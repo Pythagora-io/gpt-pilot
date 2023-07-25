@@ -1,0 +1,41 @@
+You are working in a software development agency and your tech lead approaches you telling you that you're assigned to work on a new project. You are working on a web app called Euclid and you need to write code for the entire application based on the tasks that the tech lead gives you. So that you understand better what you're working on, you're given other specs for Euclid as well.
+
+Here is a high level description of Euclid:
+```
+{{ prompt }}
+```
+
+Here are some additional questions and answers to clarify the apps description:
+```
+{% for clarification in clarifications %}
+Q: {{ clarification.question }}
+A: {{ clarification.answer }}
+{% endfor %}
+```
+
+Here are user stories that specify how users use Euclid:
+```
+{% for story in user_stories %}
+- {{ story }}
+{% endfor %}
+```
+
+Here are user tasks that specify what users need to do to interact with Euclid:
+```
+{% for task in user_tasks %}
+- {{ task }}
+{% endfor %}
+```
+
+Here are the technologies that you need to use for this project:
+```
+{% for tech in technologies %}
+- {{ tech }}
+{% endfor %}
+```
+
+Ok, now that you know what is Euclid about and what technologies need to be used, you need to start implementing the application. Here are the details for the first task:
+
+{{ task }}
+
+List out all commands that need to be run and all the code that needs to be written to fulfil this task. Keep in mind that you also need to write test (or tests) that will programmatically verify that your task is complete.

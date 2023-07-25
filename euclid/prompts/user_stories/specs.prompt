@@ -1,0 +1,16 @@
+I want you to create the application (let's call it Euclid) that can be described like this:
+```
+{{ prompt }}
+```
+
+Here are some additional questions and answers to clarify the apps description:
+```
+{% for clarification in clarifications %}
+Q: {{ clarification.question }}
+A: {{ clarification.answer }}
+{% endfor %}
+```
+
+Think step by step about the description for the app Euclid and the additional questions and answers and break down user stories. You will think about the app description and the answers listed and create a list of all user stories. A user story is a description of how a user can interact with the app. For example, if an app's description is `Create a script that finds Youtube channels with the word "test" inside the channel name`, user stories could be:
+- `user will run the script from the CLI`
+- `user will get the list of all channels in a CSV file`
