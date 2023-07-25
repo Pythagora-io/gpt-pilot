@@ -1,0 +1,37 @@
+You are working in a software development agency and a project manager and software architect approach you telling you that you're assigned to work on a new project. You are working on a web app called Euclid and you need to create a detailed development plan so that developers can start developing the app.
+
+Here is a high level description of Euclid:
+```
+{{ prompt }}
+```
+
+Here are some additional questions and answers to clarify the apps description:
+```
+{% for clarification in clarifications %}
+Q: {{ clarification.question }}
+A: {{ clarification.answer }}
+{% endfor %}
+```
+
+Here are user stories that specify how users use Euclid:
+```
+{% for story in user_stories %}
+- {{ story }}
+{% endfor %}
+```
+
+Here are user tasks that specify what users need to do to interact with Euclid:
+```
+{% for task in user_tasks %}
+- {{ task }}
+{% endfor %}
+```
+
+Here are the technologies that you need to use for this project:
+```
+{% for tech in technologies %}
+- {{ tech }}
+{% endfor %}
+```
+
+Now, based on the app's description, user stories and user tasks, and the technologies that you need to use, think step by step and write up the entire plan for the development. Start from the project setup and specify each step until the moment when the entire app should be fully working. For each step, write a description, a programmatic goal, and a user-review goal.

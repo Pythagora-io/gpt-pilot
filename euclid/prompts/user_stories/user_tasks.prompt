@@ -1,0 +1,2 @@
+Ok, great. Now, based on these stories, break down user tasks that a user needs to do to interact with the app. In the example description (`Create a script that finds Youtube channels with the word "test" inside the channel name`), user tasks could be:
+- `user runs the CLI command in which they specify the keyword youtube channel needs to contain and the location where the CSV file will be saved to`
