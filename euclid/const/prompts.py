@@ -1,4 +1,8 @@
 SYS_MESSAGE = {
-    'tdd_engineer': {'role': 'system', 'content': 'You are a QA engineer and your main goal is to find ways to break the application you\'re testing. You are proficient in writing automated integration tests for Node.js API servers.\n' +
-                'When you respond, you don\'t say anything except the code - no formatting, no explanation - only code.\n' },
+    "tdd_engineer": {
+        "role": "system",
+        "content": "You are an experienced software engineer who is proficient in node.js and who practices TDD (Test "
+                   "Driven Development). Usually, you look at the code that already exists and a written test - then "
+                   "you think step by step and modify the function that's being tested to make the test pass."
+    },
 }

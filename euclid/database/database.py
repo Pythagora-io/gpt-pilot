@@ -1,8 +1,11 @@
 # database.py
 
 import psycopg2
+import json
 from psycopg2 import sql
-from euclid.const import db
+from const import db
+from logger.logger import logger
+
 
 def create_connection():
     conn = psycopg2.connect(
@@ -12,6 +15,7 @@ def create_connection():
         user=db.DB_USER,
         password=db.DB_PASSWORD)
     return conn
+
 
 def create_tables():
     commands = (
@@ -48,6 +52,7 @@ def create_tables():
             id SERIAL PRIMARY KEY,
             app_id INTEGER NOT NULL,
             step VARCHAR(255) NOT NULL,
+            data TEXT,
             completed BOOLEAN NOT NULL,
             completed_at TIMESTAMP,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -57,6 +62,7 @@ def create_tables():
                 ON UPDATE CASCADE ON DELETE CASCADE
         )
         """)
+
     conn = None
     try:
         conn = create_connection()
@@ -79,20 +85,30 @@ def save_app(user_id, app_type):
     cursor.execute("SELECT * FROM users WHERE id = %s", (str(user_id),))
     if cursor.fetchone() is None:
         # If user doesn't exist, create a new user
-        cursor.execute("INSERT INTO users (id, username, email, password) VALUES (%s, 'username', 'email', 'password')", (str(user_id),))
+        cursor.execute("INSERT INTO users (id, username, email, password) VALUES (%s, 'username', 'email', 'password')",
+                       (str(user_id),))
 
     # Now save the app
-    cursor.execute("INSERT INTO apps (user_id, app_type, status) VALUES (%s, %s, 'started') RETURNING id", (str(user_id), app_type))
+    cursor.execute("INSERT INTO apps (user_id, app_type, status) VALUES (%s, %s, 'started') RETURNING id",
+                   (str(user_id), app_type))
     app_id = cursor.fetchone()[0]
 
     conn.commit()
     cursor.close()
     conn.close()
+
+    logger.info('User saved')
+
     return app_id
+
 
 def save_progress(app_id, step, data):
     conn = create_connection()
     cursor = conn.cursor()
+
+    # Check if the data is a dictionary. If it is, convert it to a JSON string.
+    if isinstance(data, dict):
+        data = json.dumps(data)
 
     insert = sql.SQL(
         "INSERT INTO progress_steps (app_id, step, data, completed) VALUES (%s, %s, %s, false)"
@@ -102,6 +118,7 @@ def save_progress(app_id, step, data):
     conn.commit()
     cursor.close()
     conn.close()
+
 
 if __name__ == "__main__":
     create_tables()
