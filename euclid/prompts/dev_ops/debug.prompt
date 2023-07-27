@@ -1,0 +1,2 @@
+Ok, we need to debug this issue so we can execute `{{ command }}` successfully. In case you cannot debug this by running any command and need a human assistance, respond with `NEED_HUMAN`. Write the command I need to run next to solve this issue in the following format:
+COMMAND: {command_that_needs_to_be_ran}
