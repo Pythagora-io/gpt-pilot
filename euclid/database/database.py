@@ -3,6 +3,7 @@
 import psycopg2
 import json
 from psycopg2 import sql
+from psycopg2.extras import RealDictCursor
 from const import db
 from logger.logger import logger
 
@@ -13,7 +14,9 @@ def create_connection():
         database=db.DB_NAME,
         port=db.DB_PORT,
         user=db.DB_USER,
-        password=db.DB_PASSWORD)
+        password=db.DB_PASSWORD,
+        cursor_factory=RealDictCursor
+    )
     return conn
 
 
@@ -38,6 +41,7 @@ def create_tables():
         CREATE TABLE apps (
             id SERIAL PRIMARY KEY,
             user_id UUID NOT NULL,
+            app_id UUID NOT NULL UNIQUE,
             app_type VARCHAR(255) NOT NULL,
             status VARCHAR(255) NOT NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -50,7 +54,7 @@ def create_tables():
         """
         CREATE TABLE progress_steps (
             id SERIAL PRIMARY KEY,
-            app_id INTEGER NOT NULL,
+            app_id UUID NOT NULL,
             step VARCHAR(255) NOT NULL,
             data TEXT,
             completed BOOLEAN NOT NULL,
@@ -58,7 +62,7 @@ def create_tables():
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (app_id)
-                REFERENCES apps (id)
+                REFERENCES apps (app_id)
                 ON UPDATE CASCADE ON DELETE CASCADE
         )
         """)
@@ -78,7 +82,7 @@ def create_tables():
             conn.close()
 
 
-def save_app(user_id, app_type):
+def save_app(user_id, app_id, app_type):
     conn = create_connection()
     cursor = conn.cursor()
 
@@ -89,9 +93,8 @@ def save_app(user_id, app_type):
                        (str(user_id),))
 
     # Now save the app
-    cursor.execute("INSERT INTO apps (user_id, app_type, status) VALUES (%s, %s, 'started') RETURNING id",
-                   (str(user_id), app_type))
-    app_id = cursor.fetchone()[0]
+    cursor.execute("INSERT INTO apps (user_id, app_id, app_type, status) VALUES (%s, %s, %s, 'started') RETURNING id",
+                   (str(user_id), (str(app_id)), app_type))
 
     conn.commit()
     cursor.close()
@@ -99,7 +102,7 @@ def save_app(user_id, app_type):
 
     logger.info('User saved')
 
-    return app_id
+    return
 
 
 def save_progress(app_id, step, data):
@@ -118,6 +121,35 @@ def save_progress(app_id, step, data):
     conn.commit()
     cursor.close()
     conn.close()
+
+
+def get_apps_by_id(app_id):
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM apps WHERE app_id = %s", (str(app_id),))
+    apps = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return apps
+
+
+def get_progress_steps(app_id, step=None):
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    if step:
+        cursor.execute("SELECT * FROM progress_steps WHERE app_id = %s AND step = %s", (app_id, step))
+    else:
+        cursor.execute("SELECT * FROM progress_steps WHERE app_id = %s", (app_id,))
+    steps = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return steps
 
 
 if __name__ == "__main__":

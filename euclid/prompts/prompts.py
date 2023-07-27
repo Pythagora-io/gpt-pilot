@@ -4,8 +4,9 @@ from inquirer.themes import GreenPassion
 from termcolor import colored
 
 from const import common
-from const.prompts import SYS_MESSAGE
+from const.llm import MAX_QUESTIONS, END_RESPONSE
 from utils.llm_connection import create_gpt_chat_completion, get_prompt
+from utils.utils import capitalize_first_word_with_underscores, get_sys_message, find_role_from_step
 from logger.logger import logger
 
 
@@ -90,8 +91,7 @@ def get_additional_info_from_openai(messages):
         response = create_gpt_chat_completion(messages, 'additional_info')
 
         if response is not None:
-            # Check if the response is "Thank you!"
-            if response.strip() == "Thank you!":
+            if response.strip() == END_RESPONSE:
                 print(response)
                 return messages
 
@@ -104,34 +104,74 @@ def get_additional_info_from_openai(messages):
         else:
             is_complete = True
 
-    logger.info('Getting additional info done')
+    logger.info('Getting additional info from openai done')
 
     return messages
 
 
+def get_additional_info_from_user(messages, role):
+    updated_messages = []
+
+    for message in messages:
+
+        while True:
+            print(colored(f"Please check this message and say what needs to be changed. If everything is ok just type 'DONE'.", "yellow"))
+            answer = ask_user(message)
+            if answer.lower() == 'done':
+                break
+            response = create_gpt_chat_completion(
+                generate_messages_from_custom_conversation(role, [get_prompt('utils/update.prompt'), message, answer], 'user'),
+                'additional_info')
+
+            message = response
+
+        updated_messages.append(message)
+
+    logger.info('Getting additional info from user done')
+
+    return "\n\n".join(updated_messages)
+
+
 def generate_messages_from_description(description, app_type):
-    prompt = get_prompt('clarification.pt', {'description': description, 'app_type': app_type, 'maximum_questions': 3})
+    prompt = get_prompt('high_level_questions/specs.prompt', {
+        'description': description,
+        'app_type': app_type,
+        'MAX_QUESTIONS': MAX_QUESTIONS
+    })
 
     return [
-        SYS_MESSAGE['tdd_engineer'],
+        get_sys_message('product_owner'),
         {"role": "user", "content": prompt},
     ]
 
 
-def execute_chat_prompt(prompt_file, prompt_data, chat_completion_type, print_msg):
+def generate_messages_from_custom_conversation(role, messages, start_role='user'):
+    result = [get_sys_message(role)]
+
+    for i, message in enumerate(messages):
+        if i % 2 == 0:
+            result.append({"role": start_role, "content": message})
+        else:
+            result.append({"role": "assistant" if start_role == "user" else "user", "content": message})
+
+    return result
+
+
+def execute_chat_prompt(prompt_file, prompt_data, chat_type):
     # Generate a prompt for the completion type.
     prompt = get_prompt(prompt_file, prompt_data)
 
     # Pass the prompt to the API.
     messages = [
-        SYS_MESSAGE['tdd_engineer'],
+        get_sys_message(find_role_from_step(chat_type)),
         {"role": "user", "content": prompt},
     ]
 
-    response = create_gpt_chat_completion(messages, chat_completion_type)
+    response = create_gpt_chat_completion(messages, chat_type)
 
+    print_msg = capitalize_first_word_with_underscores(chat_type)
     print(colored(f"{print_msg}:\n", "green"))
     print(f"{response}")
-    logger.info(f"{print_msg}: {response}")
+    logger.info(f"{print_msg}: {response}\n")
 
     return response

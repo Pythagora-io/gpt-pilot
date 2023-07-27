@@ -1,0 +1,7 @@
+**IMPORTANT**
+I want your response to be only one question at a time. I will ask you again when I am ready for next question.
+
+Ask maximum of {{MAX_QUESTIONS}} questions and after that I want you to respond with "{{END_RESPONSE}}".
+
+If everything is clear before asking those {{MAX_QUESTIONS}} questions, you write the response in the following format:
+"{{END_RESPONSE}}"

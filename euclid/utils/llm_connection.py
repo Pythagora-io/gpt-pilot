@@ -6,18 +6,23 @@ import json
 from typing import List
 from jinja2 import Environment, FileSystemLoader
 
-from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS
-from const.prompts import SYS_MESSAGE
+from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS, MAX_QUESTIONS, END_RESPONSE
 from logger.logger import logger
 from termcolor import colored
+from utils.utils import get_prompt_components
 
 
 def connect_to_llm():
     pass
 
 
-def get_prompt(prompt_name, data):
-    logger.debug(f"Getting prompt for {prompt_name} with data {data}")  # logging here
+def get_prompt(prompt_name, data=None):
+    if data is None:
+        data = {}
+
+    data.update(get_prompt_components())
+
+    logger.debug(f"Getting prompt for {prompt_name}")  # logging here
     # Create a file system loader with the directory of the templates
     file_loader = FileSystemLoader('prompts')
 
@@ -31,19 +36,6 @@ def get_prompt(prompt_name, data):
     output = template.render(data)
 
     return output
-
-
-def get_user_flows(description):
-    prompt = get_prompt('breakdown_1_user_flows.prompt', {'description': description})
-
-    messages = [
-        SYS_MESSAGE['tdd_engineer'],
-        # app type
-        #
-        {"role": "user", "content": prompt},
-    ]
-
-    create_gpt_chat_completion(messages, 'user_flows')
 
 
 def get_tokens_in_messages(messages: List[str]) -> int:
@@ -124,22 +116,6 @@ def stream_gpt_completion(data, req_type):
     logger.info(f'Response message: {gpt_response}')
     new_code = postprocessing(gpt_response, req_type)  # TODO add type dynamically
     return new_code
-
-
-def get_clarifications(description):
-    prompt = get_prompt('clarification.pt', {'description': description})
-
-    messages = [
-        SYS_MESSAGE['tdd_engineer'],
-        {"role": "user", "content": prompt},
-    ]
-
-    response = create_gpt_chat_completion(messages, 'get_clarifications')
-
-    if response is not None:
-        messages.append({'role': 'assistant', 'content': response})
-
-    return messages, response
 
 
 def postprocessing(gpt_response, req_type):
