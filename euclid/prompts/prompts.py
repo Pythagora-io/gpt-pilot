@@ -60,7 +60,7 @@ def ask_for_main_app_definition():
 
         description += ' ' + answers['confirmation']
 
-    logger.info('Initial App description done')
+    logger.info(f"Initial App description done: {description}")
 
     return description
 
@@ -134,7 +134,7 @@ def get_additional_info_from_user(messages, role):
 
 def generate_messages_from_description(description, app_type):
     prompt = get_prompt('high_level_questions/specs.prompt', {
-        'description': description,
+        'prompt': description,
         'app_type': app_type,
         'MAX_QUESTIONS': MAX_QUESTIONS
     })
