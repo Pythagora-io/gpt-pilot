@@ -1,0 +1,29 @@
+{{ if len(files) > 0}}
+Here are the requested files:
+{% for file in files %}
+**{{ file.name }}**
+```{{ file.language }}
+{{ file.content }}
+```
+
+{% endfor %}
+{% else %}
+Currently, no tests are written.
+
+{% endif %}
+Now, start with the implementation of the automated test (or tests).
+
+If you need a CLI command to be ran, write it like this:
+COMMAND: {command_that_needs_to_be_ran}
+
+At the end of your response, specify file names of all files that should be changed based on your instructions in the following format:
+FILES_CHANGED: ["file_name_1", "file_name_2", ..., "file_name_n"]
+
+If you need to create a new file, at the end of the file write an array of new files that need to be created in the following format:
+NEW_FILES: {new_files_array}
+
+`new_files_array` is a JSON array where each item in the array needs to be a JSON object with these keys:
+`name` - file name with the full path relative to the root of the project
+`description` - a thorough description of what this file is meant to contain so that we can know in the future if any new code needs to be put in that file. Do not describe what is currently implemented in this file but rather a description so that anyone who looks at this description knows if they should put the new code in it or not.
+
+You can write code in multiple files and keep in mind that you also need to write test (or tests) that will programmatically verify that your task is complete. If you need to run any commands, you can do that now but make sure that the command is not contained in any other steps outlined above.

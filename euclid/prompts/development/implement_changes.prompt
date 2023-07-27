@@ -1,18 +1,50 @@
-I will show you contents from a file {{ file_name }} and the instructions of what changes need to be made to that file. The instructions will be in the following format:
+I have development instructions that I need you to reformat into a JSON array that will be executed with a code. The instructions will be in the following format:
 -- INSTRUCTIONS --
 {all_the_instructions}
 -- END OF INSTRUCTIONS --
 
-I want you to modify the file contents and respond with the entire file along with the modifications. If anything needs to be written by the user, add the comment in the same line as the code that starts with `// INPUT_REQUIRED {input_description}` where `input_description` is a description of what needs to be added here by the user.
-
-Here is how the file `{{ file_name }}` looks now:
-```javascript
-{{ file_content }}
+The instructions might include changes to files or commands that need to be run. I need you to read the instructions and respond with a JSON array that show each instruction in a JSON object format. In case a command needs to be run, the JSON object needs to look like this:
+```json
+{
+  "type": "command",
+  "command": "{command_that_needs_to_be_run}"
+}
 ```
+
+In case a file needs to be modified, I want you to modify the file and show me how it should look like after the modifications. Here is how the JSON object should look like in that case:
+```json
+{
+  "type": "file_change",
+  "file_content": "{file_content_after_modifications}"
+}
+```
+
+Within the new modifications, anything needs to be written by the user, add the comment in the same line as the code that starts with `// INPUT_REQUIRED {input_description}` where `input_description` is a description of what needs to be added here by the user.
+
+{% if len(files) > 0 %}
+Here is how files look now:
+{% for file in files %}
+**{{ file.name }}**
+```{{ file.language }}
+{{ file.content }}
+```
+
+{% endfor %}
+{% endif%}
 
 Here are the instructions for changes that need to be made:
 -- INSTRUCTIONS --
-{{ instructions }}
+The existing test for the root ('/') route seems sufficient for this step. It accurately checks the intended functionality - the server responds with a status code of 200 and HTML content type when a GET request is made to the root route.
+
+Therefore, no changes are required in the file `tests/server.test.js`.
+
+To verify the changes from this step, we can run this test using the command `npm test`.
+
+COMMAND: npm test
+
+FILES_CHANGED: []
+
+NEW_FILES: []
 -- END OF INSTRUCTIONS --
 
-Do not write anything else but only the file contents. Keep in mind that the changes might be related to multiple files. You don't need to think about any other changes except for the changes in `index.js`
+Do not write anything else but the JSON array. Make sure that the JSON array preserves the order of instructions. For example, if a file needs to be modified, then a command needs to be run, and then the file should be modified again - then, the JSON array should have 3 items where the first item should be the file with the first modifications, the second item should be the command that needs to be run and the third item should be the file with the second modifications.
