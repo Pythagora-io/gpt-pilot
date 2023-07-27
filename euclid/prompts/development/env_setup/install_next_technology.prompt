@@ -1,0 +1,4 @@
+Let's install `{{ technology }}` - respond with the command that I need to run to check if {{ technology }} is installed and ready to be used on my machine. You must not respond by anything other than these things:
+When you want to tell me a command I need to run, respond only with the command you want me to run and nothing else.
+When the technology is fully installed, respond with `INSTALLED`.
+If the previous command was meant to check if the technology is install and if it wasn't, respond with `NOT_INSTALLED`.

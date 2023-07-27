@@ -1,0 +1,18 @@
+I will show you contents from a file {{ file_name }} and the instructions of what changes need to be made to that file. The instructions will be in the following format:
+-- INSTRUCTIONS --
+{all_the_instructions}
+-- END OF INSTRUCTIONS --
+
+I want you to modify the file contents and respond with the entire file along with the modifications. If anything needs to be written by the user, add the comment in the same line as the code that starts with `// INPUT_REQUIRED {input_description}` where `input_description` is a description of what needs to be added here by the user.
+
+Here is how the file `{{ file_name }}` looks now:
+```javascript
+{{ file_content }}
+```
+
+Here are the instructions for changes that need to be made:
+-- INSTRUCTIONS --
+{{ instructions }}
+-- END OF INSTRUCTIONS --
+
+Do not write anything else but only the file contents. Keep in mind that the changes might be related to multiple files. You don't need to think about any other changes except for the changes in `index.js`

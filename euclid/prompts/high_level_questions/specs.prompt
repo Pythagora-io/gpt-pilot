@@ -1,6 +1,6 @@
-I want you to create the {{app_type}} (let's call it Euclid) that can be described like this:
+I want you to create the application (let's call it Euclid) that can be described like this:
 ```
-{{ description }}
+{{ prompt }}
 ```
 
 I'm going to show you an overview of tasks that you need to do to lead the process of creating this app and for each task, I will tell you an example of how would you solve this task for the example app.
