@@ -2,13 +2,14 @@
 import json
 from termcolor import colored
 
-from utils.utils import execute_step, split_into_bullets, find_role_from_step, generate_app_data
+from utils.utils import execute_step, find_role_from_step, generate_app_data
 from database.database import save_progress, get_progress_steps
 from logger.logger import logger
 from prompts.prompts import get_additional_info_from_user, execute_chat_prompt
+from const.function_calls import USER_TASKS
 
 
-def get_user_tasks(summary, args):
+def get_user_tasks(previous_messages, args):
     current_step = 'user_tasks'
     role = find_role_from_step(current_step)
     # If this app_id already did this step, just get all data from DB and don't ask user again
@@ -17,7 +18,6 @@ def get_user_tasks(summary, args):
         first_step = steps[0]
         data = json.loads(first_step['data'])
 
-        summary = data.get('summary')
         app_data = data.get('app_data')
         if app_data is not None:
             args.update(app_data)
@@ -25,18 +25,20 @@ def get_user_tasks(summary, args):
         message = f"User tasks already done for this app_id: {args['app_id']}. Moving to next step..."
         print(colored(message, "green"))
         logger.info(message)
-        return summary, data.get('messages')
+        return data.get('user_tasks'), data.get('messages')
 
     # USER TASKS
     print(colored(f"Generating user tasks...\n", "green"))
     logger.info(f"Generating user tasks...")
 
-    user_tasks, user_tasks_messages = execute_chat_prompt('user_tasks/specs.prompt',
-                                       {'prompt': summary, 'app_type': args['app_type']},
-                                       current_step)
+    # TODO: remove this once the database is set up properly
+    previous_messages[2]['content'] = '\n'.join(previous_messages[2]['content'])
+    # TODO END
+    user_tasks, user_tasks_messages = execute_chat_prompt('user_stories/user_tasks.prompt',
+                                       {}, current_step, previous_messages, function_calls=USER_TASKS)
 
-    logger.info(split_into_bullets(user_tasks))
-    user_tasks = get_additional_info_from_user(split_into_bullets(user_tasks), role)
+    logger.info(user_tasks)
+    user_tasks = get_additional_info_from_user(user_tasks, role)
 
     logger.info(f"Final user tasks: {user_tasks}")
 

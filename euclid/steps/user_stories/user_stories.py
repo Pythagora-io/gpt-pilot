@@ -2,7 +2,7 @@
 import json
 from termcolor import colored
 
-from utils.utils import execute_step, split_into_bullets, find_role_from_step, generate_app_data
+from utils.utils import execute_step, find_role_from_step, generate_app_data
 from database.database import save_progress, get_progress_steps
 from logger.logger import logger
 from prompts.prompts import get_additional_info_from_user, execute_chat_prompt

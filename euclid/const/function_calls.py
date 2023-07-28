@@ -34,3 +34,12 @@ USER_STORIES = {
         'process_user_stories': process_user_stories
     },
 }
+
+USER_TASKS = {
+    'definitions': [
+        return_array_from_prompt('user tasks', 'user task', 'tasks')
+    ],
+    'functions': {
+        'process_user_tasks': process_user_tasks
+    },
+}
