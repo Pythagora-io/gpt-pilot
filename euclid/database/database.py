@@ -63,7 +63,8 @@ def create_tables():
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (app_id)
                 REFERENCES apps (app_id)
-                ON UPDATE CASCADE ON DELETE CASCADE
+                ON UPDATE CASCADE ON DELETE CASCADE,
+            UNIQUE (app_id, step)
         )
         """)
 
@@ -113,14 +114,20 @@ def save_progress(app_id, step, data):
     if isinstance(data, dict):
         data = json.dumps(data)
 
+    # INSERT the data, but on conflict (if the app_id and step combination already exists) UPDATE the data
     insert = sql.SQL(
-        "INSERT INTO progress_steps (app_id, step, data, completed) VALUES (%s, %s, %s, false)"
+        """INSERT INTO progress_steps (app_id, step, data, completed)
+           VALUES (%s, %s, %s, false)
+           ON CONFLICT (app_id, step) DO UPDATE
+           SET data = excluded.data, completed = excluded.completed"""
     )
+
     cursor.execute(insert, (app_id, step, data))
 
     conn.commit()
     cursor.close()
     conn.close()
+
 
 
 def get_apps_by_id(app_id):

@@ -38,7 +38,7 @@ def get_arguments():
     if 'step' not in arguments:
         arguments['step'] = None
 
-    print(f"If you wish to continue with this project in future run 'python main.py app_id={arguments['app_id']}")
+    print(f"If you wish to continue with this project in future run 'python main.py app_id={arguments['app_id']}'")
     return arguments
 
 
@@ -149,3 +149,7 @@ def split_into_bullets(text):
     split_text = re.split(pattern, text)
     split_text = [bullet for bullet in split_text if bullet]  # Remove any empty strings from the list
     return split_text
+
+
+def generate_app_data(args):
+    return {'app_id': args['app_id'], 'app_type': args['app_type']}

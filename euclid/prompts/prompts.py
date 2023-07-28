@@ -2,6 +2,7 @@
 import inquirer
 from inquirer.themes import GreenPassion
 from termcolor import colored
+import questionary
 
 from const import common
 from const.llm import MAX_QUESTIONS, END_RESPONSE
@@ -67,21 +68,17 @@ def ask_for_main_app_definition():
 
 def ask_user(question):
     while True:
-        questions = [
-            inquirer.Text('answer', message=question)
-        ]
+        answer = questionary.text(question).ask()
 
-        answers = inquirer.prompt(questions, theme=GreenPassion())
-
-        if answers is None:
+        if answer is None:
             print("Exiting application.")
             exit(0)
 
-        if answers['answer'].strip() == '':
+        if answer.strip() == '':
             print("No input provided! Please try again.")
             continue
         else:
-            return answers['answer']
+            return answer
 
 
 def get_additional_info_from_openai(messages):
@@ -115,12 +112,15 @@ def get_additional_info_from_user(messages, role):
     for message in messages:
 
         while True:
-            print(colored(f"Please check this message and say what needs to be changed. If everything is ok just type 'DONE'.", "yellow"))
+            print(colored(
+                f"Please check this message and say what needs to be changed. If everything is ok just type 'DONE'.",
+                "yellow"))
             answer = ask_user(message)
             if answer.lower() == 'done':
                 break
             response = create_gpt_chat_completion(
-                generate_messages_from_custom_conversation(role, [get_prompt('utils/update.prompt'), message, answer], 'user'),
+                generate_messages_from_custom_conversation(role, [get_prompt('utils/update.prompt'), message, answer],
+                                                           'user'),
                 'additional_info')
 
             message = response
@@ -146,6 +146,7 @@ def generate_messages_from_description(description, app_type):
 
 
 def generate_messages_from_custom_conversation(role, messages, start_role='user'):
+    # messages is list of strings
     result = [get_sys_message(role)]
 
     for i, message in enumerate(messages):
@@ -157,21 +158,28 @@ def generate_messages_from_custom_conversation(role, messages, start_role='user'
     return result
 
 
-def execute_chat_prompt(prompt_file, prompt_data, chat_type):
+def execute_chat_prompt(prompt_file, prompt_data, chat_type, previous_messages=None):
     # Generate a prompt for the completion type.
     prompt = get_prompt(prompt_file, prompt_data)
+    new_message = {"role": "user", "content": prompt}
 
-    # Pass the prompt to the API.
-    messages = [
-        get_sys_message(find_role_from_step(chat_type)),
-        {"role": "user", "content": prompt},
-    ]
+    if previous_messages:
+        # Use the provided previous_messages instead of the default system message.
+        messages = previous_messages + [new_message]
+    else:
+        # Use the default system message.
+        messages = [
+            get_sys_message(find_role_from_step(chat_type)),
+            new_message,
+        ]
 
     response = create_gpt_chat_completion(messages, chat_type)
+
+    messages.append({"role": "assistant", "content": response})
 
     print_msg = capitalize_first_word_with_underscores(chat_type)
     print(colored(f"{print_msg}:\n", "green"))
     print(f"{response}")
     logger.info(f"{print_msg}: {response}\n")
 
-    return response
+    return response, messages
