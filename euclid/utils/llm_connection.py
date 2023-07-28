@@ -77,7 +77,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
 
 
 def stream_gpt_completion(data, req_type):
-    print(colored("Waiting for OpenAI API response...", 'light_magenta'))
+    print(colored("Waiting for OpenAI API response...", 'yellow'))
     api_key = os.getenv("OPENAI_API_KEY")
 
     logger.info(f'Request data: {data}')
