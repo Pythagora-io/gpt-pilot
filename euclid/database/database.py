@@ -93,15 +93,20 @@ def save_app(user_id, app_id, app_type):
         cursor.execute("INSERT INTO users (id, username, email, password) VALUES (%s, 'username', 'email', 'password')",
                        (str(user_id),))
 
-    # Now save the app
-    cursor.execute("INSERT INTO apps (user_id, app_id, app_type, status) VALUES (%s, %s, %s, 'started') RETURNING id",
-                   (str(user_id), (str(app_id)), app_type))
+    # Now save or update the app
+    cursor.execute("""
+        INSERT INTO apps (user_id, app_id, app_type, status)
+        VALUES (%s, %s, %s, 'started')
+        ON CONFLICT (app_id) DO UPDATE SET
+        user_id = EXCLUDED.user_id, app_type = EXCLUDED.app_type, status = EXCLUDED.status
+        RETURNING id
+    """, (str(user_id), str(app_id), app_type))
 
     conn.commit()
     cursor.close()
     conn.close()
 
-    logger.info('User saved')
+    logger.info('App saved')
 
     return
 
