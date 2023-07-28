@@ -8,6 +8,7 @@ from utils.utils import execute_step, generate_app_data
 from prompts.prompts import ask_for_app_type, ask_for_main_app_definition, get_additional_info_from_openai, \
     generate_messages_from_description, execute_chat_prompt
 
+
 def get_project_description(args):
     current_step = 'project_description'
     # If this app_id already did this step, just get all data from DB and don't ask user again
@@ -24,7 +25,7 @@ def get_project_description(args):
         print(colored(message, "green"))
         logger.info(message)
 
-        return summary
+        return summary, data.get('messages')
 
     # PROJECT DESCRIPTION
     args['app_type'] = ask_for_app_type()
@@ -42,7 +43,8 @@ def get_project_description(args):
                                              current_step)
 
     save_progress(args['app_id'], current_step,
-                  {"messages": high_level_messages, "summary": high_level_summary, "app_data": generate_app_data(args)})
+                  {"messages": high_level_messages, "summary": high_level_summary, "app_data": generate_app_data(args)
+                   })
 
-    return high_level_summary
+    return high_level_summary, high_level_messages
     # PROJECT DESCRIPTION END

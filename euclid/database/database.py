@@ -129,7 +129,6 @@ def save_progress(app_id, step, data):
     conn.close()
 
 
-
 def get_apps_by_id(app_id):
     conn = create_connection()
     cursor = conn.cursor()

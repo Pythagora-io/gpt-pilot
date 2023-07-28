@@ -25,7 +25,7 @@ def get_user_stories(summary, args):
         message = f"User stories already done for this app_id: {args['app_id']}. Moving to next step..."
         print(colored(message, "green"))
         logger.info(message)
-        return user_stories
+        return user_stories, data.get('messages')
 
     # USER STORIES
     print(colored(f"Generating user stories...\n", "green"))
@@ -40,7 +40,9 @@ def get_user_stories(summary, args):
 
     logger.info(f"Final user stories: {user_stories}")
 
-    save_progress(args['app_id'], current_step, {"user_stories": user_stories, "app_data": generate_app_data(args)})
+    save_progress(args['app_id'], current_step, {
+        "messages": user_stories_messages, "user_stories": user_stories, "app_data": generate_app_data(args)
+    })
 
-    return user_stories
+    return user_stories, user_stories_messages
     # USER STORIES END

@@ -25,7 +25,7 @@ def get_user_tasks(summary, args):
         message = f"User tasks already done for this app_id: {args['app_id']}. Moving to next step..."
         print(colored(message, "green"))
         logger.info(message)
-        return summary
+        return summary, data.get('messages')
 
     # USER TASKS
     print(colored(f"Generating user tasks...\n", "green"))
@@ -40,7 +40,9 @@ def get_user_tasks(summary, args):
 
     logger.info(f"Final user tasks: {user_tasks}")
 
-    save_progress(args['app_id'], current_step, {"user_tasks": user_tasks, "app_data": generate_app_data(args)})
+    save_progress(args['app_id'], current_step, {
+        "messages": user_tasks_messages,"user_tasks": user_tasks, "app_data": generate_app_data(args)
+    })
 
-    return user_tasks
+    return user_tasks, user_tasks_messages
     # USER TASKS END
