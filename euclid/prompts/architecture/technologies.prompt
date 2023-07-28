@@ -1,4 +1,4 @@
-You are working in a software development agency and a project manager approached you telling you that you're assigned to work on a new project. You  are working on a web app called Euclid and you need to create specifications on what technologies should be used in this project.
+You are working in a software development agency and a project manager approached you telling you that you're assigned to work on a new project. You  are working on a {{app_type}} called Euclid and you need to create specifications on what technologies should be used in this project.
 
 Here is a high level description of Euclid:
 ```
