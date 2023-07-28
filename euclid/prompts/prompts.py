@@ -1,6 +1,5 @@
 # prompts/prompts.py
-import inquirer
-from inquirer.themes import GreenPassion
+
 from termcolor import colored
 import questionary
 
@@ -8,58 +7,55 @@ from const import common
 from const.llm import MAX_QUESTIONS, END_RESPONSE
 from utils.llm_connection import create_gpt_chat_completion, get_prompt
 from utils.utils import capitalize_first_word_with_underscores, get_sys_message, find_role_from_step
+from utils.questionary import styled_select, styled_text
 from logger.logger import logger
 
 
 def ask_for_app_type():
-    questions = [
-        inquirer.List('type',
-                      message="What type of app do you want to build?",
-                      choices=common.APP_TYPES,
-                      )
-    ]
+    answer = styled_select(
+        "What type of app do you want to build?",
+        choices=common.APP_TYPES
+    )
 
-    answers = inquirer.prompt(questions, theme=GreenPassion())
-    if answers is None:
+    if answer is None:
         print("Exiting application.")
         exit(0)
 
-    while 'unavailable' in answers['type']:
+    while 'unavailable' in answer:
         print("Sorry, that option is not available.")
-        answers = inquirer.prompt(questions, theme=GreenPassion())
-        if answers is None:
+        answer = styled_select(
+            "What type of app do you want to build?",
+            choices=common.APP_TYPES
+        )
+        if answer is None:
             print("Exiting application.")
             exit(0)
 
-    print("You chose: " + answers['type'])
-    logger.info(f"You chose: {answers['type']}")
-    return answers['type']
+    print("You chose: " + answer)
+    logger.info(f"You chose: {answer}")
+    return answer
 
 
 def ask_for_main_app_definition():
-    questions = [
-        inquirer.Text('description', message="Describe your app in as many details as possible.")
-    ]
+    description = styled_text(
+        "Describe your app in as many details as possible."
+    )
 
-    answers = inquirer.prompt(questions, theme=GreenPassion())
-    if answers is None:
+    if description is None:
         print("No input provided!")
         return
 
-    description = answers['description']
-
     while True:
-        questions = [
-            inquirer.Text('confirmation', message="Do you want to add anything else? If not, just press ENTER.")
-        ]
+        confirmation = styled_text(
+            "Do you want to add anything else? If not, just press ENTER."
+        )
 
-        answers = inquirer.prompt(questions, theme=GreenPassion())
-        if answers is None or answers['confirmation'] == '':
+        if confirmation is None or confirmation == '':
             break
         elif description[-1] not in ['.', '!', '?', ';']:
             description += '.'
 
-        description += ' ' + answers['confirmation']
+        description += ' ' + confirmation
 
     logger.info(f"Initial App description done: {description}")
 
@@ -68,7 +64,7 @@ def ask_for_main_app_definition():
 
 def ask_user(question):
     while True:
-        answer = questionary.text(question).ask()
+        answer = styled_text(question)
 
         if answer is None:
             print("Exiting application.")
