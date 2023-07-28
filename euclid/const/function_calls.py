@@ -3,29 +3,32 @@ from utils.llm import parse_llm_output
 def process_user_stories(stories):
     return stories
 
-def return_array_from_prompt(values_in_list):
+def process_user_tasks(tasks):
+    return tasks
+
+def return_array_from_prompt(name_plural, name_singular, return_var_name):
     return {
-        'name': 'process_user_stories',
-        'description': f"Print the list of user stories that are created.",
+        'name': f'process_{name_plural.replace(" ", "_")}',
+        'description': f"Print the list of {name_plural} that are created.",
         'parameters': {
             'type': 'object',
             "properties": {
-                "stories": {
+                f"{return_var_name}": {
                     "type": "array",
-                    "description": f"List of user stories that are created in a list.",
+                    "description": f"List of {name_plural} that are created in a list.",
                     "items": {
                         "type": "string",
-                        "description": "User story"
+                        "description": f"{name_singular}"
                     },
                 },
             },
-            "required": ["stories"],
+            "required": [return_var_name],
         },
     }
 
 USER_STORIES = {
     'definitions': [
-        return_array_from_prompt('user stories')
+        return_array_from_prompt('user stories', 'user story', 'stories')
     ],
     'functions': {
         'process_user_stories': process_user_stories
