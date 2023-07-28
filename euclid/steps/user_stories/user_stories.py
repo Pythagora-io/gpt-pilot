@@ -6,6 +6,7 @@ from utils.utils import execute_step, split_into_bullets, find_role_from_step, g
 from database.database import save_progress, get_progress_steps
 from logger.logger import logger
 from prompts.prompts import get_additional_info_from_user, execute_chat_prompt
+from const.function_calls import USER_STORIES
 
 
 def get_user_stories(summary, args):
@@ -32,11 +33,12 @@ def get_user_stories(summary, args):
     logger.info(f"Generating user stories...")
 
     user_stories, user_stories_messages = execute_chat_prompt('user_stories/specs.prompt',
-                                       {'prompt': summary, 'app_type': args['app_type']},
-                                       current_step)
+                                        {'prompt': summary, 'app_type': args['app_type']},
+                                        current_step,
+                                        function_calls=USER_STORIES)
 
-    logger.info(split_into_bullets(user_stories))
-    user_stories = get_additional_info_from_user(split_into_bullets(user_stories), role)
+    logger.info(user_stories)
+    user_stories = get_additional_info_from_user(user_stories, role)
 
     logger.info(f"Final user stories: {user_stories}")
 

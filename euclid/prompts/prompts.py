@@ -158,7 +158,7 @@ def generate_messages_from_custom_conversation(role, messages, start_role='user'
     return result
 
 
-def execute_chat_prompt(prompt_file, prompt_data, chat_type, previous_messages=None):
+def execute_chat_prompt(prompt_file, prompt_data, chat_type, previous_messages=None, function_calls=None):
     # Generate a prompt for the completion type.
     prompt = get_prompt(prompt_file, prompt_data)
     new_message = {"role": "user", "content": prompt}
@@ -173,7 +173,7 @@ def execute_chat_prompt(prompt_file, prompt_data, chat_type, previous_messages=N
             new_message,
         ]
 
-    response = create_gpt_chat_completion(messages, chat_type)
+    response = create_gpt_chat_completion(messages, chat_type, function_calls=function_calls)
 
     messages.append({"role": "assistant", "content": response})
 

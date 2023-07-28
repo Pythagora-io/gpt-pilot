@@ -61,12 +61,12 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
 
     if function_calls is not None:
         gpt_data['functions'] = function_calls['definitions']
-        gpt_data['function_call'] = "auto"
+        gpt_data['function_call'] = { 'name': function_calls['definitions'][0]['name'] }
 
     try:
         response = stream_gpt_completion(gpt_data, req_type)
         if 'function_calls' in response and function_calls is not None:
-            function_calls['callback'](response['function_calls']);
+            return function_calls['functions'][response['function_calls']['name']](**response['function_calls']['arguments']);
         elif 'text' in response:
             return response['text']
     except Exception as e:
@@ -133,6 +133,10 @@ def stream_gpt_completion(data, req_type):
                 if content:
                     gpt_response += content
 
+    if function_calls['arguments'] != '':
+        logger.info(f'Response via function call: {function_calls["arguments"]}')
+        function_calls['arguments'] = json.loads(function_calls['arguments'])
+        return { 'function_calls': function_calls };
     logger.info(f'Response message: {gpt_response}')
     new_code = postprocessing(gpt_response, req_type)  # TODO add type dynamically
     return { 'text': new_code }
