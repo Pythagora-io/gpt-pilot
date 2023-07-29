@@ -5,29 +5,41 @@ import threading
 import queue
 import time
 
-def enqueue_output(out, queue):
-    for line in iter(out.readline, b''):
-        queue.put(line)
+from termcolor import colored
+
+def enqueue_output(out, q):
+    for line in iter(out.readline, ''):
+        q.put(line)
     out.close()
 
-def run_command(command, queue, pid_container):
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, preexec_fn=os.setsid)
+def run_command(command, q, pid_container):
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     pid_container[0] = process.pid
-    t = threading.Thread(target=enqueue_output, args=(process.stdout, queue))
+    t = threading.Thread(target=enqueue_output, args=(process.stdout, q))
     t.daemon = True
     t.start()
+    return process
 
 def execute_command(command, timeout=5):
     q = queue.Queue()
     pid_container = [None]
-    run_command(command, q, pid_container)
+    process = run_command(command, q, pid_container)
     output = ''
     start_time = time.time()
 
     while True:
         elapsed_time = time.time() - start_time
+
+        # Check if process has finished
+        if process.poll() is not None:
+            # Get remaining lines from the queue
+            while not q.empty():
+                output += q.get_nowait()
+            break
+
+        # If timeout is reached, kill the process
         if elapsed_time > timeout:
-            os.killpg(pid_container[0], signal.SIGKILL)
+            os.kill(pid_container[0], signal.SIGKILL)
             break
 
         try:
@@ -37,8 +49,11 @@ def execute_command(command, timeout=5):
 
         if line:
             output += line
+            print(colored('CLI OUTPUT:', 'green') + line)
+            print(line, end='')  # This will print the output in real-time
 
-    return output[-2000:]
+    stderr_output = process.stderr.read()
+    return output[-2000:] if output != '' else stderr_output[-2000:]
 
 def build_directory_tree(path, prefix="", ignore=None, is_last=False):
     """Build the directory tree structure in tree-like format.
