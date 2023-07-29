@@ -65,10 +65,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
 
     try:
         response = stream_gpt_completion(gpt_data, req_type)
-        if 'function_calls' in response and function_calls is not None:
-            return function_calls['functions'][response['function_calls']['name']](**response['function_calls']['arguments']);
-        elif 'text' in response:
-            return response['text']
+        return response
     except Exception as e:
         print(
             'The request to OpenAI API failed. Might be due to GPT being down or due to the too large message. It\'s '

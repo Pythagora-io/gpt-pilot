@@ -169,13 +169,32 @@ def execute_chat_prompt(prompt_file, prompt_data, chat_type, previous_messages=N
             new_message,
         ]
 
+    # TODO remove this once the database is set up properly
+    for message in messages:
+        if isinstance(message['content'], list):
+            message['content'] = '\n'.join(message['content'])
+        else:
+            message['content'] = str(message['content'])
+    # TODO END
+
     response = create_gpt_chat_completion(messages, chat_type, function_calls=function_calls)
 
-    messages.append({"role": "assistant", "content": response})
-
+    # TODO we need to specify the response when there is a function called
+    # TODO maybe we can have a specific function that creates the GPT response from the function call
+    messages.append({"role": "assistant", "content": response['text'] if 'text' in response else str(response['function_calls']['name'])})
     print_msg = capitalize_first_word_with_underscores(chat_type)
     print(colored(f"{print_msg}:\n", "green"))
     print(f"{response}")
     logger.info(f"{print_msg}: {response}\n")
+    
+    if 'function_calls' in response and function_calls is not None:
+        if 'send_messages_and_step' in function_calls:
+            response['function_calls']['arguments']['previous_messages']  = messages
+            response['function_calls']['arguments']['current_step'] = chat_type
+        response, msgs = function_calls['functions'][response['function_calls']['name']](**response['function_calls']['arguments'])
+        if msgs is not None:
+            messages = msgs
+    elif 'text' in response:
+        response = response['text']
 
     return response, messages
