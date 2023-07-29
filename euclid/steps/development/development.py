@@ -24,11 +24,7 @@ def implement_task(task):
     # development/task/breakdown.prompt
     # loop through returned array
         # development/task/step/specs.prompt
-        
     pass
-
-def install_technology(technology):
-      pass
 
 def execute_command_and_check_cli_response(command, timeout, previous_messages, current_step):
     cli_response = execute_command(command, timeout)
@@ -80,11 +76,8 @@ def set_up_environment(technologies, args):
     # TODO END
 
     os_info = get_os_info()
-    # os_specific_techologies, previous_messages = execute_chat_prompt('development/env_setup/specs.prompt',
-    #         { "os_info": os_info, "technologies": technologies }, current_step, function_calls=FILTER_OS_TECHNOLOGIES)
-    
-    os_specific_techologies = ['Heroku']
-    previous_messages = [{'role': 'system', 'content': ''}, {'role': 'user', 'content': "You are working in a software development agency and a project manager and software architect approach you telling you that you're assigned to work on a new project. You are working on a web app called Euclid and your first job is to set up the environment on a computer.\n\nHere are the technologies that you need to use for this project:\n```\n\n- 1. Node.js\n\n- 2. Express.js\n\n- 3. Axios\n\n- 4. Github API\n\n- 5. Jest\n\n- 6. D3.js\n\n- 7. Tailwind\n\n- 8. HTML\n\n- 9. Vanilla Javascript\n\n- 10. Cypress\n\n- 11. API Bakery\n\n- 12. Heroku or similar web hosting service for Node.js apps\n\n- 13. Git & Github for version control.\n\n```\n\nLet's set up the environment on my machine. Here are the details about my machine:\n```\nOS: Darwin\nOS Version: Darwin Kernel Version 22.5.0: Mon Apr 24 20:53:19 PDT 2023; root:xnu-8796.121.2~5/RELEASE_ARM64_T6020\nArchitecture: 64bit\nMachine: arm64\nNode: Zvonimirs-MacBook-Pro.local\nRelease: 22.5.0\n```\n\nFirst, filter out the technologies from the list above and tell me, which technologies need to be installed on my machine. That is everything OS specific and not dependencies, libraries, etc. Do not respond with anything else except the list in a JSON array format."}, {'role': 'assistant', 'content': ['Node.js', 'Git & Github for version control.', 'Heroku or similar web hosting service for Node.js apps']}]
+    os_specific_techologies, previous_messages = execute_chat_prompt('development/env_setup/specs.prompt',
+            { "os_info": os_info, "technologies": technologies }, current_step, function_calls=FILTER_OS_TECHNOLOGIES)
 
     for technology in os_specific_techologies:
         llm_response, previous_messages = execute_chat_prompt('development/env_setup/install_next_technology.prompt',
@@ -162,11 +155,6 @@ def set_up_environment(technologies, args):
     # })
 
     # ENVIRONMENT SETUP END
-
-
-
-    for technology in technologies:
-          install_technology(technology)
 
 def start_development(user_stories, user_tasks, technologies_to_use, args):
     # break down the development plan
