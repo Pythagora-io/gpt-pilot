@@ -1,5 +1,3 @@
-from utils.llm import parse_llm_output
-
 def process_user_stories(stories):
     return stories, None
 
@@ -47,15 +45,6 @@ USER_TASKS = {
     ],
     'functions': {
         'process_user_tasks': process_user_tasks
-    },
-}
-
-RUN_COMMAND = {
-    'definitions': [
-
-    ],
-    'functions': {
-        'run_command': parse_llm_output
     },
 }
 
