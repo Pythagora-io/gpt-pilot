@@ -149,18 +149,18 @@ def set_up_environment(technologies, args):
 
     logger.info('The entire tech stack neede is installed and ready to be used.')
 
-    # TODO save conversations to database
-    # save_progress(args['app_id'], current_step, {
-    #     "messages": user_tasks_messages,"user_tasks": user_tasks, "app_data": generate_app_data(args)
-    # })
+    save_progress(args['app_id'], current_step, {
+        "os_specific_techologies": os_specific_techologies, "newly_installed_technologies": [], "app_data": generate_app_data(args)
+    })
 
     # ENVIRONMENT SETUP END
 
 def start_development(user_stories, user_tasks, technologies_to_use, args):
     # break down the development plan
-    # set up the environment
+
     # TODO REMOVE THIS
     technologies_to_use = technologies_to_use.split('\n')
     # TODO END
+
     set_up_environment(technologies_to_use, args);
     pass
