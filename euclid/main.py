@@ -11,6 +11,8 @@ from steps.user_stories.user_stories import get_user_stories
 from steps.user_tasks.user_tasks import get_user_tasks
 from steps.architecture.architecture import get_architecture
 
+from flow.development import start_development
+
 
 def init():
     load_dotenv()
@@ -33,4 +35,4 @@ if __name__ == "__main__":
 
     architecture, architecture_messages = get_architecture(high_level_summary, user_stories, user_tasks, args)
 
-    # development
+    start_development(user_stories, user_tasks, architecture, args)

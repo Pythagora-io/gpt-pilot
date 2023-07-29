@@ -1,10 +1,16 @@
 from utils.llm import parse_llm_output
 
 def process_user_stories(stories):
-    return stories
+    return stories, None
 
 def process_user_tasks(tasks):
-    return tasks
+    return tasks, None
+
+def process_os_technologies(technologies):
+    return technologies, None
+
+def run_commands(commands):
+    return commands, None
 
 def return_array_from_prompt(name_plural, name_singular, return_var_name):
     return {
@@ -41,5 +47,41 @@ USER_TASKS = {
     ],
     'functions': {
         'process_user_tasks': process_user_tasks
+    },
+}
+
+RUN_COMMAND = {
+    'definitions': [
+
+    ],
+    'functions': {
+        'run_command': parse_llm_output
+    },
+}
+
+FILTER_OS_TECHNOLOGIES = {
+    'definitions': [
+        return_array_from_prompt('os specific technologies', 'os specific technology', 'technologies')
+    ],
+    'functions': {
+        'process_os_specific_technologies': process_os_technologies
+    },
+}
+
+INSTALL_TECH = {
+    'definitions': [
+        return_array_from_prompt('os specific technologies', 'os specific technology', 'technologies')
+    ],
+    'functions': {
+        'process_os_specific_technologies': process_os_technologies
+    },
+}
+
+COMMANDS_TO_RUN = {
+    'definitions': [
+        return_array_from_prompt('commands', 'command', 'commands')
+    ],
+    'functions': {
+        'process_commands': run_commands
     },
 }

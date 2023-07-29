@@ -1,4 +1,4 @@
-I ran the command `npm start` and for this response from CLI:
+I ran the command `{{ command }}` and for this response from CLI:
 ```
 {{ cli_response }}
 ```

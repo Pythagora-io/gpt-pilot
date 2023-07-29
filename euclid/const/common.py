@@ -3,7 +3,8 @@ ROLES = {
     'product_owner': ['project_description', 'user_stories', 'user_tasks'],
     'architect': ['architecture'],
     'tech_lead': ['development_planing'],
-    'full_stack_developer': ['create_scripts', 'coding']
+    'full_stack_developer': ['create_scripts', 'coding'],
+    'dev_ops': ['environment_setup'],
 }
 STEPS = [
     'project_description',
