@@ -25,11 +25,11 @@ def run_command(command, q, pid_container):
 def execute_command(command, timeout=5):
     answer = styled_text(
         f'Can i execute the command: `{command}`?\n' +
-    'If yes, just press ENTER and if not, please paste the output of running this command here and press ENTER'
+        'If yes, just press ENTER and if not, please paste the output of running this command here and press ENTER'
     )
     if answer != '':
         return answer[-2000:]
-    
+
     q = queue.Queue()
     pid_container = [None]
     process = run_command(command, q, pid_container)
@@ -42,8 +42,12 @@ def execute_command(command, timeout=5):
         # Check if process has finished
         if process.poll() is not None:
             # Get remaining lines from the queue
+            time.sleep(0.1) # TODO this shouldn't be used
             while not q.empty():
-                output += q.get_nowait()
+                output_line = q.get_nowait()
+                if output_line not in output:
+                    print(colored('CLI OUTPUT:', 'green') + output_line, end='')
+                    output += output_line
             break
 
         # If timeout is reached, kill the process
@@ -58,8 +62,7 @@ def execute_command(command, timeout=5):
 
         if line:
             output += line
-            print(colored('CLI OUTPUT:', 'green') + line)
-            print(line, end='')  # This will print the output in real-time
+            print(colored('CLI OUTPUT:', 'green') + line, end='')
 
     stderr_output = process.stderr.read()
     return output[-2000:] if output != '' else stderr_output[-2000:]
