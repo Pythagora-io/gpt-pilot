@@ -36,10 +36,6 @@ if __name__ == "__main__":
 
     architecture, architecture_messages = get_architecture(high_level_summary, user_stories, user_tasks, args)
 
-    # TODO REMOVE THIS
-    architecture = architecture.split('\n')
-    # TODO END
-
     development_plan = create_development_plan(high_level_summary, user_stories, user_tasks, architecture, args)
 
     set_up_environment(architecture, args);

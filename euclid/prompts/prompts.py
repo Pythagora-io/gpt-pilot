@@ -84,15 +84,15 @@ def get_additional_info_from_openai(messages):
         response = create_gpt_chat_completion(messages, 'additional_info')
 
         if response is not None:
-            if response.strip() == END_RESPONSE:
-                print(response)
+            if response['text'].strip() == END_RESPONSE:
+                print(response['text'])
                 return messages
 
             # Ask the question to the user
-            answer = ask_user(response)
+            answer = ask_user(response['text'])
 
             # Add the answer to the messages
-            messages.append({'role': 'assistant', 'content': response})
+            messages.append({'role': 'assistant', 'content': response['text']})
             messages.append({'role': 'user', 'content': answer})
         else:
             is_complete = True
@@ -102,12 +102,15 @@ def get_additional_info_from_openai(messages):
     return messages
 
 
+# TODO refactor this to comply with AgentConvo class
 def get_additional_info_from_user(messages, role):
     updated_messages = []
 
     for message in messages:
 
         while True:
+            if 'text' in message:
+                message = message['text']
             print(colored(
                 f"Please check this message and say what needs to be changed. If everything is ok just press ENTER",
                 "yellow"))
@@ -125,7 +128,7 @@ def get_additional_info_from_user(messages, role):
 
     logger.info('Getting additional info from user done')
 
-    return "\n\n".join(updated_messages)
+    return updated_messages
 
 
 def generate_messages_from_description(description, app_type):
@@ -179,12 +182,16 @@ def execute_chat_prompt(prompt_file, prompt_data, chat_type, previous_messages=N
 
     response = create_gpt_chat_completion(messages, chat_type, function_calls=function_calls)
 
+    # TODO handle errors from OpenAI
+    if response == {}:
+        raise Exception("OpenAI API error happened.")
+    
     # TODO we need to specify the response when there is a function called
     # TODO maybe we can have a specific function that creates the GPT response from the function call
     messages.append({"role": "assistant", "content": response['text'] if 'text' in response else str(response['function_calls']['name'])})
     print_msg = capitalize_first_word_with_underscores(chat_type)
     print(colored(f"{print_msg}:\n", "green"))
-    print(f"{response}")
+    print(f"{response['text'] if 'text' in response else str(response['function_calls']['name'])}\n")
     logger.info(f"{print_msg}: {response}\n")
     
     if 'function_calls' in response and function_calls is not None:
