@@ -27,18 +27,18 @@ def implement_task(task):
         # development/task/step/specs.prompt
     pass
 
-def execute_command_and_check_cli_response(command, timeout, previous_messages, current_step):
+def execute_command_and_check_cli_response(command, timeout, convo):
     cli_response = execute_command(command, timeout)
-    response, messages = execute_chat_prompt('dev_ops/ran_command.prompt',
-        { 'cli_response': cli_response, 'command': command }, current_step, previous_messages)
-    return response, messages
+    response = convo.send_message('dev_ops/ran_command.prompt',
+        { 'cli_response': cli_response, 'command': command })
+    return response
 
-def run_command_until_success(command, timeout, previous_messages, current_step):
+def run_command_until_success(command, timeout, convo):
     command_executed = False
     for _ in range(MAX_COMMAND_DEBUG_TRIES):
         cli_response = execute_command(command, timeout)
-        response, previous_messages = execute_chat_prompt('dev_ops/ran_command.prompt',
-            {'cli_response': cli_response, 'command': command}, current_step, previous_messages)
+        response = convo.send_message('dev_ops/ran_command.prompt',
+            {'cli_response': cli_response, 'command': command})
         
         command_executed = response == 'DONE'
         if command_executed:
@@ -52,7 +52,7 @@ def run_command_until_success(command, timeout, previous_messages, current_step)
 
 def set_up_environment(technologies, args):
     current_step = 'environment_setup'
-    role = find_role_from_step(current_step)
+    convo_os_specific_tech = AgentConvo(current_step)
 
     steps = get_progress_steps(args['app_id'], current_step)
     if steps and not execute_step(args['step'], current_step):
@@ -77,12 +77,12 @@ def set_up_environment(technologies, args):
     # TODO END
 
     os_info = get_os_info()
-    os_specific_techologies, previous_messages = execute_chat_prompt('development/env_setup/specs.prompt',
-            { "os_info": os_info, "technologies": technologies }, current_step, function_calls=FILTER_OS_TECHNOLOGIES)
+    os_specific_techologies = convo_os_specific_tech.send_message('development/env_setup/specs.prompt',
+        { "os_info": os_info, "technologies": technologies }, FILTER_OS_TECHNOLOGIES)
 
     for technology in os_specific_techologies:
-        llm_response, previous_messages = execute_chat_prompt('development/env_setup/install_next_technology.prompt',
-            { 'technology': technology}, current_step, previous_messages, function_calls={
+        llm_response = convo_os_specific_tech.send_message('development/env_setup/install_next_technology.prompt',
+            { 'technology': technology}, {
                 'definitions': [{
                     'name': 'execute_command',
                     'description': f'Executes a command that should check if {technology} is installed on the machine. ',
@@ -104,12 +104,12 @@ def set_up_environment(technologies, args):
                 'functions': {
                     'execute_command': execute_command_and_check_cli_response
                 },
-                'send_messages_and_step': True
+                'send_convo': True
             })
         
         if not llm_response == 'DONE':
-            installation_commands, previous_messages = execute_chat_prompt('development/env_setup/unsuccessful_installation.prompt',
-                { 'technology': technology }, current_step, previous_messages, function_calls={
+            installation_commands = convo_os_specific_tech.send_message('development/env_setup/unsuccessful_installation.prompt',
+                { 'technology': technology }, {
                 'definitions': [{
                     'name': 'execute_commands',
                     'description': f'Executes a list of commands that should install the {technology} on the machine. ',
@@ -138,15 +138,12 @@ def set_up_environment(technologies, args):
                     },
                 }],
                 'functions': {
-                    'execute_commands': lambda commands: (commands, None)
+                    'execute_commands': lambda commands: commands
                 }
             })
             if installation_commands is not None:
                 for cmd in installation_commands:
-                    run_command_until_success(cmd['command'], cmd['timeout'], previous_messages, current_step)
-        
-
-
+                    run_command_until_success(cmd['command'], cmd['timeout'], convo_os_specific_tech)
 
     logger.info('The entire tech stack neede is installed and ready to be used.')
 

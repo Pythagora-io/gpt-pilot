@@ -1,6 +1,5 @@
 from utils.llm_connection import get_prompt, create_gpt_chat_completion
 from utils.utils import get_sys_message, find_role_from_step, capitalize_first_word_with_underscores
-from prompts.prompts import execute_chat_prompt
 from logger.logger import logger
 from termcolor import colored
 
@@ -59,12 +58,9 @@ class AgentConvo:
     
     def postprocess_response(self, response, function_calls):        
         if 'function_calls' in response and function_calls is not None:
-            if 'send_messages_and_step' in function_calls:
-                response['function_calls']['arguments']['previous_messages']  = self.messages
-                response['function_calls']['arguments']['current_step'] = self.high_level_step
-            response, msgs = function_calls['functions'][response['function_calls']['name']](**response['function_calls']['arguments'])
-            if msgs is not None:
-                messages = msgs
+            if 'send_convo' in function_calls:
+                response['function_calls']['arguments']['convo']  = self
+            response = function_calls['functions'][response['function_calls']['name']](**response['function_calls']['arguments'])
         elif 'text' in response:
             response = response['text']
         

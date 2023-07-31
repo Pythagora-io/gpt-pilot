@@ -1,14 +1,14 @@
 def process_user_stories(stories):
-    return stories, None
+    return stories
 
 def process_user_tasks(tasks):
-    return tasks, None
+    return tasks
 
 def process_os_technologies(technologies):
-    return technologies, None
+    return technologies
 
 def run_commands(commands):
-    return commands, None
+    return commands
 
 def return_array_from_prompt(name_plural, name_singular, return_var_name):
     return {
@@ -110,6 +110,6 @@ DEVELOPMENT_PLAN = {
         },
     }],
     'functions': {
-        'implement_development_plan': lambda plan: (plan, None)
+        'implement_development_plan': lambda plan: plan
     },
 }
