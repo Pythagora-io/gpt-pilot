@@ -7,6 +7,8 @@ import time
 
 from termcolor import colored
 
+from utils.questionary import styled_text
+
 def enqueue_output(out, q):
     for line in iter(out.readline, ''):
         q.put(line)
@@ -21,6 +23,13 @@ def run_command(command, q, pid_container):
     return process
 
 def execute_command(command, timeout=5):
+    answer = styled_text(
+        f'Can i execute the command: `{command}`?\n' +
+    'If yes, just press ENTER and if not, please paste the output of running this command here and press ENTER'
+    )
+    if answer != '':
+        return answer[-2000:]
+    
     q = queue.Queue()
     pid_container = [None]
     process = run_command(command, q, pid_container)
