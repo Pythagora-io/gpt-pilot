@@ -1,11 +1,12 @@
 import json
 from termcolor import colored
+from helpers.AgentConvo import AgentConvo
 
 from utils.utils import execute_step, find_role_from_step, generate_app_data
 from database.database import save_progress, get_progress_steps
 from logger.logger import logger
 from prompts.prompts import get_additional_info_from_user, execute_chat_prompt
-from const.function_calls import FILTER_OS_TECHNOLOGIES, COMMANDS_TO_RUN
+from const.function_calls import FILTER_OS_TECHNOLOGIES, DEVELOPMENT_PLAN
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES
 from utils.utils import get_os_info
 from helpers.cli import execute_command
@@ -155,9 +156,9 @@ def set_up_environment(technologies, args):
 
     # ENVIRONMENT SETUP END
 
-def create_development_plan(user_stories, user_tasks, technologies_to_use, args):
+def create_development_plan(high_level_summary, user_stories, user_tasks, technologies_to_use, args):
     current_step = 'development_planning'
-    role = find_role_from_step(current_step)
+    convo_development_plan = AgentConvo(current_step)
 
     steps = get_progress_steps(args['app_id'], current_step)
     if steps and not execute_step(args['step'], current_step):
@@ -177,8 +178,23 @@ def create_development_plan(user_stories, user_tasks, technologies_to_use, args)
     print(colored(f"Starting to create the action plan for development...\n", "green"))
     logger.info(f"Starting to create the action plan for development...")
 
+    # TODO add clarifications
+    development_plan = convo_development_plan.send_message('development/plan.prompt',
+        {
+            "app_summary": high_level_summary,
+            "clarification": [],
+            "user_stories": user_stories.split('\n\n'),
+            "user_tasks": user_tasks.split('\n\n'),
+            "technologies": technologies_to_use
+        }, DEVELOPMENT_PLAN)
 
-    pass
+    logger.info('Plan for development is created.')
+
+    save_progress(args['app_id'], current_step, {
+        "development_plan": development_plan, "app_data": generate_app_data(args)
+    })
+
+    return development_plan
 
 def start_development(user_stories, user_tasks, technologies_to_use, args):
     pass

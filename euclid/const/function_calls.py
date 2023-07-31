@@ -74,3 +74,42 @@ COMMANDS_TO_RUN = {
         'process_commands': run_commands
     },
 }
+
+DEVELOPMENT_PLAN = {
+    'definitions': [{
+        'name': 'implement_development_plan',
+        'description': 'Implements the development plan.',
+        'parameters': {
+            'type': 'object',
+            "properties": {
+                "plan": {
+                    "type": "array",
+                    "description": 'List of development tasks that need to be done to implement the entire plan.',
+                    "items": {
+                        "type": "object",
+                        'description': 'Development task that needs to be done to implement the entire plan.',
+                        'properties': {
+                            'task_description': {
+                                'type': 'string',
+                                'description': 'Description of the development task that needs to be done to implement the entire plan.',
+                            },
+                            'programmatic_goal': {
+                                'type': 'string',
+                                'description': 'programmatic goal that will determine if a task can be marked as done from a programmatic perspective (this will result in an automated test that is run before the task is sent to you for a review)',
+                            },
+                            'user_review_goal': {
+                                'type': 'string',
+                                'description': 'user-review goal that will determine if a task is done or not but from a user perspective since it will be reviewed by a human',
+                            }
+                        },
+                        'required': ['command', 'timeout'],
+                    },
+                },
+            },
+            "required": ['plan'],
+        },
+    }],
+    'functions': {
+        'implement_development_plan': lambda plan: (plan, None)
+    },
+}

@@ -2,7 +2,7 @@ You are working in a software development agency and a project manager and softw
 
 Here is a high level description of Euclid:
 ```
-{{ prompt }}
+{{ app_summary }}
 ```
 
 Here are some additional questions and answers to clarify the apps description:
