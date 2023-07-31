@@ -104,6 +104,7 @@ def get_additional_info_from_openai(messages):
 
 # TODO refactor this to comply with AgentConvo class
 def get_additional_info_from_user(messages, role):
+    # TODO process with agent convo
     updated_messages = []
 
     for message in messages:

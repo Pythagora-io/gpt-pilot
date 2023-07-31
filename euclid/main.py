@@ -30,9 +30,9 @@ if __name__ == "__main__":
 
     high_level_summary, high_level_messages = get_project_description(args)
 
-    user_stories, user_stories_messages = get_user_stories(high_level_summary, args)
+    user_stories, convo = get_user_stories(high_level_summary, args)
 
-    user_tasks, user_tasks_messages = get_user_tasks(user_stories_messages, args)
+    user_tasks = get_user_tasks(convo, args)
 
     architecture = get_architecture(high_level_summary, user_stories, user_tasks, args)
 
