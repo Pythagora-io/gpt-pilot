@@ -2,7 +2,7 @@ APP_TYPES = ['Web App', 'Script', 'Mobile App (unavailable)', 'Chrome Extension 
 ROLES = {
     'product_owner': ['project_description', 'user_stories', 'user_tasks'],
     'architect': ['architecture'],
-    'tech_lead': ['development_planing'],
+    'tech_lead': ['development_planning'],
     'full_stack_developer': ['create_scripts', 'coding'],
     'dev_ops': ['environment_setup'],
 }
@@ -11,7 +11,7 @@ STEPS = [
     'user_stories',
     'user_tasks',
     'architecture',
-    'development_planing',
-    'create_scripts',
-    'coding'
+    'development_planning',
+    'environment_setup',
+    'development'
 ]

@@ -62,10 +62,10 @@ def set_up_environment(technologies, args):
         if app_data is not None:
             args.update(app_data)
 
-        message = f"Tech stask breakdown already done for this app_id: {args['app_id']}. Moving to next step..."
+        message = f"Environment setup is already done for this app_id: {args['app_id']}. Moving to next step..."
         print(colored(message, "green"))
         logger.info(message)
-        return data.get('technologies'), data.get('messages')
+        return data.get('os_specific_techologies'), data.get('newly_installed_technologies'), data.get('messages')
     
     # ENVIRONMENT SETUP
     print(colored(f"Setting up the environment...\n", "green"))
@@ -155,12 +155,30 @@ def set_up_environment(technologies, args):
 
     # ENVIRONMENT SETUP END
 
+def create_development_plan(user_stories, user_tasks, technologies_to_use, args):
+    current_step = 'development_planning'
+    role = find_role_from_step(current_step)
+
+    steps = get_progress_steps(args['app_id'], current_step)
+    if steps and not execute_step(args['step'], current_step):
+        first_step = steps[0]
+        data = json.loads(first_step['data'])
+
+        app_data = data.get('app_data')
+        if app_data is not None:
+            args.update(app_data)
+
+        message = f"Plan for development is already done for this app_id: {args['app_id']}. Moving to next step..."
+        print(colored(message, "green"))
+        logger.info(message)
+        return data.get('messages')
+    
+    # DEVELOPMENT PLANNING
+    print(colored(f"Starting to create the action plan for development...\n", "green"))
+    logger.info(f"Starting to create the action plan for development...")
+
+
+    pass
+
 def start_development(user_stories, user_tasks, technologies_to_use, args):
-    # break down the development plan
-
-    # TODO REMOVE THIS
-    technologies_to_use = technologies_to_use.split('\n')
-    # TODO END
-
-    set_up_environment(technologies_to_use, args);
     pass

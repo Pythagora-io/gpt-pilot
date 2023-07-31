@@ -10,7 +10,8 @@ from steps.project_description.project_description import get_project_descriptio
 from steps.user_stories.user_stories import get_user_stories
 from steps.user_tasks.user_tasks import get_user_tasks
 from steps.architecture.architecture import get_architecture
-
+from steps.development.development import create_development_plan
+from steps.development.development import set_up_environment
 from steps.development.development import start_development
 
 
@@ -34,5 +35,13 @@ if __name__ == "__main__":
     user_tasks, user_tasks_messages = get_user_tasks(user_stories_messages, args)
 
     architecture, architecture_messages = get_architecture(high_level_summary, user_stories, user_tasks, args)
+
+    development_plan, development_plan_messages = create_development_plan(user_stories, user_tasks, architecture, args)
+
+    # TODO REMOVE THIS
+    architecture = architecture.split('\n')
+    # TODO END
+
+    set_up_environment(architecture, args);
 
     start_development(user_stories, user_tasks, architecture, args)
