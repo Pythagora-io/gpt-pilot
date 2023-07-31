@@ -26,7 +26,7 @@ def get_user_tasks(convo, args):
         message = f"User tasks already done for this app_id: {args['app_id']}. Moving to next step..."
         print(colored(message, "green"))
         logger.info(message)
-        return data.get('user_tasks'), data.get('messages')
+        return data.get('user_tasks')
 
     # USER TASKS
     print(colored(f"Generating user tasks...\n", "green"))

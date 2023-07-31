@@ -25,7 +25,7 @@ def get_architecture(high_level_summary, user_stories, user_tasks, args):
         message = f"Architecture already done for this app_id: {args['app_id']}. Moving to next step..."
         print(colored(message, "green"))
         logger.info(message)
-        return architecture, data.get('messages')
+        return architecture
 
     # ARCHITECTURE
     print(colored(f"Planning project architecture...\n", "green"))

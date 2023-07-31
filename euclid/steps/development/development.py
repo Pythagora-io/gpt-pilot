@@ -65,7 +65,7 @@ def set_up_environment(technologies, args):
         message = f"Environment setup is already done for this app_id: {args['app_id']}. Moving to next step..."
         print(colored(message, "green"))
         logger.info(message)
-        return data.get('os_specific_techologies'), data.get('newly_installed_technologies'), data.get('messages')
+        return
     
     # ENVIRONMENT SETUP
     print(colored(f"Setting up the environment...\n", "green"))
@@ -168,7 +168,7 @@ def create_development_plan(high_level_summary, user_stories, user_tasks, techno
         message = f"Plan for development is already done for this app_id: {args['app_id']}. Moving to next step..."
         print(colored(message, "green"))
         logger.info(message)
-        return data.get('messages')
+        return data.get('development_plan')
     
     # DEVELOPMENT PLANNING
     print(colored(f"Starting to create the action plan for development...\n", "green"))
