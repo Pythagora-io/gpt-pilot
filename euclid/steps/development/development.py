@@ -183,8 +183,8 @@ def create_development_plan(high_level_summary, user_stories, user_tasks, techno
         {
             "app_summary": high_level_summary,
             "clarification": [],
-            "user_stories": user_stories.split('\n\n'),
-            "user_tasks": user_tasks.split('\n\n'),
+            "user_stories": user_stories,
+            "user_tasks": user_tasks,
             "technologies": technologies_to_use
         }, DEVELOPMENT_PLAN)
 
