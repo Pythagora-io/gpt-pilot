@@ -144,12 +144,5 @@ def execute_step(matching_step, current_step):
     return matching_step_index is not None and current_step_index is not None and current_step_index >= matching_step_index
 
 
-def split_into_bullets(text):
-    pattern = re.compile(r'\n*\d+\.\s\*\*')
-    split_text = re.split(pattern, text)
-    split_text = [bullet for bullet in split_text if bullet]  # Remove any empty strings from the list
-    return split_text
-
-
 def generate_app_data(args):
     return {'app_id': args['app_id'], 'app_type': args['app_type']}

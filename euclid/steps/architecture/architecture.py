@@ -6,7 +6,7 @@ from const.function_calls import ARCHITECTURE
 from utils.utils import execute_step, find_role_from_step, generate_app_data
 from database.database import save_progress, get_progress_steps
 from logger.logger import logger
-from prompts.prompts import get_additional_info_from_user, execute_chat_prompt
+from prompts.prompts import get_additional_info_from_user
 from helpers.AgentConvo import AgentConvo
 
 

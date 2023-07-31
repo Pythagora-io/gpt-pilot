@@ -5,7 +5,6 @@ from helpers.AgentConvo import AgentConvo
 from utils.utils import execute_step, find_role_from_step, generate_app_data
 from database.database import save_progress, get_progress_steps
 from logger.logger import logger
-from prompts.prompts import get_additional_info_from_user, execute_chat_prompt
 from const.function_calls import FILTER_OS_TECHNOLOGIES, DEVELOPMENT_PLAN
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES
 from utils.utils import get_os_info
