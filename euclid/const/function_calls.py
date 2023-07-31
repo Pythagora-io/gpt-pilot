@@ -48,6 +48,15 @@ USER_TASKS = {
     },
 }
 
+ARCHITECTURE = {
+    'definitions': [
+        return_array_from_prompt('technologies', 'technology', 'technologies')
+    ],
+    'functions': {
+        'process_technologies': lambda technologies: technologies
+    },
+}
+
 FILTER_OS_TECHNOLOGIES = {
     'definitions': [
         return_array_from_prompt('os specific technologies', 'os specific technology', 'technologies')

@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     user_tasks, user_tasks_messages = get_user_tasks(user_stories_messages, args)
 
-    architecture, architecture_messages = get_architecture(high_level_summary, user_stories, user_tasks, args)
+    architecture = get_architecture(high_level_summary, user_stories, user_tasks, args)
 
     development_plan = create_development_plan(high_level_summary, user_stories, user_tasks, architecture, args)
 
