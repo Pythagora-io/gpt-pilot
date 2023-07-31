@@ -62,7 +62,7 @@ def ask_for_main_app_definition():
     return description
 
 
-def ask_user(question):
+def ask_user(question, require_some_input=True):
     while True:
         answer = styled_text(question)
 
@@ -70,7 +70,7 @@ def ask_user(question):
             print("Exiting application.")
             exit(0)
 
-        if answer.strip() == '':
+        if answer.strip() == '' and require_some_input:
             print("No input provided! Please try again.")
             continue
         else:
@@ -109,10 +109,10 @@ def get_additional_info_from_user(messages, role):
 
         while True:
             print(colored(
-                f"Please check this message and say what needs to be changed. If everything is ok just type 'DONE'.",
+                f"Please check this message and say what needs to be changed. If everything is ok just press ENTER",
                 "yellow"))
-            answer = ask_user(message)
-            if answer.lower() == 'done':
+            answer = ask_user(message, False)
+            if answer.lower() == '':
                 break
             response = create_gpt_chat_completion(
                 generate_messages_from_custom_conversation(role, [get_prompt('utils/update.prompt'), message, answer],
