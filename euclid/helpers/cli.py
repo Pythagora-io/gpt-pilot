@@ -8,6 +8,7 @@ import time
 from termcolor import colored
 
 from utils.questionary import styled_text
+from const.code_execution import MAX_COMMAND_DEBUG_TRIES
 
 def enqueue_output(out, q):
     for line in iter(out.readline, ''):
@@ -103,3 +104,26 @@ def build_directory_tree(path, prefix="", ignore=None, is_last=False):
         output += prefix + "|-- " + os.path.basename(path) + "\n"
 
     return output
+
+def execute_command_and_check_cli_response(command, timeout, convo):
+    cli_response = execute_command(command, timeout)
+    response = convo.send_message('dev_ops/ran_command.prompt',
+        { 'cli_response': cli_response, 'command': command })
+    return response
+
+def run_command_until_success(command, timeout, convo):
+    command_executed = False
+    for _ in range(MAX_COMMAND_DEBUG_TRIES):
+        cli_response = execute_command(command, timeout)
+        response = convo.send_message('dev_ops/ran_command.prompt',
+            {'cli_response': cli_response, 'command': command})
+
+        command_executed = response == 'DONE'
+        if command_executed:
+            break
+
+        command = response
+
+    if not command_executed:
+        # TODO ask user to debug and press enter to continue
+        pass
