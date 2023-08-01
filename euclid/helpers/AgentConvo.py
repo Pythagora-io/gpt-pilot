@@ -8,6 +8,7 @@ from termcolor import colored
 class AgentConvo:
     def __init__(self, agent):
         self.messages = []
+        self.branches = {}
         self.agent = agent
         self.high_level_step = self.agent.project.current_step
 
@@ -49,6 +50,12 @@ class AgentConvo:
         self.log_message(message_content)
 
         return response
+
+    def save_branch(self, branch_name):
+        self.branches[branch_name] = self.messages.copy()
+
+    def load_branch(self, branch_name):
+        self.messages = self.branches[branch_name].copy()
 
     def convo_length(self):
         return len([msg for msg in self.messages if msg['role'] != 'system'])
