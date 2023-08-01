@@ -22,9 +22,7 @@ class Project:
     def start(self):
         self.project_manager = ProductOwner(self)
         self.high_level_summary = self.project_manager.get_project_description()
-
         self.user_stories = self.project_manager.get_user_stories()
-
         self.user_tasks = self.project_manager.get_user_tasks()
 
         self.architect = Architect(self)

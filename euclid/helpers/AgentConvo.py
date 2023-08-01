@@ -5,18 +5,17 @@ from utils.utils import get_sys_message, find_role_from_step, capitalize_first_w
 from logger.logger import logger
 from termcolor import colored
 
-
-
 class AgentConvo:
-    def __init__(self, high_level_step):
+    def __init__(self, agent):
         self.messages = []
-        self.high_level_step = high_level_step
-        self.agent = find_role_from_step(high_level_step)
+        self.agent = agent
+        self.high_level_step = self.agent.project.current_step
 
         # add system message
-        self.messages.append(get_sys_message(self.agent))
+        self.messages.append(get_sys_message(self.agent.role))
 
     def send_message(self, prompt_path, prompt_data, function_calls=None):
+
         # craft message
         prompt = get_prompt(prompt_path, prompt_data)
         self.messages.append({"role": "user", "content": prompt})
@@ -50,10 +49,7 @@ class AgentConvo:
         self.log_message(message_content)
 
         return response
-    
-    def get_messages(self):
-        return self.messages
-    
+
     def convo_length(self):
         return len([msg for msg in self.messages if msg['role'] != 'system'])
     

@@ -92,7 +92,7 @@ class ProductOwner(Agent):
         logger.info(f"Final user stories: {user_stories}")
 
         save_progress(self.project.args['app_id'], self.project.current_step, {
-            "messages": self.convo_user_stories.get_messages(), "user_stories": user_stories, "app_data": generate_app_data(self.project.args)
+            "messages": self.convo_user_stories.messages, "user_stories": user_stories, "app_data": generate_app_data(self.project.args)
         })
 
         return user_stories
@@ -130,7 +130,7 @@ class ProductOwner(Agent):
         logger.info(f"Final user tasks: {user_tasks}")
 
         save_progress(self.project.args['app_id'], current_step, {
-            "messages": self.convo_user_stories.get_messages(),"user_tasks": user_tasks, "app_data": generate_app_data(self.project.args)
+            "messages": self.convo_user_stories.messages,"user_tasks": user_tasks, "app_data": generate_app_data(self.project.args)
         })
 
         return user_tasks

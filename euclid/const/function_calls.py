@@ -98,7 +98,7 @@ DEVELOPMENT_PLAN = {
                         "type": "object",
                         'description': 'Development task that needs to be done to implement the entire plan.',
                         'properties': {
-                            'task_description': {
+                            'description': {
                                 'type': 'string',
                                 'description': 'Description of the development task that needs to be done to implement the entire plan.',
                             },
@@ -111,7 +111,7 @@ DEVELOPMENT_PLAN = {
                                 'description': 'user-review goal that will determine if a task is done or not but from a user perspective since it will be reviewed by a human',
                             }
                         },
-                        'required': ['command', 'timeout'],
+                        'required': ['task_description', 'programmatic_goal', 'user_review_goal'],
                     },
                 },
             },

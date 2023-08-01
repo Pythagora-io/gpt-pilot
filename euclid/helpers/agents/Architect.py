@@ -45,7 +45,7 @@ class Architect(Agent):
         logger.info(f"Final architecture: {architecture}")
 
         save_progress(self.project.args['app_id'], self.project.current_step, {
-            "messages": self.convo_architecture.get_messages(),
+            "messages": self.convo_architecture.messages,
             "architecture": architecture,
             "app_data": generate_app_data(self.project.args)
         })
