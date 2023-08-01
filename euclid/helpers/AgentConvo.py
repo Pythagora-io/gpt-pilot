@@ -1,3 +1,5 @@
+import subprocess
+from utils.utils import array_of_objects_to_string
 from utils.llm_connection import get_prompt, create_gpt_chat_completion
 from utils.utils import get_sys_message, find_role_from_step, capitalize_first_word_with_underscores
 from logger.logger import logger
@@ -33,7 +35,7 @@ class AgentConvo:
         if isinstance(response, list):
             if isinstance(response[0], dict):
                 string_response = [
-                    f'#{i + 1}\n' + '\n'.join([f'{key}: {value}' for key, value in d.items()])
+                    f'#{i + 1}\n' + array_of_objects_to_string(d)
                     for i, d in enumerate(response)
                 ]
             else:
@@ -71,3 +73,9 @@ class AgentConvo:
         print(colored(f"{print_msg}:\n", "green"))
         print(f"{content}\n")
         logger.info(f"{print_msg}: {content}\n")
+
+    def to_playground(self, path):
+        with open('const/convert_to_playground_convo.js', 'r', encoding='utf-8') as file:
+            content = file.read()
+        process = subprocess.Popen('pbcopy', stdin=subprocess.PIPE)
+        process.communicate(content.replace('{{messages}}', str(self.messages)).encode('utf-8'))

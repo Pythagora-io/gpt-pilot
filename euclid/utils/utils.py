@@ -133,8 +133,7 @@ def get_os_info():
         os_info["Mac Version"] = platform.mac_ver()[0]
 
     # Convert the dictionary to a readable text format
-    output = "\n".join(f"{key}: {value}" for key, value in os_info.items())
-    return output
+    return array_of_objects_to_string(os_info)
 
 
 def execute_step(matching_step, current_step):
@@ -146,3 +145,6 @@ def execute_step(matching_step, current_step):
 
 def generate_app_data(args):
     return {'app_id': args['app_id'], 'app_type': args['app_type']}
+
+def array_of_objects_to_string(array):
+    return '\n'.join([f'{key}: {value}' for key, value in array.items()])
