@@ -110,7 +110,7 @@ def get_additional_info_from_user(messages, role):
     for message in messages:
 
         while True:
-            if 'text' in message:
+            if isinstance(message, dict) and 'text' in message:
                 message = message['text']
             print(colored(
                 f"Please check this message and say what needs to be changed. If everything is ok just press ENTER",

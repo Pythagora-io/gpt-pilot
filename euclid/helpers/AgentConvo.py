@@ -8,9 +8,8 @@ from termcolor import colored
 
 
 class AgentConvo:
-    messages = []
-
     def __init__(self, high_level_step):
+        self.messages = []
         self.high_level_step = high_level_step
         self.agent = find_role_from_step(high_level_step)
 
