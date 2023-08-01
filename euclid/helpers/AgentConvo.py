@@ -73,7 +73,7 @@ class AgentConvo:
         print(f"{content}\n")
         logger.info(f"{print_msg}: {content}\n")
 
-    def to_playground(self, path):
+    def to_playground(self):
         with open('const/convert_to_playground_convo.js', 'r', encoding='utf-8') as file:
             content = file.read()
         process = subprocess.Popen('pbcopy', stdin=subprocess.PIPE)

@@ -9,13 +9,26 @@ async function fill_playground(messages) {
     if (system_messages.length > 0) {
         let system_message_textarea = document.querySelector('.chat-pg-instructions').querySelector('textarea');
         system_message_textarea.focus();
+        system_message_textarea.value = '';
         document.execCommand("insertText", false, system_messages[0].content);
         await sleep(100);
     }
 
+    // Remove all previous messages
+    let remove_buttons = document.querySelectorAll('.chat-message-remove-button');
+    for (let j = 0; j < 10; j++) {
+        for (let i = 0; i < remove_buttons.length; i++) {
+            let clickEvent = new Event('click', {
+                'bubbles': true,
+                'cancelable': true
+            });
+            remove_buttons[i].dispatchEvent(clickEvent);
+        }
+    }
+
     let other_messages = messages.filter(msg => msg.role !== 'system');
 
-    for (let i = 0; i < other_messages.length - 1; i++) {
+    for (let i = 0; i < other_messages.length; i++) {
         document.querySelector('.add-message').click()
         await sleep(100);
     }
