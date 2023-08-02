@@ -51,6 +51,9 @@ class Project:
         for file in files:
             files_with_content.append({
                 "path": file,
-                "content": open(file, 'r').read()
+                "content": open(self.get_full_file_path(file), 'r').read()
             })
         return files_with_content
+    
+    def get_full_file_path(self, file_name):
+        return self.root_path + '/' + file_name
