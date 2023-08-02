@@ -143,19 +143,10 @@ def create_tables():
 
 
 def drop_tables():
-    with database:
-        database.drop_tables([
-            User,
-            App,
-            ProjectDescription,
-            UserStories,
-            UserTasks,
-            Architecture,
-            DevelopmentPlanning,
-            DevelopmentSteps,
-            EnvironmentSetup,
-            Development
-        ])
+    with database.atomic():
+        for table in [User, App, ProjectDescription, UserStories, UserTasks, Architecture, DevelopmentPlanning, DevelopmentSteps, EnvironmentSetup, Development]:
+            database.execute_sql(f'DROP TABLE IF EXISTS "{table._meta.table_name}" CASCADE')
+
 
 
 if __name__ == "__main__":
