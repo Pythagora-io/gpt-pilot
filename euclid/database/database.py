@@ -106,20 +106,21 @@ def get_progress_steps(app_id, step=None):
         return steps
 
 
-def save_development_step(app_id, messages):
+def save_development_step(app_id, messages, response):
     app = get_app(app_id)
     hash_id = hash_data(messages)
     try:
-        dev_step = DevelopmentSteps.create(app=app, hash_id=hash_id, messages=messages)
+        dev_step = DevelopmentSteps.create(app=app, hash_id=hash_id, messages=messages, llm_response=response)
     except IntegrityError:
         print(f"A Development Step with hash_id {hash_id} already exists.")
         return None
     return dev_step
 
 
-def get_development_step_by_hash_id(hash_id):
+def get_development_step_from_messages(app_id, messages):
+    hash_id = hash_data(messages)
     try:
-        dev_step = DevelopmentSteps.get(DevelopmentSteps.hash_id == hash_id)
+        dev_step = DevelopmentSteps.get((DevelopmentSteps.hash_id == hash_id) & (DevelopmentSteps.app == app_id))
     except DoesNotExist:
         print(f"No Development Step found with hash_id {hash_id}")
         return None
