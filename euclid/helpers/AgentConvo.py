@@ -41,15 +41,15 @@ class AgentConvo:
         response = self.postprocess_response(response, function_calls)
         
         # TODO remove this once the database is set up properly
-        message_content = response
-        if isinstance(response, list):
-            if isinstance(response[0], dict):
+        message_content = response[0] if type(response) == tuple else response
+        if isinstance(message_content, list):
+            if isinstance(message_content[0], dict):
                 string_response = [
                     f'#{i + 1}\n' + array_of_objects_to_string(d)
-                    for i, d in enumerate(response)
+                    for i, d in enumerate(message_content)
                 ]
             else:
-                string_response = ['- ' + r for r in response]
+                string_response = ['- ' + r for r in message_content]
 
             message_content = '\n'.join(string_response)
         # TODO END
