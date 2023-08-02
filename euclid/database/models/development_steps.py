@@ -10,3 +10,6 @@ class DevelopmentSteps(BaseModel):
     app = ForeignKeyField(App, primary_key=True)
     hash_id = CharField(unique=True, null=False)
     messages = BinaryJSONField(null=True)
+
+    class Meta:
+        db_table = 'development_steps'
