@@ -24,15 +24,17 @@ class AgentConvo:
 
 
         # check if we already have the LLM response saved
-        saved_checkpoint = get_development_step_from_messages(self.agent.project.args['app_id'], self.messages)
-        if saved_checkpoint is not None:
+        development_step = get_development_step_from_messages(self.agent.project.args['app_id'], self.messages)
+        if development_step is not None:
             # if we do, use it
-            response = saved_checkpoint.llm_response
-            self.messages = saved_checkpoint.messages
+            self.agent.project.restore_files(development_step.id)
+            response = development_step.llm_response
+            self.messages = development_step.messages
         else:
             # if we don't, get the response from LLM
             response = create_gpt_chat_completion(self.messages, self.high_level_step, function_calls=function_calls)
-            save_development_step(self.agent.project.args['app_id'], self.messages, response)
+            development_step = save_development_step(self.agent.project.args['app_id'], self.messages, response)
+            self.agent.project.save_files_snapshot(development_step.id)
         
         # TODO handle errors from OpenAI
         if response == {}:
