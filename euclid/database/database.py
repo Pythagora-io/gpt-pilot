@@ -1,167 +1,163 @@
-# database.py
+from playhouse.shortcuts import model_to_dict
+from peewee import *
 
-import psycopg2
-import json
-from psycopg2 import sql
-from psycopg2.extras import RealDictCursor
-from const import db
-from logger.logger import logger
-
-
-def create_connection():
-    conn = psycopg2.connect(
-        host=db.DB_HOST,
-        database=db.DB_NAME,
-        port=db.DB_PORT,
-        user=db.DB_USER,
-        password=db.DB_PASSWORD,
-        cursor_factory=RealDictCursor
-    )
-    return conn
+from utils.utils import hash_data
+from database.models.components.base_models import database
+from database.models.user import User
+from database.models.app import App
+from database.models.project_description import ProjectDescription
+from database.models.user_stories import UserStories
+from database.models.user_tasks import UserTasks
+from database.models.architecture import Architecture
+from database.models.development_planning import DevelopmentPlanning
+from database.models.development_steps import DevelopmentSteps
+from database.models.environment_setup import EnvironmentSetup
+from database.models.development import Development
 
 
-def create_tables():
-    commands = (
-        """
-        DROP TABLE IF EXISTS progress_steps;
-        DROP TABLE IF EXISTS apps;
-        DROP TABLE IF EXISTS users;
-        """,
-        """
-        CREATE TABLE users (
-            id UUID PRIMARY KEY,
-            username VARCHAR(255) NOT NULL,
-            email VARCHAR(255) NOT NULL,
-            password VARCHAR(255) NOT NULL,
-            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        )
-        """,
-        """
-        CREATE TABLE apps (
-            id SERIAL PRIMARY KEY,
-            user_id UUID NOT NULL,
-            app_id UUID NOT NULL UNIQUE,
-            app_type VARCHAR(255) NOT NULL,
-            status VARCHAR(255) NOT NULL,
-            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id)
-                REFERENCES users (id)
-                ON UPDATE CASCADE ON DELETE CASCADE
-        )
-        """,
-        """
-        CREATE TABLE progress_steps (
-            id SERIAL PRIMARY KEY,
-            app_id UUID NOT NULL,
-            step VARCHAR(255) NOT NULL,
-            data TEXT,
-            completed BOOLEAN NOT NULL,
-            completed_at TIMESTAMP,
-            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (app_id)
-                REFERENCES apps (app_id)
-                ON UPDATE CASCADE ON DELETE CASCADE,
-            UNIQUE (app_id, step)
-        )
-        """)
-
-    conn = None
+def save_user(user_id, email="email", password="password"):
     try:
-        conn = create_connection()
-        cur = conn.cursor()
-        for command in commands:
-            cur.execute(command)
-        cur.close()
-        conn.commit()
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-    finally:
-        if conn is not None:
-            conn.close()
+        user = User.get(User.id == user_id)
+        return user
+    except DoesNotExist:
+        return User.create(id=user_id, email=email, password=password)
 
 
 def save_app(user_id, app_id, app_type):
-    conn = create_connection()
-    cursor = conn.cursor()
+    try:
+        app = App.get(App.id == app_id)
+    except DoesNotExist:
+        user = save_user(user_id)
+        app = App.create(id=app_id, user=user, app_type=app_type)
 
-    cursor.execute("SELECT * FROM users WHERE id = %s", (str(user_id),))
-    if cursor.fetchone() is None:
-        # If user doesn't exist, create a new user
-        cursor.execute("INSERT INTO users (id, username, email, password) VALUES (%s, 'username', 'email', 'password')",
-                       (str(user_id),))
-
-    # Now save or update the app
-    cursor.execute("""
-        INSERT INTO apps (user_id, app_id, app_type, status)
-        VALUES (%s, %s, %s, 'started')
-        ON CONFLICT (app_id) DO UPDATE SET
-        user_id = EXCLUDED.user_id, app_type = EXCLUDED.app_type, status = EXCLUDED.status
-        RETURNING id
-    """, (str(user_id), str(app_id), app_type))
-
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    logger.info('App saved')
-
-    return
+    return app
 
 
 def save_progress(app_id, step, data):
-    conn = create_connection()
-    cursor = conn.cursor()
+    progress_table_map = {
+        'project_description': ProjectDescription,
+        'user_stories': UserStories,
+        'user_tasks': UserTasks,
+        'architecture': Architecture,
+        'development_planning': DevelopmentPlanning,
+        'environment_setup': EnvironmentSetup,
+        'development': Development,
+    }
 
-    # Check if the data is a dictionary. If it is, convert it to a JSON string.
-    if isinstance(data, dict):
-        data = json.dumps(data)
+    data['step'] = step
 
-    # INSERT the data, but on conflict (if the app_id and step combination already exists) UPDATE the data
-    insert = sql.SQL(
-        """INSERT INTO progress_steps (app_id, step, data, completed)
-           VALUES (%s, %s, %s, false)
-           ON CONFLICT (app_id, step) DO UPDATE
-           SET data = excluded.data, completed = excluded.completed"""
-    )
+    ProgressTable = progress_table_map.get(step)
+    if not ProgressTable:
+        raise ValueError(f"Invalid step: {step}")
 
-    cursor.execute(insert, (app_id, step, data))
+    app = get_app(app_id)
 
-    conn.commit()
-    cursor.close()
-    conn.close()
+    # Use the get_or_create method, which attempts to retrieve a record
+    # or creates a new one if it does not exist.
+    progress, created = ProgressTable.get_or_create(app=app, defaults=data)
+
+    # If the record was not created, it already existed and we should update it
+    if not created:
+        for key, value in data.items():
+            setattr(progress, key, value)
+        progress.save()
+
+    return progress
 
 
-def get_apps_by_id(app_id):
-    conn = create_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM apps WHERE app_id = %s", (str(app_id),))
-    apps = cursor.fetchall()
-
-    cursor.close()
-    conn.close()
-
-    return apps
+def get_app(app_id):
+    try:
+        app = App.get(App.id == app_id)
+        return app
+    except DoesNotExist:
+        raise ValueError(f"No app with id: {app_id}")
 
 
 def get_progress_steps(app_id, step=None):
-    conn = create_connection()
-    cursor = conn.cursor()
+    progress_table_map = {
+        'project_description': ProjectDescription,
+        'user_stories': UserStories,
+        'user_tasks': UserTasks,
+        'architecture': Architecture,
+        'development_planning': DevelopmentPlanning,
+        'environment_setup': EnvironmentSetup,
+        'development': Development,
+    }
 
     if step:
-        cursor.execute("SELECT * FROM progress_steps WHERE app_id = %s AND step = %s", (app_id, step))
+        ProgressTable = progress_table_map.get(step)
+        if not ProgressTable:
+            raise ValueError(f"Invalid step: {step}")
+
+        try:
+            progress = ProgressTable.get(ProgressTable.app_id == app_id)
+            return model_to_dict(progress)
+        except DoesNotExist:
+            return None
     else:
-        cursor.execute("SELECT * FROM progress_steps WHERE app_id = %s", (app_id,))
-    steps = cursor.fetchall()
+        steps = {}
+        for step, ProgressTable in progress_table_map.items():
+            try:
+                progress = ProgressTable.get(ProgressTable.app_id == app_id)
+                steps[step] = model_to_dict(progress)
+            except DoesNotExist:
+                steps[step] = None
 
-    cursor.close()
-    conn.close()
+        return steps
 
-    return steps
+
+def save_development_step(app_id, messages):
+    app = get_app(app_id)
+    hash_id = hash_data(messages)
+    try:
+        dev_step = DevelopmentSteps.create(app=app, hash_id=hash_id, messages=messages)
+    except IntegrityError:
+        print(f"A Development Step with hash_id {hash_id} already exists.")
+        return None
+    return dev_step
+
+
+def get_development_step_by_hash_id(hash_id):
+    try:
+        dev_step = DevelopmentSteps.get(DevelopmentSteps.hash_id == hash_id)
+    except DoesNotExist:
+        print(f"No Development Step found with hash_id {hash_id}")
+        return None
+    return dev_step
+
+
+def create_tables():
+    with database:
+        database.create_tables([
+            User,
+            App,
+            ProjectDescription,
+            UserStories,
+            UserTasks,
+            Architecture,
+            DevelopmentPlanning,
+            DevelopmentSteps,
+            EnvironmentSetup,
+            Development
+        ])
+
+
+def drop_tables():
+    with database:
+        database.drop_tables([
+            User,
+            App,
+            ProjectDescription,
+            UserStories,
+            UserTasks,
+            Architecture,
+            DevelopmentPlanning,
+            DevelopmentSteps,
+            EnvironmentSetup,
+            Development
+        ])
 
 
 if __name__ == "__main__":
+    drop_tables()
     create_tables()

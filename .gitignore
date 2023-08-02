@@ -162,3 +162,6 @@ cython_debug/
 
 # Logger
 /euclid/logger/debug.log
+
+#dev
+/euclid/brija.py

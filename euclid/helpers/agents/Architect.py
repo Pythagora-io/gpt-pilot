@@ -1,3 +1,4 @@
+from utils.utils import step_already_finished
 from helpers.Agent import Agent
 import json
 from termcolor import colored
@@ -18,17 +19,10 @@ class Architect(Agent):
         self.convo_architecture = AgentConvo(self)
 
         # If this app_id already did this step, just get all data from DB and don't ask user again
-        steps = get_progress_steps(self.project.args['app_id'], self.project.current_step)
-        if steps and not execute_step(self.project.args['step'], self.project.current_step):
-            first_step = steps[0]
-            data = json.loads(first_step['data'])
-
-            architecture = data.get('architecture')
-
-            message = f"Architecture already done for this app_id: {self.project.args['app_id']}. Moving to next step..."
-            print(colored(message, "green"))
-            logger.info(message)
-            return architecture
+        step = get_progress_steps(self.project.args['app_id'], self.project.current_step)
+        if step and not execute_step(self.project.args['step'], self.project.current_step):
+            step_already_finished(self.project.args, step)
+            return step['architecture']
 
         # ARCHITECTURE
         print(colored(f"Planning project architecture...\n", "green"))

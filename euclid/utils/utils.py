@@ -5,11 +5,15 @@ import os
 import platform
 import distro
 import uuid
+import json
+import hashlib
 import re
 from jinja2 import Environment, FileSystemLoader
+from termcolor import colored
 
 from const.llm import MAX_QUESTIONS, END_RESPONSE
 from const.common import ROLES, STEPS
+from logger.logger import logger
 
 
 def get_arguments():
@@ -143,8 +147,20 @@ def execute_step(matching_step, current_step):
     return matching_step_index is not None and current_step_index is not None and current_step_index >= matching_step_index
 
 
+def step_already_finished(args, step):
+    args.update(step['app_data'])
+
+    message = f"{capitalize_first_word_with_underscores(step['step'])} already done for this app_id: {args['app_id']}. Moving to next step..."
+    print(colored(message, "green"))
+    logger.info(message)
+
+
 def generate_app_data(args):
     return {'app_id': args['app_id'], 'app_type': args['app_type']}
 
 def array_of_objects_to_string(array):
     return '\n'.join([f'{key}: {value}' for key, value in array.items()])
+
+def hash_data(data):
+    serialized_data = json.dumps(data, sort_keys=True).encode('utf-8')
+    return hashlib.sha256(serialized_data).hexdigest()
