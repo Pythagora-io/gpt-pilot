@@ -10,9 +10,7 @@ from steps.project_description.project_description import get_project_descriptio
 from steps.user_stories.user_stories import get_user_stories
 from steps.user_tasks.user_tasks import get_user_tasks
 from steps.architecture.architecture import get_architecture
-from steps.development.development import create_development_plan
-from steps.development.development import set_up_environment
-from steps.development.development import start_development
+from steps.development.development import create_development_plan, set_up_environment, start_development
 
 
 def init():

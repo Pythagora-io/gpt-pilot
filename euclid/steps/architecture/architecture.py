@@ -1,9 +1,8 @@
 # user_stories.py
-import json
 from termcolor import colored
 from const.function_calls import ARCHITECTURE
 
-from utils.utils import execute_step, find_role_from_step, generate_app_data
+from utils.utils import execute_step, find_role_from_step, generate_app_data, step_already_finished
 from database.database import save_progress, get_progress_steps
 from logger.logger import logger
 from prompts.prompts import get_additional_info_from_user
@@ -15,17 +14,10 @@ def get_architecture(high_level_summary, user_stories, user_tasks, args):
     convo_architecture = AgentConvo(current_step)
 
     # If this app_id already did this step, just get all data from DB and don't ask user again
-    steps = get_progress_steps(args['app_id'], current_step)
-    if steps and not execute_step(args['step'], current_step):
-        first_step = steps[0]
-        data = json.loads(first_step['data'])
-
-        architecture = data.get('architecture')
-
-        message = f"Architecture already done for this app_id: {args['app_id']}. Moving to next step..."
-        print(colored(message, "green"))
-        logger.info(message)
-        return architecture
+    step = get_progress_steps(args['app_id'], current_step)
+    if step and not execute_step(args['step'], current_step):
+        step_already_finished(args, step)
+        return step['architecture']
 
     # ARCHITECTURE
     print(colored(f"Planning project architecture...\n", "green"))
