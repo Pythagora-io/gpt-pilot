@@ -1,16 +1,15 @@
-{% if is_first_step %}
+{% if step_index != 0 %}
 So far, steps {{ finished_steps }} are finished so let's do
 {% else %}
 Let's start with the
 {% endif %}
- step #{{ i }} - `{{ step_description }}`. 
-{% if is_command_step %}
-Write all commands that need to be run to fulfill this step. Your response needs to have the following format:
-COMMAND: {command_that_needs_to_be_run}
-{% elif is_code_change_step %}
+ step #{{ step_index }} - `{{ step_description }}`. This step by step about what needs to be done to fulfill this step. 
+{% if step_type == 'COMMAND' %}
+Respond with all commands that need to be run to fulfill this step. In case this is a complex step that can't be completed by only running commands (maybe it requires some code changes or user review), respond with an array with only one item `COMPLEX`. Like this - `[{"command": "COMPLEX", "timeout": 0}]`
+{% elif step_type == 'CODE_CHANGE' %}
 First, you need to know the code that's currently written so that you can appropriately write new or update the existing code. Here are all the file that are written so far in a file tree format:
 ```
-{{ file_tree }}
+{{ directory_tree }}
 ```
 
 Respond with a list of files that you need to see before you can write the code for the current step. This list needs to be in a JSON array where each item is a file name. Do not respond with anything other than the mentioned JSON array.
