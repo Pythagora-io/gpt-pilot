@@ -2,9 +2,7 @@ import os
 from const.common import IGNORE_FOLDERS
 from helpers.files import get_files_content
 from helpers.cli import build_directory_tree
-from helpers.agents.CodeMonkey import CodeMonkey
 from helpers.agents.TechLead import TechLead
-from helpers.agents.DevOps import DevOps
 from helpers.agents.Developer import Developer
 from helpers.agents.Architect import Architect
 from helpers.agents.ProductOwner import ProductOwner
@@ -15,6 +13,8 @@ from database.models.file_snapshot import FileSnapshot
 class Project:
     def __init__(self, args, name=None, description=None, user_stories=None, user_tasks=None, architecture=None, development_plan=None, current_step=None):
         self.args = args
+        # TODO make flexible
+        self.root_path = ''
 
         if current_step != None:
             self.current_step = current_step
