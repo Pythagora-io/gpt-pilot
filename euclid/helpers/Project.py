@@ -1,4 +1,6 @@
+import os
 from const.common import IGNORE_FOLDERS
+from helpers.files import get_files_content
 from helpers.cli import build_directory_tree
 from helpers.agents.CodeMonkey import CodeMonkey
 from helpers.agents.TechLead import TechLead
@@ -6,6 +8,9 @@ from helpers.agents.DevOps import DevOps
 from helpers.agents.Developer import Developer
 from helpers.agents.Architect import Architect
 from helpers.agents.ProductOwner import ProductOwner
+
+from database.models.development_steps import DevelopmentSteps
+from database.models.file_snapshot import FileSnapshot
 
 class Project:
     def __init__(self, args, name=None, description=None, user_stories=None, user_tasks=None, architecture=None, development_plan=None, current_step=None):
@@ -57,3 +62,29 @@ class Project:
     
     def get_full_file_path(self, file_name):
         return self.root_path + '/' + file_name
+
+    def save_files_snapshot(self, development_step_id):
+        files = get_files_content(self.root_path, ignore=IGNORE_FOLDERS)
+        development_step, created = DevelopmentSteps.get_or_create(id=development_step_id)
+
+        for file in files:
+            file_snapshot, created = FileSnapshot.get_or_create(
+                development_step=development_step,
+                name=file['name'],
+                defaults={'content': file.get('content', '')}
+            )
+            file_snapshot.content = content=file['content']
+            file_snapshot.save()
+
+    def restore_files(self, development_step_id):
+        development_step = DevelopmentSteps.get(DevelopmentSteps.id == development_step_id)
+        file_snapshots = FileSnapshot.select().where(FileSnapshot.development_step == development_step)
+
+        for file_snapshot in file_snapshots:
+            full_path = self.root_path + '/' + file_snapshot.name
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+            # Write/overwrite the file with its content
+            with open(full_path, 'w', encoding='utf-8') as f:
+                f.write(file_snapshot.content)

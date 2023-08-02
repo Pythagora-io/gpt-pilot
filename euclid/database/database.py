@@ -13,6 +13,7 @@ from database.models.development_planning import DevelopmentPlanning
 from database.models.development_steps import DevelopmentSteps
 from database.models.environment_setup import EnvironmentSetup
 from database.models.development import Development
+from database.models.file_snapshot import FileSnapshot
 
 
 def save_user(user_id, email="email", password="password"):
@@ -139,13 +140,14 @@ def create_tables():
             DevelopmentPlanning,
             DevelopmentSteps,
             EnvironmentSetup,
-            Development
+            Development,
+            FileSnapshot,
         ])
 
 
 def drop_tables():
     with database.atomic():
-        for table in [User, App, ProjectDescription, UserStories, UserTasks, Architecture, DevelopmentPlanning, DevelopmentSteps, EnvironmentSetup, Development]:
+        for table in [User, App, ProjectDescription, UserStories, UserTasks, Architecture, DevelopmentPlanning, DevelopmentSteps, EnvironmentSetup, Development, FileSnapshot]:
             database.execute_sql(f'DROP TABLE IF EXISTS "{table._meta.table_name}" CASCADE')
 
 
