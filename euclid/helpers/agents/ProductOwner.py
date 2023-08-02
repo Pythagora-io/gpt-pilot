@@ -22,7 +22,8 @@ class ProductOwner(Agent):
         step = get_progress_steps(self.project.args['app_id'], self.project.current_step)
         if step and not execute_step(self.project.args['step'], self.project.current_step):
             step_already_finished(self.project.args, step)
-            return step['summary'], step['messages']
+            self.project_description = step['summary']
+            return step['summary']
 
         # PROJECT DESCRIPTION
         self.project.args['app_type'] = ask_for_app_type()
@@ -58,7 +59,8 @@ class ProductOwner(Agent):
         step = get_progress_steps(self.project.args['app_id'], self.project.current_step)
         if step and not execute_step(self.project.args['step'], self.project.current_step):
             step_already_finished(self.project.args, step)
-            return step['user_stories'], step['messages']
+            self.convo_user_stories.messages = step['messages']
+            return step['user_stories']
 
         # USER STORIES
         print(colored(f"Generating user stories...\n", "green"))
@@ -85,11 +87,12 @@ class ProductOwner(Agent):
 
 
     def get_user_tasks(self):
-        current_step = 'user_tasks'
+        self.project.current_step = 'user_tasks'
+        self.convo_user_stories.high_level_step = self.project.current_step
 
         # If this app_id already did this step, just get all data from DB and don't ask user again
-        step = get_progress_steps(self.project.args['app_id'], current_step)
-        if step and not execute_step(self.project.args['step'], current_step):
+        step = get_progress_steps(self.project.args['app_id'], self.project.current_step)
+        if step and not execute_step(self.project.args['step'], self.project.current_step):
             step_already_finished(self.project.args, step)
             return step['user_tasks']
 
@@ -98,14 +101,14 @@ class ProductOwner(Agent):
         logger.info(f"Generating user tasks...")
 
         user_tasks = self.convo_user_stories.send_message('user_stories/user_tasks.prompt',
-                                        {}, USER_TASKS)
+            {}, USER_TASKS)
 
         logger.info(user_tasks)
         user_tasks = get_additional_info_from_user(user_tasks, 'product_owner')
 
         logger.info(f"Final user tasks: {user_tasks}")
 
-        save_progress(self.project.args['app_id'], current_step, {
+        save_progress(self.project.args['app_id'], self.project.current_step, {
             "messages": self.convo_user_stories.messages,
             "user_tasks": user_tasks,
             "app_data": generate_app_data(self.project.args)

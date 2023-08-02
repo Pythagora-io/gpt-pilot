@@ -1,3 +1,4 @@
+from utils.utils import step_already_finished
 from helpers.Agent import Agent
 import json
 from termcolor import colored
@@ -21,19 +22,11 @@ class TechLead(Agent):
         self.project.current_step = 'development_planning'
         self.convo_development_plan = AgentConvo(self)
 
-        steps = get_progress_steps(self.project.args['app_id'], self.project.current_step)
-        if steps and not execute_step(self.project.args['step'], self.project.current_step):
-            first_step = steps[0]
-            data = json.loads(first_step['data'])
-
-            app_data = data.get('app_data')
-            if app_data is not None:
-                self.project.args.update(app_data)
-
-            message = f"Plan for development is already done for this app_id: {self.project.args['app_id']}. Moving to next step..."
-            print(colored(message, "green"))
-            logger.info(message)
-            return data.get('development_plan')
+        # If this app_id already did this step, just get all data from DB and don't ask user again
+        step = get_progress_steps(self.project.args['app_id'], self.project.current_step)
+        if step and not execute_step(self.project.args['step'], self.project.current_step):
+            step_already_finished(self.project.args, step)
+            return step['development_plan']
         
         # DEVELOPMENT PLANNING
         print(colored(f"Starting to create the action plan for development...\n", "green"))
