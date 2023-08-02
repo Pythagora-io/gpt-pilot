@@ -13,5 +13,17 @@ STEPS = [
     'architecture',
     'development_planning',
     'environment_setup',
-    'development'
+    'coding'
+]
+
+IGNORE_FOLDERS = [
+    '.git',
+    '.idea',
+    '.vscode',
+    '__pycache__',
+    'node_modules',
+    'package-lock.json',
+    'venv',
+    'dist',
+    'build',
 ]

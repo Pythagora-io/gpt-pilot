@@ -1,4 +1,11 @@
-from helpers.agents import Developer, DevOps, TechLead, Architect, ProductOwner
+from const.common import IGNORE_FOLDERS
+from helpers.cli import build_directory_tree
+from helpers.agents.CodeMonkey import CodeMonkey
+from helpers.agents.TechLead import TechLead
+from helpers.agents.DevOps import DevOps
+from helpers.agents.Developer import Developer
+from helpers.agents.Architect import Architect
+from helpers.agents.ProductOwner import ProductOwner
 
 class Project:
     def __init__(self, args, name=None, description=None, user_stories=None, user_tasks=None, architecture=None, development_plan=None, current_step=None):
@@ -35,3 +42,15 @@ class Project:
         self.developer.set_up_environment();
         
         self.developer.start_coding()
+
+    def get_directory_tree(self):
+        return build_directory_tree(self.root_path, ignore=IGNORE_FOLDERS)
+    
+    def get_files(self, files):
+        files_with_content = []
+        for file in files:
+            files_with_content.append({
+                "path": file,
+                "content": open(file, 'r').read()
+            })
+        return files_with_content
