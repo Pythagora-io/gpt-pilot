@@ -10,6 +10,10 @@ def process_os_technologies(technologies):
 def run_commands(commands):
     return commands
 
+def return_files(files):
+    # TODO get file
+    return files
+
 def return_array_from_prompt(name_plural, name_singular, return_var_name):
     return {
         'name': f'process_{name_plural.replace(" ", "_")}',
