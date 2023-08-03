@@ -57,7 +57,7 @@ class Developer(Agent):
         for (i, step) in enumerate(task_steps):
             convo.load_branch('after_task_breakdown')
             if step['type'] == 'command':
-                run_command_until_success(cmd['command'], cmd['timeout'], convo_dev_task)
+                run_command_until_success(step['command'], step['command_timeout'], convo)
             elif step['type'] == 'code_change':
                 print(f'Implementing code changes for `{step["code_change_description"]}`')
                 code_monkey = CodeMonkey(self.project, self)
