@@ -1,2 +1,4 @@
 Ok, now, I will show you the list of all files with automated tests that are written so far and I want you to tell me which automated tests do you want to see so that you can propriatelly modify tests or create new ones.
 {{ testing_files_tree }}
+
+Remember, ask for files relative to the project root. For example, if you need a file with path `{project_root}/models/model.py`, you need to request the file `models/model.py`.

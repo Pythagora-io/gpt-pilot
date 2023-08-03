@@ -40,4 +40,19 @@ class CodeMonkey(Agent):
                 for file_data in changes:
                     update_file(self.project.get_full_file_path(file_data['name']), file_data['content'])
         
-        self.developer.test_changes()
+                self.developer.test_code_changes(self, convo)
+
+    def implement_test(self, convo, automated_test_description):
+        files_needed = convo.send_message('development/task/request_test_files.prompt', {
+            "testing_files_tree": self.project.get_directory_tree(),
+        }, GET_FILES)
+
+        changes = convo.send_message('development/write_automated_test.prompt', {
+            "files": self.project.get_files(files_needed),
+        }, IMPLEMENT_CHANGES)
+
+        for file_data in changes:
+            update_file(self.project.get_full_file_path(file_data['name']), file_data['content'])
+
+        self.developer.run_test_and_debug()
+        self.developer.run_all_tests_and_debug()

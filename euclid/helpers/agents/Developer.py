@@ -7,7 +7,7 @@ from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import execute_step, array_of_objects_to_string, generate_app_data
 from helpers.cli import build_directory_tree, run_command_until_success, execute_command_and_check_cli_response
-from const.function_calls import FILTER_OS_TECHNOLOGIES, DEVELOPMENT_PLAN, EXECUTE_COMMANDS, DEV_STEPS
+from const.function_calls import FILTER_OS_TECHNOLOGIES, DEVELOPMENT_PLAN, EXECUTE_COMMANDS, DEV_STEPS, GET_TEST_TYPE
 from database.database import save_progress, get_progress_steps
 from utils.utils import get_os_info
 from helpers.cli import execute_command
@@ -163,19 +163,19 @@ class Developer(Agent):
         code_monkey = CodeMonkey(self.project, self)
         code_monkey.implement_code_changes(code_changes_description)
 
-    def test_code_changes(self, code_changes_description):
-        verification_type = convo.send_message('development/step_check.prompt', {
-            "instructions": code_changes_description,
-            "directory_tree": self.project.get_directory_tree(),
-            "files": self.project.get_files(files_needed),
-        }, CHANGE_VERIFICATION)
+    def test_code_changes(self, code_monkey, convo):
+        (test_type, command, automated_test_description, manual_test_description) = convo.send_message('development/task/step_check.prompt', {}, GET_TEST_TYPE)
         
-        if verification_type == 'command':
-            pass
-        elif verification_type == 'automated_test':
-            pass
-        elif verification_type == 'manual_test':
-            pass
+        if test_type == 'command_test':
+            run_command_until_success(command['command'], command['timeout'], convo)
+        elif test_type == 'automated_test':
+            code_monkey.implement_test(convo, automated_test_description)
+        elif test_type == 'manual_test':
+            # TODO make the message better
+            self.project.ask_for_human_verification(
+                'Message from Euclid: I need your help. Can you please test if this was successful?',
+                manual_test_description
+            )
 
     def implement_step(self, convo, step_index, type, description):
         # TODO remove hardcoded folder path

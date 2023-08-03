@@ -352,3 +352,46 @@ IMPLEMENT_CHANGES = {
         'save_files': lambda files: files
     }
 }
+
+GET_TEST_TYPE = {
+    'definitions': [{
+        'name': 'test_changes',
+        'description': f'Tests the changes based on the test type.',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'type': {
+                    'type': 'string',
+                    'description': f'Type of a test that needs to be run. It can be "automated_test", "command_test" or "manual_test".',
+                    'enum': ['automated_test', 'command_test', 'manual_test']
+                },
+                'command': {
+                    'type': 'object',
+                    'description': 'Command that needs to be run to test the changes. This should be used only if the test type is "command_test". Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
+                    'properties': {
+                        'command': {
+                            'type': 'string',
+                            'description': 'Command that needs to be run to test the changes.',
+                        },
+                        'timeout': {
+                            'type': 'number',
+                            'description': 'Timeout in seconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
+                        }
+                    },
+                },
+                'automated_test_description': {
+                    'type': 'string',
+                    'description': 'Description of an automated test that needs to be run to test the changes. This should be used only if the test type is "automated_test".',
+                },
+                'manual_test_description': {
+                    'type': 'string',
+                    'description': 'Description of a manual test that needs to be run to test the changes. This should be used only if the test type is "manual_test".',
+                }
+            },
+            'required': ['type'],
+        },
+    }],
+    'functions': {
+        'test_changes': lambda type, command=None, automated_test_description=None, manual_test_description=None: (type, command, automated_test_description, manual_test_description)
+    }
+}
