@@ -10,50 +10,25 @@ class CodeMonkey(Agent):
         super().__init__('code_monkey', project)
         self.developer = developer
 
-    def implement_code_changes(self, code_changes_description, convo=None, cb=None):
+    def implement_code_changes(self, convo, code_changes_description, step_index):
         if convo == None:
             convo = AgentConvo(self)
-        steps = convo.send_message('development/task/break_down_code_changes.prompt', {
-            "instructions": code_changes_description,
+
+        files_needed = convo.send_message('development/task/request_files_for_code_changes.prompt', {
+            "step_description": code_changes_description,
             "directory_tree": self.project.get_directory_tree(),
-            "technologies": self.project.architecture
-        }, CODE_CHANGES)
-
-
-        convo.save_branch('after_code_changes_breakdown')
-        for i, step in enumerate(steps):
-            convo.load_branch('after_code_changes_breakdown')
-            if step['type'] == 'command':
-                run_command_until_success(step['command'], step['command_timeout'], convo)
-            elif step['type'] == 'code_change':
-                files_needed = convo.send_message('development/task/request_files_for_code_changes.prompt', {
-                    "instructions": code_changes_description,
-                    "step_description": step['code_change_description'],
-                    "directory_tree": self.project.get_directory_tree(),
-                }, GET_FILES)
-
-                changes = convo.send_message('development/implement_changes.prompt', {
-                    "instructions": code_changes_description,
-                    "directory_tree": self.project.get_directory_tree(),
-                    "files": self.project.get_files(files_needed),
-                }, IMPLEMENT_CHANGES)
-
-                for file_data in changes:
-                    update_file(self.project.get_full_file_path(file_data['name']), file_data['content'])
-        
-                self.developer.test_code_changes(self, convo)
-
-    def implement_test(self, convo, automated_test_description):
-        files_needed = convo.send_message('development/task/request_test_files.prompt', {
-            "testing_files_tree": self.project.get_directory_tree(),
+            "step_index": step_index,
+            "finished_steps": ', '.join(f"#{j}" for j in range(step_index))
         }, GET_FILES)
 
-        changes = convo.send_message('development/write_automated_test.prompt', {
+
+        changes = convo.send_message('development/implement_changes.prompt', {
+            "instructions": code_changes_description,
+            "directory_tree": self.project.get_directory_tree(),
             "files": self.project.get_files(files_needed),
         }, IMPLEMENT_CHANGES)
 
         for file_data in changes:
             update_file(self.project.get_full_file_path(file_data['name']), file_data['content'])
 
-        self.developer.run_test_and_debug()
-        self.developer.run_all_tests_and_debug()
+        return convo

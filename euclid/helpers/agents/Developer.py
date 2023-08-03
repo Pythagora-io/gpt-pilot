@@ -7,7 +7,7 @@ from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import execute_step, array_of_objects_to_string, generate_app_data
 from helpers.cli import build_directory_tree, run_command_until_success, execute_command_and_check_cli_response
-from const.function_calls import FILTER_OS_TECHNOLOGIES, DEVELOPMENT_PLAN, EXECUTE_COMMANDS, DEV_STEPS, GET_TEST_TYPE
+from const.function_calls import FILTER_OS_TECHNOLOGIES, DEVELOPMENT_PLAN, EXECUTE_COMMANDS, DEV_STEPS, GET_TEST_TYPE, DEV_TASKS_BREAKDOWN
 from database.database import save_progress, get_progress_steps
 from utils.utils import get_os_info
 from helpers.cli import execute_command
@@ -36,7 +36,7 @@ class Developer(Agent):
         print(sibling_tasks[current_task_index]['description'])
         print(colored('-------------------------', 'green'))
         convo_dev_task = AgentConvo(self)
-        task_steps, type = convo_dev_task.send_message('development/task/breakdown.prompt', {
+        task_steps = convo_dev_task.send_message('development/task/breakdown.prompt', {
             "app_summary": self.project.high_level_summary,
             "clarification": [],
             "user_stories": self.project.user_stories,
@@ -48,29 +48,21 @@ class Developer(Agent):
             "current_task_index": current_task_index,
             "sibling_tasks": sibling_tasks,
             "parent_task": parent_task,
-        }, DEV_STEPS)
+        }, DEV_TASKS_BREAKDOWN)
 
-        self.execute_task(task_steps)
+        self.execute_task(convo_dev_task, task_steps)
 
-        if type == 'run_commands':
-            for cmd in task_steps:
-                run_command_until_success(cmd['command'], cmd['timeout'], convo_dev_task)
-        elif type == 'code_change':
-            self.implement_code_changes(task_steps)
-        elif type == 'more_tasks':
-            if isinstance(task_steps, list):
-                for i, step in enumerate(task_steps):
-                    self.implement_task(task_steps, i, sibling_tasks[current_task_index])
-            else:
-                raise Exception('Task steps must be a list.')
-
-
-    def execute_task(self, task):
-        for step in task:
+    def execute_task(self, convo, task_steps):
+        convo.save_branch('after_task_breakdown')
+        for (i, step) in enumerate(task_steps):
+            convo.load_branch('after_task_breakdown')
             if step['type'] == 'command':
                 run_command_until_success(cmd['command'], cmd['timeout'], convo_dev_task)
             elif step['type'] == 'code_change':
-                self.implement_code_changes(step['description'])
+                print(f'Implementing code changes for `{step["code_change_description"]}`')
+                code_monkey = CodeMonkey(self.project, self)
+                updated_convo = code_monkey.implement_code_changes(convo, step['code_change_description'], i)
+                self.test_code_changes(code_monkey, updated_convo)
             else:
                 raise Exception('Step type must be either run_command or code_change.')
             
@@ -134,17 +126,13 @@ class Developer(Agent):
 
         # ENVIRONMENT SETUP END
 
-    def implement_code_changes(self, code_changes_description):
-        code_monkey = CodeMonkey(self.project, self)
-        code_monkey.implement_code_changes(code_changes_description)
-
     def test_code_changes(self, code_monkey, convo):
         (test_type, command, automated_test_description, manual_test_description) = convo.send_message('development/task/step_check.prompt', {}, GET_TEST_TYPE)
         
         if test_type == 'command_test':
             run_command_until_success(command['command'], command['timeout'], convo)
         elif test_type == 'automated_test':
-            code_monkey.implement_test(convo, automated_test_description)
+            code_monkey.implement_code_changes(convo, automated_test_description, 0)
         elif test_type == 'manual_test':
             # TODO make the message better
             self.project.ask_for_human_verification(
