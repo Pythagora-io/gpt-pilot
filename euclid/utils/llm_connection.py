@@ -9,7 +9,7 @@ from jinja2 import Environment, FileSystemLoader
 from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS, MAX_QUESTIONS, END_RESPONSE
 from logger.logger import logger
 from termcolor import colored
-from utils.utils import get_prompt_components
+from utils.utils import get_prompt_components, escape_json_special_chars
 
 
 def connect_to_llm():
@@ -113,9 +113,9 @@ def stream_gpt_completion(data, req_type):
                 continue
 
             try:
-                json_line = json.loads(line)
+                json_line = json_loads_with_escape(line)
                 if json_line['choices'][0]['finish_reason'] == 'function_call':
-                    function_calls['arguments'] = json.loads(function_calls['arguments'])
+                    function_calls['arguments'] = json_loads_with_escape(function_calls['arguments'])
                     return { 'function_calls': function_calls };
 
                 json_line = json_line['choices'][0]['delta']
@@ -135,7 +135,7 @@ def stream_gpt_completion(data, req_type):
 
     if function_calls['arguments'] != '':
         logger.info(f'Response via function call: {function_calls["arguments"]}')
-        function_calls['arguments'] = json.loads(function_calls['arguments'])
+        function_calls['arguments'] = json_loads_with_escape(function_calls['arguments'])
         return { 'function_calls': function_calls };
     logger.info(f'Response message: {gpt_response}')
     new_code = postprocessing(gpt_response, req_type)  # TODO add type dynamically
@@ -144,3 +144,7 @@ def stream_gpt_completion(data, req_type):
 
 def postprocessing(gpt_response, req_type):
     return gpt_response
+
+def json_loads_with_escape(str):
+    # return json.loads(escape_json_special_chars(str))
+    return json.loads(str)

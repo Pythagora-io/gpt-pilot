@@ -164,3 +164,19 @@ def array_of_objects_to_string(array):
 def hash_data(data):
     serialized_data = json.dumps(data, sort_keys=True).encode('utf-8')
     return hashlib.sha256(serialized_data).hexdigest()
+
+def escape_json_special_chars(s):
+    replacements = {
+        '"': '\\"',
+        '\\': '\\\\',
+        '\n': '\\n',
+        '\r': '\\r',
+        '\t': '\\t',
+        '\b': '\\b',
+        '\f': '\\f'
+    }
+
+    for char, replacement in replacements.items():
+        s = s.replace(char, replacement)
+
+    return s
