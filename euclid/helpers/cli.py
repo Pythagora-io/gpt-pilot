@@ -15,15 +15,22 @@ def enqueue_output(out, q):
         q.put(line)
     out.close()
 
-def run_command(command, q, pid_container):
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+def run_command(command, directory, q, pid_container):
+    process = subprocess.Popen(
+        command,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        cwd=directory
+    )
     pid_container[0] = process.pid
     t = threading.Thread(target=enqueue_output, args=(process.stdout, q))
     t.daemon = True
     t.start()
     return process
 
-def execute_command(command, timeout=5):
+def execute_command(root_path, command, timeout=5):
     answer = styled_text(
         f'Can i execute the command: `{command}`?\n' +
         'If yes, just press ENTER and if not, please paste the output of running this command here and press ENTER'
@@ -33,7 +40,7 @@ def execute_command(command, timeout=5):
 
     q = queue.Queue()
     pid_container = [None]
-    process = run_command(command, q, pid_container)
+    process = run_command(command, root_path, q, pid_container)
     output = ''
     start_time = time.time()
 
@@ -114,7 +121,7 @@ def execute_command_and_check_cli_response(command, timeout, convo):
 def run_command_until_success(command, timeout, convo):
     command_executed = False
     for _ in range(MAX_COMMAND_DEBUG_TRIES):
-        cli_response = execute_command(command, timeout)
+        cli_response = execute_command(convo.agent.project.root_path, command, timeout)
         response = convo.send_message('dev_ops/ran_command.prompt',
             {'cli_response': cli_response, 'command': command})
 
@@ -125,5 +132,7 @@ def run_command_until_success(command, timeout, convo):
         command = response
 
     if not command_executed:
-        # TODO ask user to debug and press enter to continue
-        pass
+        convo.agent.project.ask_for_human_verification(
+            'It seems like I cannot debug this problem by myself. Can you please help me and try debugging it yourself?',
+            command
+        )

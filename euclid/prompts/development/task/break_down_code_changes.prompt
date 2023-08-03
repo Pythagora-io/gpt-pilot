@@ -8,6 +8,13 @@ Here is the current folder tree:
 {{ directory_tree }}
 ```
 
+Here are technologies that you can use:
+```
+{% for technology in technologies %}
+- {{ technology }}
+{% endfor %}
+```
+
 First, you need to break down these instructions into actionable steps that can be made. There are 2 types of steps. If a step requires a change in a file content, that step is of a type `code_change` and if a change requires a command to be run (eg. to create a file or a folder), that step is of a type `run_command`.
 For a step to be actionable, it cannot have a vague description but a clear explanation of what needs to be done to finish that step. Here are a couple of examples of good and bad steps:
 BAD STEP: `Set up mongo database`
@@ -16,5 +23,7 @@ GOOD STEP: `Inside db.js, add the following code: {code that needs to be added t
 When thinking about steps, first think about what files need to changed to finish this task. When you determine what changes need to be done, put all changes for each file in a single step of type `code_change`.
 
 So, each step of type `code_change` can contain ALL changes that need to be made to a single file. If changes need to be made to multiple different files, they need to be split across multiple steps where each step contains all changes that need ot be made to a single file.
+
+Remember, all commands will be run from the project root folder.
 
 Now, think step by step and return a list of steps that need to be run.

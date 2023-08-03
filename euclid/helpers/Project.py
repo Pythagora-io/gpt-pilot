@@ -1,5 +1,8 @@
 import os
+
+from termcolor import colored
 from const.common import IGNORE_FOLDERS
+from utils.questionary import styled_text
 from helpers.files import get_files_content
 from helpers.cli import build_directory_tree
 from helpers.agents.TechLead import TechLead
@@ -49,7 +52,11 @@ class Project:
         self.developer.start_coding()
 
     def get_directory_tree(self):
-        return build_directory_tree(self.root_path, ignore=IGNORE_FOLDERS)
+        return build_directory_tree(self.root_path + '/', ignore=IGNORE_FOLDERS)
+
+    def get_test_directory_tree(self):
+        # TODO remove hardcoded path
+        return build_directory_tree(self.root_path + '/tests', ignore=IGNORE_FOLDERS)
     
     def get_files(self, files):
         files_with_content = []
@@ -88,3 +95,12 @@ class Project:
             # Write/overwrite the file with its content
             with open(full_path, 'w', encoding='utf-8') as f:
                 f.write(file_snapshot.content)
+
+    def ask_for_human_verification(self, message, description):
+        print(colored(message, "orange"))
+        print(description)
+        answer = ''
+        while answer != 'continue':
+            answer = styled_text(
+                'Once you are ready, type "continue" to continue.',
+            )

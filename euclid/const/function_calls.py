@@ -162,7 +162,7 @@ DEV_STEPS = {
                         'description': f'List of files that need to be analized to implement the reqired changes.',
                         'items': {
                             'type': 'string',
-                            'description': f'A single file name that needs to be analized to implement the reqired changes.',
+                            'description': f'A single file name that needs to be analized to implement the reqired changes. Remember, this is a file name with path relative to the project root. For example, if a file path is `{{project_root}}/models/model.py`, this value needs to be `models/model.py`.',
                         }
                     }
                 },
@@ -175,6 +175,52 @@ DEV_STEPS = {
         'run_commands': lambda commands: (commands, 'run_commands'),
         'process_code_changes': lambda code_change_description: (code_change_description, 'code_changes'),
         'get_files': return_files
+    },
+}
+
+CODE_CHANGES = {
+    'definitions': [
+        {
+            'name': 'break_down_development_task',
+            'description': 'Implements all the smaller tasks that need to be done to complete the entire development task.',
+            'parameters': {
+                'type': 'object',
+                "properties": {
+                    "tasks": {
+                        'type': 'array',
+                        'description': 'List of smaller development steps that need to be done to complete the entire task.',
+                        'items': {
+                            'type': 'object',
+                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
+                            'properties': {
+                                'type': {
+                                    'type': 'string',
+                                    'enum': ['command', 'code_change'],
+                                    'description': 'Type of the development step that needs to be done to complete the entire task - it can be "command" or "code_change".',
+                                },
+                                'command': {
+                                    'type': 'string',
+                                    'description': 'Command that needs to be run to complete the current task. This should be used only if the task is of a type "command".',
+                                },
+                                'command_timeout': {
+                                    'type': 'number',
+                                    'description': 'Timeout in seconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
+                                },
+                                'code_change_description': {
+                                    'type': 'string',
+                                    'description': 'Description of a the development step that needs to be done. This should be used only if the task is of a type "code_change" and it should thoroughly describe what needs to be done to implement the code change.',
+                                },
+                            },
+                            'required': ['type'],
+                        }
+                    }
+                },
+                "required": ['tasks'],
+            },
+        }
+    ],
+    'functions': {
+        'break_down_development_task': lambda tasks: tasks,
     },
 }
 
@@ -226,7 +272,7 @@ EXECUTE_COMMANDS = {
             'properties': {
                 'commands': {
                         'type': 'array',
-                        'description': f'List of commands that need to be executed.',
+                        'description': f'List of commands that need to be executed.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
                         'items': {
                         'type': 'object',
                         'properties': {
@@ -236,7 +282,7 @@ EXECUTE_COMMANDS = {
                             },
                             'timeout': {
                                 'type': 'number',
-                                'description': f'Timeout in seconds that represent the approximate time this command takes to finish.',
+                                'description': f'Timeout in seconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
                             }
                         }
                     }
@@ -262,7 +308,7 @@ GET_FILES = {
                     'description': f'List of files that need to be analized to implement the reqired changes.',
                     'items': {
                         'type': 'string',
-                        'description': f'A single file name that needs to be analized to implement the reqired changes.',
+                        'description': f'A single file name that needs to be analized to implement the reqired changes. Remember, this is a file name with path relative to the project root. For example, if a file path is `{{project_root}}/models/model.py`, this value needs to be `models/model.py`.',
                     }
                 }
             },
@@ -304,5 +350,48 @@ IMPLEMENT_CHANGES = {
     }],
     'functions': {
         'save_files': lambda files: files
+    }
+}
+
+GET_TEST_TYPE = {
+    'definitions': [{
+        'name': 'test_changes',
+        'description': f'Tests the changes based on the test type.',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'type': {
+                    'type': 'string',
+                    'description': f'Type of a test that needs to be run. It can be "automated_test", "command_test" or "manual_test".',
+                    'enum': ['automated_test', 'command_test', 'manual_test']
+                },
+                'command': {
+                    'type': 'object',
+                    'description': 'Command that needs to be run to test the changes. This should be used only if the test type is "command_test". Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
+                    'properties': {
+                        'command': {
+                            'type': 'string',
+                            'description': 'Command that needs to be run to test the changes.',
+                        },
+                        'timeout': {
+                            'type': 'number',
+                            'description': 'Timeout in seconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
+                        }
+                    },
+                },
+                'automated_test_description': {
+                    'type': 'string',
+                    'description': 'Description of an automated test that needs to be run to test the changes. This should be used only if the test type is "automated_test".',
+                },
+                'manual_test_description': {
+                    'type': 'string',
+                    'description': 'Description of a manual test that needs to be run to test the changes. This should be used only if the test type is "manual_test".',
+                }
+            },
+            'required': ['type'],
+        },
+    }],
+    'functions': {
+        'test_changes': lambda type, command=None, automated_test_description=None, manual_test_description=None: (type, command, automated_test_description, manual_test_description)
     }
 }

@@ -61,7 +61,10 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
 
     if function_calls is not None:
         gpt_data['functions'] = function_calls['definitions']
-        gpt_data['function_call'] = { 'name': function_calls['definitions'][0]['name'] }
+        if len(function_calls['definitions']) > 1:
+            gpt_data['function_call'] = 'auto'
+        else:
+            gpt_data['function_call'] = { 'name': function_calls['definitions'][0]['name'] }
 
     try:
         response = stream_gpt_completion(gpt_data, req_type)

@@ -2,7 +2,7 @@
 Here are the requested files:
 {% for file in files %}
 **{{ file.name }}**
-```{{ file.language }}
+```{# file.language #}
 {{ file.content }}
 ```
 
