@@ -1,5 +1,6 @@
 from playhouse.shortcuts import model_to_dict
 from peewee import *
+from termcolor import colored
 
 from utils.utils import hash_data
 from database.models.components.base_models import database
@@ -123,6 +124,7 @@ def save_development_step(app_id, prompt_path, prompt_data, llm_req_num, message
             .execute())
 
         dev_step = DevelopmentSteps.get_by_id(inserted_id)
+        print(colored(f"Saved development step with id {dev_step.id}", "yellow"))
     except IntegrityError:
         print(f"A Development Step with hash_id {hash_id} already exists.")
         return None

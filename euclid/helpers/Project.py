@@ -17,7 +17,7 @@ class Project:
     def __init__(self, args, name=None, description=None, user_stories=None, user_tasks=None, architecture=None, development_plan=None, current_step=None):
         self.args = args
         self.llm_req_num = 0
-        self.skip_steps = True
+        self.skip_steps = False if ('skip_until_dev_step' in args and args['skip_until_dev_step'] == '0') else True
         self.skip_until_dev_step = args['skip_until_dev_step'] if 'skip_until_dev_step' in args else None
         # TODO make flexible
         self.root_path = ''
