@@ -162,8 +162,18 @@ def array_of_objects_to_string(array):
     return '\n'.join([f'{key}: {value}' for key, value in array.items()])
 
 def hash_data(data):
-    serialized_data = json.dumps(data, sort_keys=True).encode('utf-8')
+    serialized_data = json.dumps(replace_functions(data), sort_keys=True).encode('utf-8')
     return hashlib.sha256(serialized_data).hexdigest()
+
+def replace_functions(obj):
+    if isinstance(obj, dict):
+        return {k: replace_functions(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [replace_functions(item) for item in obj]
+    elif callable(obj):
+        return "function"
+    else:
+        return obj
 
 def escape_json_special_chars(s):
     replacements = {
