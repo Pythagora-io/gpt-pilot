@@ -125,5 +125,7 @@ def run_command_until_success(command, timeout, convo):
         command = response
 
     if not command_executed:
-        # TODO ask user to debug and press enter to continue
-        pass
+        convo.agent.project.ask_for_human_verification(
+            'It seems like I cannot debug this problem by myself. Can you please help me and try debugging it yourself?',
+            command
+        )
