@@ -88,6 +88,56 @@ COMMANDS_TO_RUN = {
     },
 }
 
+DEV_TASKS_BREAKDOWN = {
+    'definitions': [
+        {
+            'name': 'break_down_development_task',
+            'description': 'Breaks down the development task into smaller steps that need to be done to implement the entire task.',
+            'parameters': {
+                'type': 'object',
+                "properties": {
+                    "tasks": {
+                        'type': 'array',
+                        'description': 'List of smaller development steps that need to be done to complete the entire task.',
+                        'items': {
+                            'type': 'object',
+                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 miliseconds.',
+                            'properties': {
+                                'type': {
+                                    'type': 'string',
+                                    'enum': ['command', 'code_change', 'human_invervention'],
+                                    'description': 'Type of the development step that needs to be done to complete the entire task - it can be "command" or "code_change".',
+                                },
+                                'command': {
+                                    'type': 'string',
+                                    'description': 'Command that needs to be run to complete the current task. This should be used only if the task is of a type "command".',
+                                },
+                                'command_timeout': {
+                                    'type': 'number',
+                                    'description': 'Timeout in miliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 miliseconds.',
+                                },
+                                'code_change_description': {
+                                    'type': 'string',
+                                    'description': 'Description of a the development step that needs to be done. This should be used only if the task is of a type "code_change" and it should thoroughly describe what needs to be done to implement the code change for a single file - it cannot include changes for multiple files.',
+                                },
+                                'human_intervention_description': {
+                                    'type': 'string',
+                                    'description': 'Description of a task that requires a human to do.',
+                                },
+                            },
+                            'required': ['type'],
+                        }
+                    }
+                },
+                "required": ['tasks'],
+            },
+        },
+    ],
+    'functions': {
+        'break_down_development_task': lambda tasks: tasks
+    },
+}
+
 DEV_STEPS = {
     'definitions': [
         {
@@ -191,7 +241,7 @@ CODE_CHANGES = {
                         'description': 'List of smaller development steps that need to be done to complete the entire task.',
                         'items': {
                             'type': 'object',
-                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
+                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 miliseconds.',
                             'properties': {
                                 'type': {
                                     'type': 'string',
@@ -204,7 +254,7 @@ CODE_CHANGES = {
                                 },
                                 'command_timeout': {
                                     'type': 'number',
-                                    'description': 'Timeout in seconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
+                                    'description': 'Timeout in miliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 miliseconds.',
                                 },
                                 'code_change_description': {
                                     'type': 'string',
@@ -272,7 +322,7 @@ EXECUTE_COMMANDS = {
             'properties': {
                 'commands': {
                         'type': 'array',
-                        'description': f'List of commands that need to be executed.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
+                        'description': f'List of commands that need to be executed.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 miliseconds.',
                         'items': {
                         'type': 'object',
                         'properties': {
@@ -282,7 +332,7 @@ EXECUTE_COMMANDS = {
                             },
                             'timeout': {
                                 'type': 'number',
-                                'description': f'Timeout in seconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
+                                'description': f'Timeout in miliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 miliseconds.',
                             }
                         }
                     }
@@ -367,7 +417,7 @@ GET_TEST_TYPE = {
                 },
                 'command': {
                     'type': 'object',
-                    'description': 'Command that needs to be run to test the changes. This should be used only if the test type is "command_test". Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
+                    'description': 'Command that needs to be run to test the changes. This should be used only if the test type is "command_test". Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 miliseconds.',
                     'properties': {
                         'command': {
                             'type': 'string',
@@ -375,13 +425,13 @@ GET_TEST_TYPE = {
                         },
                         'timeout': {
                             'type': 'number',
-                            'description': 'Timeout in seconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
+                            'description': 'Timeout in miliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 miliseconds.',
                         }
                     },
                 },
                 'automated_test_description': {
                     'type': 'string',
-                    'description': 'Description of an automated test that needs to be run to test the changes. This should be used only if the test type is "automated_test".',
+                    'description': 'Description of an automated test that needs to be run to test the changes. This should be used only if the test type is "automated_test" and it should thoroughly describe what needs to be done to implement the automated test so that when someone looks at this test can know exactly what needs to be done to implement this automated test.',
                 },
                 'manual_test_description': {
                     'type': 'string',
