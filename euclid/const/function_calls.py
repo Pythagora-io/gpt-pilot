@@ -178,6 +178,52 @@ DEV_STEPS = {
     },
 }
 
+CODE_CHANGES = {
+    'definitions': [
+        {
+            'name': 'break_down_development_task',
+            'description': 'Implements all the smaller tasks that need to be done to complete the entire development task.',
+            'parameters': {
+                'type': 'object',
+                "properties": {
+                    "tasks": {
+                        'type': 'array',
+                        'description': 'List of smaller development steps that need to be done to complete the entire task.',
+                        'items': {
+                            'type': 'object',
+                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
+                            'properties': {
+                                'type': {
+                                    'type': 'string',
+                                    'enum': ['command', 'code_change'],
+                                    'description': 'Type of the development step that needs to be done to complete the entire task - it can be "command" or "code_change".',
+                                },
+                                'command': {
+                                    'type': 'string',
+                                    'description': 'Command that needs to be run to complete the current task. This should be used only if the task is of a type "command".',
+                                },
+                                'command_timeout': {
+                                    'type': 'number',
+                                    'description': 'Timeout in seconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
+                                },
+                                'code_change_description': {
+                                    'type': 'string',
+                                    'description': 'Description of a the development step that needs to be done. This should be used only if the task is of a type "code_change" and it should thoroughly describe what needs to be done to implement the code change.',
+                                },
+                            },
+                            'required': ['type'],
+                        }
+                    }
+                },
+                "required": ['tasks'],
+            },
+        }
+    ],
+    'functions': {
+        'break_down_development_task': lambda tasks: tasks,
+    },
+}
+
 DEVELOPMENT_PLAN = {
     'definitions': [{
         'name': 'implement_development_plan',

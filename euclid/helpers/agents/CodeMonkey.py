@@ -1,4 +1,4 @@
-from const.function_calls import GET_FILES, DEV_STEPS, IMPLEMENT_CHANGES
+from const.function_calls import GET_FILES, DEV_STEPS, IMPLEMENT_CHANGES, CODE_CHANGES
 from helpers.files import update_file
 from helpers.cli import run_command_until_success
 from helpers.cli import build_directory_tree
@@ -12,10 +12,11 @@ class CodeMonkey(Agent):
 
     def implement_code_changes(self, code_changes_description):
         convo = AgentConvo(self)
-        steps, type = convo.send_message('development/task/break_down_code_changes.prompt', {
+        steps = convo.send_message('development/task/break_down_code_changes.prompt', {
             "instructions": code_changes_description,
             "directory_tree": self.project.get_directory_tree(),
-        }, DEV_STEPS)
+            "technologies": self.project.architecture
+        }, CODE_CHANGES)
 
 
         convo.save_branch('after_code_changes_breakdown')
