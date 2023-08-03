@@ -156,7 +156,7 @@ def run_command_until_success(command, timeout, convo):
         command = response
 
     if not command_executed:
-        convo.agent.project.ask_for_human_verification(
+        convo.agent.project.ask_for_human_intervention(
             'It seems like I cannot debug this problem by myself. Can you please help me and try debugging it yourself?',
             command
         )

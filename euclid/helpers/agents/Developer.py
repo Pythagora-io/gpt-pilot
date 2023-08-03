@@ -63,6 +63,8 @@ class Developer(Agent):
                 code_monkey = CodeMonkey(self.project, self)
                 updated_convo = code_monkey.implement_code_changes(convo, step['code_change_description'], i)
                 self.test_code_changes(code_monkey, updated_convo)
+            elif step['type'] == 'human_intervention':
+                self.project.ask_for_human_intervention(step['human_intervention_description'])
             else:
                 raise Exception('Step type must be either run_command or code_change.')
             
@@ -135,7 +137,7 @@ class Developer(Agent):
             code_monkey.implement_code_changes(convo, automated_test_description, 0)
         elif test_type == 'manual_test':
             # TODO make the message better
-            self.project.ask_for_human_verification(
+            self.project.ask_for_human_intervention(
                 'Message from Euclid: I need your help. Can you please test if this was successful?',
                 manual_test_description
             )

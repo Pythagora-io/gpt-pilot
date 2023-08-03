@@ -100,7 +100,7 @@ class Project:
             with open(full_path, 'w', encoding='utf-8') as f:
                 f.write(file_snapshot.content)
 
-    def ask_for_human_verification(self, message, description):
+    def ask_for_human_intervention(self, message, description):
         print(colored(message, "yellow"))
         print(description)
         answer = ''
