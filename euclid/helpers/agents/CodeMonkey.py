@@ -22,12 +22,12 @@ class CodeMonkey(Agent):
         convo.save_branch('after_code_changes_breakdown')
         for i, step in enumerate(steps):
             convo.load_branch('after_code_changes_breakdown')
-            if step['type'] == 'run_command':
-                run_command_until_success(step['command'], step['description'], convo)
+            if step['type'] == 'command':
+                run_command_until_success(step['command'], step['command_timeout'], convo)
             elif step['type'] == 'code_change':
                 files_needed = convo.send_message('development/task/request_files_for_code_changes.prompt', {
                     "instructions": code_changes_description,
-                    "step_description": step['description'],
+                    "step_description": step['code_change_description'],
                     "directory_tree": self.project.get_directory_tree(),
                 }, GET_FILES)
 
