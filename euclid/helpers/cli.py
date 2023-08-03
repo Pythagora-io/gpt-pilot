@@ -15,38 +15,42 @@ def enqueue_output(out, q):
         q.put(line)
     out.close()
 
-def run_command(command, directory, q, pid_container):
+def run_command(command, root_path, q_stdout, q_stderr, pid_container):
     process = subprocess.Popen(
         command,
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
-        cwd=directory
+        cwd=root_path
     )
     pid_container[0] = process.pid
-    t = threading.Thread(target=enqueue_output, args=(process.stdout, q))
-    t.daemon = True
-    t.start()
+    t_stdout = threading.Thread(target=enqueue_output, args=(process.stdout, q_stdout))
+    t_stderr = threading.Thread(target=enqueue_output, args=(process.stderr, q_stderr))
+    t_stdout.daemon = True
+    t_stderr.daemon = True
+    t_stdout.start()
+    t_stderr.start()
     return process
+
 
 def execute_command(root_path, command, timeout=5):
     answer = styled_text(
-        f'Can i execute the command: `{command}`?\n' +
+        f'Can i execute the command: `{command}` with {timeout}s timeout?\n' +
         'If yes, just press ENTER and if not, please paste the output of running this command here and press ENTER'
     )
     if answer != '':
         return answer[-2000:]
 
+    q_stderr = queue.Queue()
     q = queue.Queue()
     pid_container = [None]
-    process = run_command(command, root_path, q, pid_container)
+    process = run_command(command, root_path, q, q_stderr, pid_container)
     output = ''
     start_time = time.time()
 
     while True:
         elapsed_time = time.time() - start_time
-
         # Check if process has finished
         if process.poll() is not None:
             # Get remaining lines from the queue
@@ -72,7 +76,9 @@ def execute_command(root_path, command, timeout=5):
             output += line
             print(colored('CLI OUTPUT:', 'green') + line, end='')
 
-    stderr_output = process.stderr.read()
+    stderr_output = ''
+    while not q_stderr.empty():
+        stderr_output += q_stderr.get_nowait()
     return output[-2000:] if output != '' else stderr_output[-2000:]
 
 def build_directory_tree(path, prefix="", ignore=None, is_last=False):
