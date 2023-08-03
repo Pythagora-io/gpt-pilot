@@ -126,12 +126,15 @@ def stream_gpt_completion(data, req_type):
             if 'function_call' in json_line:
                 if 'name' in json_line['function_call']:
                     function_calls['name'] = json_line['function_call']['name']
+                    print(f'Function call: {function_calls["name"]}')
                 if 'arguments' in json_line['function_call']:
                     function_calls['arguments'] += json_line['function_call']['arguments']
+                    print(json_line['function_call']['arguments'], end='', flush=True)
             if 'content' in json_line:
                 content = json_line.get('content')
                 if content:
                     gpt_response += content
+                    print(content, end='', flush=True)
 
     if function_calls['arguments'] != '':
         logger.info(f'Response via function call: {function_calls["arguments"]}')
