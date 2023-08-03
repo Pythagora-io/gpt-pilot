@@ -1,18 +1,19 @@
-You need to implement the current changes into a codebase:
+{#You need to implement the current changes into a codebase:
 -- INSTRUCTIONS --
 {{ instructions }}
--- END OF INSTRUCTIONS --
+-- END OF INSTRUCTIONS --#}
+{% if step_index != 0 %}
+So far, steps {{ finished_steps }} are finished so let's do
+{% else %}
+Let's start with the
+{% endif %}
+ step #{{ step_index }} - `{{ step_description }}`.
+
+I will give you each file that needs to be changed and you will implement changes from the instructions. To do this, you will need to see the currently implemented files so first, filter the files outlined above that are relevant for the instructions. Then, tell me files that you need to see so that you can make appropriate changes to the code. If no files are needed (eg. if you need to create a file), just return an empty array.
 
 Here is the current folder tree:
 ```
 {{ directory_tree }}
 ```
-
-You are currently working on this step from the instructions above:
-```
-{{ step_description }}
-```
-
-I will give you each file that needs to be changed and you will implement changes from the instructions. To do this, you will need to see the currently implemented files so first, filter the files outlined above that are relevant for the instructions. Then, tell me files that you need to see so that you can make appropriate changes to the code. If no files are needed (eg. if you need to create a file), just return an empty array.
 
 Remember, ask for files relative to the project root. For example, if you need a file with path `{project_root}/models/model.py`, you need to request the file `models/model.py`.
