@@ -15,3 +15,6 @@ class DevelopmentSteps(BaseModel):
 
     class Meta:
         db_table = 'development_steps'
+        indexes = (
+            (('app', 'hash_id'), True),
+        )

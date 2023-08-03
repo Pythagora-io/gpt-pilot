@@ -1,5 +1,5 @@
 import subprocess
-from database.database import get_development_step_from_messages, save_development_step
+from database.database import get_development_step_from_hash_id, save_development_step
 from utils.utils import array_of_objects_to_string
 from utils.llm_connection import get_prompt, create_gpt_chat_completion
 from utils.utils import get_sys_message, find_role_from_step, capitalize_first_word_with_underscores
@@ -24,16 +24,20 @@ class AgentConvo:
 
 
         # check if we already have the LLM response saved
-        development_step = get_development_step_from_messages(self.agent.project.args['app_id'], self.messages)
-        if development_step is not None:
+        self.agent.project.llm_req_num += 1
+        development_step = get_development_step_from_hash_id(self.agent.project.args['app_id'], prompt_path, prompt_data, self.agent.project.llm_req_num)
+        if development_step is not None and self.agent.project.skip_steps:
             # if we do, use it
+            if self.agent.project.skip_until_dev_step and str(development_step.id) == self.agent.project.skip_until_dev_step:
+                self.agent.project.skip_steps = False
+            print(colored(f'Restoring development step with id {development_step.id}', 'yellow'))
             self.agent.project.restore_files(development_step.id)
             response = development_step.llm_response
             self.messages = development_step.messages
         else:
             # if we don't, get the response from LLM
             response = create_gpt_chat_completion(self.messages, self.high_level_step, function_calls=function_calls)
-            development_step = save_development_step(self.agent.project.args['app_id'], self.messages, response)
+            development_step = save_development_step(self.agent.project.args['app_id'], prompt_path, prompt_data, self.agent.project.llm_req_num, self.messages, response)
             self.agent.project.save_files_snapshot(development_step.id)
         
         # TODO handle errors from OpenAI

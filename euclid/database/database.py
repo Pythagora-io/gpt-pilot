@@ -107,19 +107,34 @@ def get_progress_steps(app_id, step=None):
         return steps
 
 
-def save_development_step(app_id, messages, response):
+def save_development_step(app_id, prompt_path, prompt_data, llm_req_num, messages, response):
     app = get_app(app_id)
-    hash_id = hash_data(messages)
+    hash_id = hash_data({
+        'prompt_path': prompt_path,
+        'prompt_data': prompt_data,
+        'llm_req_num': llm_req_num
+    })
     try:
-        dev_step = DevelopmentSteps.create(app=app, hash_id=hash_id, messages=messages, llm_response=response)
+        inserted_id = (DevelopmentSteps
+            .insert(app=app, hash_id=hash_id, messages=messages, llm_response=response)
+            .on_conflict(conflict_target=[DevelopmentSteps.app, DevelopmentSteps.hash_id],
+                preserve=[DevelopmentSteps.messages, DevelopmentSteps.llm_response],
+                update={})
+            .execute())
+
+        dev_step = DevelopmentSteps.get_by_id(inserted_id)
     except IntegrityError:
         print(f"A Development Step with hash_id {hash_id} already exists.")
         return None
     return dev_step
 
 
-def get_development_step_from_messages(app_id, messages):
-    hash_id = hash_data(messages)
+def get_development_step_from_hash_id(app_id, prompt_path, prompt_data, llm_req_num):
+    hash_id = hash_data({
+        'prompt_path': prompt_path,
+        'prompt_data': prompt_data,
+        'llm_req_num': llm_req_num
+    })
     try:
         dev_step = DevelopmentSteps.get((DevelopmentSteps.hash_id == hash_id) & (DevelopmentSteps.app == app_id))
     except DoesNotExist:
