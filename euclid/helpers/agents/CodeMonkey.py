@@ -10,8 +10,9 @@ class CodeMonkey(Agent):
         super().__init__('code_monkey', project)
         self.developer = developer
 
-    def implement_code_changes(self, code_changes_description):
-        convo = AgentConvo(self)
+    def implement_code_changes(self, code_changes_description, convo=None, cb=None):
+        if convo == None:
+            convo = AgentConvo(self)
         steps = convo.send_message('development/task/break_down_code_changes.prompt', {
             "instructions": code_changes_description,
             "directory_tree": self.project.get_directory_tree(),

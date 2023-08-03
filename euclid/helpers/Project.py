@@ -100,7 +100,7 @@ class Project:
                 f.write(file_snapshot.content)
 
     def ask_for_human_verification(self, message, description):
-        print(colored(message, "orange"))
+        print(colored(message, "yellow"))
         print(description)
         answer = ''
         while answer != 'continue':
