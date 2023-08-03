@@ -34,9 +34,9 @@ def run_command(command, root_path, q_stdout, q_stderr, pid_container):
     return process
 
 
-def execute_command(root_path, command, timeout=5):
+def execute_command(root_path, command, timeout=5000):
     answer = styled_text(
-        f'Can i execute the command: `{command}` with {timeout}s timeout?\n' +
+        f'Can i execute the command: `{command}` with {timeout}ms timeout?\n' +
         'If yes, just press ENTER and if not, please paste the output of running this command here and press ENTER'
     )
     if answer != '':
@@ -63,7 +63,7 @@ def execute_command(root_path, command, timeout=5):
             break
 
         # If timeout is reached, kill the process
-        if elapsed_time > timeout:
+        if elapsed_time * 1000 > timeout:
             os.kill(pid_container[0], signal.SIGKILL)
             break
 
