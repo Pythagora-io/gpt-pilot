@@ -162,7 +162,7 @@ DEV_STEPS = {
                         'description': f'List of files that need to be analized to implement the reqired changes.',
                         'items': {
                             'type': 'string',
-                            'description': f'A single file name that needs to be analized to implement the reqired changes.',
+                            'description': f'A single file name that needs to be analized to implement the reqired changes. Remember, this is a file name with path relative to the project root. For example, if a file path is `{{project_root}}/models/model.py`, this value needs to be `models/model.py`.',
                         }
                     }
                 },
@@ -226,7 +226,7 @@ EXECUTE_COMMANDS = {
             'properties': {
                 'commands': {
                         'type': 'array',
-                        'description': f'List of commands that need to be executed.',
+                        'description': f'List of commands that need to be executed.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
                         'items': {
                         'type': 'object',
                         'properties': {
@@ -236,7 +236,7 @@ EXECUTE_COMMANDS = {
                             },
                             'timeout': {
                                 'type': 'number',
-                                'description': f'Timeout in seconds that represent the approximate time this command takes to finish.',
+                                'description': f'Timeout in seconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 seconds.',
                             }
                         }
                     }
@@ -262,7 +262,7 @@ GET_FILES = {
                     'description': f'List of files that need to be analized to implement the reqired changes.',
                     'items': {
                         'type': 'string',
-                        'description': f'A single file name that needs to be analized to implement the reqired changes.',
+                        'description': f'A single file name that needs to be analized to implement the reqired changes. Remember, this is a file name with path relative to the project root. For example, if a file path is `{{project_root}}/models/model.py`, this value needs to be `models/model.py`.',
                     }
                 }
             },
