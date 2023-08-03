@@ -7,6 +7,7 @@ from helpers.Project import Project
 from utils.utils import get_arguments
 from logger.logger import logger
 
+
 def init():
     load_dotenv()
 

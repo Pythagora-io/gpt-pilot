@@ -1,27 +1,32 @@
 import subprocess
+from termcolor import colored
+
 from database.database import get_development_step_from_messages, save_development_step
 from utils.utils import array_of_objects_to_string
 from utils.llm_connection import get_prompt, create_gpt_chat_completion
 from utils.utils import get_sys_message, find_role_from_step, capitalize_first_word_with_underscores
 from logger.logger import logger
-from termcolor import colored
+from prompts.prompts import ask_user
+from const.llm import END_RESPONSE
+
 
 class AgentConvo:
     def __init__(self, agent):
         self.messages = []
         self.branches = {}
+        self.log_to_user = True
         self.agent = agent
         self.high_level_step = self.agent.project.current_step
 
         # add system message
         self.messages.append(get_sys_message(self.agent.role))
 
-    def send_message(self, prompt_path, prompt_data, function_calls=None):
+    def send_message(self, prompt_path=None, prompt_data=None, function_calls=None):
 
         # craft message
-        prompt = get_prompt(prompt_path, prompt_data)
-        self.messages.append({"role": "user", "content": prompt})
-
+        if prompt_path is not None and prompt_data is not None:
+            prompt = get_prompt(prompt_path, prompt_data)
+            self.messages.append({"role": "user", "content": prompt})
 
         # check if we already have the LLM response saved
         saved_checkpoint = get_development_step_from_messages(self.agent.project.args['app_id'], self.messages)
@@ -33,7 +38,7 @@ class AgentConvo:
             # if we don't, get the response from LLM
             response = create_gpt_chat_completion(self.messages, self.high_level_step, function_calls=function_calls)
             save_development_step(self.agent.project.args['app_id'], self.messages, response)
-        
+
         # TODO handle errors from OpenAI
         if response == {}:
             raise Exception("OpenAI API error happened.")       
@@ -54,13 +59,31 @@ class AgentConvo:
             message_content = '\n'.join(string_response)
         # TODO END
 
-        
         # TODO we need to specify the response when there is a function called
         # TODO maybe we can have a specific function that creates the GPT response from the function call
         self.messages.append({"role": "assistant", "content": message_content}) 
         self.log_message(message_content)
 
         return response
+
+    def continuous_conversation(self, prompt_path, prompt_data, function_calls=None):
+        self.log_to_user = False
+        accepted_messages = []
+        response = self.send_message(prompt_path, prompt_data, function_calls)
+
+        # Continue conversation until GPT response equals END_RESPONSE
+        while response != END_RESPONSE:
+            print(colored("Do you want to add anything else? If not, just press ENTER.", 'yellow'))
+            user_message = ask_user(response, False)
+
+            if user_message == "":
+                accepted_messages.append(response)
+
+            self.messages.append({"role": "user", "content": user_message})
+            response = self.send_message(None, None, function_calls)
+
+        self.log_to_user = True
+        return accepted_messages
 
     def save_branch(self, branch_name):
         self.branches[branch_name] = self.messages.copy()
@@ -83,8 +106,9 @@ class AgentConvo:
     
     def log_message(self, content):
         print_msg = capitalize_first_word_with_underscores(self.high_level_step)
-        print(colored(f"{print_msg}:\n", "green"))
-        print(f"{content}\n")
+        if self.log_to_user:
+            print(colored(f"{print_msg}:\n", "green"))
+            print(f"{content}\n")
         logger.info(f"{print_msg}: {content}\n")
 
     def to_playground(self):
