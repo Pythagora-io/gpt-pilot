@@ -15,6 +15,7 @@ from database.models.development_steps import DevelopmentSteps
 from database.models.environment_setup import EnvironmentSetup
 from database.models.development import Development
 from database.models.file_snapshot import FileSnapshot
+from database.models.command_runs import CommandRuns
 
 
 def save_user(user_id, email="email", password="password"):
@@ -130,6 +131,58 @@ def save_development_step(app_id, prompt_path, prompt_data, llm_req_num, message
         return None
     return dev_step
 
+def get_db_model_from_hash_id(data_to_hash, model, app_id):
+    hash_id = hash_data(data_to_hash)
+    try:
+        db_row = model.get((model.hash_id == hash_id) & (model.app == app_id))
+    except DoesNotExist:
+        return None
+    return db_row
+
+def hash_and_save_step(Model, app_id, hash_data_args, data_fields, message):
+    app = get_app(app_id)
+    hash_id = hash_data(hash_data_args)
+
+    data_to_insert = {
+        'app': app,
+        'hash_id': hash_id
+    }
+    for field, value in data_fields.items():
+        data_to_insert[field] = value
+
+    try:
+        inserted_id = (Model
+            .insert(**data_to_insert)
+            .on_conflict(conflict_target=[Model.app, Model.hash_id],
+                         preserve=[field for field in data_fields.keys()],
+                         update={})
+            .execute())
+
+        record = Model.get_by_id(inserted_id)
+        print(colored(f"{message} with id {record.id}", "yellow"))
+    except IntegrityError:
+        print(f"A record with hash_id {hash_id} already exists for {Model}.")
+        return None
+    return record
+
+def save_command_run(project, command, cli_response):
+    hash_data_args = {
+        'command': command,
+        'command_runs_count': project.command_runs_count,
+    }
+    data_fields = {
+        'command': command,
+        'cli_response': cli_response,
+    }
+    return hash_and_save_step(CommandRuns, project.args['app_id'], hash_data_args, data_fields, "Saved Command Run")
+
+def get_command_run_from_hash_id(project, command):
+    data_to_hash = {
+        'command': command,
+        'command_runs_count': project.command_runs_count
+    }
+    return get_db_model_from_hash_id(data_to_hash, CommandRuns, project.args['app_id'])
+
 
 def get_development_step_from_hash_id(app_id, prompt_path, prompt_data, llm_req_num):
     hash_id = hash_data({
@@ -159,12 +212,26 @@ def create_tables():
             EnvironmentSetup,
             Development,
             FileSnapshot,
+            CommandRuns,
         ])
 
 
 def drop_tables():
     with database.atomic():
-        for table in [User, App, ProjectDescription, UserStories, UserTasks, Architecture, DevelopmentPlanning, DevelopmentSteps, EnvironmentSetup, Development, FileSnapshot]:
+        for table in [
+            User,
+            App,
+            ProjectDescription,
+            UserStories,
+            UserTasks,
+            Architecture,
+            DevelopmentPlanning,
+            DevelopmentSteps,
+            EnvironmentSetup,
+            Development,
+            FileSnapshot,
+            CommandRuns
+            ]:
             database.execute_sql(f'DROP TABLE IF EXISTS "{table._meta.table_name}" CASCADE')
 
 
