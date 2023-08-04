@@ -51,7 +51,7 @@ class AgentConvo:
         if isinstance(message_content, list):
             if len(message_content) > 0 and isinstance(message_content[0], dict):
                 string_response = [
-                    f'#{i + 1}\n' + array_of_objects_to_string(d)
+                    f'#{i}\n' + array_of_objects_to_string(d)
                     for i, d in enumerate(message_content)
                 ]
             else:

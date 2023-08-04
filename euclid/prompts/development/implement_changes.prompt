@@ -1,7 +1,7 @@
 {% if files|length > 0 %}
 Here is how files look now:
 {% for file in files %}
-**{{ file.name }}**
+**{{ file.path }}**
 ```{# file.language #}
 {{ file.content }}
 ```

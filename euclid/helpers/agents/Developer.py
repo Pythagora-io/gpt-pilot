@@ -43,7 +43,6 @@ class Developer(Agent):
             "user_tasks": self.project.user_tasks,
             "technologies": self.project.architecture,
             "array_of_objects_to_string": array_of_objects_to_string,
-            # TODO remove hardcoded folder path
             "directory_tree": self.project.get_directory_tree(),
             "current_task_index": current_task_index,
             "sibling_tasks": sibling_tasks,

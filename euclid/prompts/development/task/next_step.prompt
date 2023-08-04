@@ -3,7 +3,11 @@ So far, steps {{ finished_steps }} are finished so let's do
 {% else %}
 Let's start with the
 {% endif %}
- step #{{ step_index }} - `{{ step_description }}`. This step by step about what needs to be done to fulfill this step. 
+step #{{ step_index }}:
+```
+{{ step_description }}
+```
+This step by step about what needs to be done to fulfill this step. 
 {% if step_type == 'COMMAND' %}
 Respond with all commands that need to be run to fulfill this step. In case this is a complex step that can't be completed by only running commands (maybe it requires some code changes or user review), respond with an array with only one item `COMPLEX`. Like this - `[{"command": "COMPLEX", "timeout": 0}]`
 {% elif step_type == 'CODE_CHANGE' %}
