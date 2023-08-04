@@ -22,6 +22,7 @@ class Project:
         self.skip_until_dev_step = args['skip_until_dev_step'] if 'skip_until_dev_step' in args else None
         # TODO make flexible
         self.root_path = ''
+        self.restore_files({dev_step_id_to_start_from})
 
         if current_step != None:
             self.current_step = current_step
