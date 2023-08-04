@@ -38,6 +38,7 @@ def run_command(command, root_path, q_stdout, q_stderr, pid_container):
 
 def execute_command(project, command, timeout=5000):
     # check if we already have the command run saved
+    timeout = max(timeout, 2000)
     print(colored(f'Can i execute the command: `{command}` with {timeout}ms timeout?', 'white', attrs=['bold']))
     project.command_runs_count += 1
     command_run = get_command_run_from_hash_id(project, command)
