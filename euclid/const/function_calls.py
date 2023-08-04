@@ -101,7 +101,7 @@ DEV_TASKS_BREAKDOWN = {
                         'description': 'List of smaller development steps that need to be done to complete the entire task.',
                         'items': {
                             'type': 'object',
-                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 milliseconds.',
+                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
                             'properties': {
                                 'type': {
                                     'type': 'string',
@@ -114,7 +114,7 @@ DEV_TASKS_BREAKDOWN = {
                                 },
                                 'command_timeout': {
                                     'type': 'number',
-                                    'description': 'Timeout in milliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 milliseconds.',
+                                    'description': 'Timeout in milliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
                                 },
                                 'code_change_description': {
                                     'type': 'string',
@@ -241,7 +241,7 @@ CODE_CHANGES = {
                         'description': 'List of smaller development steps that need to be done to complete the entire task.',
                         'items': {
                             'type': 'object',
-                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 milliseconds.',
+                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
                             'properties': {
                                 'type': {
                                     'type': 'string',
@@ -254,7 +254,7 @@ CODE_CHANGES = {
                                 },
                                 'command_timeout': {
                                     'type': 'number',
-                                    'description': 'Timeout in milliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 milliseconds.',
+                                    'description': 'Timeout in milliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
                                 },
                                 'code_change_description': {
                                     'type': 'string',
@@ -322,7 +322,7 @@ EXECUTE_COMMANDS = {
             'properties': {
                 'commands': {
                         'type': 'array',
-                        'description': f'List of commands that need to be executed.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 milliseconds.',
+                        'description': f'List of commands that need to be executed.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
                         'items': {
                         'type': 'object',
                         'properties': {
@@ -332,7 +332,7 @@ EXECUTE_COMMANDS = {
                             },
                             'timeout': {
                                 'type': 'number',
-                                'description': f'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 milliseconds.',
+                                'description': f'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
                             }
                         }
                     }
@@ -417,7 +417,7 @@ GET_TEST_TYPE = {
                 },
                 'command': {
                     'type': 'object',
-                    'description': 'Command that needs to be run to test the changes. This should be used only if the test type is "command_test". Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 milliseconds.',
+                    'description': 'Command that needs to be run to test the changes. This should be used only if the test type is "command_test". Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
                     'properties': {
                         'command': {
                             'type': 'string',
@@ -425,7 +425,7 @@ GET_TEST_TYPE = {
                         },
                         'timeout': {
                             'type': 'number',
-                            'description': 'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3 milliseconds.',
+                            'description': 'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
                         }
                     },
                 },
