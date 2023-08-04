@@ -10,9 +10,11 @@ from logger.logger import logger
 from prompts.prompts import get_additional_info_from_user
 from helpers.AgentConvo import AgentConvo
 
+
 class Architect(Agent):
     def __init__(self, project):
         super().__init__('architect', project)
+        self.convo_architecture = None
 
     def get_architecture(self):
         self.project.current_step = 'architecture'
@@ -34,7 +36,8 @@ class Architect(Agent):
             'user_tasks': self.project.user_tasks,
             'app_type': self.project.args['app_type']}, ARCHITECTURE)
 
-        architecture = get_additional_info_from_user(architecture, 'architect')
+        if self.project.args.get('advanced', False):
+            architecture = get_additional_info_from_user(architecture, 'architect')
 
         logger.info(f"Final architecture: {architecture}")
 

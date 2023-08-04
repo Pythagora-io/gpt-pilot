@@ -1,2 +1,10 @@
 Ok, great. Now, based on these stories, break down user tasks that a user needs to do to interact with the app. In the example description (`Create a script that finds Youtube channels with the word "test" inside the channel name`), user tasks could be:
 - `user runs the CLI command in which they specify the keyword youtube channel needs to contain and the location where the CSV file will be saved to`
+
+
+**IMPORTANT**
+Return one user task at the time. Do not return anything else but single user task. I might ask you to modify some user tasks and only when I send you empty response you can move to next user task.
+
+**IMPORTANT**
+Once you are done creating all user tasks, write the response containing nothing else but this:
+{{END_RESPONSE}}

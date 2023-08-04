@@ -1,6 +1,8 @@
 from playhouse.shortcuts import model_to_dict
 from peewee import *
 from termcolor import colored
+from functools import reduce
+import operator
 
 from utils.utils import hash_data
 from database.models.components.base_models import database
@@ -18,20 +20,45 @@ from database.models.file_snapshot import FileSnapshot
 from database.models.command_runs import CommandRuns
 
 
-def save_user(user_id, email="email", password="password"):
+def save_user(user_id, email, password):
     try:
         user = User.get(User.id == user_id)
         return user
     except DoesNotExist:
-        return User.create(id=user_id, email=email, password=password)
+        try:
+            return User.create(id=user_id, email=email, password=password)
+        except IntegrityError as e:
+            existing_user = User.get(User.email == email)
+            return existing_user
 
 
-def save_app(user_id, app_id, app_type):
+
+def get_user(user_id=None, email=None):
+    if not user_id and not email:
+        raise ValueError("Either user_id or email must be provided")
+
+    query = []
+    if user_id:
+        query.append(User.id == user_id)
+    if email:
+        query.append(User.email == email)
+
     try:
-        app = App.get(App.id == app_id)
+        user = User.get(reduce(operator.or_, query))
+        return user
     except DoesNotExist:
-        user = save_user(user_id)
-        app = App.create(id=app_id, user=user, app_type=app_type)
+        raise ValueError("No user found with provided id or email")
+
+
+def save_app(args):
+    try:
+        app = App.get(App.id == args['app_id'])
+    except DoesNotExist:
+        try:
+            user = get_user(user_id=args['user_id'])
+        except ValueError:
+            user = save_user(args['user_id'], args['email'], args['password'])
+        app = App.create(id=args['app_id'], user=user, app_type=args['app_type'])
 
     return app
 

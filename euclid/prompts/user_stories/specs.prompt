@@ -1,4 +1,4 @@
-I want you to create the application (let's call it Euclid) that can be described like this:
+I want you to create {{ app_type }} (let's call it Euclid) that can be described like this:
 ```
 {{ prompt }}
 ```
@@ -15,4 +15,9 @@ Think step by step about the description for the app Euclid and the additional q
 - `user will run the script from the CLI`
 - `user will get the list of all channels in a CSV file`
 
-Return the list of user stories in a JSON array.
+**IMPORTANT**
+Return one user story at the time. Do not return anything else but single user story. I might ask you to modify some user stories and only when I send you empty response you can move to next user story.
+
+**IMPORTANT**
+Once you are done creating all user stories, write the response containing nothing else but this:
+{{END_RESPONSE}}

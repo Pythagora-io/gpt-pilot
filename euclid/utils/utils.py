@@ -30,11 +30,16 @@ def get_arguments():
             key, value = arg.split('=', 1)
             arguments[key] = value
         else:
-            # Handle arguments without '=' (e.g., positional arguments).
-            pass
+            arguments[arg] = True
 
     if 'user_id' not in arguments:
         arguments['user_id'] = str(uuid.uuid4())
+
+    if 'email' not in arguments:
+        arguments['email'] = 'email'
+
+    if 'password' not in arguments:
+        arguments['password'] = 'password'
 
     if 'app_id' not in arguments:
         arguments['app_id'] = str(uuid.uuid4())
@@ -158,8 +163,10 @@ def step_already_finished(args, step):
 def generate_app_data(args):
     return {'app_id': args['app_id'], 'app_type': args['app_type']}
 
+
 def array_of_objects_to_string(array):
     return '\n'.join([f'{key}: {value}' for key, value in array.items()])
+
 
 def hash_data(data):
     serialized_data = json.dumps(replace_functions(data), sort_keys=True).encode('utf-8')
