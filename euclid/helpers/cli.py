@@ -155,6 +155,9 @@ def run_command_until_success(command, timeout, convo):
         if command_executed:
             break
 
+        print(colored(f'Got incorrect CLI response:', 'red'))
+        print(cli_response)
+        print(colored('-------------------', 'red'))
         debugging_plan = convo.send_message('dev_ops/debug.prompt',
             { 'command': command, 'debugging_try_num': i },
             DEBUG_STEPS_BREAKDOWN)

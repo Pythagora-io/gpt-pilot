@@ -136,6 +136,7 @@ def stream_gpt_completion(data, req_type):
                     gpt_response += content
                     print(content, end='', flush=True)
 
+    print('\n')
     if function_calls['arguments'] != '':
         logger.info(f'Response via function call: {function_calls["arguments"]}')
         function_calls['arguments'] = json_loads_with_escape(function_calls['arguments'])
