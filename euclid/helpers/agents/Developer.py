@@ -37,6 +37,7 @@ class Developer(Agent):
         print(colored('-------------------------', 'green'))
         convo_dev_task = AgentConvo(self)
         task_steps = convo_dev_task.send_message('development/task/breakdown.prompt', {
+            "name": self.project.args['name'],
             "app_summary": self.project.high_level_summary,
             "clarification": [],
             "user_stories": self.project.user_stories,
@@ -94,7 +95,7 @@ class Developer(Agent):
 
         os_info = get_os_info()
         os_specific_techologies = self.convo_os_specific_tech.send_message('development/env_setup/specs.prompt',
-            { "os_info": os_info, "technologies": self.project.architecture }, FILTER_OS_TECHNOLOGIES)
+            { "name": self.project.args['name'], "os_info": os_info, "technologies": self.project.architecture }, FILTER_OS_TECHNOLOGIES)
 
         for technology in os_specific_techologies:
             llm_response = self.convo_os_specific_tech.send_message('development/env_setup/install_next_technology.prompt',

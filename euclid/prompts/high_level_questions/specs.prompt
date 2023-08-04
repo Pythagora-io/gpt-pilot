@@ -1,4 +1,4 @@
-I want you to create the application (let's call it Euclid) that can be described like this:
+I want you to create the application (let's call it "{{ name }}") that can be described like this:
 ```
 {{ prompt }}
 ```
@@ -19,6 +19,6 @@ Here is an overview of the tasks that you need to do:
 3. Break down user tasks. In this task, you will think about the app description, answers from step #1 and the user stories from the step #2 and create a list of user tasks that a user needs to do to interact with the app. In the example description, user tasks could be:
 - `user runs the CLI command in which they specify the keyword youtube channel needs to contain and the location where the CSV file will be saved to`
 
-Let's start with the task #1 Getting additional answers. Think about the description for the app Euclid and ask questions that you would like to get cleared before going onto breaking down the user stories.
+Let's start with the task #1 Getting additional answers. Think about the description for the app "{{ name }}" and ask questions that you would like to get cleared before going onto breaking down the user stories.
 
 {{single_question}}

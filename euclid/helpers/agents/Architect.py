@@ -31,10 +31,11 @@ class Architect(Agent):
         logger.info(f"Planning project architecture...")
 
         architecture = self.convo_architecture.send_message('architecture/technologies.prompt',
-            {'prompt': self.project.high_level_summary,
-            'user_stories': self.project.user_stories,
-            'user_tasks': self.project.user_tasks,
-            'app_type': self.project.args['app_type']}, ARCHITECTURE)
+            {'name': self.project.args['name'],
+             'prompt': self.project.high_level_summary,
+             'user_stories': self.project.user_stories,
+             'user_tasks': self.project.user_tasks,
+             'app_type': self.project.args['app_type']}, ARCHITECTURE)
 
         if self.project.args.get('advanced', False):
             architecture = get_additional_info_from_user(architecture, 'architect')

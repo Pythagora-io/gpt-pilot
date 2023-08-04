@@ -1,6 +1,6 @@
-You are working in a software development agency and a project manager approached you telling you that you're assigned to work on a new project. You  are working on a {{app_type}} called Euclid and you need to create specifications on what technologies should be used in this project.
+You are working in a software development agency and a project manager approached you telling you that you're assigned to work on a new project. You  are working on a {{app_type}} called "{{ name }}" and you need to create specifications on what technologies should be used in this project.
 
-Here is a high level description of Euclid:
+Here is a high level description of "{{ name }}":
 ```
 {{ prompt }}
 ```
@@ -13,18 +13,18 @@ A: {{ clarification.answer }}
 {% endfor %}
 ```
 
-Here are user stories that specify how users use Euclid:
+Here are user stories that specify how users use "{{ name }}":
 ```
 {% for story in user_stories %}
 - {{ story }}
 {% endfor %}
 ```
 
-Here are user tasks that specify what users need to do to interact with Euclid:
+Here are user tasks that specify what users need to do to interact with "{{ name }}":
 ```
 {% for task in user_tasks %}
 - {{ task }}
 {% endfor %}
 ```
 
-Now, based on the app's description, user stories and user tasks, think step by step and write up all technologies that will be used by your development team to create the app Euclid. Do not write any explanations behind your choices but only a list of technologies that will be used.
+Now, based on the app's description, user stories and user tasks, think step by step and write up all technologies that will be used by your development team to create the app "{{ name }}". Do not write any explanations behind your choices but only a list of technologies that will be used.
