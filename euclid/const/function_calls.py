@@ -105,8 +105,8 @@ DEV_TASKS_BREAKDOWN = {
                             'properties': {
                                 'type': {
                                     'type': 'string',
-                                    'enum': ['command', 'code_change', 'human_invervention'],
-                                    'description': 'Type of the development step that needs to be done to complete the entire task - it can be "command" or "code_change".',
+                                    'enum': ['command', 'code_change', 'human_intervention'],
+                                    'description': 'Type of the development step that needs to be done to complete the entire task.',
                                 },
                                 'command': {
                                     'type': 'string',
@@ -246,7 +246,7 @@ CODE_CHANGES = {
                                 'type': {
                                     'type': 'string',
                                     'enum': ['command', 'code_change'],
-                                    'description': 'Type of the development step that needs to be done to complete the entire task - it can be "command" or "code_change".',
+                                    'description': 'Type of the development step that needs to be done to complete the entire task.',
                                 },
                                 'command': {
                                     'type': 'string',
@@ -412,7 +412,7 @@ GET_TEST_TYPE = {
             'properties': {
                 'type': {
                     'type': 'string',
-                    'description': f'Type of a test that needs to be run. It can be "automated_test", "command_test" or "manual_test".',
+                    'description': f'Type of a test that needs to be run.',
                     'enum': ['automated_test', 'command_test', 'manual_test']
                 },
                 'command': {
