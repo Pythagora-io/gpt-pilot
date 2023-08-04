@@ -3,7 +3,7 @@ import os
 from termcolor import colored
 from const.common import IGNORE_FOLDERS
 from utils.questionary import styled_text
-from helpers.files import get_files_content
+from helpers.files import get_files_content, clear_directory
 from helpers.cli import build_directory_tree
 from helpers.agents.TechLead import TechLead
 from helpers.agents.Developer import Developer
@@ -91,6 +91,7 @@ class Project:
         development_step = DevelopmentSteps.get(DevelopmentSteps.id == development_step_id)
         file_snapshots = FileSnapshot.select().where(FileSnapshot.development_step == development_step)
 
+        clear_directory(self.root_path, IGNORE_FOLDERS)
         for file_snapshot in file_snapshots:
             full_path = self.root_path + '/' + file_snapshot.name
             # Ensure directory exists
