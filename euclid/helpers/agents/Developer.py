@@ -52,22 +52,33 @@ class Developer(Agent):
 
         self.execute_task(convo_dev_task, task_steps)
 
-    def execute_task(self, convo, task_steps):
+    def execute_task(self, convo, task_steps, test_command=None, reset_convo=True):
         convo.save_branch('after_task_breakdown')
+
         for (i, step) in enumerate(task_steps):
-            convo.load_branch('after_task_breakdown')
+            if reset_convo:
+                convo.load_branch('after_task_breakdown')
+
             if step['type'] == 'command':
                 run_command_until_success(step['command'], step['command_timeout'], convo)
+
             elif step['type'] == 'code_change':
                 print(f'Implementing code changes for `{step["code_change_description"]}`')
                 code_monkey = CodeMonkey(self.project, self)
                 updated_convo = code_monkey.implement_code_changes(convo, step['code_change_description'], i)
                 self.test_code_changes(code_monkey, updated_convo)
+
             elif step['type'] == 'human_intervention':
-                self.project.ask_for_human_intervention(step['human_intervention_description'])
+                self.project.ask_for_human_intervention('I need your help! Can you try debugging this yourself and let me take over afterwards? Here are the details about the issue:', step['human_intervention_description'])
+
             else:
                 raise Exception('Step type must be either run_command or code_change.')
             
+            if test_command is not None and step['check_if_fixed']:
+                response = execute_command_and_check_cli_response(test_command['command'], test_command['timeout'], convo)
+                if response == 'DONE':
+                    return True
+
     def set_up_environment(self):
         self.project.current_step = 'environment_setup'
         self.convo_os_specific_tech = AgentConvo(self)

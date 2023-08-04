@@ -1,2 +1,5 @@
-Ok, we need to debug this issue so we can execute `{{ command }}` successfully. In case you cannot debug this by running any command and need a human assistance, respond with `NEED_HUMAN`. Write the command I need to run next to solve this issue in the following format:
-COMMAND: {command_that_needs_to_be_ran}
+{% if debugging_try_num == 0 %}
+Ok, we need to debug this issue so we can execute `{{ command }}` successfully. In case you cannot debug this by running any command and need a human assistance, respond with `NEED_HUMAN`. Write a step by step explanation of what needs to be done that will debug this issue
+{% else %}
+I've tried all you suggested but it's still not working. Can you suggest other things I can try to debug this issue?
+{% endif %}

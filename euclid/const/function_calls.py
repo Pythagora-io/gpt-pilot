@@ -445,3 +445,57 @@ GET_TEST_TYPE = {
         'test_changes': lambda type, command=None, automated_test_description=None, manual_test_description=None: (type, command, automated_test_description, manual_test_description)
     }
 }
+
+DEBUG_STEPS_BREAKDOWN = {
+    'definitions': [
+        {
+            'name': 'start_debugging',
+            'description': 'Starts the debugging process based on the list of steps that need to be done to debug the problem.',
+            'parameters': {
+                'type': 'object',
+                "properties": {
+                    "steps": {
+                        'type': 'array',
+                        'description': 'List of steps that need to be done to debug the problem.',
+                        'items': {
+                            'type': 'object',
+                            'description': 'A single step that needs to be done to get closer to debugging this issue.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
+                            'properties': {
+                                'type': {
+                                    'type': 'string',
+                                    'enum': ['command', 'code_change', 'human_intervention'],
+                                    'description': 'Type of the step that needs to be done to debug this issue.',
+                                },
+                                'command': {
+                                    'type': 'string',
+                                    'description': 'Command that needs to be complete this step in debugging. This should be used only if the task is of a type "command".',
+                                },
+                                'command_timeout': {
+                                    'type': 'number',
+                                    'description': 'Timeout in milliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
+                                },
+                                'code_change_description': {
+                                    'type': 'string',
+                                    'description': 'Description of a step in debugging this issue when there are code changes required. This should be used only if the task is of a type "code_change" and it should thoroughly describe what needs to be done to implement the code change for a single file - it cannot include changes for multiple files.',
+                                },
+                                'human_intervention_description': {
+                                    'type': 'string',
+                                    'description': 'Description of a step in debugging this issue when there is a human intervention needed. This should be used only if the task is of a type "human_intervention".',
+                                },
+                                "check_if_fixed": {
+                                    'type': 'boolean',
+                                    'description': 'Flag that indicates if the original command that triggered the error that\'s being debugged should be tried after this step to check if the error is fixed. If this step is just one step that can\'t fix the error by itself, then `check_if_fixed` should be FALSE. If this step can fix the error by itself, then `check_if_fixed` should be TRUE.',
+                                }
+                            },
+                            'required': ['type', 'check_if_fixed'],
+                        }
+                    }
+                },
+                "required": ['steps'],
+            },
+        },
+    ],
+    'functions': {
+        'start_debugging': lambda steps: steps
+    },
+}

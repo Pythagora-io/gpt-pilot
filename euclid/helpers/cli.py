@@ -7,6 +7,7 @@ import time
 
 from termcolor import colored
 from database.database import get_command_run_from_hash_id, save_command_run
+from const.function_calls import DEBUG_STEPS_BREAKDOWN
 
 from utils.questionary import styled_text
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES
@@ -144,7 +145,7 @@ def execute_command_and_check_cli_response(command, timeout, convo):
 
 def run_command_until_success(command, timeout, convo):
     command_executed = False
-    for _ in range(MAX_COMMAND_DEBUG_TRIES):
+    for i in range(MAX_COMMAND_DEBUG_TRIES):
         cli_response = execute_command(convo.agent.project, command, timeout)
         response = convo.send_message('dev_ops/ran_command.prompt',
             {'cli_response': cli_response, 'command': command})
@@ -153,9 +154,20 @@ def run_command_until_success(command, timeout, convo):
         if command_executed:
             break
 
-        command = response
+        debugging_plan = convo.send_message('dev_ops/debug.prompt',
+            { 'command': command, 'debugging_try_num': i },
+            DEBUG_STEPS_BREAKDOWN)
+
+        # TODO refactor to nicely get the developer agent
+        convo.agent.project.developer.execute_task(
+            convo,
+            debugging_plan,
+            {'command': command, 'timeout': timeout},
+            False)
 
     if not command_executed:
+        # TODO explain better how should the user approach debugging
+        # we can copy the entire convo to clipboard so they can paste it in the playground
         convo.agent.project.ask_for_human_intervention(
             'It seems like I cannot debug this problem by myself. Can you please help me and try debugging it yourself?',
             command
