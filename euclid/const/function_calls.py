@@ -355,10 +355,10 @@ GET_FILES = {
             'properties': {
                 'files': {
                     'type': 'array',
-                    'description': f'List of files that need to be analized to implement the reqired changes.',
+                    'description': f'List of files that need to be analized to implement the reqired changes. Any file name in this array MUST be from the directory tree listed in the previous message.',
                     'items': {
                         'type': 'string',
-                        'description': f'A single file name that needs to be analized to implement the reqired changes. Remember, this is a file name with path relative to the project root. For example, if a file path is `{{project_root}}/models/model.py`, this value needs to be `models/model.py`.',
+                        'description': f'A single file name that needs to be analized to implement the reqired changes. Remember, this is a file name with path relative to the project root. For example, if a file path is `{{project_root}}/models/model.py`, this value needs to be `models/model.py`. This file name MUST be listed in the directory from the previous message.',
                     }
                 }
             },
