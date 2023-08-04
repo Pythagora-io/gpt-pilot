@@ -140,7 +140,7 @@ def save_development_step(app_id, prompt_path, prompt_data, llm_req_num, message
     app = get_app(app_id)
     hash_id = hash_data({
         'prompt_path': prompt_path,
-        'prompt_data': prompt_data,
+        'prompt_data': {k: v for k, v in prompt_data.items() if k not in {"directory_tree"}},
         'llm_req_num': llm_req_num
     })
     try:
@@ -152,7 +152,7 @@ def save_development_step(app_id, prompt_path, prompt_data, llm_req_num, message
             .execute())
 
         dev_step = DevelopmentSteps.get_by_id(inserted_id)
-        print(colored(f"Saved development step with id {dev_step.id}", "yellow"))
+        print(colored(f"Saved DEV step => {dev_step.id}", "yellow"))
     except IntegrityError:
         print(f"A Development Step with hash_id {hash_id} already exists.")
         return None
@@ -188,7 +188,7 @@ def hash_and_save_step(Model, app_id, hash_data_args, data_fields, message):
         record = Model.get_by_id(inserted_id)
         print(colored(f"{message} with id {record.id}", "yellow"))
     except IntegrityError:
-        print(f"A record with hash_id {hash_id} already exists for {Model}.")
+        print(f"A record with hash_id {hash_id} already exists for {Model.__name__}.")
         return None
     return record
 
@@ -214,13 +214,12 @@ def get_command_run_from_hash_id(project, command):
 def get_development_step_from_hash_id(app_id, prompt_path, prompt_data, llm_req_num):
     hash_id = hash_data({
         'prompt_path': prompt_path,
-        'prompt_data': prompt_data,
+        'prompt_data': {k: v for k, v in prompt_data.items() if k not in {"directory_tree"}},
         'llm_req_num': llm_req_num
     })
     try:
         dev_step = DevelopmentSteps.get((DevelopmentSteps.hash_id == hash_id) & (DevelopmentSteps.app == app_id))
     except DoesNotExist:
-        print(f"No Development Step found with hash_id {hash_id}")
         return None
     return dev_step
 

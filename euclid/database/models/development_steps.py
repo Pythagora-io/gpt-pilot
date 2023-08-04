@@ -9,7 +9,7 @@ from database.models.app import App
 class DevelopmentSteps(BaseModel):
     id = AutoField()  # This will serve as the primary key
     app = ForeignKeyField(App)
-    hash_id = CharField(unique=True, null=False)
+    hash_id = CharField(null=False)
     messages = BinaryJSONField(null=True)
     llm_response = BinaryJSONField(null=False)
 

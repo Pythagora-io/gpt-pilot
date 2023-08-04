@@ -7,7 +7,7 @@ from database.models.app import App
 class CommandRuns(BaseModel):
     id = AutoField()
     app = ForeignKeyField(App)
-    hash_id = CharField(unique=True, null=False)
+    hash_id = CharField(null=False)
     command = TextField(null=True)
     cli_response = TextField(null=True)
 
