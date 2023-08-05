@@ -37,7 +37,7 @@ class Architect(Agent):
             'app_type': self.project.args['app_type']}, ARCHITECTURE)
 
         if self.project.args.get('advanced', False):
-            architecture = get_additional_info_from_user(architecture, 'architect')
+            architecture = get_additional_info_from_user(self.project, architecture, 'architect')
 
         logger.info(f"Final architecture: {architecture}")
 

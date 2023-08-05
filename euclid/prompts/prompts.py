@@ -36,8 +36,9 @@ def ask_for_app_type():
     return answer
 
 
-def ask_for_main_app_definition():
+def ask_for_main_app_definition(project):
     description = styled_text(
+        project,
         "Describe your app in as many details as possible."
     )
 
@@ -47,6 +48,7 @@ def ask_for_main_app_definition():
 
     while True:
         confirmation = styled_text(
+            project,
             "Do you want to add anything else? If not, just press ENTER."
         )
 
@@ -62,9 +64,9 @@ def ask_for_main_app_definition():
     return description
 
 
-def ask_user(question, require_some_input=True):
+def ask_user(project, question, require_some_input=True):
     while True:
-        answer = styled_text(question)
+        answer = styled_text(project, question)
 
         if answer is None:
             print("Exiting application.")
@@ -77,7 +79,7 @@ def ask_user(question, require_some_input=True):
             return answer
 
 
-def get_additional_info_from_openai(messages):
+def get_additional_info_from_openai(project, messages):
     is_complete = False
     while not is_complete:
         # Obtain clarifications using the OpenAI API
@@ -89,7 +91,7 @@ def get_additional_info_from_openai(messages):
                 return messages
 
             # Ask the question to the user
-            answer = ask_user(response['text'])
+            answer = ask_user(project, response['text'])
 
             # Add the answer to the messages
             messages.append({'role': 'assistant', 'content': response['text']})
@@ -103,7 +105,7 @@ def get_additional_info_from_openai(messages):
 
 
 # TODO refactor this to comply with AgentConvo class
-def get_additional_info_from_user(messages, role):
+def get_additional_info_from_user(project,  messages, role):
     # TODO process with agent convo
     updated_messages = []
 
@@ -115,7 +117,7 @@ def get_additional_info_from_user(messages, role):
             print(colored(
                 f"Please check this message and say what needs to be changed. If everything is ok just press ENTER",
                 "yellow"))
-            answer = ask_user(message, False)
+            answer = ask_user(project, message, False)
             if answer.lower() == '':
                 break
             response = create_gpt_chat_completion(

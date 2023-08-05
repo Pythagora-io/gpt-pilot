@@ -18,6 +18,7 @@ class Project:
         self.args = args
         self.llm_req_num = 0
         self.command_runs_count = 0
+        self.user_inputs_count = 0
         self.skip_steps = False if ('skip_until_dev_step' in args and args['skip_until_dev_step'] == '0') else True
         self.skip_until_dev_step = args['skip_until_dev_step'] if 'skip_until_dev_step' in args else None
         # TODO make flexible
@@ -108,5 +109,6 @@ class Project:
         answer = ''
         while answer != 'continue':
             answer = styled_text(
+                self,
                 'Once you are ready, type "continue" to continue.',
             )

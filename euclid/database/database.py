@@ -18,6 +18,7 @@ from database.models.environment_setup import EnvironmentSetup
 from database.models.development import Development
 from database.models.file_snapshot import FileSnapshot
 from database.models.command_runs import CommandRuns
+from database.models.user_inputs import UserInputs
 
 
 def save_user(user_id, email, password):
@@ -210,6 +211,24 @@ def get_command_run_from_hash_id(project, command):
     }
     return get_db_model_from_hash_id(data_to_hash, CommandRuns, project.args['app_id'])
 
+def save_user_input(project, query, user_input):
+    hash_data_args = {
+        'query': query,
+        'user_inputs_count': project.user_inputs_count,
+    }
+    data_fields = {
+        'query': query,
+        'user_input': user_input,
+    }
+    return hash_and_save_step(UserInputs, project.args['app_id'], hash_data_args, data_fields, "Saved User Input")
+
+def get_user_input_from_hash_id(project, query):
+    data_to_hash = {
+        'query': query,
+        'user_inputs_count': project.user_inputs_count
+    }
+    return get_db_model_from_hash_id(data_to_hash, UserInputs, project.args['app_id'])
+
 
 def get_development_step_from_hash_id(app_id, prompt_path, prompt_data, llm_req_num):
     hash_id = hash_data({
@@ -239,6 +258,7 @@ def create_tables():
             Development,
             FileSnapshot,
             CommandRuns,
+            UserInputs,
         ])
 
 
@@ -256,7 +276,8 @@ def drop_tables():
             EnvironmentSetup,
             Development,
             FileSnapshot,
-            CommandRuns
+            CommandRuns,
+            UserInputs,
             ]:
             database.execute_sql(f'DROP TABLE IF EXISTS "{table._meta.table_name}" CASCADE')
 

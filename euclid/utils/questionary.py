@@ -1,5 +1,8 @@
 from prompt_toolkit.styles import Style
 import questionary
+from termcolor import colored
+
+from database.database import save_user_input, get_user_input_from_hash_id
 
 custom_style = Style.from_dict({
     'question': '#FFFFFF bold',  # the color and style of the question
@@ -15,6 +18,18 @@ def styled_select(*args, **kwargs):
     return questionary.select(*args, **kwargs).ask()  # .ask() is included here
 
 
-def styled_text(*args, **kwargs):
-    kwargs["style"] = custom_style  # Set style here
-    return questionary.text(*args, **kwargs).ask()  # .ask() is included here
+def styled_text(project, question):
+    project.user_inputs_count += 1
+    user_input = get_user_input_from_hash_id(project, question)
+    if user_input is not None and project.skip_steps:
+        # if we do, use it
+        print(colored(f'Restoring user input id {user_input.id}: ', 'yellow'), end='')
+        print(colored(f'{user_input.user_input}', 'yellow', attrs=['bold']))
+        return user_input.user_input
+
+    config = {
+        'style': custom_style,
+    }
+    response = questionary.text(question, **config).ask()  # .ask() is included here
+    user_input = save_user_input(project, question, response)
+    return response

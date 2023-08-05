@@ -30,9 +30,10 @@ class ProductOwner(Agent):
 
         save_app(self.project.args)
 
-        main_prompt = ask_for_main_app_definition()
+        main_prompt = ask_for_main_app_definition(self, project)
 
         high_level_messages = get_additional_info_from_openai(
+            self.project,
             generate_messages_from_description(main_prompt, self.project.args['app_type']))
 
         high_level_summary = convo_project_description.send_message('utils/summary.prompt',

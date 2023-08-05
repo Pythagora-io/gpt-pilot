@@ -49,6 +49,7 @@ def execute_command(project, command, timeout=5000):
         return command_run.cli_response
 
     answer = styled_text(
+        project,
         'If yes, just press ENTER and if not, please paste the output of running this command here and press ENTER'
     )
 
