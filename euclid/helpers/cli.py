@@ -24,6 +24,7 @@ def run_command(command, root_path, q_stdout, q_stderr, pid_container):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
+        preexec_fn=os.setsid,
         cwd=root_path
     )
     pid_container[0] = process.pid
@@ -78,7 +79,7 @@ def execute_command(project, command, timeout=5000):
 
         # If timeout is reached, kill the process
         if elapsed_time * 1000 > timeout:
-            os.kill(pid_container[0], signal.SIGKILL)
+            os.killpg(pid_container[0], signal.SIGKILL)
             break
 
         try:
@@ -95,7 +96,10 @@ def execute_command(project, command, timeout=5000):
         stderr_output += q_stderr.get_nowait()
 
     if return_value is None:
-        return_value = output[-2000:] if output != '' else stderr_output[-2000:]
+        return_value = ''
+        if stderr_output != '':
+            return_value = 'stderr:\n```\n' + stderr_output[-2000:] + '\n```\n'
+        return_value += 'stdout:\n```\n' + output[-2000:] + '\n```'
 
     command_run = save_command_run(project, command, return_value)
 
