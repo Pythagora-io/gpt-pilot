@@ -4,9 +4,10 @@ from helpers.AgentConvo import AgentConvo
 from helpers.Agent import Agent
 from logger.logger import logger
 from database.database import save_progress, save_app, get_progress_steps
-from utils.utils import execute_step, generate_app_data, step_already_finished
+from utils.utils import execute_step, generate_app_data, step_already_finished, clean_filename
+from utils.files import setup_workspace
 from prompts.prompts import ask_for_app_type, ask_for_main_app_definition, get_additional_info_from_openai, \
-    generate_messages_from_description
+    generate_messages_from_description, ask_user
 from const.llm import END_RESPONSE
 
 
@@ -27,6 +28,9 @@ class ProductOwner(Agent):
 
         # PROJECT DESCRIPTION
         self.project.args['app_type'] = ask_for_app_type()
+        self.project.args['name'] = clean_filename(ask_user('What is the project name?'))
+
+        setup_workspace(self.project.root_path, self.project.args['name'])
 
         save_app(self.project.args)
 
@@ -34,7 +38,7 @@ class ProductOwner(Agent):
 
         high_level_messages = get_additional_info_from_openai(
             self.project,
-            generate_messages_from_description(main_prompt, self.project.args['app_type']))
+            generate_messages_from_description(main_prompt, self.project.args['app_type'], self.project.args['name']))
 
         high_level_summary = convo_project_description.send_message('utils/summary.prompt',
                                                 {'conversation': '\n'.join(
@@ -69,6 +73,7 @@ class ProductOwner(Agent):
         logger.info(msg)
 
         self.project.user_stories = self.convo_user_stories.continuous_conversation('user_stories/specs.prompt', {
+            'name': self.project.args['name'],
             'prompt': self.project_description,
             'app_type': self.project.args['app_type'],
             'END_RESPONSE': END_RESPONSE

@@ -134,8 +134,9 @@ def get_additional_info_from_user(project,  messages, role):
     return updated_messages
 
 
-def generate_messages_from_description(description, app_type):
+def generate_messages_from_description(description, app_type, name):
     prompt = get_prompt('high_level_questions/specs.prompt', {
+        'name': name,
         'prompt': description,
         'app_type': app_type,
         'MAX_QUESTIONS': MAX_QUESTIONS

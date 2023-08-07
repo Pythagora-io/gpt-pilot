@@ -9,6 +9,7 @@ from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS, MAX_QUE
 from logger.logger import logger
 from termcolor import colored
 from utils.utils import get_prompt_components, escape_json_special_chars
+from utils.spinner import spinner_start, spinner_stop
 
 
 def connect_to_llm():
@@ -98,7 +99,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
         if len(function_calls['definitions']) > 1:
             gpt_data['function_call'] = 'auto'
         else:
-            gpt_data['function_call'] = { 'name': function_calls['definitions'][0]['name'] }
+            gpt_data['function_call'] = {'name': function_calls['definitions'][0]['name']}
 
     try:
         response = stream_gpt_completion(gpt_data, req_type)
@@ -111,7 +112,12 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
 
 
 def stream_gpt_completion(data, req_type):
-    print(colored("Waiting for OpenAI API response...", 'yellow'))
+    def return_result(result_data):
+        # spinner_stop(spinner)
+        return result_data
+
+    # spinner = spinner_start(colored("Waiting for OpenAI API response...", 'yellow'))
+    colored("Waiting for OpenAI API response...", 'yellow')
     api_key = os.getenv("OPENAI_API_KEY")
 
     logger.info(f'Request data: {data}')
@@ -129,10 +135,10 @@ def stream_gpt_completion(data, req_type):
     if response.status_code != 200:
         print(f'problem with request: {response.text}')
         logger.debug(f'problem with request: {response.text}')
-        return {}
+        return return_result({})
 
     gpt_response = ''
-    function_calls = { 'name': '', 'arguments': '' }
+    function_calls = {'name': '', 'arguments': ''}
 
     for line in response.iter_lines():
         # Ignore keep-alive new lines
@@ -150,7 +156,7 @@ def stream_gpt_completion(data, req_type):
                 json_line = json_loads_with_escape(line)
                 if json_line['choices'][0]['finish_reason'] == 'function_call':
                     function_calls['arguments'] = json_loads_with_escape(function_calls['arguments'])
-                    return { 'function_calls': function_calls };
+                    return return_result({'function_calls': function_calls});
 
                 json_line = json_line['choices'][0]['delta']
             except json.JSONDecodeError:
@@ -174,14 +180,15 @@ def stream_gpt_completion(data, req_type):
     if function_calls['arguments'] != '':
         logger.info(f'Response via function call: {function_calls["arguments"]}')
         function_calls['arguments'] = json_loads_with_escape(function_calls['arguments'])
-        return { 'function_calls': function_calls };
+        return return_result({'function_calls': function_calls});
     logger.info(f'Response message: {gpt_response}')
     new_code = postprocessing(gpt_response, req_type)  # TODO add type dynamically
-    return { 'text': new_code }
+    return return_result({'text': new_code})
 
 
 def postprocessing(gpt_response, req_type):
     return gpt_response
+
 
 def json_loads_with_escape(str):
     # return json.loads(escape_json_special_chars(str))

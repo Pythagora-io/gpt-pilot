@@ -197,3 +197,12 @@ def escape_json_special_chars(s):
         s = s.replace(char, replacement)
 
     return s
+
+def clean_filename(filename):
+    # Remove invalid characters
+    cleaned_filename = re.sub(r'[<>:"/\\|?*]', '', filename)
+
+    # Replace whitespace with underscore
+    cleaned_filename = re.sub(r'\s', '_', cleaned_filename)
+
+    return cleaned_filename

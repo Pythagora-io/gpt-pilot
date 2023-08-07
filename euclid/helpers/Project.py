@@ -12,9 +12,12 @@ from helpers.agents.ProductOwner import ProductOwner
 
 from database.models.development_steps import DevelopmentSteps
 from database.models.file_snapshot import FileSnapshot
+from utils.files import get_parent_folder
+
 
 class Project:
-    def __init__(self, args, name=None, description=None, user_stories=None, user_tasks=None, architecture=None, development_plan=None, current_step=None):
+    def __init__(self, args, name=None, description=None, user_stories=None, user_tasks=None, architecture=None,
+                 development_plan=None, current_step=None):
         self.args = args
         self.llm_req_num = 0
         self.command_runs_count = 0
@@ -22,22 +25,23 @@ class Project:
         self.skip_steps = False if ('skip_until_dev_step' in args and args['skip_until_dev_step'] == '0') else True
         self.skip_until_dev_step = args['skip_until_dev_step'] if 'skip_until_dev_step' in args else None
         # TODO make flexible
+        # self.root_path = get_parent_folder('euclid')
         self.root_path = ''
-        self.restore_files({dev_step_id_to_start_from})
+        # self.restore_files({dev_step_id_to_start_from})
 
-        if current_step != None:
+        if current_step is not None:
             self.current_step = current_step
-        if name != None:
+        if name is not None:
             self.name = name
-        if description != None:
+        if description is not None:
             self.description = description
-        if user_stories != None:
+        if user_stories is not None:
             self.user_stories = user_stories
-        if user_tasks != None:
+        if user_tasks is not None:
             self.user_tasks = user_tasks
-        if architecture != None:
+        if architecture is not None:
             self.architecture = architecture
-        if development_plan != None:
+        if development_plan is not None:
             self.development_plan = development_plan
 
     def start(self):
@@ -54,7 +58,7 @@ class Project:
 
         self.developer = Developer(self)
         self.developer.set_up_environment();
-        
+
         self.developer.start_coding()
 
     def get_directory_tree(self):
@@ -63,7 +67,7 @@ class Project:
     def get_test_directory_tree(self):
         # TODO remove hardcoded path
         return build_directory_tree(self.root_path + '/tests', ignore=IGNORE_FOLDERS)
-    
+
     def get_files(self, files):
         files_with_content = []
         for file in files:
@@ -72,7 +76,7 @@ class Project:
                 "content": open(self.get_full_file_path(file), 'r').read()
             })
         return files_with_content
-    
+
     def get_full_file_path(self, file_name):
         return self.root_path + '/' + file_name
 
@@ -86,7 +90,7 @@ class Project:
                 name=file['name'],
                 defaults={'content': file.get('content', '')}
             )
-            file_snapshot.content = content=file['content']
+            file_snapshot.content = content = file['content']
             file_snapshot.save()
 
     def restore_files(self, development_step_id):

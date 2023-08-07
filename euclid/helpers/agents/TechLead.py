@@ -35,6 +35,7 @@ class TechLead(Agent):
         # TODO add clarifications
         self.development_plan = self.convo_development_plan.send_message('development/plan.prompt',
             {
+                "name": self.project.args['name'],
                 "app_summary": self.project.high_level_summary,
                 "clarification": [],
                 "user_stories": self.project.user_stories,

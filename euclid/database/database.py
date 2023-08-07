@@ -33,7 +33,6 @@ def save_user(user_id, email, password):
             return existing_user
 
 
-
 def get_user(user_id=None, email=None):
     if not user_id and not email:
         raise ValueError("Either user_id or email must be provided")
@@ -59,7 +58,7 @@ def save_app(args):
             user = get_user(user_id=args['user_id'])
         except ValueError:
             user = save_user(args['user_id'], args['email'], args['password'])
-        app = App.create(id=args['app_id'], user=user, app_type=args['app_type'])
+        app = App.create(id=args['app_id'], user=user, app_type=args['app_type'], name=args['name'])
 
     return app
 
@@ -146,11 +145,11 @@ def save_development_step(app_id, prompt_path, prompt_data, llm_req_num, message
     })
     try:
         inserted_id = (DevelopmentSteps
-            .insert(app=app, hash_id=hash_id, messages=messages, llm_response=response)
-            .on_conflict(conflict_target=[DevelopmentSteps.app, DevelopmentSteps.hash_id],
-                preserve=[DevelopmentSteps.messages, DevelopmentSteps.llm_response],
-                update={})
-            .execute())
+                       .insert(app=app, hash_id=hash_id, messages=messages, llm_response=response)
+                       .on_conflict(conflict_target=[DevelopmentSteps.app, DevelopmentSteps.hash_id],
+                                    preserve=[DevelopmentSteps.messages, DevelopmentSteps.llm_response],
+                                    update={})
+                       .execute())
 
         dev_step = DevelopmentSteps.get_by_id(inserted_id)
         print(colored(f"Saved DEV step => {dev_step.id}", "yellow"))
@@ -159,6 +158,7 @@ def save_development_step(app_id, prompt_path, prompt_data, llm_req_num, message
         return None
     return dev_step
 
+
 def get_db_model_from_hash_id(data_to_hash, model, app_id):
     hash_id = hash_data(data_to_hash)
     try:
@@ -166,6 +166,7 @@ def get_db_model_from_hash_id(data_to_hash, model, app_id):
     except DoesNotExist:
         return None
     return db_row
+
 
 def hash_and_save_step(Model, app_id, hash_data_args, data_fields, message):
     app = get_app(app_id)
@@ -180,11 +181,11 @@ def hash_and_save_step(Model, app_id, hash_data_args, data_fields, message):
 
     try:
         inserted_id = (Model
-            .insert(**data_to_insert)
-            .on_conflict(conflict_target=[Model.app, Model.hash_id],
-                         preserve=[field for field in data_fields.keys()],
-                         update={})
-            .execute())
+                       .insert(**data_to_insert)
+                       .on_conflict(conflict_target=[Model.app, Model.hash_id],
+                                    preserve=[field for field in data_fields.keys()],
+                                    update={})
+                       .execute())
 
         record = Model.get_by_id(inserted_id)
         print(colored(f"{message} with id {record.id}", "yellow"))
@@ -192,6 +193,7 @@ def hash_and_save_step(Model, app_id, hash_data_args, data_fields, message):
         print(f"A record with hash_id {hash_id} already exists for {Model.__name__}.")
         return None
     return record
+
 
 def save_command_run(project, command, cli_response):
     hash_data_args = {
@@ -203,6 +205,7 @@ def save_command_run(project, command, cli_response):
         'cli_response': cli_response,
     }
     return hash_and_save_step(CommandRuns, project.args['app_id'], hash_data_args, data_fields, "Saved Command Run")
+
 
 def get_command_run_from_hash_id(project, command):
     data_to_hash = {
@@ -280,7 +283,6 @@ def drop_tables():
             UserInputs,
             ]:
             database.execute_sql(f'DROP TABLE IF EXISTS "{table._meta.table_name}" CASCADE')
-
 
 
 if __name__ == "__main__":

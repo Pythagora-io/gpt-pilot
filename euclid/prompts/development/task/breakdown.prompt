@@ -1,6 +1,6 @@
-You are working on a web app called Euclid and you need to write code for the entire application based on the tasks that the tech lead gives you. So that you understand better what you're working on, you're given other specs for Euclid as well.
+You are working on a web app called "{{ name }}" and you need to write code for the entire application based on the tasks that the tech lead gives you. So that you understand better what you're working on, you're given other specs for "{{ name }}" as well.
 
-Here is a high level description of Euclid:
+Here is a high level description of "{{ name }}":
 ```
 {{ app_summary }}
 ```
@@ -13,12 +13,12 @@ A: {{ clarification.answer }}
 {% endfor %}
 ```
 #}
-Here are user stories that specify how users use Euclid:
+Here are user stories that specify how users use "{{ name }}":
 ```{% for story in user_stories %}
 - {{ story }}{% endfor %}
 ```
 
-Here are user tasks that specify what users need to do to interact with Euclid:
+Here are user tasks that specify what users need to do to interact with "{{ name }}":
 ```{% for task in user_tasks %}
 - {{ task }}{% endfor %}
 ```
