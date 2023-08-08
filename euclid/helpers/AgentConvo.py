@@ -54,7 +54,9 @@ class AgentConvo:
         # TODO remove this once the database is set up properly
         message_content = response[0] if type(response) == tuple else response
         if isinstance(message_content, list):
-            if len(message_content) > 0 and isinstance(message_content[0], dict):
+            if 'to_message' in function_calls:
+                string_response = function_calls['to_message'](message_content)
+            elif len(message_content) > 0 and isinstance(message_content[0], dict):
                 string_response = [
                     f'#{i}\n' + array_of_objects_to_string(d)
                     for i, d in enumerate(message_content)
