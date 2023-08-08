@@ -1,9 +1,7 @@
 {% if step_index != 0 %}
 So far, steps {{ finished_steps }} are finished so let's do
 {% else %}
-Let's start with the
-{% endif %}
-step #{{ step_index }}:
+Let's start with the{% endif %} step #{{ step_index }}:
 ```
 {{ step_description }}
 ```
