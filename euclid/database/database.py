@@ -19,6 +19,7 @@ from database.models.development import Development
 from database.models.file_snapshot import FileSnapshot
 from database.models.command_runs import CommandRuns
 from database.models.user_inputs import UserInputs
+from database.models.files import File
 
 
 def save_user(user_id, email, password):
@@ -262,6 +263,7 @@ def create_tables():
             FileSnapshot,
             CommandRuns,
             UserInputs,
+            File,
         ])
 
 
@@ -281,6 +283,7 @@ def drop_tables():
             FileSnapshot,
             CommandRuns,
             UserInputs,
+            File,
             ]:
             database.execute_sql(f'DROP TABLE IF EXISTS "{table._meta.table_name}" CASCADE')
 

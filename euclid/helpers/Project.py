@@ -2,6 +2,8 @@ import os
 
 from termcolor import colored
 from const.common import IGNORE_FOLDERS
+from database.models.app import App
+from database.database import get_app
 from utils.questionary import styled_text
 from helpers.files import get_files_content, clear_directory
 from helpers.cli import build_directory_tree
@@ -28,6 +30,9 @@ class Project:
         # self.root_path = get_parent_folder('euclid')
         self.root_path = ''
         # self.restore_files({dev_step_id_to_start_from})
+
+        if 'app_id' in args:
+            self.app = get_app(args['app_id'])
 
         if current_step is not None:
             self.current_step = current_step

@@ -1,4 +1,5 @@
 from const.function_calls import GET_FILES, DEV_STEPS, IMPLEMENT_CHANGES, CODE_CHANGES
+from database.models.files import File
 from helpers.files import update_file
 from helpers.AgentConvo import AgentConvo
 from helpers.Agent import Agent
@@ -27,6 +28,14 @@ class CodeMonkey(Agent):
         }, IMPLEMENT_CHANGES, True)
 
         for file_data in changes:
-            update_file(self.project.get_full_file_path(file_data['name']), file_data['content'])
+            if file_data['description'] != '':
+                    (File.insert(app=self.project.app, name=file_data['path'], description=file_data['description'])
+                        .on_conflict(
+                            conflict_target=[File.app, File.name],
+                            preserve=[],
+                            update={'description': file_data['description']})
+                        .execute())
+
+            update_file(self.project.get_full_file_path(file_data['path']), file_data['content'])
 
         return convo
