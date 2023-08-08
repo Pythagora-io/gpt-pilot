@@ -400,7 +400,8 @@ IMPLEMENT_CHANGES = {
     }],
     'functions': {
         'save_files': lambda files: files
-    }
+    },
+    'to_message': lambda files: [f'File `{file["name"]}` saved to the disk and currently looks like this:\n```\n{file["content"]}\n```' for file in files]
 }
 
 GET_TEST_TYPE = {
