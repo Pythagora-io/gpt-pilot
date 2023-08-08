@@ -7,9 +7,10 @@ from database.models.app import App
 class File(BaseModel):
     app = ForeignKeyField(App)
     name = CharField()
+    path = CharField()
     description = TextField()
 
     class Meta:
         indexes = (
-            (('app', 'name'), True),
+            (('app', 'name', 'path'), True),
         )

@@ -387,11 +387,20 @@ IMPLEMENT_CHANGES = {
                                 'type': 'string',
                                 'description': 'Name of the file that needs to be saved on the disk.',
                             },
+                            'path': {
+                                'type': 'string',
+                                'description': 'Path of the file that needs to be saved on the disk.',
+                            },
                             'content': {
                                 'type': 'string',
                                 'description': 'Full content of the file that needs to be saved on the disk.',
-                            }
-                        }
+                            },
+                            'description': {
+                                'type': 'string',
+                                'description': 'Description of the file that needs to be saved on the disk. This description doesn\'t need to explain what is being done currently in this task but rather what is the idea behind this file - what do we want to put in this file in the future. Write the description ONLY if this is the first time this file is being saved. If this file already exists on the disk, leave this field empty.',
+                            },
+                        },
+                        'required': ['name', 'path', 'content'],
                     }
                 }
             },

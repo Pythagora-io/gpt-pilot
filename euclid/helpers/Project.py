@@ -78,12 +78,15 @@ class Project:
         for file in files:
             files_with_content.append({
                 "path": file,
-                "content": open(self.get_full_file_path(file), 'r').read()
+                "content": open(self.get_full_file_path('', file), 'r').read()
             })
         return files_with_content
 
-    def get_full_file_path(self, file_name):
-        return self.root_path + '/' + file_name
+    def get_full_file_path(self, file_path, file_name):
+        file_path = file_path.replace('./', '', 1).rstrip(file_name)
+        if not file_path.endswith('/'):
+            file_path = file_path + '/'
+        return self.root_path + file_path + file_name
 
     def save_files_snapshot(self, development_step_id):
         files = get_files_content(self.root_path, ignore=IGNORE_FOLDERS)

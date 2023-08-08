@@ -36,6 +36,7 @@ class Developer(Agent):
         print(colored(f"Implementing task {current_task_index + 1}...\n", "green"))
         print(colored(sibling_tasks[current_task_index]['description'], 'green'))
         print(colored('-------------------------', 'green'))
+
         convo_dev_task = AgentConvo(self)
         task_steps = convo_dev_task.send_message('development/task/breakdown.prompt', {
             "name": self.project.args['name'],
