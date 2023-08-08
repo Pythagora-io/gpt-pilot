@@ -110,7 +110,7 @@ def execute_command(project, command, timeout=5000):
 
     return return_value
 
-def build_directory_tree(path, prefix="", ignore=None, is_last=False):
+def build_directory_tree(path, prefix="", ignore=None, is_last=False, files=None, add_descriptions=False):
     """Build the directory tree structure in tree-like format.
 
     Args:
@@ -133,17 +133,17 @@ def build_directory_tree(path, prefix="", ignore=None, is_last=False):
 
     if os.path.isdir(path):
         # It's a directory, add its name to the output and then recurse into it
-        output += prefix + "|-- " + os.path.basename(path) + "/\n"
+        output += prefix + "|-- " + os.path.basename(path) + ((' - ' + files[os.path.basename(path)].description + ' ' if files and os.path.basename(path) in files and add_descriptions else '')) + "/\n"
 
         # List items in the directory
         items = os.listdir(path)
         for index, item in enumerate(items):
             item_path = os.path.join(path, item)
-            output += build_directory_tree(item_path, prefix + indent, ignore, index == len(items) - 1)
+            output += build_directory_tree(item_path, prefix + indent, ignore, index == len(items) - 1, files, add_descriptions)
 
     else:
         # It's a file, add its name to the output
-        output += prefix + "|-- " + os.path.basename(path) + "\n"
+        output += prefix + "|-- " + os.path.basename(path) + ((' - ' + files[os.path.basename(path)].description + ' ' if files and os.path.basename(path) in files and add_descriptions else '')) + "\n"
 
     return output
 

@@ -15,7 +15,7 @@ class CodeMonkey(Agent):
 
         files_needed = convo.send_message('development/task/request_files_for_code_changes.prompt', {
             "step_description": code_changes_description,
-            "directory_tree": self.project.get_directory_tree(),
+            "directory_tree": self.project.get_directory_tree(True),
             "step_index": step_index,
             "finished_steps": ', '.join(f"#{j}" for j in range(step_index))
         }, GET_FILES)

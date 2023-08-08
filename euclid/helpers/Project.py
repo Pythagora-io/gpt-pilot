@@ -66,8 +66,12 @@ class Project:
 
         self.developer.start_coding()
 
-    def get_directory_tree(self):
-        return build_directory_tree(self.root_path + '/', ignore=IGNORE_FOLDERS)
+    def get_directory_tree(self, with_descriptions=False):
+        files = {}
+        if with_descriptions:
+            files = File.select().where(File.app_id == self.args['app_id'])
+            files = {snapshot.name: snapshot for snapshot in files}
+        return build_directory_tree(self.root_path + '/', ignore=IGNORE_FOLDERS, files=files, add_descriptions=True)
 
     def get_test_directory_tree(self):
         # TODO remove hardcoded path

@@ -46,7 +46,7 @@ class Developer(Agent):
             "user_tasks": self.project.user_tasks,
             "technologies": self.project.architecture,
             "array_of_objects_to_string": array_of_objects_to_string,
-            "directory_tree": self.project.get_directory_tree(),
+            "directory_tree": self.project.get_directory_tree(True),
             "current_task_index": current_task_index,
             "sibling_tasks": sibling_tasks,
             "parent_task": parent_task,
@@ -170,7 +170,7 @@ class Developer(Agent):
 
     def implement_step(self, convo, step_index, type, description):
         # TODO remove hardcoded folder path
-        directory_tree = self.project.get_directory_tree()
+        directory_tree = self.project.get_directory_tree(True)
         step_details = convo.send_message('development/task/next_step.prompt', {
             'finished_steps': [],
             'step_description': description,
