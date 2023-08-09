@@ -10,6 +10,7 @@ class CommandRuns(BaseModel):
     hash_id = CharField(null=False)
     command = TextField(null=True)
     cli_response = TextField(null=True)
+    previous_command_run = ForeignKeyField('self', null=True, column_name='previous_command_run')
 
     class Meta:
         db_table = 'command_runs'

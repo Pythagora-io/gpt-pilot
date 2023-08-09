@@ -24,6 +24,11 @@ class Project:
         self.llm_req_num = 0
         self.command_runs_count = 0
         self.user_inputs_count = 0
+        self.checkpoints = {
+            'last_user_input': None,
+            'last_command_run': None,
+            'last_development_step': None,
+        }
         self.skip_steps = False if ('skip_until_dev_step' in args and args['skip_until_dev_step'] == '0') else True
         self.skip_until_dev_step = args['skip_until_dev_step'] if 'skip_until_dev_step' in args else None
         # TODO make flexible

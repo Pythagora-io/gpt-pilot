@@ -137,7 +137,7 @@ def get_progress_steps(app_id, step=None):
         return steps
 
 
-def save_development_step(app_id, prompt_path, prompt_data, llm_req_num, messages, response):
+def save_development_step(app_id, prompt_path, prompt_data, llm_req_num, messages, response, previous_step=None):
     app = get_app(app_id)
     hash_id = hash_data({
         'prompt_path': prompt_path,
@@ -146,11 +146,11 @@ def save_development_step(app_id, prompt_path, prompt_data, llm_req_num, message
     })
     try:
         inserted_id = (DevelopmentSteps
-                       .insert(app=app, hash_id=hash_id, messages=messages, llm_response=response)
-                       .on_conflict(conflict_target=[DevelopmentSteps.app, DevelopmentSteps.hash_id],
-                                    preserve=[DevelopmentSteps.messages, DevelopmentSteps.llm_response],
-                                    update={})
-                       .execute())
+            .insert(app=app, hash_id=hash_id, messages=messages, llm_response=response, previous_dev_step=previous_step)
+            .on_conflict(conflict_target=[DevelopmentSteps.app, DevelopmentSteps.hash_id],
+                        preserve=[DevelopmentSteps.messages, DevelopmentSteps.llm_response],
+                        update={})
+            .execute())
 
         dev_step = DevelopmentSteps.get_by_id(inserted_id)
         print(colored(f"Saved DEV step => {dev_step.id}", "yellow"))
@@ -184,8 +184,8 @@ def hash_and_save_step(Model, app_id, hash_data_args, data_fields, message):
         inserted_id = (Model
                        .insert(**data_to_insert)
                        .on_conflict(conflict_target=[Model.app, Model.hash_id],
-                                    preserve=[field for field in data_fields.keys()],
-                                    update={})
+                                    preserve=[],
+                                    update=data_fields)
                        .execute())
 
         record = Model.get_by_id(inserted_id)
@@ -204,8 +204,11 @@ def save_command_run(project, command, cli_response):
     data_fields = {
         'command': command,
         'cli_response': cli_response,
+        'previous_command_run': project.checkpoints['last_command_run'],
     }
-    return hash_and_save_step(CommandRuns, project.args['app_id'], hash_data_args, data_fields, "Saved Command Run")
+    command_run = hash_and_save_step(CommandRuns, project.args['app_id'], hash_data_args, data_fields, "Saved Command Run")
+    project.checkpoints['last_command_run'] = command_run
+    return command_run
 
 
 def get_command_run_from_hash_id(project, command):
@@ -213,7 +216,8 @@ def get_command_run_from_hash_id(project, command):
         'command': command,
         'command_runs_count': project.command_runs_count
     }
-    return get_db_model_from_hash_id(data_to_hash, CommandRuns, project.args['app_id'])
+    command_run = get_db_model_from_hash_id(data_to_hash, CommandRuns, project.args['app_id'])
+    return command_run
 
 def save_user_input(project, query, user_input):
     hash_data_args = {
@@ -223,15 +227,19 @@ def save_user_input(project, query, user_input):
     data_fields = {
         'query': query,
         'user_input': user_input,
+        'previous_user_input': project.checkpoints['last_user_input'],
     }
-    return hash_and_save_step(UserInputs, project.args['app_id'], hash_data_args, data_fields, "Saved User Input")
+    user_input = hash_and_save_step(UserInputs, project.args['app_id'], hash_data_args, data_fields, "Saved User Input")
+    project.checkpoints['last_user_input'] = user_input
+    return user_input
 
 def get_user_input_from_hash_id(project, query):
     data_to_hash = {
         'query': query,
         'user_inputs_count': project.user_inputs_count
     }
-    return get_db_model_from_hash_id(data_to_hash, UserInputs, project.args['app_id'])
+    user_input = get_db_model_from_hash_id(data_to_hash, UserInputs, project.args['app_id'])
+    return user_input
 
 
 def get_development_step_from_hash_id(app_id, prompt_path, prompt_data, llm_req_num):

@@ -12,6 +12,7 @@ class DevelopmentSteps(BaseModel):
     hash_id = CharField(null=False)
     messages = BinaryJSONField(null=True)
     llm_response = BinaryJSONField(null=False)
+    previous_dev_step = ForeignKeyField('self', null=True, column_name='previous_dev_step')
 
     class Meta:
         db_table = 'development_steps'

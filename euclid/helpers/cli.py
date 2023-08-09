@@ -48,6 +48,7 @@ def execute_command(project, command, timeout=5000):
     command_run = get_command_run_from_hash_id(project, command)
     if command_run is not None and project.skip_steps:
         # if we do, use it
+        project.checkpoints['last_command_run'] = command_run
         print(colored(f'Restoring command run response id {command_run.id}:\n```\n{command_run.cli_response}```', 'yellow'))
         return command_run.cli_response
 
