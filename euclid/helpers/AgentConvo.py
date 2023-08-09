@@ -30,7 +30,7 @@ class AgentConvo:
 
         # check if we already have the LLM response saved
         self.agent.project.llm_req_num += 1
-        development_step = get_development_step_from_hash_id(self.agent.project.args['app_id'], prompt_path, prompt_data, self.agent.project.llm_req_num)
+        development_step = get_development_step_from_hash_id(self.agent.project, prompt_path, prompt_data, self.agent.project.llm_req_num)
         if development_step is not None and self.agent.project.skip_steps:
             # if we do, use it
             if self.agent.project.skip_until_dev_step and str(development_step.id) == self.agent.project.skip_until_dev_step:
@@ -44,7 +44,7 @@ class AgentConvo:
         else:
             # if we don't, get the response from LLM
             response = create_gpt_chat_completion(self.messages, self.high_level_step, function_calls=function_calls)
-            development_step = save_development_step(self.agent.project.args['app_id'], prompt_path, prompt_data, self.agent.project.llm_req_num, self.messages, response, self.agent.project.checkpoints['last_development_step'])
+            development_step = save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, response)
             self.agent.project.checkpoints['last_development_step'] = development_step
             self.agent.project.save_files_snapshot(development_step.id)
 
