@@ -36,13 +36,15 @@ class AgentConvo:
             if self.agent.project.skip_until_dev_step and str(development_step.id) == self.agent.project.skip_until_dev_step:
                 self.agent.project.skip_steps = False
             print(colored(f'Restoring development step with id {development_step.id}', 'yellow'))
+            self.agent.project.checkpoints['last_development_step'] = development_step
             self.agent.project.restore_files(development_step.id)
             response = development_step.llm_response
             self.messages = development_step.messages
         else:
             # if we don't, get the response from LLM
             response = create_gpt_chat_completion(self.messages, self.high_level_step, function_calls=function_calls)
-            development_step = save_development_step(self.agent.project.args['app_id'], prompt_path, prompt_data, self.agent.project.llm_req_num, self.messages, response)
+            development_step = save_development_step(self.agent.project.args['app_id'], prompt_path, prompt_data, self.agent.project.llm_req_num, self.messages, response, self.agent.project.checkpoints['last_development_step'])
+            self.agent.project.checkpoints['last_development_step'] = development_step
             self.agent.project.save_files_snapshot(development_step.id)
 
         # TODO handle errors from OpenAI
@@ -54,7 +56,9 @@ class AgentConvo:
         # TODO remove this once the database is set up properly
         message_content = response[0] if type(response) == tuple else response
         if isinstance(message_content, list):
-            if len(message_content) > 0 and isinstance(message_content[0], dict):
+            if 'to_message' in function_calls:
+                string_response = function_calls['to_message'](message_content)
+            elif len(message_content) > 0 and isinstance(message_content[0], dict):
                 string_response = [
                     f'#{i}\n' + array_of_objects_to_string(d)
                     for i, d in enumerate(message_content)

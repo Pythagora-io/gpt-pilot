@@ -2,6 +2,8 @@ import os
 
 from termcolor import colored
 from const.common import IGNORE_FOLDERS
+from database.models.app import App
+from database.database import get_app
 from utils.questionary import styled_text
 from helpers.files import get_files_content, clear_directory
 from helpers.cli import build_directory_tree
@@ -12,6 +14,7 @@ from helpers.agents.ProductOwner import ProductOwner
 
 from database.models.development_steps import DevelopmentSteps
 from database.models.file_snapshot import FileSnapshot
+from database.models.files import File
 from utils.files import get_parent_folder
 
 
@@ -22,12 +25,20 @@ class Project:
         self.llm_req_num = 0
         self.command_runs_count = 0
         self.user_inputs_count = 0
+        self.checkpoints = {
+            'last_user_input': None,
+            'last_command_run': None,
+            'last_development_step': None,
+        }
         self.skip_steps = False if ('skip_until_dev_step' in args and args['skip_until_dev_step'] == '0') else True
         self.skip_until_dev_step = args['skip_until_dev_step'] if 'skip_until_dev_step' in args else None
         # TODO make flexible
         # self.root_path = get_parent_folder('euclid')
         self.root_path = ''
         # self.restore_files({dev_step_id_to_start_from})
+
+        if 'app_id' in args:
+            self.app = get_app(args['app_id'])
 
         if current_step is not None:
             self.current_step = current_step
@@ -61,8 +72,12 @@ class Project:
 
         self.developer.start_coding()
 
-    def get_directory_tree(self):
-        return build_directory_tree(self.root_path + '/', ignore=IGNORE_FOLDERS)
+    def get_directory_tree(self, with_descriptions=False):
+        files = {}
+        if with_descriptions:
+            files = File.select().where(File.app_id == self.args['app_id'])
+            files = {snapshot.name: snapshot for snapshot in files}
+        return build_directory_tree(self.root_path + '/', ignore=IGNORE_FOLDERS, files=files, add_descriptions=True)
 
     def get_test_directory_tree(self):
         # TODO remove hardcoded path
@@ -73,12 +88,15 @@ class Project:
         for file in files:
             files_with_content.append({
                 "path": file,
-                "content": open(self.get_full_file_path(file), 'r').read()
+                "content": open(self.get_full_file_path('', file), 'r').read()
             })
         return files_with_content
 
-    def get_full_file_path(self, file_name):
-        return self.root_path + '/' + file_name
+    def get_full_file_path(self, file_path, file_name):
+        file_path = file_path.replace('./', '', 1).rstrip(file_name)
+        if not file_path.endswith('/'):
+            file_path = file_path + '/'
+        return self.root_path + file_path + file_name
 
     def save_files_snapshot(self, development_step_id):
         files = get_files_content(self.root_path, ignore=IGNORE_FOLDERS)

@@ -114,7 +114,7 @@ DEV_TASKS_BREAKDOWN = {
                                 },
                                 'command_timeout': {
                                     'type': 'number',
-                                    'description': 'Timeout in milliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
+                                    'description': 'Timeout in milliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. Remember, this is not in seconds but in milliseconds so likely it always needs to be greater than 1000.',
                                 },
                                 'code_change_description': {
                                     'type': 'string',
@@ -254,7 +254,7 @@ CODE_CHANGES = {
                                 },
                                 'command_timeout': {
                                     'type': 'number',
-                                    'description': 'Timeout in milliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
+                                    'description': 'Timeout in milliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. Remember, this is not in seconds but in milliseconds so likely it always needs to be greater than 1000.',
                                 },
                                 'code_change_description': {
                                     'type': 'string',
@@ -373,25 +373,34 @@ GET_FILES = {
 IMPLEMENT_CHANGES = {
     'definitions': [{
         'name': 'save_files',
-        'description': f'Iterates over the files passed to this function and saves them on the disk.',
+        'description': 'Iterates over the files passed to this function and saves them on the disk.',
         'parameters': {
             'type': 'object',
             'properties': {
                 'files': {
                     'type': 'array',
-                    'description': f'List of files that need to be analized to implement the reqired changes.',
+                    'description': 'List of files that need to be saved.',
                     'items': {
                         'type': 'object',
                         'properties': {
                             'name': {
                                 'type': 'string',
-                                'description': f'Name of the file that needs to be saved on the disk.',
+                                'description': 'Name of the file that needs to be saved on the disk.',
+                            },
+                            'path': {
+                                'type': 'string',
+                                'description': 'Path of the file that needs to be saved on the disk.',
                             },
                             'content': {
                                 'type': 'string',
-                                'description': f'Full content of the file that needs to be saved on the disk.',
-                            }
-                        }
+                                'description': 'Full content of the file that needs to be saved on the disk.',
+                            },
+                            'description': {
+                                'type': 'string',
+                                'description': 'Description of the file that needs to be saved on the disk. This description doesn\'t need to explain what is being done currently in this task but rather what is the idea behind this file - what do we want to put in this file in the future. Write the description ONLY if this is the first time this file is being saved. If this file already exists on the disk, leave this field empty.',
+                            },
+                        },
+                        'required': ['name', 'path', 'content'],
                     }
                 }
             },
@@ -400,7 +409,8 @@ IMPLEMENT_CHANGES = {
     }],
     'functions': {
         'save_files': lambda files: files
-    }
+    },
+    'to_message': lambda files: [f'File `{file["name"]}` saved to the disk and currently looks like this:\n```\n{file["content"]}\n```' for file in files]
 }
 
 GET_TEST_TYPE = {
@@ -412,8 +422,8 @@ GET_TEST_TYPE = {
             'properties': {
                 'type': {
                     'type': 'string',
-                    'description': f'Type of a test that needs to be run.',
-                    'enum': ['automated_test', 'command_test', 'manual_test']
+                    'description': f'Type of a test that needs to be run. If this is just an intermediate step in getting a task done, put `no_test` as the type and we\'ll just go onto the next task without testing.',
+                    'enum': ['automated_test', 'command_test', 'manual_test', 'no_test']
                 },
                 'command': {
                     'type': 'object',
@@ -467,12 +477,19 @@ DEBUG_STEPS_BREAKDOWN = {
                                     'description': 'Type of the step that needs to be done to debug this issue.',
                                 },
                                 'command': {
-                                    'type': 'string',
-                                    'description': 'Command that needs to be complete this step in debugging. This should be used only if the task is of a type "command".',
-                                },
-                                'command_timeout': {
-                                    'type': 'number',
-                                    'description': 'Timeout in milliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
+                                    'type': 'object',
+                                    'description': 'Command that needs to be run to debug this issue. This should be used only if the step is of a type "command".',
+                                    'properties': {
+                                        'command': {
+                                            'type': 'string',
+                                            'description': 'Command that needs to be run to debug this issue.',
+                                        },
+                                        'timeout': {
+                                            'type': 'number',
+                                            'description': 'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
+                                        }
+                                    },
+                                    'required': ['command', 'timeout'],
                                 },
                                 'code_change_description': {
                                     'type': 'string',
@@ -484,7 +501,7 @@ DEBUG_STEPS_BREAKDOWN = {
                                 },
                                 "check_if_fixed": {
                                     'type': 'boolean',
-                                    'description': 'Flag that indicates if the original command that triggered the error that\'s being debugged should be tried after this step to check if the error is fixed. If this step is just one step that can\'t fix the error by itself, then `check_if_fixed` should be FALSE. If this step can fix the error by itself, then `check_if_fixed` should be TRUE.',
+                                    'description': 'Flag that indicates if the original command that triggered the error that\'s being debugged should be tried after this step to check if the error is fixed. If you think that the original command `delete node_modules/ && delete package-lock.json` will pass after this step, then this flag should be set to TRUE and if you think that the original command will still fail after this step, then this flag should be set to FALSE.',
                                 }
                             },
                             'required': ['type', 'check_if_fixed'],

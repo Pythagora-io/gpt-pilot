@@ -10,6 +10,7 @@ class UserInputs(BaseModel):
     hash_id = CharField(null=False)
     query = TextField(null=True)
     user_input = TextField(null=True)
+    previous_user_input = ForeignKeyField('self', null=True, column_name='previous_user_input')
 
     class Meta:
         db_table = 'user_inputs'

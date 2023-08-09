@@ -27,3 +27,5 @@ IGNORE_FOLDERS = [
     'dist',
     'build',
 ]
+
+PROMPT_DATA_TO_IGNORE = {'directory_tree', 'name'}

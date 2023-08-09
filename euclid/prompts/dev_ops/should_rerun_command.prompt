@@ -1,0 +1,1 @@
+Should I rerun the command `{{ command }}` or is this task done? If I should rerun `{{ command }}`, respond only with YES. If I don't need to rerun the command but continue fixing the problem, respond with NEEDS_DEBUGGING and if I don't need to rerun the command and the original problem is fixed, respond with NO.

@@ -1,9 +1,6 @@
 from termcolor import colored
 import os
 
-from database.models.development_steps import DevelopmentSteps
-from database.models.file_snapshot import FileSnapshot
-
 
 def update_file(path, new_content):
     # Ensure the directory exists; if not, create it

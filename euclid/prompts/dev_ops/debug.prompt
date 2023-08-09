@@ -1,5 +1,7 @@
-{% if debugging_try_num == 0 %}
-Ok, we need to debug this issue so we can execute `{{ command }}` successfully. In case you cannot debug this by running any command and need a human assistance, respond with `NEED_HUMAN`. Write a step by step explanation of what needs to be done that will debug this issue
-{% else %}
-I've tried all you suggested but it's still not working. Can you suggest other things I can try to debug this issue?
-{% endif %}
+Ok, we need to debug this issue so we can execute `{{ command }}` successfully. I want you to debug this issue by yourself and I will give you 2 functions that you can use - `run_command` and `implement_code_changes`.
+
+`run_command` function will run a command on the machine and will return the CLI output to you so you can see what to do next.
+
+`implement_code_changes` function will change the code where you just need to thoroughly describe what needs to be implmemented, I will implement the requested changes and let you know.
+
+After this, you need to deside what to do next. You can rerun the command `{{ command }}` to check if the problem is fixed or run another command with `run_command` or change more code with `implement_code_changes`.

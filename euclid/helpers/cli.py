@@ -4,6 +4,7 @@ import signal
 import threading
 import queue
 import time
+import uuid
 
 from termcolor import colored
 from database.database import get_command_run_from_hash_id, save_command_run
@@ -39,12 +40,15 @@ def run_command(command, root_path, q_stdout, q_stderr, pid_container):
 
 def execute_command(project, command, timeout=5000):
     # check if we already have the command run saved
+    if timeout < 1000:
+        timeout *= 1000
     timeout = max(timeout, 2000)
     print(colored(f'Can i execute the command: `{command}` with {timeout}ms timeout?', 'white', attrs=['bold']))
     project.command_runs_count += 1
     command_run = get_command_run_from_hash_id(project, command)
     if command_run is not None and project.skip_steps:
         # if we do, use it
+        project.checkpoints['last_command_run'] = command_run
         print(colored(f'Restoring command run response id {command_run.id}:\n```\n{command_run.cli_response}```', 'yellow'))
         return command_run.cli_response
 
@@ -67,6 +71,7 @@ def execute_command(project, command, timeout=5000):
 
     while True and return_value is None:
         elapsed_time = time.time() - start_time
+        print(colored(f'\rt: {round(elapsed_time * 1000)}ms', 'white', attrs=['bold']), end='', flush=True)
         # Check if process has finished
         if process.poll() is not None:
             # Get remaining lines from the queue
@@ -106,7 +111,7 @@ def execute_command(project, command, timeout=5000):
 
     return return_value
 
-def build_directory_tree(path, prefix="", ignore=None, is_last=False):
+def build_directory_tree(path, prefix="", ignore=None, is_last=False, files=None, add_descriptions=False):
     """Build the directory tree structure in tree-like format.
 
     Args:
@@ -129,17 +134,17 @@ def build_directory_tree(path, prefix="", ignore=None, is_last=False):
 
     if os.path.isdir(path):
         # It's a directory, add its name to the output and then recurse into it
-        output += prefix + "|-- " + os.path.basename(path) + "/\n"
+        output += prefix + "|-- " + os.path.basename(path) + ((' - ' + files[os.path.basename(path)].description + ' ' if files and os.path.basename(path) in files and add_descriptions else '')) + "/\n"
 
         # List items in the directory
         items = os.listdir(path)
         for index, item in enumerate(items):
             item_path = os.path.join(path, item)
-            output += build_directory_tree(item_path, prefix + indent, ignore, index == len(items) - 1)
+            output += build_directory_tree(item_path, prefix + indent, ignore, index == len(items) - 1, files, add_descriptions)
 
     else:
         # It's a file, add its name to the output
-        output += prefix + "|-- " + os.path.basename(path) + "\n"
+        output += prefix + "|-- " + os.path.basename(path) + ((' - ' + files[os.path.basename(path)].description + ' ' if files and os.path.basename(path) in files and add_descriptions else '')) + "\n"
 
     return output
 
@@ -150,16 +155,18 @@ def execute_command_and_check_cli_response(command, timeout, convo):
     return response
 
 def run_command_until_success(command, timeout, convo):
-    command_executed = False
-    for i in range(MAX_COMMAND_DEBUG_TRIES):
-        cli_response = execute_command(convo.agent.project, command, timeout)
-        response = convo.send_message('dev_ops/ran_command.prompt',
-            {'cli_response': cli_response, 'command': command})
+    cli_response = execute_command(convo.agent.project, command, timeout)
+    response = convo.send_message('dev_ops/ran_command.prompt',
+        {'cli_response': cli_response, 'command': command})
+    command_successfully_executed = response == 'DONE'
 
-        command_executed = response == 'DONE'
-        if command_executed:
+    function_uuid = str(uuid.uuid4())
+    convo.save_branch(function_uuid)
+    for i in range(MAX_COMMAND_DEBUG_TRIES):
+        if command_successfully_executed:
             break
 
+        convo.load_branch(function_uuid)
         print(colored(f'Got incorrect CLI response:', 'red'))
         print(cli_response)
         print(colored('-------------------', 'red'))
@@ -168,13 +175,15 @@ def run_command_until_success(command, timeout, convo):
             DEBUG_STEPS_BREAKDOWN)
 
         # TODO refactor to nicely get the developer agent
-        convo.agent.project.developer.execute_task(
+        command_successfully_executed = convo.agent.project.developer.execute_task(
             convo,
             debugging_plan,
             {'command': command, 'timeout': timeout},
+            False,
             False)
 
-    if not command_executed:
+
+    if not command_successfully_executed:
         # TODO explain better how should the user approach debugging
         # we can copy the entire convo to clipboard so they can paste it in the playground
         convo.agent.project.ask_for_human_intervention(
