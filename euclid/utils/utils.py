@@ -182,21 +182,13 @@ def replace_functions(obj):
     else:
         return obj
 
-def escape_json_special_chars(s):
-    replacements = {
-        '"': '\\"',
-        '\\': '\\\\',
-        '\n': '\\n',
-        '\r': '\\r',
-        '\t': '\\t',
-        '\b': '\\b',
-        '\f': '\\f'
-    }
+def fix_json_newlines(s):
+    pattern = r'("(?:\\.|[^"\\])*")'
 
-    for char, replacement in replacements.items():
-        s = s.replace(char, replacement)
+    def replace_newlines(match):
+        return match.group(1).replace('\n', '\\n')
 
-    return s
+    return re.sub(pattern, replace_newlines, s)
 
 def clean_filename(filename):
     # Remove invalid characters
