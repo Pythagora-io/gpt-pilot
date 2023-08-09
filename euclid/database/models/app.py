@@ -6,6 +6,6 @@ from database.models.user import User
 
 class App(BaseModel):
     user = ForeignKeyField(User, backref='apps')
-    app_type = CharField()
-    name = CharField()
+    app_type = CharField(null=True)
+    name = CharField(null=True)
     status = CharField(default='started')

@@ -16,6 +16,7 @@ class ProductOwner(Agent):
         super().__init__('product_owner', project)
 
     def get_project_description(self):
+        save_app(self.project.args)
         self.project.current_step = 'project_description'
         convo_project_description = AgentConvo(self)
 
@@ -28,13 +29,13 @@ class ProductOwner(Agent):
 
         # PROJECT DESCRIPTION
         self.project.args['app_type'] = ask_for_app_type()
-        self.project.args['name'] = clean_filename(ask_user('What is the project name?'))
+        self.project.args['name'] = clean_filename(ask_user(self.project, 'What is the project name?'))
 
         setup_workspace(self.project.root_path, self.project.args['name'])
 
         save_app(self.project.args)
 
-        main_prompt = ask_for_main_app_definition(self, project)
+        main_prompt = ask_for_main_app_definition(self.project)
 
         high_level_messages = get_additional_info_from_openai(
             self.project,
