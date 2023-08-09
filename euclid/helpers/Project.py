@@ -14,6 +14,7 @@ from helpers.agents.ProductOwner import ProductOwner
 
 from database.models.development_steps import DevelopmentSteps
 from database.models.file_snapshot import FileSnapshot
+from database.models.files import File
 from utils.files import get_parent_folder
 
 
