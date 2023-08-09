@@ -23,7 +23,7 @@ class CodeMonkey(Agent):
 
         changes = convo.send_message('development/implement_changes.prompt', {
             "instructions": code_changes_description,
-            "directory_tree": self.project.get_directory_tree(),
+            "directory_tree": self.project.get_directory_tree(True),
             "files": self.project.get_files(files_needed),
         }, IMPLEMENT_CHANGES, True)
 

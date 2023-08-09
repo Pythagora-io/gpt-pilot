@@ -106,8 +106,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
         return response
     except Exception as e:
         print(
-            'The request to OpenAI API failed. Might be due to GPT being down or due to the too large message. It\'s '
-            'best if you try again.')
+            'The request to OpenAI API failed. Here is the error message:')
         print(e)
 
 

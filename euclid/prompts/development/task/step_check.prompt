@@ -3,6 +3,6 @@ Now, we need to verify if this change was successfully implemented. We can do th
 
 2. By running a command (or multiple commands) - this is good for when an automated test is an overkill. For example, if we installed a new package or changed some configuration. Keep in mind that in this case, there shouldn't be any human intervention needed - I will run the commands you will give me and show you the CLI output and from that, you should be able to determine if the test passed or failed.
 
-3. By requesting that a human checks if everything works as expected - this is the last option that we want to avoid but if we can't test the functionality programmatically, we should ask a human to check if it works as expected. For example, if something was visually changed in the UI.
+3. By requesting that a human checks if everything works as expected - this is the last option that we want to avoid but if we can't test the functionality programmatically, we should ask a human to check if it works as expected. For example, if something was visually changed in the UI. If you have any option to test the code change with an automated test or a command, you always do it. Manual test is the last resort that should be avoided if possible.
 
 Ok, now, tell me how can we verify if this change was successful and respond only with a keyword for a type of test.    
