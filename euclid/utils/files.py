@@ -11,11 +11,12 @@ def get_parent_folder(folder_name):
     return current_path.parent
 
 
-def setup_workspace(root, project_name):
+def setup_workspace(project_name):
+    root = get_parent_folder('euclid')
     create_directory(root, 'workspace')
     project_path = create_directory(os.path.join(root, 'workspace'), project_name)
     create_directory(project_path, 'tests')
-    return
+    return project_path
 
 
 def create_directory(parent_directory, new_directory):
