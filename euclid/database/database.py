@@ -3,6 +3,7 @@ from peewee import *
 from termcolor import colored
 from functools import reduce
 import operator
+from const.common import PROMPT_DATA_TO_IGNORE
 
 from utils.utils import hash_data
 from database.models.components.base_models import database
@@ -141,7 +142,7 @@ def save_development_step(app_id, prompt_path, prompt_data, llm_req_num, message
     app = get_app(app_id)
     hash_id = hash_data({
         'prompt_path': prompt_path,
-        'prompt_data': {k: v for k, v in prompt_data.items() if k not in {"directory_tree"}},
+        'prompt_data': {} if prompt_data is None else {k: v for k, v in prompt_data.items() if k not in PROMPT_DATA_TO_IGNORE},
         'llm_req_num': llm_req_num
     })
     try:
@@ -245,7 +246,7 @@ def get_user_input_from_hash_id(project, query):
 def get_development_step_from_hash_id(app_id, prompt_path, prompt_data, llm_req_num):
     hash_id = hash_data({
         'prompt_path': prompt_path,
-        'prompt_data': {k: v for k, v in prompt_data.items() if k not in {"directory_tree"}},
+        'prompt_data': {} if prompt_data is None else {k: v for k, v in prompt_data.items() if k not in PROMPT_DATA_TO_IGNORE},
         'llm_req_num': llm_req_num
     })
     try:
