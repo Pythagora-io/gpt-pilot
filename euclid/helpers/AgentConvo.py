@@ -33,14 +33,15 @@ class AgentConvo:
         development_step = get_development_step_from_hash_id(self.agent.project, prompt_path, prompt_data, self.agent.project.llm_req_num)
         if development_step is not None and self.agent.project.skip_steps:
             # if we do, use it
-            if self.agent.project.skip_until_dev_step and str(development_step.id) == self.agent.project.skip_until_dev_step:
-                self.agent.project.skip_steps = False
-                delete_all_subsequent_steps(self.agent.project)
             print(colored(f'Restoring development step with id {development_step.id}', 'yellow'))
             self.agent.project.checkpoints['last_development_step'] = development_step
             self.agent.project.restore_files(development_step.id)
             response = development_step.llm_response
             self.messages = development_step.messages
+
+            if self.agent.project.skip_until_dev_step and str(development_step.id) == self.agent.project.skip_until_dev_step:
+                self.agent.project.skip_steps = False
+                delete_all_subsequent_steps(self.agent.project)
         else:
             # if we don't, get the response from LLM
             response = create_gpt_chat_completion(self.messages, self.high_level_step, function_calls=function_calls)
