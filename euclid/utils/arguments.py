@@ -38,6 +38,8 @@ def get_arguments():
         arguments['user_id'] = str(uuid.uuid4())
 
     if 'email' not in arguments:
+        # todo change email so its not uuid4 but make sure to fix storing of development steps where
+        #  1 user can have multiple apps. In that case each app should have its own development steps
         arguments['email'] = str(uuid.uuid4())
 
     if 'password' not in arguments:
