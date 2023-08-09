@@ -24,8 +24,9 @@ class ProductOwner(Agent):
         step = get_progress_steps(self.project.args['app_id'], self.project.current_step)
         if step and not execute_step(self.project.args['step'], self.project.current_step):
             step_already_finished(self.project.args, step)
-            self.project_description = step['summary']
-            return step['summary']
+            self.project.project_description = step['summary']
+            self.project.project_description_messages = step['messages']
+            return
 
         # PROJECT DESCRIPTION
         self.project.args['app_type'] = ask_for_app_type()
@@ -52,8 +53,9 @@ class ProductOwner(Agent):
             "app_data": generate_app_data(self.project.args)
         })
 
-        self.project_description = high_level_summary
-        return high_level_summary
+        self.project.project_description = high_level_summary
+        self.project.project_description_messages = high_level_messages
+        return
         # PROJECT DESCRIPTION END
 
 
@@ -75,7 +77,8 @@ class ProductOwner(Agent):
 
         self.project.user_stories = self.convo_user_stories.continuous_conversation('user_stories/specs.prompt', {
             'name': self.project.args['name'],
-            'prompt': self.project_description,
+            'prompt': self.project.project_description,
+            'clarifications': self.project.project_description_messages,
             'app_type': self.project.args['app_type'],
             'END_RESPONSE': END_RESPONSE
         })
