@@ -25,7 +25,7 @@ class CodeMonkey(Agent):
             "instructions": code_changes_description,
             "directory_tree": self.project.get_directory_tree(True),
             "files": self.project.get_files(files_needed),
-        }, IMPLEMENT_CHANGES, True)
+        }, IMPLEMENT_CHANGES)
 
         for file_data in changes:
             file_data['full_path'] = self.project.get_full_file_path(file_data['path'], file_data['name'])
