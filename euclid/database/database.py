@@ -29,10 +29,11 @@ def save_user(user_id, email, password):
         return user
     except DoesNotExist:
         try:
-            return User.create(id=user_id, email=email, password=password)
-        except IntegrityError as e:
             existing_user = User.get(User.email == email)
             return existing_user
+        except DoesNotExist:
+            return User.create(id=user_id, email=email, password=password)
+
 
 
 def get_user(user_id=None, email=None):
@@ -55,12 +56,27 @@ def get_user(user_id=None, email=None):
 def save_app(args):
     try:
         app = App.get(App.id == args['app_id'])
+        for key, value in args.items():
+            if key != 'app_id' and value is not None:
+                setattr(app, key, value)
+        app.save()
     except DoesNotExist:
-        try:
-            user = get_user(user_id=args['user_id'])
-        except ValueError:
-            user = save_user(args['user_id'], args['email'], args['password'])
-        app = App.create(id=args['app_id'], user=user, app_type=args['app_type'], name=args['name'])
+        if args.get('user_id') is not None:
+            try:
+                user = get_user(user_id=args['user_id'])
+            except ValueError:
+                user = save_user(args['user_id'], args['email'], args['password'])
+                args['user_id'] = user.id
+                args['email'] = user.email
+        else:
+            user = None
+
+        app = App.create(
+            id=args['app_id'],
+            user=user,
+            app_type=args.get('app_type'),
+            name=args.get('name')
+        )
 
     return app
 

@@ -16,6 +16,7 @@ class ProductOwner(Agent):
         super().__init__('product_owner', project)
 
     def get_project_description(self):
+        self.project.app = save_app(self.project.args)
         self.project.current_step = 'project_description'
         convo_project_description = AgentConvo(self)
 
@@ -23,18 +24,19 @@ class ProductOwner(Agent):
         step = get_progress_steps(self.project.args['app_id'], self.project.current_step)
         if step and not execute_step(self.project.args['step'], self.project.current_step):
             step_already_finished(self.project.args, step)
-            self.project_description = step['summary']
-            return step['summary']
+            self.project.project_description = step['summary']
+            self.project.project_description_messages = step['messages']
+            return
 
         # PROJECT DESCRIPTION
         self.project.args['app_type'] = ask_for_app_type()
-        self.project.args['name'] = clean_filename(ask_user('What is the project name?'))
+        self.project.args['name'] = clean_filename(ask_user(self.project, 'What is the project name?'))
 
         setup_workspace(self.project.root_path, self.project.args['name'])
 
-        save_app(self.project.args)
+        self.project.app = save_app(self.project.args)
 
-        main_prompt = ask_for_main_app_definition(self, project)
+        main_prompt = ask_for_main_app_definition(self.project)
 
         high_level_messages = get_additional_info_from_openai(
             self.project,
@@ -51,8 +53,9 @@ class ProductOwner(Agent):
             "app_data": generate_app_data(self.project.args)
         })
 
-        self.project_description = high_level_summary
-        return high_level_summary
+        self.project.project_description = high_level_summary
+        self.project.project_description_messages = high_level_messages
+        return
         # PROJECT DESCRIPTION END
 
 
@@ -74,7 +77,8 @@ class ProductOwner(Agent):
 
         self.project.user_stories = self.convo_user_stories.continuous_conversation('user_stories/specs.prompt', {
             'name': self.project.args['name'],
-            'prompt': self.project_description,
+            'prompt': self.project.project_description,
+            'clarifications': self.project.project_description_messages,
             'app_type': self.project.args['app_type'],
             'END_RESPONSE': END_RESPONSE
         })

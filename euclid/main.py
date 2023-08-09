@@ -4,8 +4,9 @@ from __future__ import print_function, unicode_literals
 from dotenv import load_dotenv
 from helpers.Project import Project
 
-from utils.utils import get_arguments
+from utils.arguments import get_arguments
 from logger.logger import logger
+
 
 def init():
     load_dotenv()

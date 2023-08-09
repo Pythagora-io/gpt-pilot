@@ -37,9 +37,6 @@ class Project:
         self.root_path = ''
         # self.restore_files({dev_step_id_to_start_from})
 
-        if 'app_id' in args:
-            self.app = get_app(args['app_id'])
-
         if current_step is not None:
             self.current_step = current_step
         if name is not None:
@@ -57,7 +54,7 @@ class Project:
 
     def start(self):
         self.project_manager = ProductOwner(self)
-        self.high_level_summary = self.project_manager.get_project_description()
+        self.project_manager.get_project_description()
         self.user_stories = self.project_manager.get_user_stories()
         self.user_tasks = self.project_manager.get_user_tasks()
 

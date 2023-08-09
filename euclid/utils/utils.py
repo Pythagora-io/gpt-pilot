@@ -1,10 +1,8 @@
 # utils/utils.py
 
-import sys
 import os
 import platform
 import distro
-import uuid
 import json
 import hashlib
 import re
@@ -14,41 +12,6 @@ from termcolor import colored
 from const.llm import MAX_QUESTIONS, END_RESPONSE
 from const.common import ROLES, STEPS
 from logger.logger import logger
-
-
-def get_arguments():
-    # The first element in sys.argv is the name of the script itself.
-    # Any additional elements are the arguments passed from the command line.
-    args = sys.argv[1:]
-
-    # Create an empty dictionary to store the key-value pairs.
-    arguments = {}
-
-    # Loop through the arguments and parse them as key-value pairs.
-    for arg in args:
-        if '=' in arg:
-            key, value = arg.split('=', 1)
-            arguments[key] = value
-        else:
-            arguments[arg] = True
-
-    if 'user_id' not in arguments:
-        arguments['user_id'] = str(uuid.uuid4())
-
-    if 'email' not in arguments:
-        arguments['email'] = 'email'
-
-    if 'password' not in arguments:
-        arguments['password'] = 'password'
-
-    if 'app_id' not in arguments:
-        arguments['app_id'] = str(uuid.uuid4())
-
-    if 'step' not in arguments:
-        arguments['step'] = None
-
-    print(f"If you wish to continue with this project in future run 'python main.py app_id={arguments['app_id']}'")
-    return arguments
 
 
 def capitalize_first_word_with_underscores(s):
