@@ -255,6 +255,17 @@ def get_development_step_from_hash_id(app_id, prompt_path, prompt_data, llm_req_
         return None
     return dev_step
 
+def delete_all_subsequent_steps(project):
+    delete_subsequent_steps(DevelopmentSteps, project.checkpoints['last_development_step'], 'previous_dev_step')
+    delete_subsequent_steps(CommandRuns, project.checkpoints['last_command_run'], 'previous_command_run')
+    delete_subsequent_steps(UserInputs, project.checkpoints['last_user_input'], 'previous_user_input')
+
+def delete_subsequent_steps(model, step, step_field_name):
+    print(colored(f"Deleting subsequent {model.__name__} steps after {step.id}", "red"))
+    subsequent_step = model.get_or_none(**{step_field_name: step.id})
+    if subsequent_step:
+        delete_subsequent_steps(model, subsequent_step, step_field_name)
+        subsequent_step.delete_instance()
 
 def create_tables():
     with database:

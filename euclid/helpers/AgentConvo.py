@@ -1,7 +1,7 @@
 import subprocess
 from termcolor import colored
 
-from database.database import get_development_step_from_hash_id, save_development_step
+from database.database import get_development_step_from_hash_id, save_development_step, delete_all_subsequent_steps
 from utils.utils import array_of_objects_to_string
 from utils.llm_connection import get_prompt, create_gpt_chat_completion
 from utils.utils import get_sys_message, find_role_from_step, capitalize_first_word_with_underscores
@@ -35,6 +35,7 @@ class AgentConvo:
             # if we do, use it
             if self.agent.project.skip_until_dev_step and str(development_step.id) == self.agent.project.skip_until_dev_step:
                 self.agent.project.skip_steps = False
+                delete_all_subsequent_steps(self.agent.project)
             print(colored(f'Restoring development step with id {development_step.id}', 'yellow'))
             self.agent.project.checkpoints['last_development_step'] = development_step
             self.agent.project.restore_files(development_step.id)
