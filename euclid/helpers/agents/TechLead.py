@@ -36,7 +36,7 @@ class TechLead(Agent):
         self.development_plan = self.convo_development_plan.send_message('development/plan.prompt',
             {
                 "name": self.project.args['name'],
-                "app_summary": self.project.high_level_summary,
+                "app_summary": self.project.project_description,
                 "clarification": [],
                 "user_stories": self.project.user_stories,
                 "user_tasks": self.project.user_tasks,

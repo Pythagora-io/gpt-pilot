@@ -32,7 +32,7 @@ class Architect(Agent):
 
         architecture = self.convo_architecture.send_message('architecture/technologies.prompt',
             {'name': self.project.args['name'],
-             'prompt': self.project.high_level_summary,
+             'prompt': self.project.project_description,
              'user_stories': self.project.user_stories,
              'user_tasks': self.project.user_tasks,
              'app_type': self.project.args['app_type']}, ARCHITECTURE)

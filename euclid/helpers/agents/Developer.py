@@ -32,15 +32,15 @@ class Developer(Agent):
         logger.info('The app is DONE!!! Yay...you can use it now.')
 
     def implement_task(self, sibling_tasks, current_task_index, parent_task=None):
-        print(colored('-------------------------', 'green'))
+        print(colored('-------------------------', 'green', attrs=['bold']))
         print(colored(f"Implementing task {current_task_index + 1}...\n", "green"))
         print(colored(sibling_tasks[current_task_index]['description'], 'green'))
-        print(colored('-------------------------', 'green'))
+        print(colored('-------------------------', 'green', attrs=['bold']))
 
         convo_dev_task = AgentConvo(self)
         task_steps = convo_dev_task.send_message('development/task/breakdown.prompt', {
             "name": self.project.args['name'],
-            "app_summary": self.project.high_level_summary,
+            "app_summary": self.project.project_description,
             "clarification": [],
             "user_stories": self.project.user_stories,
             "user_tasks": self.project.user_tasks,
