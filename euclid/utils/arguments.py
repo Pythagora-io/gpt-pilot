@@ -28,7 +28,6 @@ def get_arguments():
             arguments['name'] = app.name
             # Add any other fields from the App model you wish to include
         except ValueError as e:
-            print('fkldsjlfjsdlkfjkldsjflkdsjfljdsklfjdslk')
             print(e)
             # Handle the error as needed, possibly exiting the script
     else:

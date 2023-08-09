@@ -16,7 +16,7 @@ class ProductOwner(Agent):
         super().__init__('product_owner', project)
 
     def get_project_description(self):
-        save_app(self.project.args)
+        self.project.app = save_app(self.project.args)
         self.project.current_step = 'project_description'
         convo_project_description = AgentConvo(self)
 
@@ -33,7 +33,7 @@ class ProductOwner(Agent):
 
         setup_workspace(self.project.root_path, self.project.args['name'])
 
-        save_app(self.project.args)
+        self.project.app = save_app(self.project.args)
 
         main_prompt = ask_for_main_app_definition(self.project)
 
