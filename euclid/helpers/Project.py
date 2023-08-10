@@ -83,9 +83,15 @@ class Project:
     def get_files(self, files):
         files_with_content = []
         for file in files:
+            # TODO this is a hack, fix it
+            try:
+                file_content = open(self.get_full_file_path('', file), 'r').read()
+            except:
+                file_content = ''
+
             files_with_content.append({
                 "path": file,
-                "content": open(self.get_full_file_path('', file), 'r').read()
+                "content": file_content
             })
         return files_with_content
 
