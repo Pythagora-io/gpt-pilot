@@ -11,7 +11,7 @@ from database.database import get_command_run_from_hash_id, save_command_run
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
 
 from utils.questionary import styled_text
-from const.code_execution import MAX_COMMAND_DEBUG_TRIES
+from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MIN_COMMAND_RUN_TIME, MAX_COMMAND_RUN_TIME
 
 def enqueue_output(out, q):
     for line in iter(out.readline, ''):
@@ -42,7 +42,8 @@ def execute_command(project, command, timeout=5000):
     # check if we already have the command run saved
     if timeout < 1000:
         timeout *= 1000
-    timeout = max(timeout, 2000)
+    timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
+
     print(colored(f'Can i execute the command: `{command}` with {timeout}ms timeout?', 'white', attrs=['bold']))
     project.command_runs_count += 1
     command_run = get_command_run_from_hash_id(project, command)
