@@ -6,11 +6,11 @@ from database.models.app import App
 
 class UserInputs(BaseModel):
     id = AutoField()
-    app = ForeignKeyField(App)
+    app = ForeignKeyField(App, on_delete='CASCADE')
     hash_id = CharField(null=False)
     query = TextField(null=True)
     user_input = TextField(null=True)
-    previous_user_input = ForeignKeyField('self', null=True, column_name='previous_user_input')
+    previous_step = ForeignKeyField('self', null=True, column_name='previous_step')
 
     class Meta:
         db_table = 'user_inputs'

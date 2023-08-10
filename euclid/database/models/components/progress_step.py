@@ -7,7 +7,7 @@ from database.models.app import App
 
 
 class ProgressStep(BaseModel):
-    app = ForeignKeyField(App, primary_key=True)
+    app = ForeignKeyField(App, primary_key=True, on_delete='CASCADE')
     step = CharField()
     data = BinaryJSONField(null=True)
     messages = BinaryJSONField(null=True)

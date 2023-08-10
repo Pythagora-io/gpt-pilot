@@ -3,7 +3,7 @@ import os
 from termcolor import colored
 from const.common import IGNORE_FOLDERS
 from database.models.app import App
-from database.database import get_app
+from database.database import get_app, delete_unconnected_steps_from
 from utils.questionary import styled_text
 from helpers.files import get_files_content, clear_directory
 from helpers.cli import build_directory_tree
@@ -121,6 +121,11 @@ class Project:
             # Write/overwrite the file with its content
             with open(full_path, 'w', encoding='utf-8') as f:
                 f.write(file_snapshot.content)
+
+    def delete_all_steps_except_current_branch(self):
+        delete_unconnected_steps_from(self.checkpoints['last_development_step'], 'previous_step')
+        delete_unconnected_steps_from(self.checkpoints['last_command_run'], 'previous_step')
+        delete_unconnected_steps_from(self.checkpoints['last_user_input'], 'previous_step')
 
     def ask_for_human_intervention(self, message, description):
         print(colored(message, "yellow"))
