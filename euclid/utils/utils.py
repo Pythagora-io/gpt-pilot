@@ -146,7 +146,7 @@ def replace_functions(obj):
         return obj
 
 def fix_json_newlines(s):
-    pattern = r'("(?:\\.|[^"\\])*")'
+    pattern = r'("(?:\\\\n|\\.|[^"\\])*")'
 
     def replace_newlines(match):
         return match.group(1).replace('\n', '\\n')

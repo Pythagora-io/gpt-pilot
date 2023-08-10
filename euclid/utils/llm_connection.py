@@ -153,6 +153,9 @@ def stream_gpt_completion(data, req_type):
 
             try:
                 json_line = load_data_to_json(line)
+                if 'error' in json_line:
+                    logger.error(f'Error in LLM response: {json_line}')
+                    raise ValueError(f'Error in LLM response: {json_line["error"]["message"]}')
                 if json_line['choices'][0]['finish_reason'] == 'function_call':
                     function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
                     return return_result({'function_calls': function_calls});

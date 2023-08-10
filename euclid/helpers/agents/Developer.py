@@ -33,8 +33,8 @@ class Developer(Agent):
 
     def implement_task(self, sibling_tasks, current_task_index, parent_task=None):
         print(colored('-------------------------', 'green', attrs=['bold']))
-        print(colored(f"Implementing task {current_task_index + 1}...\n", "green"))
-        print(colored(sibling_tasks[current_task_index]['description'], 'green'))
+        print(colored(f"Implementing task {current_task_index + 1}...\n", "green", attrs=['bold']))
+        print(colored(sibling_tasks[current_task_index]['description'], 'green', attrs=['bold']))
         print(colored('-------------------------', 'green', attrs=['bold']))
 
         convo_dev_task = AgentConvo(self)
@@ -133,8 +133,8 @@ class Developer(Agent):
                     },
                     'send_convo': True
                 })
-            
-            if not llm_response == 'DONE':
+
+            if llm_response != 'DONE':
                 installation_commands = self.convo_os_specific_tech.send_message('development/env_setup/unsuccessful_installation.prompt',
                     { 'technology': technology }, EXECUTE_COMMANDS)
                 if installation_commands is not None:
