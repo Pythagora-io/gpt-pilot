@@ -3,7 +3,7 @@ import os
 from termcolor import colored
 from const.common import IGNORE_FOLDERS
 from database.models.app import App
-from database.database import get_app, delete_unconnected_steps_from
+from database.database import get_app, delete_unconnected_steps_from, delete_all_steps_from_app
 from utils.questionary import styled_text
 from helpers.files import get_files_content, clear_directory
 from helpers.cli import build_directory_tree
@@ -30,8 +30,16 @@ class Project:
             'last_command_run': None,
             'last_development_step': None,
         }
+        if 'skip_until_dev_step' in args:
+            self.skip_until_dev_step = args['skip_until_dev_step']
+            if args['skip_until_dev_step'] == '0':
+                delete_all_steps_from_app(args['app_id'])
+                self.skip_steps = False
+        else:
+            self.skip_until_dev_step = None
+            self.skip_steps = True
         self.skip_steps = False if ('skip_until_dev_step' in args and args['skip_until_dev_step'] == '0') else True
-        self.skip_until_dev_step = args['skip_until_dev_step'] if 'skip_until_dev_step' in args else None
+
         # TODO make flexible
         # self.root_path = get_parent_folder('euclid')
         self.root_path = ''
@@ -99,6 +107,8 @@ class Project:
         file_path = file_path.replace('./', '', 1).rstrip(file_name)
         if not file_path.endswith('/'):
             file_path = file_path + '/'
+        if not file_path.startswith('/'):
+            file_path = '/' + file_path
         return self.root_path + file_path + file_name
 
     def save_files_snapshot(self, development_step_id):

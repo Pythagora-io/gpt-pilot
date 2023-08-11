@@ -1,4 +1,4 @@
-I ran the command `{{ command }}` and for this response from CLI:
+{{ additional_info }}I ran the command `{{ command }}` and for this response from CLI:
 ```
 {{ cli_response }}
 ```

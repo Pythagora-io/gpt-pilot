@@ -154,19 +154,19 @@ class Developer(Agent):
             'development/task/step_check.prompt',
             {},
             GET_TEST_TYPE)
-        
+
         if test_type == 'command_test':
             run_command_until_success(command['command'], command['timeout'], convo)
         elif test_type == 'automated_test':
             code_monkey.implement_code_changes(convo, automated_test_description, 0)
         elif test_type == 'manual_test':
             # TODO make the message better
-            response = self.project.ask_for_human_intervention(
+            user_feedback = self.project.ask_for_human_intervention(
                 'Message from Euclid: I need your help. Can you please test if this was successful?',
                 manual_test_description
             )
-            if response is not None and response != 'DONE':
-                self.test_code_changes(code_monkey, convo)
+            if user_feedback is not None:
+                debug(convo, user_input=user_feedback, issue_description=manual_test_description)
 
     def implement_step(self, convo, step_index, type, description):
         # TODO remove hardcoded folder path

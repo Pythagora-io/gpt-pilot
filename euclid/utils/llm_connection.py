@@ -182,7 +182,7 @@ def stream_gpt_completion(data, req_type):
     if function_calls['arguments'] != '':
         logger.info(f'Response via function call: {function_calls["arguments"]}')
         function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
-        return return_result({'function_calls': function_calls});
+        return return_result({'function_calls': function_calls})
     logger.info(f'Response message: {gpt_response}')
     new_code = postprocessing(gpt_response, req_type)  # TODO add type dynamically
     return return_result({'text': new_code})
