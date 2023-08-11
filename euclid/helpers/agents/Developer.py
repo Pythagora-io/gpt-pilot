@@ -75,7 +75,7 @@ class Developer(Agent):
             elif step['type'] == 'human_intervention':
                 self.project.ask_for_human_intervention('I need your help! Can you try debugging this yourself and let me take over afterwards? Here are the details about the issue:', step['human_intervention_description'])
             
-            if test_command is not None and step['check_if_fixed']:
+            if test_command is not None and step.get('check_if_fixed'):
                 should_rerun_command = convo.send_message('dev_ops/should_rerun_command.prompt',
                     test_command)
                 if should_rerun_command == 'NO':
