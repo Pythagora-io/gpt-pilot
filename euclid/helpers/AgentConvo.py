@@ -23,9 +23,7 @@ class AgentConvo:
 
     def send_message(self, prompt_path=None, prompt_data=None, function_calls=None):
         # craft message
-        if prompt_path is not None and prompt_data is not None:
-            prompt = get_prompt(prompt_path, prompt_data)
-            self.messages.append({"role": "user", "content": prompt})
+        self.construct_and_add_message_from_prompt(prompt_path, prompt_data)
 
         if function_calls is not None and 'function_calls' in function_calls:
             self.messages[-1]['content'] += '\nMAKE SURE THAT YOU RESPOND WITH A CORRECT JSON FORMAT!!!'
@@ -135,3 +133,8 @@ class AgentConvo:
 
     def remove_last_x_messages(self, x):
         self.messages = self.messages[:-x]
+
+    def construct_and_add_message_from_prompt(self, prompt_path, prompt_data):
+        if prompt_path is not None and prompt_data is not None:
+            prompt = get_prompt(prompt_path, prompt_data)
+            self.messages.append({"role": "user", "content": prompt})
