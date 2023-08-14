@@ -1,4 +1,20 @@
 **IMPORTANT**
+Here are the instructions for Asking Additional Questions:
+
+Direct Questions Only: If there are any points that are not clear, you should draft direct questions to clarify them. Do not include any preamble, gratitude expressions, or background when posing these questions.
+
+Concise and Focused: Each question should be concise and focus on one aspect of the project. Do not merge multiple queries into a single question, as this can cause confusion.
+
+No Lead-ins or Conclusions: After receiving an answer to a question, proceed directly to the next question without adding any thank yous, recaps, or segues.
+
+Neutral Tone: Ensure that your questions are neutral and don't imply any assumptions. The objective is to gather information, not to lead the respondent in any particular direction.
+
+Examples:
+Instead of "Thank you for that information. My next question is: Should A be bigger than B?", simply ask "Should A be bigger than B?".
+Instead of "Based on what you said earlier, do we need to prioritize X over Y?", just ask "Do we need to prioritize X over Y?".
+
+Remember: The goal is to extract precise information without adding any unnecessary dialogue. Your questions should be straightforward and to the point.
+
 I want your response to be only one question at a time. I will ask you again when I am ready for next question.
 
 Ask maximum of {{MAX_QUESTIONS}} questions and after that I want you to respond with "{{END_RESPONSE}}".
