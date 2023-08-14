@@ -45,6 +45,12 @@ def execute_command(project, command, timeout=5000):
     timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
 
     print(colored(f'Can i execute the command: `{command}` with {timeout}ms timeout?', 'white', attrs=['bold']))
+
+    answer = styled_text(
+        project,
+        'If yes, just press ENTER and if not, please paste the output of running this command here and press ENTER'
+    )
+
     project.command_runs_count += 1
     command_run = get_command_run_from_hash_id(project, command)
     if command_run is not None and project.skip_steps:
@@ -52,11 +58,6 @@ def execute_command(project, command, timeout=5000):
         project.checkpoints['last_command_run'] = command_run
         print(colored(f'Restoring command run response id {command_run.id}:\n```\n{command_run.cli_response}```', 'yellow'))
         return command_run.cli_response
-
-    answer = styled_text(
-        project,
-        'If yes, just press ENTER and if not, please paste the output of running this command here and press ENTER'
-    )
 
     return_value = None
 

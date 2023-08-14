@@ -179,11 +179,11 @@ def hash_and_save_step(Model, app_id, hash_data_args, data_fields, message):
 
     try:
         inserted_id = (Model
-                        .insert(**data_to_insert)
-                        .on_conflict(conflict_target=[Model.app, Model.hash_id],
-                                    preserve=fields_to_preserve,
-                                    update={})
-                        .execute())
+            .insert(**data_to_insert)
+            .on_conflict(conflict_target=[Model.app, Model.hash_id],
+                preserve=fields_to_preserve,
+                update=data_fields)
+            .execute())
 
         record = Model.get_by_id(inserted_id)
         print(colored(f"{message} with id {record.id}", "yellow"))
@@ -266,18 +266,19 @@ def get_user_input_from_hash_id(project, query):
     return user_input
 
 def delete_all_subsequent_steps(project):
-    delete_subsequent_steps(DevelopmentSteps, project.checkpoints['last_development_step'], 'previous_step')
-    delete_subsequent_steps(CommandRuns, project.checkpoints['last_command_run'], 'previous_step')
-    delete_subsequent_steps(UserInputs, project.checkpoints['last_user_input'], 'previous_step')
+    delete_subsequent_steps(DevelopmentSteps, project.checkpoints['last_development_step'])
+    delete_subsequent_steps(CommandRuns, project.checkpoints['last_command_run'])
+    delete_subsequent_steps(UserInputs, project.checkpoints['last_user_input'])
 
-def delete_subsequent_steps(model, step, step_field_name):
+def delete_subsequent_steps(model, step):
     if step is None:
         return
     print(colored(f"Deleting subsequent {model.__name__} steps after {step.id}", "red"))
-    subsequent_step = model.get_or_none(**{step_field_name: step.id})
-    if subsequent_step:
-        delete_subsequent_steps(model, subsequent_step, step_field_name)
-        subsequent_step.delete_instance()
+    subsequent_steps = model.select().where(model.previous_step == step.id)
+    for subsequent_step in subsequent_steps:
+        if subsequent_step:
+            delete_subsequent_steps(model, subsequent_step)
+            subsequent_step.delete_instance()
 
 def get_all_connected_steps(step, previous_step_field_name):
     """Recursively get all steps connected to the given step."""
@@ -287,6 +288,11 @@ def get_all_connected_steps(step, previous_step_field_name):
         connected_steps.append(prev_step)
         prev_step = getattr(prev_step, previous_step_field_name)
     return connected_steps
+
+def delete_all_app_development_data(app):
+    models = [DevelopmentSteps, CommandRuns, UserInputs, File, FileSnapshot]
+    for model in models:
+        model.delete().where(model.app == app).execute()
 
 def delete_unconnected_steps_from(step, previous_step_field_name):
     if step is None:
@@ -302,6 +308,14 @@ def delete_unconnected_steps_from(step, previous_step_field_name):
     for unconnected_step in unconnected_steps:
         print(colored(f"Deleting unconnected {step.__class__.__name__} step {unconnected_step.id}", "red"))
         unconnected_step.delete_instance()
+
+def save_file_description(project, path, name, description):
+    (File.insert(app=project.app, path=path, name=name, description=description)
+        .on_conflict(
+            conflict_target=[File.app, File.name, File.path],
+            preserve=[],
+            update={'description': description})
+        .execute())
 
 def create_tables():
     with database:

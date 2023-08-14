@@ -5,10 +5,12 @@ from database.models.development_steps import DevelopmentSteps
 from database.models.app import App
 
 class File(BaseModel):
+    id = AutoField()
     app = ForeignKeyField(App, on_delete='CASCADE')
     name = CharField()
     path = CharField()
-    description = TextField()
+    full_path = CharField()
+    description = TextField(null=True)
 
     class Meta:
         indexes = (

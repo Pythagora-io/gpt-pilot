@@ -3,9 +3,9 @@ import os
 from termcolor import colored
 from const.common import IGNORE_FOLDERS
 from database.models.app import App
-from database.database import get_app, delete_unconnected_steps_from
+from database.database import get_app, delete_unconnected_steps_from, delete_all_app_development_data
 from utils.questionary import styled_text
-from helpers.files import get_files_content, clear_directory
+from helpers.files import get_files_content, clear_directory, update_file
 from helpers.cli import build_directory_tree
 from helpers.agents.TechLead import TechLead
 from helpers.agents.Developer import Developer
@@ -30,8 +30,6 @@ class Project:
             'last_command_run': None,
             'last_development_step': None,
         }
-        self.skip_steps = False if ('skip_until_dev_step' in args and args['skip_until_dev_step'] == '0') else True
-        self.skip_until_dev_step = args['skip_until_dev_step'] if 'skip_until_dev_step' in args else None
         # TODO make flexible
         # self.root_path = get_parent_folder('euclid')
         self.root_path = ''
@@ -64,6 +62,20 @@ class Project:
         self.tech_lead = TechLead(self)
         self.development_plan = self.tech_lead.create_development_plan()
 
+        # TODO move to constructor eventually
+        if 'skip_until_dev_step' in self.args:
+            self.skip_until_dev_step = self.args['skip_until_dev_step']
+            if self.args['skip_until_dev_step'] == '0':
+                clear_directory(self.root_path, IGNORE_FOLDERS)
+                delete_all_app_development_data(self.args['app_id'])
+                self.skip_steps = False
+        else:
+            self.skip_until_dev_step = None
+            self.skip_steps = True
+
+        self.skip_steps = False if ('skip_until_dev_step' in self.args and self.args['skip_until_dev_step'] == '0') else True
+        # TODO END
+
         self.developer = Developer(self)
         self.developer.set_up_environment();
 
@@ -71,21 +83,27 @@ class Project:
 
     def get_directory_tree(self, with_descriptions=False):
         files = {}
-        if with_descriptions:
+        if with_descriptions and False:
             files = File.select().where(File.app_id == self.args['app_id'])
             files = {snapshot.name: snapshot for snapshot in files}
-        return build_directory_tree(self.root_path + '/', ignore=IGNORE_FOLDERS, files=files, add_descriptions=True)
+        return build_directory_tree(self.root_path + '/', ignore=IGNORE_FOLDERS, files=files, add_descriptions=False)
 
     def get_test_directory_tree(self):
         # TODO remove hardcoded path
         return build_directory_tree(self.root_path + '/tests', ignore=IGNORE_FOLDERS)
+
+    def get_all_coded_files(self):
+        files = File.select().where(File.app_id == self.args['app_id'])
+        files = self.get_files([file.path + file.name for file in files])
+        return files
 
     def get_files(self, files):
         files_with_content = []
         for file in files:
             # TODO this is a hack, fix it
             try:
-                file_content = open(self.get_full_file_path('', file), 'r').read()
+                relative_path, full_path = self.get_full_file_path('', file)
+                file_content = open(full_path, 'r').read()
             except:
                 file_content = ''
 
@@ -95,20 +113,48 @@ class Project:
             })
         return files_with_content
 
+    def save_file(self, data):
+        data['path'], data['full_path'] = self.get_full_file_path(data['path'], data['name'])
+        update_file(data['full_path'], data['content'])
+
+        file_in_db, created = File.get_or_create(
+            app=self.app,
+            name=data['name'],
+            path=data['path'],
+            full_path=data['full_path'],
+        )
+
     def get_full_file_path(self, file_path, file_name):
         file_path = file_path.replace('./', '', 1).rstrip(file_name)
+
         if not file_path.endswith('/'):
             file_path = file_path + '/'
-        return self.root_path + file_path + file_name
+
+        if file_name.startswith('/'):
+            file_name = file_name[1:]
+
+        if not file_path.startswith('/'):
+            file_path = '/' + file_path
+
+        return (file_path, self.root_path + file_path + file_name)
 
     def save_files_snapshot(self, development_step_id):
         files = get_files_content(self.root_path, ignore=IGNORE_FOLDERS)
         development_step, created = DevelopmentSteps.get_or_create(id=development_step_id)
 
         for file in files:
-            file_snapshot, created = FileSnapshot.get_or_create(
-                development_step=development_step,
+            # TODO this can be optimized so we don't go to the db each time
+            file_in_db, created = File.get_or_create(
+                app=self.app,
                 name=file['name'],
+                path=file['path'],
+                full_path=file['full_path'],
+            )
+
+            file_snapshot, created = FileSnapshot.get_or_create(
+                app=self.app,
+                development_step=development_step,
+                file=file_in_db,
                 defaults={'content': file.get('content', '')}
             )
             file_snapshot.content = content = file['content']
@@ -120,7 +166,7 @@ class Project:
 
         clear_directory(self.root_path, IGNORE_FOLDERS)
         for file_snapshot in file_snapshots:
-            full_path = self.root_path + '/' + file_snapshot.name
+            full_path = self.root_path + file_snapshot.file.path + '/' + file_snapshot.file.name
             # Ensure directory exists
             os.makedirs(os.path.dirname(full_path), exist_ok=True)
 
