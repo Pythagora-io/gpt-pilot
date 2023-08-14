@@ -145,6 +145,12 @@ def replace_functions(obj):
     else:
         return obj
 
+def fix_json(s):
+    s = s.replace('True', 'true')
+    s = s.replace('False', 'false')
+    # s = s.replace('`', '"')
+    return fix_json_newlines(s)
+
 def fix_json_newlines(s):
     pattern = r'("(?:\\\\n|\\.|[^"\\])*")'
 
