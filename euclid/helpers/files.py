@@ -28,10 +28,11 @@ def get_files_content(directory, ignore=[]):
             with open(path, 'r', encoding='utf-8', errors='ignore') as f:
                 file_content = f.read()
 
-            file_name = path.replace(directory + '/', '')
+            file_name = os.path.basename(path)
+            relative_path = path.replace(directory, '').replace('/' + file_name, '')
             return_array.append({
                 'name': file_name,
-                'path': '/' + file.replace(file_name, ''),
+                'path': relative_path,
                 'content': file_content,
                 'full_path': path,
             })
