@@ -154,41 +154,55 @@ def execute_command_and_check_cli_response(command, timeout, convo):
     cli_response = execute_command(convo.agent.project, command, timeout)
     response = convo.send_message('dev_ops/ran_command.prompt',
         { 'cli_response': cli_response, 'command': command })
-    return response
+    return cli_response, response
 
-def run_command_until_success(command, timeout, convo):
+def run_command_until_success(command, timeout, convo, additional_message=None):
     cli_response = execute_command(convo.agent.project, command, timeout)
     response = convo.send_message('dev_ops/ran_command.prompt',
-        {'cli_response': cli_response, 'command': command})
-    command_successfully_executed = response == 'DONE'
+        {'cli_response': cli_response, 'command': command, 'additional_message': additional_message})
 
-    function_uuid = str(uuid.uuid4())
-    convo.save_branch(function_uuid)
-    for i in range(MAX_COMMAND_DEBUG_TRIES):
-        if command_successfully_executed:
-            break
-
-        convo.load_branch(function_uuid)
+    if response != 'DONE':
         print(colored(f'Got incorrect CLI response:', 'red'))
         print(cli_response)
         print(colored('-------------------', 'red'))
+
+        debug(convo, {'command': command, 'timeout': timeout})
+
+
+
+def debug(convo, command=None, user_input=None, issue_description=None):
+    function_uuid = str(uuid.uuid4())
+    convo.save_branch(function_uuid)
+    success = False
+
+    for i in range(MAX_COMMAND_DEBUG_TRIES):
+        if success:
+            break
+
+        convo.load_branch(function_uuid)
+
         debugging_plan = convo.send_message('dev_ops/debug.prompt',
-            { 'command': command, 'debugging_try_num': i },
+            { 'command': command['command'] if command is not None else None, 'user_input': user_input, 'issue_description': issue_description },
             DEBUG_STEPS_BREAKDOWN)
 
         # TODO refactor to nicely get the developer agent
-        command_successfully_executed = convo.agent.project.developer.execute_task(
+        success = convo.agent.project.developer.execute_task(
             convo,
             debugging_plan,
-            {'command': command, 'timeout': timeout},
+            command,
             False,
             False)
 
 
-    if not command_successfully_executed:
+    if not success:
         # TODO explain better how should the user approach debugging
         # we can copy the entire convo to clipboard so they can paste it in the playground
-        convo.agent.project.ask_for_human_intervention(
-            'It seems like I cannot debug this problem by myself. Can you please help me and try debugging it yourself?',
+        user_input = convo.agent.project.ask_for_human_intervention(
+            'It seems like I cannot debug this problem by myself. Can you please help me and try debugging it yourself?' if user_input is None else f'Can you check this again:\n{issue_description}?',
             command
         )
+
+        if user_input == 'continue':
+            success = True
+
+    return success

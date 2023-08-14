@@ -154,10 +154,9 @@ def get_progress_steps(app_id, step=None):
         return steps
 
 
-def get_db_model_from_hash_id(data_to_hash, model, app_id, previous_step):
-    hash_id = hash_data(data_to_hash)
+def get_db_model_from_hash_id(model, app_id, previous_step):
     try:
-        db_row = model.get((model.hash_id == hash_id) & (model.app == app_id) & (model.previous_step == previous_step))
+        db_row = model.get((model.app == app_id) & (model.previous_step == previous_step))
     except DoesNotExist:
         return None
     return db_row
@@ -217,7 +216,7 @@ def get_development_step_from_hash_id(project, prompt_path, prompt_data, llm_req
         'prompt_data': {} if prompt_data is None else {k: v for k, v in prompt_data.items() if k not in PROMPT_DATA_TO_IGNORE},
         'llm_req_num': llm_req_num
     }
-    development_step = get_db_model_from_hash_id(data_to_hash, DevelopmentSteps, project.args['app_id'], project.checkpoints['last_development_step'])
+    development_step = get_db_model_from_hash_id(DevelopmentSteps, project.args['app_id'], project.checkpoints['last_development_step'])
     return development_step
 
 def save_command_run(project, command, cli_response):
@@ -240,7 +239,7 @@ def get_command_run_from_hash_id(project, command):
         'command': command,
         'command_runs_count': project.command_runs_count
     }
-    command_run = get_db_model_from_hash_id(data_to_hash, CommandRuns, project.args['app_id'], project.checkpoints['last_command_run'])
+    command_run = get_db_model_from_hash_id(CommandRuns, project.args['app_id'], project.checkpoints['last_command_run'])
     return command_run
 
 def save_user_input(project, query, user_input):
@@ -262,7 +261,7 @@ def get_user_input_from_hash_id(project, query):
         'query': query,
         'user_inputs_count': project.user_inputs_count
     }
-    user_input = get_db_model_from_hash_id(data_to_hash, UserInputs, project.args['app_id'], project.checkpoints['last_user_input'])
+    user_input = get_db_model_from_hash_id(UserInputs, project.args['app_id'], project.checkpoints['last_user_input'])
     return user_input
 
 def delete_all_subsequent_steps(project):

@@ -43,6 +43,7 @@ def return_array_from_prompt(name_plural, name_singular, return_var_name):
 def command_definition(description_command=f'A single command that needs to be executed.', description_timeout=f'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.'):
     return {
         'type': 'object',
+        'description': 'Command that needs to be run to complete the current task. This should be used only if the task is of a type "command".',
         'properties': {
             'command': {
                 'type': 'string',
@@ -151,6 +152,64 @@ DEV_TASKS_BREAKDOWN = {
     ],
     'functions': {
         'break_down_development_task': lambda tasks: tasks
+    },
+}
+
+IMPLEMENT_TASK = {
+    'definitions': [
+        {
+            'name': 'parse_development_task',
+            'description': 'Breaks down the development task into smaller steps that need to be done to implement the entire task.',
+            'parameters': {
+                'type': 'object',
+                "properties": {
+                    "tasks": {
+                        'type': 'array',
+                        'description': 'List of smaller development steps that need to be done to complete the entire task.',
+                        'items': {
+                            'type': 'object',
+                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
+                            'properties': {
+                                'type': {
+                                    'type': 'string',
+                                    'enum': ['command', 'code_change', 'human_invervention'],
+                                    'description': 'Type of the development step that needs to be done to complete the entire task.',
+                                },
+                                'command': command_definition(),
+                                'code_change': {
+                                    'type': 'object',
+                                    'description': 'A code change that needs to be implemented. This should be used only if the task is of a type "code_change".',
+                                    'properties': {
+                                        'name': {
+                                            'type': 'string',
+                                            'description': 'Name of the file that needs to be implemented.',
+                                        },
+                                        'path': {
+                                            'type': 'string',
+                                            'description': 'Full path of the file with the file name that needs to be implemented.',
+                                        },
+                                        'content': {
+                                            'type': 'string',
+                                            'description': 'Full content of the file that needs to be implemented.',
+                                        },
+                                    },
+                                    'required': ['name', 'path', 'content'],
+                                },
+                                'human_intervention_description': {
+                                    'type': 'string',
+                                    'description': 'Description of a step in debugging this issue when there is a human intervention needed. This should be used only if the task is of a type "human_intervention".',
+                                },
+                            },
+                            'required': ['type'],
+                        }
+                    }
+                },
+                "required": ['tasks'],
+            },
+        },
+    ],
+    'functions': {
+        'parse_development_task': lambda tasks: tasks
     },
 }
 

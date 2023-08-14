@@ -66,7 +66,7 @@ class Project:
         if 'skip_until_dev_step' in self.args:
             self.skip_until_dev_step = self.args['skip_until_dev_step']
             if self.args['skip_until_dev_step'] == '0':
-                clear_directory(self.root_path, IGNORE_FOLDERS)
+                clear_directory(self.root_path)
                 delete_all_app_development_data(self.args['app_id'])
                 self.skip_steps = False
         else:
@@ -117,18 +117,18 @@ class Project:
         data['path'], data['full_path'] = self.get_full_file_path(data['path'], data['name'])
         update_file(data['full_path'], data['content'])
 
-        file_in_db, created = File.get_or_create(
-            app=self.app,
-            name=data['name'],
-            path=data['path'],
-            full_path=data['full_path'],
-        )
+        (File.insert(app=self.app, path=data['path'], name=data['name'], full_path=data['full_path'])
+            .on_conflict(
+                conflict_target=[File.app, File.name, File.path],
+                preserve=[],
+                update={ 'name': data['name'], 'path': data['path'], 'full_path': data['full_path'] })
+            .execute())
 
     def get_full_file_path(self, file_path, file_name):
         file_path = file_path.replace('./', '', 1).rstrip(file_name)
 
-        if not file_path.endswith('/'):
-            file_path = file_path + '/'
+        if file_path.endswith('/'):
+            file_path = file_path.rstrip('/')
 
         if file_name.startswith('/'):
             file_name = file_name[1:]
@@ -136,7 +136,7 @@ class Project:
         if not file_path.startswith('/'):
             file_path = '/' + file_path
 
-        return (file_path, self.root_path + file_path + file_name)
+        return (file_path, self.root_path + file_path + '/' + file_name)
 
     def save_files_snapshot(self, development_step_id):
         files = get_files_content(self.root_path, ignore=IGNORE_FOLDERS)
@@ -166,25 +166,29 @@ class Project:
 
         clear_directory(self.root_path, IGNORE_FOLDERS)
         for file_snapshot in file_snapshots:
-            full_path = self.root_path + file_snapshot.file.path + '/' + file_snapshot.file.name
-            # Ensure directory exists
-            os.makedirs(os.path.dirname(full_path), exist_ok=True)
-
-            # Write/overwrite the file with its content
-            with open(full_path, 'w', encoding='utf-8') as f:
-                f.write(file_snapshot.content)
+            update_file(file_snapshot.file.full_path, file_snapshot.content);
 
     def delete_all_steps_except_current_branch(self):
         delete_unconnected_steps_from(self.checkpoints['last_development_step'], 'previous_step')
         delete_unconnected_steps_from(self.checkpoints['last_command_run'], 'previous_step')
         delete_unconnected_steps_from(self.checkpoints['last_user_input'], 'previous_step')
 
-    def ask_for_human_intervention(self, message, description):
+    def ask_for_human_intervention(self, message, description=None):
         print(colored(message, "yellow"))
-        print(description)
+        if description is not None:
+            print(description)
         answer = ''
         while answer != 'continue':
             answer = styled_text(
                 self,
                 'Once you are ready, type "continue" to continue.',
             )
+
+            if answer != '' and answer != 'continue':
+                confirmation = styled_text(
+                    self,
+                    'Do you want me to debug this by your instructions? If you mistyped and just want to continue, type "continue" and if you want me to debug this, just press ENTER',
+                )
+                if confirmation == '':
+                    print(colored('Ok, just a second.', "yellow"))
+                    return answer

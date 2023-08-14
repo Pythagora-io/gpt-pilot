@@ -22,10 +22,12 @@ class CodeMonkey(Agent):
 
 
         changes = convo.send_message('development/implement_changes.prompt', {
-            "instructions": code_changes_description,
+            "step_description": code_changes_description,
+            "step_index": step_index,
             "directory_tree": self.project.get_directory_tree(True),
             "files": self.project.get_files(files_needed),
         }, IMPLEMENT_CHANGES)
+        convo.remove_last_x_messages(1)
 
         for file_data in changes:
             self.project.save_file(file_data)

@@ -1,6 +1,7 @@
 import json
 import uuid
 from termcolor import colored
+from utils.questionary import styled_text
 from helpers.files import update_file
 from utils.utils import step_already_finished
 from helpers.agents.CodeMonkey import CodeMonkey
@@ -8,9 +9,9 @@ from logger.logger import logger
 from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import execute_step, array_of_objects_to_string, generate_app_data
-from helpers.cli import build_directory_tree, run_command_until_success, execute_command_and_check_cli_response
-from const.function_calls import FILTER_OS_TECHNOLOGIES, DEVELOPMENT_PLAN, EXECUTE_COMMANDS, DEV_STEPS, GET_TEST_TYPE, DEV_TASKS_BREAKDOWN
-from database.database import save_progress, get_progress_steps
+from helpers.cli import build_directory_tree, run_command_until_success, execute_command_and_check_cli_response, debug
+from const.function_calls import FILTER_OS_TECHNOLOGIES, DEVELOPMENT_PLAN, EXECUTE_COMMANDS, GET_TEST_TYPE, DEV_TASKS_BREAKDOWN, IMPLEMENT_TASK
+from database.database import save_progress, get_progress_steps, save_file_description
 from utils.utils import get_os_info
 from helpers.cli import execute_command
 
@@ -25,21 +26,22 @@ class Developer(Agent):
         print(colored(f"Ok, great, now, let's start with the actual development...\n", "green"))
         logger.info(f"Starting to create the actual code...")
 
-        for i, dev_task in enumerate(self.project.development_plan):
-            self.implement_task(self.project.development_plan, i)
+        self.implement_task()
 
         # DEVELOPMENT END
 
         logger.info('The app is DONE!!! Yay...you can use it now.')
 
-    def implement_task(self, sibling_tasks, current_task_index, parent_task=None):
+    def implement_task(self):
         print(colored('-------------------------', 'green', attrs=['bold']))
-        print(colored(f"Implementing task {current_task_index + 1}...\n", "green", attrs=['bold']))
-        print(colored(sibling_tasks[current_task_index]['description'], 'green', attrs=['bold']))
+        # print(colored(f"Implementing task {current_task_index + 1}...\n", "green", attrs=['bold']))
+        print(colored(f"Implementing task...\n", "green", attrs=['bold']))
+        # print(colored(sibling_tasks[current_task_index]['description'], 'green', attrs=['bold']))
+        # print(colored(task_explanation, 'green', attrs=['bold']))
         print(colored('-------------------------', 'green', attrs=['bold']))
 
         convo_dev_task = AgentConvo(self)
-        task_steps = convo_dev_task.send_message('development/task/breakdown.prompt', {
+        task_description = convo_dev_task.send_message('development/task/breakdown.prompt', {
             "name": self.project.args['name'],
             "app_summary": self.project.project_description,
             "clarification": [],
@@ -48,11 +50,13 @@ class Developer(Agent):
             "technologies": self.project.architecture,
             "array_of_objects_to_string": array_of_objects_to_string,
             "directory_tree": self.project.get_directory_tree(True),
-            "current_task_index": current_task_index,
-            "sibling_tasks": sibling_tasks,
-            "parent_task": parent_task,
-        }, DEV_TASKS_BREAKDOWN)
+            # "current_task_index": current_task_index,
+            # "sibling_tasks": sibling_tasks,
+            # "parent_task": parent_task,
+        })
 
+        task_steps = convo_dev_task.send_message('development/parse_task.prompt', {}, IMPLEMENT_TASK)
+        convo_dev_task.remove_last_x_messages(2)
         self.execute_task(convo_dev_task, task_steps)
 
     def execute_task(self, convo, task_steps, test_command=None, reset_convo=True, test_after_code_changes=True):
@@ -64,32 +68,71 @@ class Developer(Agent):
                 convo.load_branch(function_uuid)
 
             if step['type'] == 'command':
-                run_command_until_success(step['command']['command'], step['command']['timeout'], convo)
+                additional_message = 'Let\'s start with the step #0:\n\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i)) } are finished so let\'s do step #{i + 1} now.\n\n'
+                run_command_until_success(step['command']['command'], step['command']['timeout'], convo, additional_message=additional_message)
 
-            elif step['type'] == 'code_change':
+            elif step['type'] == 'code_change' and 'code_change_description' in step:
+                # TODO this should be refactored so it always uses the same function call
                 print(f'Implementing code changes for `{step["code_change_description"]}`')
                 code_monkey = CodeMonkey(self.project, self)
                 updated_convo = code_monkey.implement_code_changes(convo, step['code_change_description'], i)
                 if test_after_code_changes:
                     self.test_code_changes(code_monkey, updated_convo)
 
+            elif step['type'] == 'code_change':
+                self.project.save_file(step['code_change'])
+                # self.project.save_file(step if 'code_change' not in step else step['code_change'])
+
             elif step['type'] == 'human_intervention':
-                self.project.ask_for_human_intervention('I need your help! Can you try debugging this yourself and let me take over afterwards? Here are the details about the issue:', step['human_intervention_description'])
-            
-            if test_command is not None and step.get('check_if_fixed'):
+                user_feedback = self.project.ask_for_human_intervention('I need your help! Can you try debugging this yourself and let me take over afterwards? Here are the details about the issue:', step['human_intervention_description'])
+                if user_feedback is not None:
+                    debug(convo, user_input=user_feedback, issue_description=step['human_intervention_description'])
+
+            if test_command is not None and ('check_if_fixed' not in step or step['check_if_fixed']):
                 should_rerun_command = convo.send_message('dev_ops/should_rerun_command.prompt',
                     test_command)
                 if should_rerun_command == 'NO':
                     return True
                 elif should_rerun_command == 'YES':
-                    response = execute_command_and_check_cli_response(test_command['command'], test_command['timeout'], convo)
-                    if response == 'NEEDS_DEBUGGING':
+                    cli_response, llm_response = execute_command_and_check_cli_response(test_command['command'], test_command['timeout'], convo)
+                    if llm_response == 'NEEDS_DEBUGGING':
                         print(colored(f'Got incorrect CLI response:', 'red'))
-                        print(response)
+                        print(cli_response)
                         print(colored('-------------------', 'red'))
-                    if response == 'DONE':
+                    if llm_response == 'DONE':
                         return True
 
+        self.continue_development()
+
+    def continue_development(self):
+        while True:
+            user_feedback = self.project.ask_for_human_intervention('Can you check if all this works?')
+
+            if user_feedback == 'DONE':
+                return True
+
+            if user_feedback is not None:
+                iteration_convo = AgentConvo(self)
+                iteration_convo.send_message('development/iteration.prompt', {
+                    "name": self.project.args['name'],
+                    "app_summary": self.project.project_description,
+                    "clarification": [],
+                    "user_stories": self.project.user_stories,
+                    "user_tasks": self.project.user_tasks,
+                    "technologies": self.project.architecture,
+                    "array_of_objects_to_string": array_of_objects_to_string,
+                    "directory_tree": self.project.get_directory_tree(True),
+                    "files": self.project.get_all_coded_files(),
+                    "user_input": user_feedback,
+                })
+
+                # debug(iteration_convo, user_input=user_feedback)
+
+                task_steps = iteration_convo.send_message('development/parse_task.prompt', {}, IMPLEMENT_TASK)
+                iteration_convo.remove_last_x_messages(2)
+                self.execute_task(iteration_convo, task_steps)
+
+    
     def set_up_environment(self):
         self.project.current_step = 'environment_setup'
         self.convo_os_specific_tech = AgentConvo(self)
@@ -100,6 +143,10 @@ class Developer(Agent):
             step_already_finished(self.project.args, step)
             return
 
+        user_input = ''
+        while user_input != 'DONE':
+            user_input = styled_text(self.project, 'Please set up your local environment so that the technologies above can be utilized. When you\'re done, write "DONE"', 'yellow')
+        return
         # ENVIRONMENT SETUP
         print(colored(f"Setting up the environment...\n", "green"))
         logger.info(f"Setting up the environment...")
@@ -109,7 +156,8 @@ class Developer(Agent):
             { "name": self.project.args['name'], "os_info": os_info, "technologies": self.project.architecture }, FILTER_OS_TECHNOLOGIES)
 
         for technology in os_specific_techologies:
-            llm_response = self.convo_os_specific_tech.send_message('development/env_setup/install_next_technology.prompt',
+            # TODO move the functions definisions to function_calls.py
+            cli_response, llm_response = self.convo_os_specific_tech.send_message('development/env_setup/install_next_technology.prompt',
                 { 'technology': technology}, {
                     'definitions': [{
                         'name': 'execute_command',

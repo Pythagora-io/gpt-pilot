@@ -4,15 +4,7 @@ Here is a high level description of "{{ name }}":
 ```
 {{ app_summary }}
 ```
-{#
-Here are some additional questions and answers to clarify the apps description:
-```
-{% for clarification in clarifications %}
-Q: {{ clarification.question }}
-A: {{ clarification.answer }}
-{% endfor %}
-```
-#}
+
 Here are user stories that specify how users use "{{ name }}":
 ```{% for story in user_stories %}
 - {{ story }}{% endfor %}
@@ -39,50 +31,8 @@ We've broken it down to these subtasks:
 ```
 {% endif %}
 
-{% if current_task_index != 0 %}
-So far, these tasks are done:
-```
-{% for task in sibling_tasks[0:current_task_index] %}
-#{{ loop.index }} {{ task['description'] }}
-{% endfor %}
-```
-so let's the next task which is this:
-{% else %}
-Let's start with the task #0:
-{% endif %}
-```
-{{ array_of_objects_to_string(sibling_tasks[current_task_index]) }}
-```
-{#
-Think step by step about what needs to be done to complete this task. 
-{% if sibling_tasks[current_task_index]['type'] == 'COMMAND' %}
-Respond with all commands that need to be run to fulfill this step.
-{% elif sibling_tasks[current_task_index]['type'] == 'CODE_CHANGE' %}
-First, you need to know the code that's currently written so that you can appropriately write new or update the existing code. Here are all the file that are written so far in a file tree format:
-```
-{{ directory_tree }}
-```
+Now, tell me all the code that needs to be written to implement this app and have it fully working and all commands that need to be run to implement this app.
 
-You can get the list of files by calling `get_files` function. 
-{% else %}
-#}
+This should be a simple version of the app so you don't need to aim to provide a production ready code but rather something that a developer can run locally and play with the implementation. Do not leave any parts of the code to be written afterwards. Make sure that all the code you provide is working and does as outlined in the description area above.
 
-Here are all the file that are written so far in a file tree format:
-```
-{{ directory_tree }}
-```
-
-First, just make a list of steps we need to do to fulfill this task. It should be in a JSON array. Every step must NOT contain both a command that needs to be run and the code that needs to be changed. It can be either command (or multiple commands) that need to be run or a change in the code.
-{#
-Each step must start with a keyword `command` in case the step consists of commands that need to be run or `code_change` in case it consists of changes in the code. After the keyword, write a description of what will be done in that step. Do not write what needs to be done for each step but only list them in an array.
-#}
-If a step involves changing the code, it must include code changes for only one single file. In case you need to change multiple files, split it into multiple steps where each involves changes for a single file.
-
-You can also request a human intervention if needed. For example, if you need an API key to some service, you should make one task for human to get an API key and put it where you think is appropriate. Just make sure that you describe the task is enough details so that a person reading it can be completely sure what to do.
-
-You have all the technologies installed on the machine (not dependencies but the technologies like databases, etc.) and you have a folder set up for this project. All commands that you specify will be ran within that folder.
-
-Also, keep in mind that you also need to write test (or tests) that will programmatically verify that your task is complete.
-{#
-{% endif %}
-#}
+Remember, I'm currently in an empty folder where I will start writing files that you tell me. Also, tell me how can I test the app to see if it's working or not. You do not need to make any automated tests work.
