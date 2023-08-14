@@ -71,12 +71,17 @@ class Developer(Agent):
                 additional_message = 'Let\'s start with the step #0:\n\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i)) } are finished so let\'s do step #{i + 1} now.\n\n'
                 run_command_until_success(step['command']['command'], step['command']['timeout'], convo, additional_message=additional_message)
 
-            elif step['type'] == 'code_change':
+            elif step['type'] == 'code_change' and 'code_change_description' in step:
+                # TODO this should be refactored so it always uses the same function call
                 print(f'Implementing code changes for `{step["code_change_description"]}`')
                 code_monkey = CodeMonkey(self.project, self)
                 updated_convo = code_monkey.implement_code_changes(convo, step['code_change_description'], i)
                 if test_after_code_changes:
                     self.test_code_changes(code_monkey, updated_convo)
+
+            elif step['type'] == 'code_change':
+                self.project.save_file(step['code_change'])
+                # self.project.save_file(step if 'code_change' not in step else step['code_change'])
 
             elif step['type'] == 'human_intervention':
                 user_feedback = self.project.ask_for_human_intervention('I need your help! Can you try debugging this yourself and let me take over afterwards? Here are the details about the issue:', step['human_intervention_description'])
