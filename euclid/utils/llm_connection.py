@@ -3,6 +3,8 @@ import os
 import sys
 import json
 import tiktoken
+import questionary
+
 from typing import List
 from jinja2 import Environment, FileSystemLoader
 
@@ -157,7 +159,19 @@ def stream_gpt_completion(data, req_type):
     logger.info(f'Response status code: {response.status_code}')
 
     if response.status_code != 200:
-        print(f'problem with request: {response.text}')
+        print(colored(f'There was a problem with request to openai API:', 'red'))
+        print(response.text)
+        user_message = questionary.text("Do you want to try make same request again? If yes, just press ENTER.",
+                                        style=questionary.Style([
+                                            ('question', 'fg:red'),
+                                            ('answer', 'fg:orange')
+                                        ])).ask()
+
+        lines_printed += count_lines_based_on_width(response.text, terminal_width) + 1
+        if user_message == '':
+            delete_last_n_lines(lines_printed)
+            return stream_gpt_completion(data, req_type)
+
         logger.debug(f'problem with request: {response.text}')
         return return_result({}, lines_printed)
 
