@@ -1,7 +1,14 @@
-Ok, we need to debug this issue so we can execute `{{ command }}` successfully. I want you to debug this issue by yourself and I will give you 2 functions that you can use - `run_command` and `implement_code_changes`.
+{% if issue_description %}
+You wanted me to check this - `{{ issue_description }}` but there was a problem{% else %}Ok, we need to debug this issue{% endif %}{% if command %} and we need to be able to execute `{{ command }}` successfully. {% else %}. Here is a brief explanation of what's happening:
+```
+{{ user_input }}
+```
+{% endif %}I want you to debug this issue by yourself and I will give you 2 functions that you can use - `run_command` and `implement_code_changes`.
 
 `run_command` function will run a command on the machine and will return the CLI output to you so you can see what to do next.
 
 `implement_code_changes` function will change the code where you just need to thoroughly describe what needs to be implmemented, I will implement the requested changes and let you know.
 
-After this, you need to deside what to do next. You can rerun the command `{{ command }}` to check if the problem is fixed or run another command with `run_command` or change more code with `implement_code_changes`.
+Return a list of steps that are needed to debug this issue. By the time we execute the last step, the issue should be fixed completely. Also, make sure that at least the last step has `check_if_fixed` set to TRUE.
+
+{# After this, you need to decide what to do next. You can rerun the command `{{ command }}` to check if the problem is fixed or run another command with `run_command` or change more code with `implement_code_changes`. #}
