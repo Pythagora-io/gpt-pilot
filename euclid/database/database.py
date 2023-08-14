@@ -289,8 +289,8 @@ def get_all_connected_steps(step, previous_step_field_name):
         prev_step = getattr(prev_step, previous_step_field_name)
     return connected_steps
 
-def delete_all_steps_from_app(app):
-    models = [DevelopmentSteps, CommandRuns, UserInputs]
+def delete_all_app_development_data(app):
+    models = [DevelopmentSteps, CommandRuns, UserInputs, File, FileSnapshot]
     for model in models:
         model.delete().where(model.app == app).execute()
 

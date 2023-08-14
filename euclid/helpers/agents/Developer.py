@@ -1,6 +1,7 @@
 import json
 import uuid
 from termcolor import colored
+from helpers.files import update_file
 from utils.utils import step_already_finished
 from helpers.agents.CodeMonkey import CodeMonkey
 from logger.logger import logger
@@ -98,7 +99,7 @@ class Developer(Agent):
         if step and not execute_step(self.project.args['step'], self.project.current_step):
             step_already_finished(self.project.args, step)
             return
-        
+
         # ENVIRONMENT SETUP
         print(colored(f"Setting up the environment...\n", "green"))
         logger.info(f"Setting up the environment...")

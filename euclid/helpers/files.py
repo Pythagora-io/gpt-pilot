@@ -28,9 +28,12 @@ def get_files_content(directory, ignore=[]):
             with open(path, 'r', encoding='utf-8', errors='ignore') as f:
                 file_content = f.read()
 
+            file_name = path.replace(directory + '/', '')
             return_array.append({
-                'name': path.replace(directory + '/', ''),
-                'content': file_content
+                'name': file_name,
+                'path': '/' + file.replace(file_name, ''),
+                'content': file_content,
+                'full_path': path,
             })
 
     return return_array

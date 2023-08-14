@@ -28,16 +28,6 @@ class CodeMonkey(Agent):
         }, IMPLEMENT_CHANGES)
 
         for file_data in changes:
-            file_data['full_path'] = self.project.get_full_file_path(file_data['path'], file_data['name'])
-
-            if file_data['description'] != '':
-                    (File.insert(app=self.project.app, path=file_data['path'], name=file_data['name'], description=file_data['description'])
-                        .on_conflict(
-                            conflict_target=[File.app, File.name, File.path],
-                            preserve=[],
-                            update={'description': file_data['description']})
-                        .execute())
-
-            update_file(file_data['full_path'], file_data['content'])
+            self.project.save_file(file_data)
 
         return convo
