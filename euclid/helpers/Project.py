@@ -33,6 +33,8 @@ class Project:
         # TODO make flexible
         # self.root_path = get_parent_folder('euclid')
         self.root_path = ''
+        self.skip_until_dev_step = None
+        self.skip_steps = None
         # self.restore_files({dev_step_id_to_start_from})
 
         if current_step is not None:
@@ -69,11 +71,6 @@ class Project:
                 clear_directory(self.root_path)
                 delete_all_app_development_data(self.args['app_id'])
                 self.skip_steps = False
-        else:
-            self.skip_until_dev_step = None
-            self.skip_steps = True
-
-        self.skip_steps = False if ('skip_until_dev_step' in self.args and self.args['skip_until_dev_step'] == '0') else True
         # TODO END
 
         self.developer = Developer(self)

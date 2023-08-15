@@ -22,6 +22,9 @@ class Developer(Agent):
     def start_coding(self):
         self.project.current_step = 'coding'
 
+        if self.project.skip_steps is None:
+            self.project.skip_steps = False if ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0') else True
+
         # DEVELOPMENT
         print(colored(f"Ok, great, now, let's start with the actual development...\n", "green"))
         logger.info(f"Starting to create the actual code...")
