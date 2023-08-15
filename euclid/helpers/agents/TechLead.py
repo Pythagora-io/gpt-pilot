@@ -39,7 +39,7 @@ class TechLead(Agent):
                 "app_summary": self.project.project_description,
                 "clarification": [],
                 "user_stories": self.project.user_stories,
-                "user_tasks": self.project.user_tasks,
+                # "user_tasks": self.project.user_tasks,
                 "technologies": self.project.architecture
             }, DEVELOPMENT_PLAN)
 

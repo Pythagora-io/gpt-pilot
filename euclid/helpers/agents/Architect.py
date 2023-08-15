@@ -34,7 +34,7 @@ class Architect(Agent):
             {'name': self.project.args['name'],
              'prompt': self.project.project_description,
              'user_stories': self.project.user_stories,
-             'user_tasks': self.project.user_tasks,
+            #  'user_tasks': self.project.user_tasks,
              'app_type': self.project.args['app_type']}, ARCHITECTURE)
 
         if self.project.args.get('advanced', False):

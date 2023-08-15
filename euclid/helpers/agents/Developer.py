@@ -49,7 +49,7 @@ class Developer(Agent):
             "app_summary": self.project.project_description,
             "clarification": [],
             "user_stories": self.project.user_stories,
-            "user_tasks": self.project.user_tasks,
+            # "user_tasks": self.project.user_tasks,
             "technologies": self.project.architecture,
             "array_of_objects_to_string": array_of_objects_to_string,
             "directory_tree": self.project.get_directory_tree(True),
@@ -121,7 +121,7 @@ class Developer(Agent):
                     "app_summary": self.project.project_description,
                     "clarification": [],
                     "user_stories": self.project.user_stories,
-                    "user_tasks": self.project.user_tasks,
+                    # "user_tasks": self.project.user_tasks,
                     "technologies": self.project.architecture,
                     "array_of_objects_to_string": array_of_objects_to_string,
                     "directory_tree": self.project.get_directory_tree(True),
@@ -148,7 +148,10 @@ class Developer(Agent):
 
         user_input = ''
         while user_input != 'DONE':
-            user_input = styled_text(self.project, 'Please set up your local environment so that the technologies above can be utilized. When you\'re done, write "DONE"', 'yellow')
+            user_input = styled_text(self.project, 'Please set up your local environment so that the technologies above can be utilized. When you\'re done, write "DONE"')
+        save_progress(self.project.args['app_id'], self.project.current_step, {
+            "os_specific_techologies": [], "newly_installed_technologies": [], "app_data": generate_app_data(self.project.args)
+        })
         return
         # ENVIRONMENT SETUP
         print(colored(f"Setting up the environment...\n", "green"))

@@ -8,12 +8,12 @@ Here is a high level description of "{{ name }}":
 Here are user stories that specify how users use "{{ name }}":
 ```{% for story in user_stories %}
 - {{ story }}{% endfor %}
-```
+```{#
 
 Here are user tasks that specify what users need to do to interact with "{{ name }}":
 ```{% for task in user_tasks %}
 - {{ task }}{% endfor %}
-```
+```#}
 
 Here are the technologies that you need to use for this project:
 ```{% for tech in technologies %}

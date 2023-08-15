@@ -49,20 +49,20 @@ class Project:
             self.user_tasks = user_tasks
         if architecture is not None:
             self.architecture = architecture
-        if development_plan is not None:
-            self.development_plan = development_plan
+        # if development_plan is not None:
+        #     self.development_plan = development_plan
 
     def start(self):
         self.project_manager = ProductOwner(self)
         self.project_manager.get_project_description()
         self.user_stories = self.project_manager.get_user_stories()
-        self.user_tasks = self.project_manager.get_user_tasks()
+        # self.user_tasks = self.project_manager.get_user_tasks()
 
         self.architect = Architect(self)
         self.architecture = self.architect.get_architecture()
 
-        self.tech_lead = TechLead(self)
-        self.development_plan = self.tech_lead.create_development_plan()
+        # self.tech_lead = TechLead(self)
+        # self.development_plan = self.tech_lead.create_development_plan()
 
         # TODO move to constructor eventually
         if 'skip_until_dev_step' in self.args:
