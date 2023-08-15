@@ -1,2 +1,23 @@
+Here are instructions for Writing the Project Summary:
+
+Stick to the Facts: The summary should encompass all pertinent details of the project without including unnecessary anecdotes, background stories, or subjective interpretations. Length is not an issue as long as every sentence is informative and relevant.
+
+Avoid Subjectivity: Do not provide personal opinions, interpretations, or unnecessary background stories. Write from a neutral standpoint.
+
+Use Active Voice: Use active rather than passive voice. For instance, "The project will include 5 subdomains" instead of "It was decided that the project should include 5 subdomains."
+
+Be Direct: State facts straightforwardly. For example, replace phrases like "The client wants to have..." with direct statements like "There must be...".
+
+Prioritize Clarity: Each statement should be clear and easy to understand. Avoid using jargon, unless it's commonly understood in the project context.
+
+Organize Information: Group related items together to ensure a logical flow to your summary. This makes it easier for someone reading the summary to understand the project's scope and requirements.
+
+Examples:
+
+Instead of "The client expressed a preference for blue in our last meeting", write "The primary color is blue".
+Instead of "Following our review of potential platforms, we've chosen to build on WordPress", write "The project will be built on WordPress".
+
+Remember: The goal of the summary is to provide a comprehensive yet precise overview of the project, focusing strictly on the factual aspects.
+
 Based on the following conversation, write a summary:
 {{conversation}}

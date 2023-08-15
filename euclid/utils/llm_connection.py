@@ -134,6 +134,28 @@ def count_lines_based_on_width(content, width):
     return lines_required
 
 
+def retry_on_exception(func):
+    def wrapper(*args, **kwargs):
+        while True:
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                print(colored(f'There was a problem with request to openai API:', 'red'))
+                print(str(e))
+                user_message = questionary.text(
+                    "Do you want to try make the same request again? If yes, just press ENTER. Otherwise, type 'no'.",
+                    style=questionary.Style([
+                        ('question', 'fg:red'),
+                        ('answer', 'fg:orange')
+                    ])).ask()
+
+                if user_message != '':
+                    return {}
+
+    return wrapper
+
+
+@retry_on_exception
 def stream_gpt_completion(data, req_type):
     terminal_width = os.get_terminal_size().columns
     lines_printed = 2
@@ -164,21 +186,8 @@ def stream_gpt_completion(data, req_type):
     logger.info(f'Response status code: {response.status_code}')
 
     if response.status_code != 200:
-        print(colored(f'There was a problem with request to openai API:', 'red'))
-        print(response.text)
-        user_message = questionary.text("Do you want to try make same request again? If yes, just press ENTER.",
-                                        style=questionary.Style([
-                                            ('question', 'fg:red'),
-                                            ('answer', 'fg:orange')
-                                        ])).ask()
-
-        lines_printed += count_lines_based_on_width(response.text, terminal_width) + 1
-        if user_message == '':
-            delete_last_n_lines(lines_printed)
-            return stream_gpt_completion(data, req_type)
-
         logger.debug(f'problem with request: {response.text}')
-        return return_result({}, lines_printed)
+        raise Exception(f"API responded with status code: {response.status_code}. Response text: {response.text}")
 
     gpt_response = ''
     function_calls = {'name': '', 'arguments': ''}
