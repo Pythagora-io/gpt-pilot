@@ -1,4 +1,9 @@
-Here are instructions for Writing the Project Summary:
+Based on the following conversation, write a summary:
+
+``` {{conversation}} ```
+
+**IMPORTANT**
+Here are the instructions for Writing the Project Summary:
 
 Stick to the Facts: The summary should encompass all pertinent details of the project without including unnecessary anecdotes, background stories, or subjective interpretations. Length is not an issue as long as every sentence is informative and relevant.
 
@@ -18,6 +23,3 @@ Instead of "The client expressed a preference for blue in our last meeting", wri
 Instead of "Following our review of potential platforms, we've chosen to build on WordPress", write "The project will be built on WordPress".
 
 Remember: The goal of the summary is to provide a comprehensive yet precise overview of the project, focusing strictly on the factual aspects.
-
-Based on the following conversation, write a summary:
-{{conversation}}
