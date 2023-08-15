@@ -1,0 +1,35 @@
+You are working on a web app called "{{ name }}" and you need to write code for the entire application.
+
+Here is a high level description of "{{ name }}":
+```
+{{ app_summary }}
+```
+
+Here are the technologies that you need to use for this project:
+```{% for tech in technologies %}
+- {{ tech }}{% endfor %}
+```
+
+A big part of the app is already finished. Here are files that are currently implemented:
+{% for file in files %}
+**{{ file.path }}**:
+```
+{{ file.content }}
+```
+{% endfor %}
+
+Now, your colleague who is testing the app "{{ name }}" sent you some additional info. Here it is:
+```
+{{ user_input }}
+```
+
+Can you debug this issue or implement changes to comply with the additional user input?
+
+Tell me all the code that needs to be written to implement this app and have it fully working. You can count that the environment is set up previously and packages listed in files are installed so tell me only commands needed for installation of new dependencies.
+
+Do not leave any parts of the code to be written afterwards. Make sure that all the code you provide is working and does as outlined in the description area above.
+
+Remember, I'm currently in an empty folder where I will start writing files that you tell me. You do not need to make any automated tests work.
+
+!!IMPORTANT!!
+Do not tell me anything about setting up the database or anything OS related - only if some dependencies need to be installed.
