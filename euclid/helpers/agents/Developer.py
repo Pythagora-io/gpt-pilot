@@ -95,7 +95,7 @@ class Developer(Agent):
                 else:
                     data = step['code_change']
                 self.project.save_file(data)
-                # self.project.save_file(step if 'code_change' not in step else step['code_change'])
+                # TODO end
 
             elif step['type'] == 'human_intervention':
                 user_feedback = self.project.ask_for_human_intervention('I need your help! Can you try debugging this yourself and let me take over afterwards? Here are the details about the issue:', step['human_intervention_description'])
