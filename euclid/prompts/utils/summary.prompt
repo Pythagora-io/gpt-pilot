@@ -3,23 +3,22 @@ Based on the following conversation, write a summary:
 ``` {{conversation}} ```
 
 **IMPORTANT**
-Here are the instructions for Writing the Project Summary:
+Here are the instructions for Writing the Summary:
 
-Stick to the Facts: The summary should encompass all pertinent details of the project without including unnecessary anecdotes, background stories, or subjective interpretations. Length is not an issue as long as every sentence is informative and relevant.
+1. **Stick to the Facts**: Every sentence should be informative and relevant. Length is not an issue as long as all pertinent details of the project are included, without unnecessary anecdotes, background stories, or subjective interpretations.
 
-Avoid Subjectivity: Do not provide personal opinions, interpretations, or unnecessary background stories. Write from a neutral standpoint.
+2. **Avoid Subjectivity and Mentioning The Client or Any External Entities**: Do not mention phrases like "the client wants" or "the client said". Do not provide personal opinions, interpretations, or unnecessary background stories. Summarize information in a direct and neutral manner.
 
-Use Active Voice: Use active rather than passive voice. For instance, "The project will include 5 subdomains" instead of "It was decided that the project should include 5 subdomains."
+3. **Use Active Voice**: Use active rather than passive voice. For instance, "The project includes 5 subdomains" instead of "It was decided that the project should include 5 subdomains."
 
-Be Direct: State facts straightforwardly. For example, replace phrases like "The client wants to have..." with direct statements like "There must be...".
+4. **Be Direct**: Replace indirect phrases with direct statements. For example, instead of saying "The client said there might be a need for...", state "There will be...".
 
-Prioritize Clarity: Each statement should be clear and easy to understand. Avoid using jargon, unless it's commonly understood in the project context.
+5. **Prioritize Clarity**: Each statement should be clear and easy to understand. Refrain from using jargon unless it's widely recognized in the project's context.
 
-Organize Information: Group related items together to ensure a logical flow to your summary. This makes it easier for someone reading the summary to understand the project's scope and requirements.
+6. **Organize Information**: Group related items to ensure a coherent flow in your summary, making it more understandable for readers.
 
-Examples:
+**Examples**:
+- Instead of "The client expressed a preference for blue in our last meeting", write "The primary color is blue".
+- Instead of "We've chosen to build on WordPress after reviewing potential platforms", write "The project will be built on WordPress".
 
-Instead of "The client expressed a preference for blue in our last meeting", write "The primary color is blue".
-Instead of "Following our review of potential platforms, we've chosen to build on WordPress", write "The project will be built on WordPress".
-
-Remember: The goal of the summary is to provide a comprehensive yet precise overview of the project, focusing strictly on the factual aspects.
+Remember: The goal of the summary is to provide a concise and accurate overview of the project, focusing strictly on its factual aspects.
