@@ -60,9 +60,9 @@ class Developer(Agent):
 
         task_steps = convo_dev_task.send_message('development/parse_task.prompt', {}, IMPLEMENT_TASK)
         convo_dev_task.remove_last_x_messages(2)
-        self.execute_task(convo_dev_task, task_steps)
+        self.execute_task(convo_dev_task, task_steps, continue_development=True)
 
-    def execute_task(self, convo, task_steps, test_command=None, reset_convo=True, test_after_code_changes=True):
+    def execute_task(self, convo, task_steps, test_command=None, reset_convo=True, test_after_code_changes=True, continue_development=False):
         function_uuid = str(uuid.uuid4())
         convo.save_branch(function_uuid)
 
@@ -118,7 +118,10 @@ class Developer(Agent):
 
         self.continue_development()
 
-    def continue_development(self):
+        if continue_development:
+            self.continue_development(convo)
+
+    def continue_development(self, iteration_convo):
         while True:
             user_feedback = self.project.ask_for_human_intervention(
                 'Can you check if all this works? If you want to run the app, just type "r" and press ENTER',
@@ -146,7 +149,7 @@ class Developer(Agent):
 
                 task_steps = iteration_convo.send_message('development/parse_task.prompt', {}, IMPLEMENT_TASK)
                 iteration_convo.remove_last_x_messages(2)
-                self.execute_task(iteration_convo, task_steps)
+                self.execute_task(iteration_convo, task_steps, continue_development=False)
 
     
     def set_up_environment(self):
