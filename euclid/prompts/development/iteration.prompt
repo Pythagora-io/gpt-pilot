@@ -25,10 +25,10 @@ Now, your colleague who is testing the app "{{ name }}" sent you some additional
 
 Can you debug this issue or implement changes to comply with the additional user input?
 
-Tell me all the code that needs to be written to implement this app and have it fully working. You can count that the environment is set up previously and packages listed in files are installed so tell me only commands needed for installation of new dependencies.
+Tell me all the new code that needs to be written or modified to implement this app and have it fully working. You can count that the environment is set up previously and packages listed in files are installed so tell me only commands needed for installation of new dependencies.
 
-Do not leave any parts of the code to be written afterwards. Make sure that all the code you provide is working and does as outlined in the description area above.
-
+{# Do not leave any parts of the code to be written afterwards. Make sure that all the code you provide is working and does as outlined in the description area above.
+#}
 Remember, I'm currently in an empty folder where I will start writing files that you tell me. You do not need to make any automated tests work.
 
 !!IMPORTANT!!
