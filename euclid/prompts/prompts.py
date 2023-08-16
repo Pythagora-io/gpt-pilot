@@ -12,6 +12,7 @@ from logger.logger import logger
 
 
 def ask_for_app_type():
+    return 'app'
     answer = styled_select(
         "What type of app do you want to build?",
         choices=common.APP_TYPES

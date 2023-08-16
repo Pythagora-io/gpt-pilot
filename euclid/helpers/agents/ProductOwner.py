@@ -44,8 +44,7 @@ class ProductOwner(Agent):
             generate_messages_from_description(main_prompt, self.project.args['app_type'], self.project.args['name']))
 
         high_level_summary = convo_project_description.send_message('utils/summary.prompt',
-                                                {'conversation': '\n'.join(
-                                                    [f"{msg['role']}: {msg['content']}" for msg in high_level_messages])})
+            {'conversation': '\n'.join([f"{msg['role']}: {msg['content']}" for msg in high_level_messages])})
 
         save_progress(self.project.args['app_id'], self.project.current_step, {
             "prompt": main_prompt,
