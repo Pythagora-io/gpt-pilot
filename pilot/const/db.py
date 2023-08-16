@@ -1,4 +1,4 @@
-DB_NAME = 'euclid'
+DB_NAME = 'pilot'
 DB_HOST = 'localhost'
 DB_PORT = '5432'
 DB_USER = 'admin'

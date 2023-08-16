@@ -31,7 +31,6 @@ class Project:
             'last_development_step': None,
         }
         # TODO make flexible
-        # self.root_path = get_parent_folder('euclid')
         self.root_path = ''
         self.skip_until_dev_step = None
         self.skip_steps = None

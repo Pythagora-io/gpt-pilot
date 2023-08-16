@@ -12,7 +12,7 @@ def get_parent_folder(folder_name):
 
 
 def setup_workspace(project_name):
-    root = get_parent_folder('euclid')
+    root = get_parent_folder('pilot')
     create_directory(root, 'workspace')
     project_path = create_directory(os.path.join(root, 'workspace'), project_name)
     create_directory(project_path, 'tests')

@@ -223,7 +223,7 @@ class Developer(Agent):
         elif test_type == 'manual_test':
             # TODO make the message better
             user_feedback = self.project.ask_for_human_intervention(
-                'Message from Euclid: I need your help. Can you please test if this was successful?',
+                'Message from Pilot: I need your help. Can you please test if this was successful?',
                 manual_test_description
             )
             if user_feedback is not None:
