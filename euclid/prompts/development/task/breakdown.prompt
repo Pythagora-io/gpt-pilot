@@ -35,4 +35,8 @@ Now, tell me all the code that needs to be written to implement this app and hav
 
 This should be a simple version of the app so you don't need to aim to provide a production ready code but rather something that a developer can run locally and play with the implementation. Do not leave any parts of the code to be written afterwards. Make sure that all the code you provide is working and does as outlined in the description area above.
 
-Remember, I'm currently in an empty folder where I will start writing files that you tell me. Also, tell me how can I test the app to see if it's working or not. You do not need to make any automated tests work.
+!IMPORTANT!
+Remember, I'm currently in an empty folder where I will start writing files that you tell me.
+Tell me how can I test the app to see if it's working or not.
+You do not need to make any automated tests work.
+DO NOT specify commands to create any folders or files, they will be created automatically - just specify the relative path to each file that needs to be written
