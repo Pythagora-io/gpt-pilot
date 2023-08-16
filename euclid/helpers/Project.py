@@ -170,7 +170,7 @@ class Project:
         delete_unconnected_steps_from(self.checkpoints['last_command_run'], 'previous_step')
         delete_unconnected_steps_from(self.checkpoints['last_user_input'], 'previous_step')
 
-    def ask_for_human_intervention(self, message, description=None):
+    def ask_for_human_intervention(self, message, description=None, cbs={}):
         print(colored(message, "yellow"))
         if description is not None:
             print(description)
@@ -180,6 +180,9 @@ class Project:
                 self,
                 'Once you are ready, type "continue" to continue.',
             )
+
+            if answer in cbs:
+                return cbs[answer]()
 
             if answer != '' and answer != 'continue':
                 confirmation = styled_text(

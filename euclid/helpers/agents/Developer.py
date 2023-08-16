@@ -120,7 +120,9 @@ class Developer(Agent):
 
     def continue_development(self):
         while True:
-            user_feedback = self.project.ask_for_human_intervention('Can you check if all this works?')
+            user_feedback = self.project.ask_for_human_intervention(
+                'Can you check if all this works? If you want to run the app, just type "r" and press ENTER',
+                cbs={ 'r': lambda: run_command_until_success(self.run_command, None, iteration_convo, force=True) })
 
             if user_feedback == 'DONE':
                 return True
