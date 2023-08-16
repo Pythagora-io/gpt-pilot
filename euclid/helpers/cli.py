@@ -13,8 +13,12 @@ from const.function_calls import DEBUG_STEPS_BREAKDOWN
 from utils.questionary import styled_text
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MIN_COMMAND_RUN_TIME, MAX_COMMAND_RUN_TIME
 
+interrupted = False
+
 def enqueue_output(out, q):
     for line in iter(out.readline, ''):
+        if interrupted:  # Check if the flag is set
+            break
         q.put(line)
     out.close()
 
@@ -68,6 +72,7 @@ def execute_command(project, command, timeout=None, force=False):
     process = run_command(command, project.root_path, q, q_stderr, pid_container)
     output = ''
     start_time = time.time()
+    interrupted = False
 
     try:
         while True and return_value is None:
@@ -99,6 +104,7 @@ def execute_command(project, command, timeout=None, force=False):
                 output += line
                 print(colored('CLI OUTPUT:', 'green') + line, end='')
     except (KeyboardInterrupt, TimeoutError) as e:
+        interrupted = True
         if isinstance(e, KeyboardInterrupt):
             print("\nCTRL+C detected. Stopping command execution...")
         else:

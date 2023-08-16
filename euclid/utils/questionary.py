@@ -15,7 +15,7 @@ custom_style = Style.from_dict({
 
 def styled_select(*args, **kwargs):
     kwargs["style"] = custom_style  # Set style here
-    return questionary.select(*args, **kwargs).ask()  # .ask() is included here
+    return questionary.select(*args, **kwargs).unsafe_ask()  # .ask() is included here
 
 
 def styled_text(project, question):
@@ -31,6 +31,6 @@ def styled_text(project, question):
     config = {
         'style': custom_style,
     }
-    response = questionary.text(question, **config).ask()  # .ask() is included here
+    response = questionary.text(question, **config).unsafe_ask()  # .ask() is included here
     user_input = save_user_input(project, question, response)
     return response
