@@ -122,7 +122,11 @@ class Project:
             .execute())
 
     def get_full_file_path(self, file_path, file_name):
-        file_path = file_path.replace('./', '', 1).rsplit(file_name, 1)[0]
+        file_path = file_path.replace('./', '', 1)
+        if ' ' in file_name or '.' not in file_name:
+            file_name = ''
+        else:
+            file_path = file_path.rsplit(file_name, 1)[0]
 
         if file_path.endswith('/'):
             file_path = file_path.rstrip('/')

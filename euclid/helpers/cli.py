@@ -77,7 +77,9 @@ def execute_command(project, command, timeout=None, force=False):
     try:
         while True and return_value is None:
             elapsed_time = time.time() - start_time
-            print(colored(f'\rt: {round(elapsed_time * 1000)}ms : ', 'white', attrs=['bold']), end='', flush=True)
+            if timeout is not None:
+                print(colored(f'\rt: {round(elapsed_time * 1000)}ms : ', 'white', attrs=['bold']), end='', flush=True)
+
             # Check if process has finished
             if process.poll() is not None:
                 # Get remaining lines from the queue
