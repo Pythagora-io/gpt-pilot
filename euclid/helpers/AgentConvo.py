@@ -89,7 +89,7 @@ class AgentConvo:
 
         # Continue conversation until GPT response equals END_RESPONSE
         while response != END_RESPONSE:
-            print(colored("Do you want to add anything else? If not, just press ENTER.", 'yellow'))
+            print(colored("Do you want to add anything else? If not, ", 'yellow') + colored('just press ENTER.', 'yellow', attrs=['bold']))
             user_message = ask_user(self.agent.project, response, False)
 
             if user_message == "":
@@ -123,8 +123,7 @@ class AgentConvo:
     def log_message(self, content):
         print_msg = capitalize_first_word_with_underscores(self.high_level_step)
         if self.log_to_user:
-            print(colored(f"{print_msg}:\n", "green"))
-            print(f"{content}\n")
+            print(colored("Dev step ", 'yellow') + colored(self.agent.project.checkpoints['last_development_step'], 'yellow', attrs=['bold']) + f"\n{content}\n")
         logger.info(f"{print_msg}: {content}\n")
 
     def to_playground(self):

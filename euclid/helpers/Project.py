@@ -183,12 +183,5 @@ class Project:
 
             if answer in cbs:
                 return cbs[answer]()
-
-            if answer != '' and answer != 'continue':
-                confirmation = styled_text(
-                    self,
-                    'Do you want me to debug this by your instructions? If you mistyped and just want to continue, type "continue" and if you want me to debug this, just press ENTER',
-                )
-                if confirmation == '':
-                    print(colored('Ok, just a second.', "yellow"))
-                    return answer
+            elif answer != '' and answer != 'continue':
+                return answer

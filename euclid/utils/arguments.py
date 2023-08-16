@@ -1,6 +1,8 @@
 import sys
 import uuid
 
+from termcolor import colored
+
 from database.database import get_app
 
 
@@ -47,5 +49,6 @@ def get_arguments():
     if 'step' not in arguments:
         arguments['step'] = None
 
-    print(f"If you wish to continue with this project in future run 'python main.py app_id={arguments['app_id']}'")
+    print(f"If you wish to continue with this project in future run:")
+    print(colored(f'python main.py app_id={arguments["app_id"]}', 'yellow', attrs=['bold']))
     return arguments

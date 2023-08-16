@@ -45,7 +45,7 @@ def execute_command(project, command, timeout=None, force=False):
         timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
 
     if not force:
-        print(colored(f'Can i execute the command: `{command}` with {timeout}ms timeout?', 'white', attrs=['bold']))
+        print(colored(f'Can i execute the command: `') + colored(command, 'white', attrs=['bold']) + colored(f'` with {timeout}ms timeout?'))
 
         answer = styled_text(
             project,
@@ -72,7 +72,7 @@ def execute_command(project, command, timeout=None, force=False):
     try:
         while True and return_value is None:
             elapsed_time = time.time() - start_time
-            print(colored(f'\rt: {round(elapsed_time * 1000)}ms', 'white', attrs=['bold']), end='', flush=True)
+            print(colored(f'\rt: {round(elapsed_time * 1000)}ms : ', 'white', attrs=['bold']), end='', flush=True)
             # Check if process has finished
             if process.poll() is not None:
                 # Get remaining lines from the queue

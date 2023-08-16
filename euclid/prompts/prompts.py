@@ -47,19 +47,6 @@ def ask_for_main_app_definition(project):
         print("No input provided!")
         return
 
-    while True:
-        confirmation = styled_text(
-            project,
-            "Do you want to add anything else? If not, just press ENTER."
-        )
-
-        if confirmation is None or confirmation == '':
-            break
-        elif description[-1] not in ['.', '!', '?', ';']:
-            description += '.'
-
-        description += ' ' + confirmation
-
     logger.info(f"Initial App description done: {description}")
 
     return description

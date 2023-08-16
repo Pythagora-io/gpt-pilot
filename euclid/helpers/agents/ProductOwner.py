@@ -72,7 +72,7 @@ class ProductOwner(Agent):
 
         # USER STORIES
         msg = f"Generating USER STORIES...\n"
-        print(colored(msg, "green"))
+        print(colored(msg, "green", attrs=['bold']))
         logger.info(msg)
 
         self.project.user_stories = self.convo_user_stories.continuous_conversation('user_stories/specs.prompt', {
@@ -106,7 +106,7 @@ class ProductOwner(Agent):
 
         # USER TASKS
         msg = f"Generating USER TASKS...\n"
-        print(colored(msg, "green"))
+        print(colored(msg, "green", attrs=['bold']))
         logger.info(msg)
 
         self.project.user_tasks = self.convo_user_stories.continuous_conversation('user_stories/user_tasks.prompt',

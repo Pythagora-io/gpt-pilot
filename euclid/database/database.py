@@ -4,6 +4,7 @@ from termcolor import colored
 from functools import reduce
 import operator
 from const.common import PROMPT_DATA_TO_IGNORE
+from logger.logger import logger
 
 from utils.utils import hash_data
 from database.models.components.base_models import database
@@ -185,7 +186,7 @@ def hash_and_save_step(Model, app_id, hash_data_args, data_fields, message):
             .execute())
 
         record = Model.get_by_id(inserted_id)
-        print(colored(f"{message} with id {record.id}", "yellow"))
+        logger.debug(colored(f"{message} with id {record.id}", "yellow"))
     except IntegrityError:
         print(f"A record with hash_id {hash_id} already exists for {Model.__name__}.")
         return None
@@ -272,7 +273,7 @@ def delete_all_subsequent_steps(project):
 def delete_subsequent_steps(model, step):
     if step is None:
         return
-    print(colored(f"Deleting subsequent {model.__name__} steps after {step.id}", "red"))
+    logger.info(colored(f"Deleting subsequent {model.__name__} steps after {step.id}", "red"))
     subsequent_steps = model.select().where(model.previous_step == step.id)
     for subsequent_step in subsequent_steps:
         if subsequent_step:

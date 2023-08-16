@@ -36,13 +36,6 @@ class Developer(Agent):
         logger.info('The app is DONE!!! Yay...you can use it now.')
 
     def implement_task(self):
-        print(colored('-------------------------', 'green', attrs=['bold']))
-        # print(colored(f"Implementing task {current_task_index + 1}...\n", "green", attrs=['bold']))
-        print(colored(f"Implementing task...\n", "green", attrs=['bold']))
-        # print(colored(sibling_tasks[current_task_index]['description'], 'green', attrs=['bold']))
-        # print(colored(task_explanation, 'green', attrs=['bold']))
-        print(colored('-------------------------', 'green', attrs=['bold']))
-
         convo_dev_task = AgentConvo(self)
         task_description = convo_dev_task.send_message('development/task/breakdown.prompt', {
             "name": self.project.args['name'],
@@ -53,9 +46,6 @@ class Developer(Agent):
             "technologies": self.project.architecture,
             "array_of_objects_to_string": array_of_objects_to_string,
             "directory_tree": self.project.get_directory_tree(True),
-            # "current_task_index": current_task_index,
-            # "sibling_tasks": sibling_tasks,
-            # "parent_task": parent_task,
         })
 
         task_steps = convo_dev_task.send_message('development/parse_task.prompt', {}, IMPLEMENT_TASK)
@@ -124,7 +114,7 @@ class Developer(Agent):
     def continue_development(self, iteration_convo):
         while True:
             user_feedback = self.project.ask_for_human_intervention(
-                'Can you check if all this works? If you want to run the app, just type "r" and press ENTER',
+                'Can you check if the app works?\nIf you want to run the app, ' + colored('just type "r" and press ENTER', 'yellow', attrs=['bold']),
                 cbs={ 'r': lambda: run_command_until_success(self.run_command, None, iteration_convo, force=True) })
 
             if user_feedback == 'DONE':

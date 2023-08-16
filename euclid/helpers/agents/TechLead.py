@@ -29,7 +29,7 @@ class TechLead(Agent):
             return step['development_plan']
         
         # DEVELOPMENT PLANNING
-        print(colored(f"Starting to create the action plan for development...\n", "green"))
+        print(colored(f"Starting to create the action plan for development...\n", "green", attrs=['bold']))
         logger.info(f"Starting to create the action plan for development...")
 
         # TODO add clarifications
