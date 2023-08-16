@@ -136,7 +136,10 @@ class Project:
         if not file_path.startswith('/'):
             file_path = '/' + file_path
 
-        return (file_path, self.root_path + file_path + '/' + file_name)
+        if file_name != '':
+            file_name = '/' + file_name
+
+        return (file_path, self.root_path + file_path + file_name)
 
     def save_files_snapshot(self, development_step_id):
         files = get_files_content(self.root_path, ignore=IGNORE_FOLDERS)
