@@ -116,7 +116,7 @@ class Developer(Agent):
                     if llm_response == 'DONE':
                         return True
 
-        self.continue_development()
+        self.run_command = convo.send_message('development/get_run_command.prompt', {})
 
         if continue_development:
             self.continue_development(convo)
