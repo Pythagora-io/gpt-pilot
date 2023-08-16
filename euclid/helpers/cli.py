@@ -38,18 +38,19 @@ def run_command(command, root_path, q_stdout, q_stderr, pid_container):
     return process
 
 
-def execute_command(project, command, timeout=5000):
-    # check if we already have the command run saved
-    if timeout < 1000:
-        timeout *= 1000
-    timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
+def execute_command(project, command, timeout=None, force=False):
+    if timeout is not None:
+        if timeout < 1000:
+            timeout *= 1000
+        timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
 
-    print(colored(f'Can i execute the command: `{command}` with {timeout}ms timeout?', 'white', attrs=['bold']))
+    if not force:
+        print(colored(f'Can i execute the command: `{command}` with {timeout}ms timeout?', 'white', attrs=['bold']))
 
-    answer = styled_text(
-        project,
-        'If yes, just press ENTER and if not, please paste the output of running this command here and press ENTER'
-    )
+        answer = styled_text(
+            project,
+            'If yes, just press ENTER'
+        )
 
     project.command_runs_count += 1
     command_run = get_command_run_from_hash_id(project, command)
@@ -61,9 +62,6 @@ def execute_command(project, command, timeout=5000):
 
     return_value = None
 
-    if answer != '':
-        return_value = answer[-2000:]
-
     q_stderr = queue.Queue()
     q = queue.Queue()
     pid_container = [None]
@@ -71,33 +69,42 @@ def execute_command(project, command, timeout=5000):
     output = ''
     start_time = time.time()
 
-    while True and return_value is None:
-        elapsed_time = time.time() - start_time
-        print(colored(f'\rt: {round(elapsed_time * 1000)}ms', 'white', attrs=['bold']), end='', flush=True)
-        # Check if process has finished
-        if process.poll() is not None:
-            # Get remaining lines from the queue
-            time.sleep(0.1) # TODO this shouldn't be used
-            while not q.empty():
-                output_line = q.get_nowait()
-                if output_line not in output:
-                    print(colored('CLI OUTPUT:', 'green') + output_line, end='')
-                    output += output_line
-            break
+    try:
+        while True and return_value is None:
+            elapsed_time = time.time() - start_time
+            print(colored(f'\rt: {round(elapsed_time * 1000)}ms', 'white', attrs=['bold']), end='', flush=True)
+            # Check if process has finished
+            if process.poll() is not None:
+                # Get remaining lines from the queue
+                time.sleep(0.1) # TODO this shouldn't be used
+                while not q.empty():
+                    output_line = q.get_nowait()
+                    if output_line not in output:
+                        print(colored('CLI OUTPUT:', 'green') + output_line, end='')
+                        output += output_line
+                break
 
-        # If timeout is reached, kill the process
-        if elapsed_time * 1000 > timeout:
-            os.killpg(pid_container[0], signal.SIGKILL)
-            break
+            # If timeout is reached, kill the process
+            if timeout is not None and elapsed_time * 1000 > timeout:
+                raise TimeoutError("Command exceeded the specified timeout.")
+                # os.killpg(pid_container[0], signal.SIGKILL)
+                # break
 
-        try:
-            line = q.get_nowait()
-        except queue.Empty:
-            line = None
+            try:
+                line = q.get_nowait()
+            except queue.Empty:
+                line = None
 
-        if line:
-            output += line
-            print(colored('CLI OUTPUT:', 'green') + line, end='')
+            if line:
+                output += line
+                print(colored('CLI OUTPUT:', 'green') + line, end='')
+    except (KeyboardInterrupt, TimeoutError) as e:
+        if isinstance(e, KeyboardInterrupt):
+            print("\nCTRL+C detected. Stopping command execution...")
+        else:
+            print("\nTimeout detected. Stopping command execution...")
+
+        os.killpg(pid_container[0], signal.SIGKILL)  # Kill the process group
 
     stderr_output = ''
     while not q_stderr.empty():
@@ -156,8 +163,8 @@ def execute_command_and_check_cli_response(command, timeout, convo):
         { 'cli_response': cli_response, 'command': command })
     return cli_response, response
 
-def run_command_until_success(command, timeout, convo, additional_message=None):
-    cli_response = execute_command(convo.agent.project, command, timeout)
+def run_command_until_success(command, timeout, convo, additional_message=None, force=False):
+    cli_response = execute_command(convo.agent.project, command, timeout, force)
     response = convo.send_message('dev_ops/ran_command.prompt',
         {'cli_response': cli_response, 'command': command, 'additional_message': additional_message})
 
