@@ -11,6 +11,7 @@ Obviously, it still can't create any production-ready app but the general concep
 Here are a couple of example apps GPT Pilot created by itself:
 
 ### Real-time chat app
+- 💬 Prompt: `A simple chat app with real time communication`
 - ▶️ [video of the app creation process](https://youtu.be/bUj9DbMRYhA)
 - 💻️ [Github repo](https://github.com/Pythagora-io/gpt-pilot-chat-app-demo)
 
@@ -19,6 +20,7 @@ Here are a couple of example apps GPT Pilot created by itself:
 
 
 ### Markdown editor
+- 💬 Prompt: `Build a simple markdown editor using HTML, CSS, and JavaScript. Allow users to input markdown text and display the formatted output in real-time.`
 - ▶️ [video of the app creation process](https://youtu.be/uZeA1iX9dgg)
 - 💻️ [Github repo](https://github.com/Pythagora-io/gpt-pilot-demo-markdown-editor.git)
 
@@ -26,6 +28,7 @@ Here are a couple of example apps GPT Pilot created by itself:
 
 
 ### Timer app
+- 💬 Prompt: `Create a simple timer app using HTML, CSS, and JavaScript that allows users to set a countdown timer and receive an alert when the time is up.`
 - ▶️ [video of the app creation process](https://youtu.be/CMN3W18zfiE)
 - 💻️ [Github repo](https://github.com/Pythagora-io/gpt-pilot-timer-app-demo)
 
