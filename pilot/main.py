@@ -8,9 +8,18 @@ from helpers.Project import Project
 
 from utils.arguments import get_arguments
 from logger.logger import logger
+from database.database import database_exists, create_database, tables_exist, create_tables
 
 
 def init():
+    # Check if the "euclid" database exists, if not, create it
+    if not database_exists():
+        create_database()
+
+    # Check if the tables exist, if not, create them
+    if not tables_exist():
+        create_tables()
+
     arguments = get_arguments()
 
     logger.info(f"Starting with args: {arguments}")
