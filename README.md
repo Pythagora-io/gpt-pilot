@@ -11,7 +11,7 @@ Obviously, it still can't create any production-ready app but the general concep
 Here are a couple of example apps GPT Pilot created by itself:
 
 ### Real-time chat app
-- ▶️ [video of the app creation process](https://www.youtube.com/watch?v=5c2sZEgDcBg)
+- ▶️ [video of the app creation process](https://youtu.be/bUj9DbMRYhA)
 - 💻️ [Github repo](https://github.com/Pythagora-io/gpt-pilot-chat-app-demo)
 
 ![gpt-pilot demo chat app](https://github.com/Pythagora-io/gpt-pilot-demo-chat-app/assets/10895136/16445462-a667-44dc-a98c-12da6a798338)
