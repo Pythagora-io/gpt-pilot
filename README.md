@@ -14,21 +14,22 @@ Here are a couple of example apps GPT Pilot created by itself:
 - ▶️ [video of the app creation process](https://www.youtube.com/watch?v=5c2sZEgDcBg)
 - 💻️ [Github repo](https://github.com/Pythagora-io/gpt-pilot-chat-app-demo)
 
-![gpt-pilot demo chat app](https://github.com/Pythagora-io/gpt-pilot-demo-chat-app/assets/10895136/16445462-a667-44dc-a98c-12da6a798338)
+![gpt-pilot demo chat app](https://github.com/Pythagora-io/gpt-pilot/assets/10895136/85bc705c-be88-4ca1-9a3b-033700b97a22)
+
 
 
 ### Markdown editor
 - ▶️ [video of the app creation process](https://youtu.be/uZeA1iX9dgg)
 - 💻️ [Github repo](https://github.com/Pythagora-io/gpt-pilot-demo-markdown-editor.git)
 
-![gpt-pilot demo markdown editor](https://github.com/Pythagora-io/gpt-pilot-demo-chat-app/assets/10895136/a860ad49-1773-4960-a996-8797466de5ac)
+![gpt-pilot demo markdown editor](https://github.com/Pythagora-io/gpt-pilot/assets/10895136/dbe1ccc3-b126-4df0-bddb-a524d6a386a8)
 
 
 ### Timer app
 - ▶️ [video of the app creation process](https://youtu.be/CMN3W18zfiE)
 - 💻️ [Github repo](https://github.com/Pythagora-io/gpt-pilot-timer-app-demo)
 
-![gpt-pilot demo markdown editor](https://github.com/Pythagora-io/gpt-pilot-demo-chat-app/assets/10895136/b61b8f4f-b873-43af-a0e9-15509d606dbc)
+![gpt-pilot demo markdown editor](https://github.com/Pythagora-io/gpt-pilot/assets/10895136/93bed40b-b769-4c8b-b16d-b80fb6fc73e0)
 
 <br>
 
