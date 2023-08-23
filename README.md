@@ -3,6 +3,21 @@
 
 ---
 
+<!-- TOC -->
+* [Main pillars of GPT Pilot:](#main-pillars-of-gpt-pilot)
+* [🚦How to start using gpt-pilot?](#how-to-start-using-gpt-pilot)
+* [🧑‍💻️ Other arguments](#-other-arguments)
+* [🔎 Examples](#-examples)
+    * [Real-time chat app](#real-time-chat-app)
+    * [Markdown editor](#markdown-editor)
+    * [Timer app](#timer-app)
+* [🏗 How GPT Pilot works?](#-how-gpt-pilot-works)
+* [🕴How's GPT Pilot different from _Smol developer_ and _GPT engineer_?](#hows-gpt-pilot-different-from-smol-developer-and-gpt-engineer)
+* [🔗 Connect with us](#-connect-with-us)
+<!-- TOC -->
+
+---
+
 This is our try to see how can GPT-4 be utilized to generate working apps and to my surprise, it works quite well.
 
 **Detailed explanation about the concept behind GPT Pilot can be found in [this blog post](https://blog.pythagora.ai/2023/08/23/430/).**
@@ -26,11 +41,11 @@ Obviously, it still can't create any production-ready app but the general concep
 2. `cd gpt-pilot`
 3. `python -m venv pilot-env`
 4. `source pilot-env/bin/activate`
-3. `pip install -r requirements.txt`
-4. `cd pilot`
-5. `mv .env.example .env`
-6. Add your OpenAI API key and the database info to the `.env` file
-7. `python main.py`
+5. `pip install -r requirements.txt`
+6. `cd pilot`
+7. `mv .env.example .env`
+8. Add your OpenAI API key and the database info to the `.env` file
+9. `python main.py`
 
 After, this, you can just follow the instructions in the terminal.
 
