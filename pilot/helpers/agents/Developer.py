@@ -89,7 +89,7 @@ class Developer(Agent):
 
             elif step['type'] == 'human_intervention':
                 user_feedback = self.project.ask_for_human_intervention('I need your help! Can you try debugging this yourself and let me take over afterwards? Here are the details about the issue:', step['human_intervention_description'])
-                if user_feedback is not None:
+                if user_feedback is not None and user_feedback != 'continue':
                     debug(convo, user_input=user_feedback, issue_description=step['human_intervention_description'])
 
             if test_command is not None and ('check_if_fixed' not in step or step['check_if_fixed']):
@@ -117,7 +117,7 @@ class Developer(Agent):
                 'Can you check if the app works?\nIf you want to run the app, ' + colored('just type "r" and press ENTER', 'yellow', attrs=['bold']),
                 cbs={ 'r': lambda: run_command_until_success(self.run_command, None, iteration_convo, force=True) })
 
-            if user_feedback == 'DONE':
+            if user_feedback == 'continue':
                 return True
 
             if user_feedback is not None:

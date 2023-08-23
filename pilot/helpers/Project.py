@@ -90,7 +90,7 @@ class Project:
 
     def get_all_coded_files(self):
         files = File.select().where(File.app_id == self.args['app_id'])
-        files = self.get_files([file.path + file.name for file in files])
+        files = self.get_files([file.path + '/' + file.name for file in files])
         return files
 
     def get_files(self, files):
@@ -110,6 +110,10 @@ class Project:
         return files_with_content
 
     def save_file(self, data):
+        # TODO fix this in prompts
+        if ' ' in data['name'] or '.' not in data['name']:
+            data['name'] = data['path'].rsplit('/', 1)[1]
+
         data['path'], data['full_path'] = self.get_full_file_path(data['path'], data['name'])
         update_file(data['full_path'], data['content'])
 
@@ -122,10 +126,7 @@ class Project:
 
     def get_full_file_path(self, file_path, file_name):
         file_path = file_path.replace('./', '', 1)
-        if ' ' in file_name or '.' not in file_name:
-            file_name = ''
-        else:
-            file_path = file_path.rsplit(file_name, 1)[0]
+        file_path = file_path.rsplit(file_name, 1)[0]
 
         if file_path.endswith('/'):
             file_path = file_path.rstrip('/')
@@ -133,7 +134,7 @@ class Project:
         if file_name.startswith('/'):
             file_name = file_name[1:]
 
-        if not file_path.startswith('/'):
+        if not file_path.startswith('/') and file_path != '':
             file_path = '/' + file_path
 
         if file_name != '':
@@ -189,5 +190,5 @@ class Project:
 
             if answer in cbs:
                 return cbs[answer]()
-            elif answer != '' and answer != 'continue':
+            elif answer != '':
                 return answer
