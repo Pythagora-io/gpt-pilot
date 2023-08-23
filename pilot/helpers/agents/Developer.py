@@ -107,12 +107,17 @@ class Developer(Agent):
                         return True
 
         self.run_command = convo.send_message('development/get_run_command.prompt', {})
+        if self.run_command.startswith('`'):
+            self.run_command = self.run_command[1:]
+        if self.run_command.endswith('`'):
+            self.run_command = self.run_command[:-1]
 
         if continue_development:
             self.continue_development(convo)
 
     def continue_development(self, iteration_convo):
         while True:
+            # TODO add description about how can the user check if the app works
             user_feedback = self.project.ask_for_human_intervention(
                 'Can you check if the app works?\nIf you want to run the app, ' + colored('just type "r" and press ENTER', 'yellow', attrs=['bold']),
                 cbs={ 'r': lambda: run_command_until_success(self.run_command, None, iteration_convo, force=True) })

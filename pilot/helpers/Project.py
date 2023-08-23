@@ -70,6 +70,9 @@ class Project:
                 clear_directory(self.root_path)
                 delete_all_app_development_data(self.args['app_id'])
                 self.skip_steps = False
+            elif 'update_files_before_start' in self.args and self.skip_until_dev_step is not None:
+                FileSnapshot.delete().where(FileSnapshot.app == self.app and FileSnapshot.development_step == self.skip_until_dev_step).execute()
+                self.save_files_snapshot(self.skip_until_dev_step)
         # TODO END
 
         self.developer = Developer(self)
