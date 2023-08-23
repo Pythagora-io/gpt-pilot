@@ -11,7 +11,7 @@ from database.database import get_command_run_from_hash_id, save_command_run
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
 
 from utils.questionary import styled_text
-from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MIN_COMMAND_RUN_TIME, MAX_COMMAND_RUN_TIME
+from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MIN_COMMAND_RUN_TIME, MAX_COMMAND_RUN_TIME, MAX_COMMAND_OUTPUT_LENGTH
 
 interrupted = False
 
@@ -71,6 +71,7 @@ def execute_command(project, command, timeout=None, force=False):
     pid_container = [None]
     process = run_command(command, project.root_path, q, q_stderr, pid_container)
     output = ''
+    stderr_output = ''
     start_time = time.time()
     interrupted = False
 
@@ -105,6 +106,17 @@ def execute_command(project, command, timeout=None, force=False):
             if line:
                 output += line
                 print(colored('CLI OUTPUT:', 'green') + line, end='')
+
+            # Read stderr
+            try:
+                stderr_line = q_stderr.get_nowait()
+            except queue.Empty:
+                stderr_line = None
+
+            if stderr_line:
+                stderr_output += stderr_line
+                print(colored('CLI ERROR:', 'red') + stderr_line, end='')  # Print with different color for distinction
+
     except (KeyboardInterrupt, TimeoutError) as e:
         interrupted = True
         if isinstance(e, KeyboardInterrupt):
@@ -114,15 +126,15 @@ def execute_command(project, command, timeout=None, force=False):
 
         os.killpg(pid_container[0], signal.SIGKILL)  # Kill the process group
 
-    stderr_output = ''
-    while not q_stderr.empty():
-        stderr_output += q_stderr.get_nowait()
+    # stderr_output = ''
+    # while not q_stderr.empty():
+    #     stderr_output += q_stderr.get_nowait()
 
     if return_value is None:
         return_value = ''
         if stderr_output != '':
-            return_value = 'stderr:\n```\n' + stderr_output[-2000:] + '\n```\n'
-        return_value += 'stdout:\n```\n' + output[-2000:] + '\n```'
+            return_value = 'stderr:\n```\n' + stderr_output[-MAX_COMMAND_OUTPUT_LENGTH:] + '\n```\n'
+        return_value += 'stdout:\n```\n' + output[-MAX_COMMAND_OUTPUT_LENGTH:] + '\n```'
 
     command_run = save_command_run(project, command, return_value)
 

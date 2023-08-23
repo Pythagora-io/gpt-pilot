@@ -141,7 +141,7 @@ class Developer(Agent):
                 iteration_convo.remove_last_x_messages(2)
                 self.execute_task(iteration_convo, task_steps, continue_development=False)
 
-    
+
     def set_up_environment(self):
         self.project.current_step = 'environment_setup'
         self.convo_os_specific_tech = AgentConvo(self)

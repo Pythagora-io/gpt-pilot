@@ -43,6 +43,7 @@ class AgentConvo:
             if self.agent.project.skip_until_dev_step and str(development_step.id) == self.agent.project.skip_until_dev_step:
                 self.agent.project.skip_steps = False
                 delete_all_subsequent_steps(self.agent.project)
+
                 if 'delete_unrelated_steps' in self.agent.project.args and self.agent.project.args['delete_unrelated_steps']:
                     self.agent.project.delete_all_steps_except_current_branch()
         else:
