@@ -5,6 +5,7 @@ import threading
 import queue
 import time
 import uuid
+import platform  # Import the platform module
 
 from termcolor import colored
 from database.database import get_command_run_from_hash_id, save_command_run
@@ -21,8 +22,7 @@ def enqueue_output(out, q):
             break
         q.put(line)
     out.close()
-    
-# had issues using setsid on Wondows, so this detects windows/Unix and uses the correct version of run_command
+
 def run_command(command, root_path, q_stdout, q_stderr, pid_container):
     if platform.system() == 'Windows':  # Check the operating system
         return run_command_windows(command, root_path, q_stdout, q_stderr, pid_container)
@@ -68,7 +68,19 @@ def run_command_unix(command, root_path, q_stdout, q_stderr, pid_container):
     t_stderr.start()
     return process
 
-
+def terminate_process(pid):
+    if platform.system() == "Windows":
+        try:
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)])
+        except subprocess.CalledProcessError:
+            # Handle any potential errors here
+            pass
+    else:  # Unix-like systems
+        try:
+            os.killpg(pid, signal.SIGTERM)
+        except OSError:
+            # Handle any potential errors here
+            pass
 
 def execute_command(project, command, timeout=None, force=False):
     if timeout is not None:
@@ -152,7 +164,11 @@ def execute_command(project, command, timeout=None, force=False):
         else:
             print("\nTimeout detected. Stopping command execution...")
 
-        os.killpg(pid_container[0], signal.SIGKILL)  # Kill the process group
+        if platform.system() == 'Windows':
+            pid = pid_container[0]  # Replace with the actual PID
+            terminate_process(pid)
+        else:
+            os.killpg(pid_container[0], signal.SIGKILL)
 
     # stderr_output = ''
     # while not q_stderr.empty():
