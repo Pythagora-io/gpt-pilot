@@ -21,15 +21,22 @@ def enqueue_output(out, q):
             break
         q.put(line)
     out.close()
-
+    
+# had issues using setsid on Wondows, so this detects windows/Unix and uses the correct version of run_command
 def run_command(command, root_path, q_stdout, q_stderr, pid_container):
+    if platform.system() == 'Windows':  # Check the operating system
+        return run_command_windows(command, root_path, q_stdout, q_stderr, pid_container)
+    else:
+        return run_command_unix(command, root_path, q_stdout, q_stderr, pid_container)
+
+def run_command_windows(command, root_path, q_stdout, q_stderr, pid_container):
+    # Windows-specific implementation using subprocess
     process = subprocess.Popen(
         command,
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
-        preexec_fn=os.setsid,
         cwd=root_path
     )
     pid_container[0] = process.pid
@@ -40,6 +47,27 @@ def run_command(command, root_path, q_stdout, q_stderr, pid_container):
     t_stdout.start()
     t_stderr.start()
     return process
+
+def run_command_unix(command, root_path, q_stdout, q_stderr, pid_container):
+    # Unix-like systems implementation using os.setsid
+    process = subprocess.Popen(
+        command,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        preexec_fn=os.setsid,  # Use os.setsid only for Unix-like systems
+        cwd=root_path
+    )
+    pid_container[0] = process.pid
+    t_stdout = threading.Thread(target=enqueue_output, args=(process.stdout, q_stdout))
+    t_stderr = threading.Thread(target=enqueue_output, args=(process.stderr, q_stderr))
+    t_stdout.daemon = True
+    t_stderr.daemon = True
+    t_stdout.start()
+    t_stderr.start()
+    return process
+
 
 
 def execute_command(project, command, timeout=None, force=False):
