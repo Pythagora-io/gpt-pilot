@@ -75,7 +75,7 @@ def get_additional_info_from_openai(project, messages):
 
         if response is not None:
             if response['text'].strip() == END_RESPONSE:
-                print(response['text'])
+                print(response['text'] + '\n')
                 return messages
 
             # Ask the question to the user
@@ -109,9 +109,7 @@ def get_additional_info_from_user(project,  messages, role):
             if answer.lower() == '':
                 break
             response = create_gpt_chat_completion(
-                generate_messages_from_custom_conversation(role, [get_prompt('utils/update.prompt'), message, answer],
-                                                           'user'),
-                'additional_info')
+                generate_messages_from_custom_conversation(role, [get_prompt('utils/update.prompt'), message, answer], 'user'), 'additional_info')
 
             message = response
 

@@ -74,8 +74,8 @@ def num_tokens_from_functions(functions, model="gpt-4"):
                             for o in v['enum']:
                                 function_tokens += 3
                                 function_tokens += len(encoding.encode(o))
-                        else:
-                            print(f"Warning: not supported field {field}")
+                        # else:
+                        #     print(f"Warning: not supported field {field}")
                 function_tokens += 11
 
         num_tokens += function_tokens
@@ -170,7 +170,7 @@ def stream_gpt_completion(data, req_type):
         return result_data
 
     # spinner = spinner_start(colored("Waiting for OpenAI API response...", 'yellow'))
-    print(colored("Waiting for OpenAI API response...", 'yellow'))
+    # print(colored("Stream response from OpenAI:", 'yellow'))
     api_key = os.getenv("OPENAI_API_KEY")
 
     logger.info(f'Request data: {data}')

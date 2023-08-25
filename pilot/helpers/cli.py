@@ -49,7 +49,8 @@ def execute_command(project, command, timeout=None, force=False):
         timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
 
     if not force:
-        print(colored(f'Can i execute the command: `') + colored(command, 'white', attrs=['bold']) + colored(f'` with {timeout}ms timeout?'))
+        print(colored(f'\n--------- EXECUTE COMMAND ----------', 'yellow', attrs=['bold']))
+        print(colored(f'Can i execute the command: `') + colored(command, 'yellow', attrs=['bold']) + colored(f'` with {timeout}ms timeout?'))
 
         answer = styled_text(
             project,

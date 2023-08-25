@@ -43,6 +43,7 @@ class ProductOwner(Agent):
             self.project,
             generate_messages_from_description(main_prompt, self.project.args['app_type'], self.project.args['name']))
 
+        print(colored('Project Summary:\n', 'green', attrs=['bold']))
         high_level_summary = convo_project_description.send_message('utils/summary.prompt',
             {'conversation': '\n'.join([f"{msg['role']}: {msg['content']}" for msg in high_level_messages])})
 
@@ -71,7 +72,7 @@ class ProductOwner(Agent):
             return step['user_stories']
 
         # USER STORIES
-        msg = f"Generating USER STORIES...\n"
+        msg = f"User Stories:\n"
         print(colored(msg, "green", attrs=['bold']))
         logger.info(msg)
 
@@ -105,7 +106,7 @@ class ProductOwner(Agent):
             return step['user_tasks']
 
         # USER TASKS
-        msg = f"Generating USER TASKS...\n"
+        msg = f"User Tasks:\n"
         print(colored(msg, "green", attrs=['bold']))
         logger.info(msg)
 

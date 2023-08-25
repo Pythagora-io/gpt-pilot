@@ -33,4 +33,7 @@ def styled_text(project, question):
     }
     response = questionary.text(question, **config).unsafe_ask()  # .ask() is included here
     user_input = save_user_input(project, question, response)
+
+    print('\n\n', end='')
+
     return response

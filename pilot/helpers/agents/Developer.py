@@ -26,7 +26,7 @@ class Developer(Agent):
             self.project.skip_steps = False if ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0') else True
 
         # DEVELOPMENT
-        print(colored(f"Ok, great, now, let's start with the actual development...\n", "green"))
+        print(colored(f"Ok, great, now, let's start with the actual development...\n", "green", attrs=['bold']))
         logger.info(f"Starting to create the actual code...")
 
         self.implement_task()
@@ -88,7 +88,7 @@ class Developer(Agent):
                 # TODO end
 
             elif step['type'] == 'human_intervention':
-                user_feedback = self.project.ask_for_human_intervention('I need your help! Can you try debugging this yourself and let me take over afterwards? Here are the details about the issue:', step['human_intervention_description'])
+                user_feedback = self.project.ask_for_human_intervention('I need human intervention:', step['human_intervention_description'])
                 if user_feedback is not None and user_feedback != 'continue':
                     debug(convo, user_input=user_feedback, issue_description=step['human_intervention_description'])
 
