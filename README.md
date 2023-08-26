@@ -1,13 +1,21 @@
 # 🧑‍✈️ GPT PILOT
-### GPT Pilot can code out the entire app as you oversee the code being written
+### GPT Pilot codes the entire app as you oversee the code being written
 
 ---
 
-This is our try to see how can GPT-4 be utilized to generate working apps and to my surprise, it works quite well.
+This is a research project to see how can GPT-4 be utilized to generate fully working, production-ready, apps. **The main idea is that AI can write most of the code for an app (maybe 95%) but for the rest 5%, a developer is and will be needed until we get full AGI**.
 
-**Detailed explanation about the concept behind GPT Pilot can be found in [this blog post](https://blog.pythagora.ai/2023/08/23/430/).**
+I've broken down the idea behind GPT Pilot and how it works in the following blog posts:
 
-**[👉 Examples of apps written by GPT Pilot can be found here 👈](#-examples)**
+**[[Part 1/3] High-level concepts + GPT Pilot workflow until the coding part](https://blog.pythagora.ai/2023/08/23/430/)**
+
+**_[Part 2/3] GPT Pilot coding workflow (COMING UP)_**
+
+**_[Part 3/3] Other important concepts and future plans (COMING UP)_**
+
+---
+
+### **[👉 Examples of apps written by GPT Pilot can be found here 👈](#-examples)**
 
 <br>
 
