@@ -15,7 +15,7 @@ I've broken down the idea behind GPT Pilot and how it works in the following blo
 
 ---
 
-### **[👉 Examples of apps written by GPT Pilot can be found here 👈](#-examples)**
+### **[👉 Examples of apps written by GPT Pilot 👈](#-examples)**
 
 <br>
 
