@@ -7,6 +7,14 @@ This is our try to see how can GPT-4 be utilized to generate working apps and to
 
 **Detailed explanation about the concept behind GPT Pilot can be found in [this blog post](https://blog.pythagora.ai/2023/08/23/430/).**
 
+**[👉 Examples of apps written by GPT Pilot can be found here 👈](#-examples)**
+
+<br>
+
+https://github.com/Pythagora-io/gpt-pilot/assets/10895136/0495631b-511e-451b-93d5-8a42acf22d3d
+
+<br>
+
 ## Main pillars of GPT Pilot:
 1. For AI to create a fully working app, **a developer needs to be involved** in the process of app creation. They need to be able to change the code at any moment and GPT Pilot needs to continue working with those changes (eg. add an API key or fix an issue if an AI gets stuck) <br><br>
 2. **The app needs to be written step by step as a developer would write it** - Let's say you want to create a simple app and you know everything you need to code and have the entire architecture in your head. Even then, you won't code it out entirely, then run it for the first time and debug all the issues at once. Rather, you will implement something simple, like add routes, run it, see how it works, and then move on to the next task. This way, you can debug issues as they arise. The same should be in the case when AI codes. It will make mistakes for sure so in order for it to have an easier time debugging issues and for the developer to understand what is happening, the AI shouldn't just spit out the entire codebase at once. Rather, the app should be developed step by step just like a developer would code it - eg. setup routes, add database connection, etc. <br><br>
@@ -18,21 +26,6 @@ This is our try to see how can GPT-4 be utilized to generate working apps and to
 The idea is that AI won't be able to (at least in the near future) create apps from scratch without the developer being involved. That's why we created an interactive tool that generates code but also requires the developer to check each step so that they can understand what's going on and so that the AI can have a better overview of the entire codebase.
 
 Obviously, it still can't create any production-ready app but the general concept of how this could work is there.
-
-<div style="width: 100%;">
-    <video width="100%" controls>
-        <source src="https://github.com/Pythagora-io/gpt-pilot/assets/10895136/aad76d6c-06af-4dc3-b7dd-983b0e793ead" type="video/mp4">
-        Your browser does not support the video tag.
-    </video>
-</div>
-
-### [👉 See examples of apps written by GPT Pilot here 👈](#-examples)
-
-<br>
-
-https://github.com/Pythagora-io/gpt-pilot/assets/10895136/0495631b-511e-451b-93d5-8a42acf22d3d
-
-<br>
 
 # 🚦How to start using gpt-pilot?
 1. Clone the repo
