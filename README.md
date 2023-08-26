@@ -19,7 +19,20 @@ The idea is that AI won't be able to (at least in the near future) create apps f
 
 Obviously, it still can't create any production-ready app but the general concept of how this could work is there.
 
-[See examples of apps written by GPT Pilot here](#-examples)
+<div style="width: 100%;">
+    <video width="100%" controls>
+        <source src="https://github.com/Pythagora-io/gpt-pilot/assets/10895136/aad76d6c-06af-4dc3-b7dd-983b0e793ead" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
+
+### [👉 See examples of apps written by GPT Pilot here 👈](#-examples)
+
+<br>
+
+https://github.com/Pythagora-io/gpt-pilot/assets/10895136/0495631b-511e-451b-93d5-8a42acf22d3d
+
+<br>
 
 # 🚦How to start using gpt-pilot?
 1. Clone the repo
