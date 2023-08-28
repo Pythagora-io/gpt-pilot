@@ -76,7 +76,7 @@ Here are a couple of example apps GPT Pilot created by itself:
 ### Real-time chat app
 - 💬 Prompt: `A simple chat app with real time communication`
 - ▶️ [Video of the app creation process](https://youtu.be/bUj9DbMRYhA)
-- 💻️ [Github repo](https://github.com/Pythagora-io/gpt-pilot-chat-app-demo)
+- 💻️ [GitHub repo](https://github.com/Pythagora-io/gpt-pilot-chat-app-demo)
 
 <p align="left">
   <img src="https://github.com/Pythagora-io/gpt-pilot/assets/10895136/85bc705c-be88-4ca1-9a3b-033700b97a22" alt="gpt-pilot demo chat app" width="500px"/>
@@ -86,7 +86,7 @@ Here are a couple of example apps GPT Pilot created by itself:
 ### Markdown editor
 - 💬 Prompt: `Build a simple markdown editor using HTML, CSS, and JavaScript. Allow users to input markdown text and display the formatted output in real-time.`
 - ▶️ [Video of the app creation process](https://youtu.be/uZeA1iX9dgg)
-- 💻️ [Github repo](https://github.com/Pythagora-io/gpt-pilot-demo-markdown-editor.git)
+- 💻️ [GitHub repo](https://github.com/Pythagora-io/gpt-pilot-demo-markdown-editor.git)
 
 <p align="left">
   <img src="https://github.com/Pythagora-io/gpt-pilot/assets/10895136/dbe1ccc3-b126-4df0-bddb-a524d6a386a8" alt="gpt-pilot demo markdown editor" width="500px"/>
@@ -96,7 +96,7 @@ Here are a couple of example apps GPT Pilot created by itself:
 ### Timer app
 - 💬 Prompt: `Create a simple timer app using HTML, CSS, and JavaScript that allows users to set a countdown timer and receive an alert when the time is up.`
 - ▶️ [Video of the app creation process](https://youtu.be/CMN3W18zfiE)
-- 💻️ [Github repo](https://github.com/Pythagora-io/gpt-pilot-timer-app-demo)
+- 💻️ [GitHub repo](https://github.com/Pythagora-io/gpt-pilot-timer-app-demo)
 
 <p align="left">
   <img src="https://github.com/Pythagora-io/gpt-pilot/assets/10895136/93bed40b-b769-4c8b-b16d-b80fb6fc73e0" alt="gpt-pilot demo markdown editor" width="500px"/>
