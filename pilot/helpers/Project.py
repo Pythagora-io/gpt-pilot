@@ -1,9 +1,12 @@
 import os
+import time
 
 from termcolor import colored
 from const.common import IGNORE_FOLDERS
 from database.models.app import App
 from database.database import get_app, delete_unconnected_steps_from, delete_all_app_development_data
+from helpers.ipc import IPCClient
+from const.ipc import MESSAGE_TYPE
 from utils.questionary import styled_text
 from helpers.files import get_files_content, clear_directory, update_file
 from helpers.cli import build_directory_tree
@@ -50,6 +53,15 @@ class Project:
             self.architecture = architecture
         # if development_plan is not None:
         #     self.development_plan = development_plan
+
+        if '--external-log-process' in args:
+            self.ipc_client_instance = IPCClient()
+
+        print('..'*20)
+        self.log('\n------------------ STARTING NEW PROJECT ----------------------', 'verbose')
+        self.log(f"If you wish to continue with this project in future run:", 'verbose')
+        self.log(f'python main.py app_id={args["app_id"]}', 'verbose')
+        self.log('--------------------------------------------------------------\n', 'verbose')
 
     def start(self):
         self.project_manager = ProductOwner(self)
@@ -195,3 +207,14 @@ class Project:
                 return cbs[answer]()
             elif answer != '':
                 return answer
+
+    def log(self, text, message_type, cb=None):
+        if self.ipc_client_instance is None or self.ipc_client_instance.client is None:
+            print(text)
+        else:
+            self.ipc_client_instance.send({
+                'type': MESSAGE_TYPE[message_type],
+                'content': str(text),
+            })
+            if cb is not None:
+                self.ipc_client_instance.listen(lambda response: cb(response['content']))
