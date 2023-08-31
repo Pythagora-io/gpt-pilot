@@ -5,6 +5,7 @@ import threading
 import queue
 import time
 import uuid
+import platform
 
 from termcolor import colored
 from database.database import get_command_run_from_hash_id, save_command_run
@@ -23,15 +24,26 @@ def enqueue_output(out, q):
     out.close()
 
 def run_command(command, root_path, q_stdout, q_stderr, pid_container):
-    process = subprocess.Popen(
-        command,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        preexec_fn=os.setsid,
-        cwd=root_path
-    )
+    if platform.system() == 'Windows':  # Check the operating system
+        process = subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            cwd=root_path
+        )
+    else:
+        process = subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            preexec_fn=os.setsid,  # Use os.setsid only for Unix-like systems
+            cwd=root_path
+        )
+
     pid_container[0] = process.pid
     t_stdout = threading.Thread(target=enqueue_output, args=(process.stdout, q_stdout))
     t_stderr = threading.Thread(target=enqueue_output, args=(process.stderr, q_stderr))
@@ -41,6 +53,19 @@ def run_command(command, root_path, q_stdout, q_stderr, pid_container):
     t_stderr.start()
     return process
 
+def terminate_process(pid):
+    if platform.system() == "Windows":
+        try:
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)])
+        except subprocess.CalledProcessError:
+            # Handle any potential errors here
+            pass
+    else:  # Unix-like systems
+        try:
+            os.killpg(pid, signal.SIGKILL)
+        except OSError:
+            # Handle any potential errors here
+            pass
 
 def execute_command(project, command, timeout=None, force=False):
     if timeout is not None:
@@ -125,7 +150,7 @@ def execute_command(project, command, timeout=None, force=False):
         else:
             print("\nTimeout detected. Stopping command execution...")
 
-        os.killpg(pid_container[0], signal.SIGKILL)  # Kill the process group
+        terminate_process(pid_container[0])
 
     # stderr_output = ''
     # while not q_stderr.empty():

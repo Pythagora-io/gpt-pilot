@@ -1,13 +1,21 @@
 # 🧑‍✈️ GPT PILOT
-### GPT Pilot can code out the entire app as you oversee the code being written
+### GPT Pilot codes the entire app as you oversee the code being written
 
 ---
 
-This is our try to see how can GPT-4 be utilized to generate working apps and to my surprise, it works quite well.
+This is a research project to see how can GPT-4 be utilized to generate fully working, production-ready, apps. **The main idea is that AI can write most of the code for an app (maybe 95%) but for the rest 5%, a developer is and will be needed until we get full AGI**.
 
-**Detailed explanation about the concept behind GPT Pilot can be found in [this blog post](https://blog.pythagora.ai/2023/08/23/430/).**
+I've broken down the idea behind GPT Pilot and how it works in the following blog posts:
 
-**[👉 Examples of apps written by GPT Pilot can be found here 👈](#-examples)**
+**[[Part 1/3] High-level concepts + GPT Pilot workflow until the coding part](https://blog.pythagora.ai/2023/08/23/430/)**
+
+**_[Part 2/3] GPT Pilot coding workflow (COMING UP)_**
+
+**_[Part 3/3] Other important concepts and future plans (COMING UP)_**
+
+---
+
+### **[👉 Examples of apps written by GPT Pilot 👈](#-examples)**
 
 <br>
 
@@ -28,19 +36,22 @@ The idea is that AI won't be able to (at least in the near future) create apps f
 Obviously, it still can't create any production-ready app but the general concept of how this could work is there.
 
 # 🚦How to start using gpt-pilot?
-1. Clone the repo
+1. `git clone https://github.com/Pythagora-io/gpt-pilot.git` (clone the repo)
 2. `cd gpt-pilot`
-3. `python -m venv pilot-env`
-4. `source pilot-env/bin/activate`
-3. `pip install -r requirements.txt`
-4. `cd pilot`
-5. `mv .env.example .env`
-6. Add your OpenAI API key and the database info to the `.env` file
-7. `python main.py`
+3. `python -m venv pilot-env` (create a virtual environment)
+4. `source pilot-env/bin/activate` (activate the virtual environment)
+5. `pip install -r requirements.txt` (install the dependencies)
+6. `cd pilot`
+7. `mv .env.example .env` (create the .env file)
+8. Add your OpenAI API key and the database info to the `.env` file
+9. `python db_init.py` (initialize the database)
+10. `python main.py` (start GPT Pilot)
 
 After, this, you can just follow the instructions in the terminal.
 
 All generated code will be stored in the folder `workspace` inside the folder named after the app name you enter upon starting the pilot.
+
+**IMPORTANT: To run GPT Pilot, you need to have PostgreSQL set up on your machine**
 <br>
 
 # 🧑‍💻️ Other arguments
@@ -68,7 +79,7 @@ Here are a couple of example apps GPT Pilot created by itself:
 ### Real-time chat app
 - 💬 Prompt: `A simple chat app with real time communication`
 - ▶️ [Video of the app creation process](https://youtu.be/bUj9DbMRYhA)
-- 💻️ [Github repo](https://github.com/Pythagora-io/gpt-pilot-chat-app-demo)
+- 💻️ [GitHub repo](https://github.com/Pythagora-io/gpt-pilot-chat-app-demo)
 
 <p align="left">
   <img src="https://github.com/Pythagora-io/gpt-pilot/assets/10895136/85bc705c-be88-4ca1-9a3b-033700b97a22" alt="gpt-pilot demo chat app" width="500px"/>
@@ -78,7 +89,7 @@ Here are a couple of example apps GPT Pilot created by itself:
 ### Markdown editor
 - 💬 Prompt: `Build a simple markdown editor using HTML, CSS, and JavaScript. Allow users to input markdown text and display the formatted output in real-time.`
 - ▶️ [Video of the app creation process](https://youtu.be/uZeA1iX9dgg)
-- 💻️ [Github repo](https://github.com/Pythagora-io/gpt-pilot-demo-markdown-editor.git)
+- 💻️ [GitHub repo](https://github.com/Pythagora-io/gpt-pilot-demo-markdown-editor.git)
 
 <p align="left">
   <img src="https://github.com/Pythagora-io/gpt-pilot/assets/10895136/dbe1ccc3-b126-4df0-bddb-a524d6a386a8" alt="gpt-pilot demo markdown editor" width="500px"/>
@@ -88,7 +99,7 @@ Here are a couple of example apps GPT Pilot created by itself:
 ### Timer app
 - 💬 Prompt: `Create a simple timer app using HTML, CSS, and JavaScript that allows users to set a countdown timer and receive an alert when the time is up.`
 - ▶️ [Video of the app creation process](https://youtu.be/CMN3W18zfiE)
-- 💻️ [Github repo](https://github.com/Pythagora-io/gpt-pilot-timer-app-demo)
+- 💻️ [GitHub repo](https://github.com/Pythagora-io/gpt-pilot-timer-app-demo)
 
 <p align="left">
   <img src="https://github.com/Pythagora-io/gpt-pilot/assets/10895136/93bed40b-b769-4c8b-b16d-b80fb6fc73e0" alt="gpt-pilot demo markdown editor" width="500px"/>
@@ -119,8 +130,19 @@ Here are the steps GPT Pilot takes to create an app:
   <br><br>
 - **Auto debugging** - when it detects an error, it debugs it by itself. I still haven't implemented writing automated tests which should make this fully autonomous but for now, you can input the error that's happening (eg. within a UI) and GPT Pilot will debug it from there. The plan is to make it write automated tests in Cypress as well so that it can test it by itself and debug without the developer's explanation.
 
+# 🍻 Contributing
+If you are interested in contributing to GPT Pilot, I would be more than happy to have you on board but also help you get started. Feel free to ping [zvonimir@pythagora.ai](mailto:zvonimir@pythagora.ai) and I'll help you get started.
+
+## 🔬️ Research
+Since this is a research project, there are many areas that need to be researched on both practical and theoretical levels. We're happy to hear how can the entire GPT Pilot concept be improved. For example, maybe it would work better if we structured functional requirements differently or maybe technical requirements need to be specified in a different way.
+
+## 🖥 Development
+Other than the research, GPT Pilot needs to be debugged to work in different scenarios. For example, we realized that the quality of the code generated is very sensitive to the size of the development task. When the task is too broad, the code has too many bugs that are hard to fix but when the development task is too narrow, GPT also seems to struggle in getting the task implemented into the existing code.
+
 # 🔗 Connect with us
 🌟 As an open source tool, it would mean the world to us if you starred the GPT-pilot repo 🌟
+
+💬 Join [the Discord server](https://discord.gg/FWnRZdCb) to get in touch.
 <br><br>
 <br><br>
 
