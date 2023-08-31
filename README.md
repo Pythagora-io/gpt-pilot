@@ -36,19 +36,22 @@ The idea is that AI won't be able to (at least in the near future) create apps f
 Obviously, it still can't create any production-ready app but the general concept of how this could work is there.
 
 # 🚦How to start using gpt-pilot?
-1. Clone the repo
+1. `git clone https://github.com/Pythagora-io/gpt-pilot.git` (clone the repo)
 2. `cd gpt-pilot`
-3. `python -m venv pilot-env`
-4. `source pilot-env/bin/activate`
-3. `pip install -r requirements.txt`
-4. `cd pilot`
-5. `mv .env.example .env`
-6. Add your OpenAI API key and the database info to the `.env` file
-7. `python main.py`
+3. `python -m venv pilot-env` (create a virtual environment)
+4. `source pilot-env/bin/activate` (activate the virtual environment)
+5. `pip install -r requirements.txt` (install the dependencies)
+6. `cd pilot`
+7. `mv .env.example .env` (create the .env file)
+8. Add your OpenAI API key and the database info to the `.env` file
+9. `python db_init.py` (initialize the database)
+10. `python main.py` (start GPT Pilot)
 
 After, this, you can just follow the instructions in the terminal.
 
 All generated code will be stored in the folder `workspace` inside the folder named after the app name you enter upon starting the pilot.
+
+**IMPORTANT: To run GPT Pilot, you need to have PostgreSQL set up on your machine**
 <br>
 
 # 🧑‍💻️ Other arguments
