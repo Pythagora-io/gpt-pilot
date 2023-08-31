@@ -1,6 +1,7 @@
 import os
 import time
 
+from fabulous.color import bold, green, yellow
 from termcolor import colored
 from const.common import IGNORE_FOLDERS
 from database.models.app import App
@@ -57,11 +58,10 @@ class Project:
         if '--external-log-process' in args:
             self.ipc_client_instance = IPCClient()
 
-        print('..'*20)
-        self.log('\n------------------ STARTING NEW PROJECT ----------------------', 'verbose')
+        self.log(green(bold('\n------------------ STARTING NEW PROJECT ----------------------')), 'verbose')
         self.log(f"If you wish to continue with this project in future run:", 'verbose')
-        self.log(f'python main.py app_id={args["app_id"]}', 'verbose')
-        self.log('--------------------------------------------------------------\n', 'verbose')
+        self.log(green(bold(f'python main.py app_id={args["app_id"]}')), 'verbose')
+        self.log(green(bold('--------------------------------------------------------------\n')), 'verbose')
 
     def start(self):
         self.project_manager = ProductOwner(self)
@@ -193,9 +193,9 @@ class Project:
         delete_unconnected_steps_from(self.checkpoints['last_user_input'], 'previous_step')
 
     def ask_for_human_intervention(self, message, description=None, cbs={}):
-        print(colored(message, "yellow", attrs=['bold']))
+        self.log(yellow(bold(message)))
         if description is not None:
-            print(description)
+            self.log(description)
         answer = ''
         while answer != 'continue':
             answer = styled_text(
@@ -208,7 +208,7 @@ class Project:
             elif answer != '':
                 return answer
 
-    def log(self, text, message_type, cb=None):
+    def log(self, text, message_type):
         if self.ipc_client_instance is None or self.ipc_client_instance.client is None:
             print(text)
         else:
@@ -216,5 +216,5 @@ class Project:
                 'type': MESSAGE_TYPE[message_type],
                 'content': str(text),
             })
-            if cb is not None:
-                self.ipc_client_instance.listen(lambda response: cb(response['content']))
+            if message_type == MESSAGE_TYPE['user_input_request']:
+                return self.ipc_client_instance.listen()

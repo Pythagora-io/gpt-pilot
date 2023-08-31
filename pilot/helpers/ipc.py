@@ -20,31 +20,18 @@ class IPCClient:
         print(f"Received request from the external process: {message_content}")
         return message_content  # For demonstration, we're just echoing back the content
 
-    def listen(self, cb):
+    def listen(self):
         if self.client is None:
             print("Not connected to the external process!")
             return
-        try:
-            while True:
-                data = self.client.recv(4096)
-                message = json.loads(data)
 
-                if message['type'] == 'request':
-                    cb(message['content'])
-                if message['type'] == 'request':
-                    response_content = self.handle_request(message['content'])
-                    response = {
-                        'type': 'response',
-                        'content': response_content
-                    }
-                    self.client.sendall(json.dumps(response).encode('utf-8'))
-                    time.sleep(0.1)
+        while True:
+            data = self.client.recv(4096)
+            message = json.loads(data)
 
-                    serialized_data = json.dumps(data)
-                    self.client.sendall(serialized_data.encode('utf-8'))
-
-        finally:
-            self.client.close()
+            if message['type'] == 'response':
+                # self.client.close()
+                return message['content']
 
     def send(self, data):
         serialized_data = json.dumps(data)

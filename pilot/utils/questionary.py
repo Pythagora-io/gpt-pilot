@@ -3,6 +3,7 @@ import questionary
 from termcolor import colored
 
 from database.database import save_user_input, get_user_input_from_hash_id
+from const.ipc import MESSAGE_TYPE
 
 custom_style = Style.from_dict({
     'question': '#FFFFFF bold',  # the color and style of the question
@@ -28,10 +29,15 @@ def styled_text(project, question):
         print(colored(f'{user_input.user_input}', 'yellow', attrs=['bold']))
         return user_input.user_input
 
-    config = {
-        'style': custom_style,
-    }
-    response = questionary.text(question, **config).unsafe_ask()  # .ask() is included here
+    if project.ipc_client_instance is None or project.ipc_client_instance.client is None:
+        config = {
+            'style': custom_style,
+        }
+        response = questionary.text(question, **config).unsafe_ask()  # .ask() is included here
+    else:
+        response = project.log(question, MESSAGE_TYPE['user_input_request'])
+        project.log(response, MESSAGE_TYPE['verbose'])
+
     user_input = save_user_input(project, question, response)
 
     print('\n\n', end='')
