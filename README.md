@@ -43,7 +43,7 @@ Obviously, it still can't create any production-ready app but the general concep
 5. `pip install -r requirements.txt` (install the dependencies)
 6. `cd pilot`
 7. `mv .env.example .env` (create the .env file)
-8. Add your OpenAI API key and the database info to the `.env` file
+8. Add your environment (OpenAI/Azure), your API key and the database info to the `.env` file
 9. `python db_init.py` (initialize the database)
 10. `python main.py` (start GPT Pilot)
 

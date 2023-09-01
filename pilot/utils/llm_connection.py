@@ -46,13 +46,9 @@ def get_tokens_in_messages(messages: List[str]) -> int:
     tokenized_messages = [tokenizer.encode(message['content']) for message in messages]
     return sum(len(tokens) for tokens in tokenized_messages)
 
-# Check if the ENDPOINT is AZURE
+#get endpoint and model name from .ENV file
+model = os.getenv('MODEL_NAME')
 endpoint = os.getenv('ENDPOINT')
-if endpoint == 'AZURE':
-    # If yes, get the model name from .ENV file
-    model = os.getenv('AZURE_MODEL_NAME')
-else:
-    model="gpt-4"
     
 def num_tokens_from_functions(functions, model=model):
     """Return the number of tokens used by a list of functions."""
