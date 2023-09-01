@@ -192,7 +192,7 @@ def stream_gpt_completion(data, req_type):
         
         # Send the request to the Azure endpoint
         response = requests.post(
-            azure_endpoint + '/openai/deployments/GPT-4/chat/completions?api-version=2023-05-15',
+            azure_endpoint + '/openai/deployments/' + model + '/chat/completions?api-version=2023-05-15',
             headers=headers,
             json=data,
             stream=True
