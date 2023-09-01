@@ -3,7 +3,6 @@ import os
 import time
 
 from fabulous.color import bold, green, yellow
-from termcolor import colored
 from const.common import IGNORE_FOLDERS
 from database.models.app import App
 from database.database import get_app, delete_unconnected_steps_from, delete_all_app_development_data
@@ -214,9 +213,9 @@ class Project:
         delete_unconnected_steps_from(self.checkpoints['last_user_input'], 'previous_step')
 
     def ask_for_human_intervention(self, message, description=None, cbs={}):
-        self.log(yellow(bold(message)))
+        print(yellow(bold(message)))
         if description is not None:
-            self.log(description)
+            print(description)
         answer = ''
         while answer != 'continue':
             answer = styled_text(

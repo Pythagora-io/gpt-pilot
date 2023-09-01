@@ -1,6 +1,6 @@
 import json
 import uuid
-from termcolor import colored
+from fabulous.color import yellow, green, red, bold
 from utils.questionary import styled_text
 from helpers.files import update_file
 from utils.utils import step_already_finished
@@ -26,7 +26,7 @@ class Developer(Agent):
             self.project.skip_steps = False if ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0') else True
 
         # DEVELOPMENT
-        print(colored(f"Ok, great, now, let's start with the actual development...\n", "green", attrs=['bold']))
+        print(green(bold(f"Ok, great, now, let's start with the actual development...\n")))
         logger.info(f"Starting to create the actual code...")
 
         self.implement_task()
@@ -100,9 +100,9 @@ class Developer(Agent):
                 elif should_rerun_command == 'YES':
                     cli_response, llm_response = execute_command_and_check_cli_response(test_command['command'], test_command['timeout'], convo)
                     if llm_response == 'NEEDS_DEBUGGING':
-                        print(colored(f'Got incorrect CLI response:', 'red'))
+                        print(red(f'Got incorrect CLI response:'))
                         print(cli_response)
-                        print(colored('-------------------', 'red'))
+                        print(red('-------------------'))
                     if llm_response == 'DONE':
                         return True
 
@@ -119,7 +119,7 @@ class Developer(Agent):
         while True:
             # TODO add description about how can the user check if the app works
             user_feedback = self.project.ask_for_human_intervention(
-                'Can you check if the app works?\nIf you want to run the app, ' + colored('just type "r" and press ENTER', 'yellow', attrs=['bold']),
+                'Can you check if the app works?\nIf you want to run the app, ' + yellow(bold('just type "r" and press ENTER')),
                 cbs={ 'r': lambda: run_command_until_success(self.run_command, None, iteration_convo, force=True) })
 
             if user_feedback == 'continue':
@@ -165,7 +165,7 @@ class Developer(Agent):
         })
         return
         # ENVIRONMENT SETUP
-        print(colored(f"Setting up the environment...\n", "green"))
+        print(green(f"Setting up the environment...\n"))
         logger.info(f"Setting up the environment...")
 
         os_info = get_os_info()

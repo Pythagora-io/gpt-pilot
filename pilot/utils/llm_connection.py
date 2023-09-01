@@ -10,13 +10,9 @@ from jinja2 import Environment, FileSystemLoader
 
 from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS, MAX_QUESTIONS, END_RESPONSE
 from logger.logger import logger
-from termcolor import colored
+from fabulous.color import red
 from utils.utils import get_prompt_components, fix_json
 from utils.spinner import spinner_start, spinner_stop
-
-
-def connect_to_llm():
-    pass
 
 
 def get_prompt(prompt_name, data=None):
@@ -115,8 +111,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
         response = stream_gpt_completion(gpt_data, req_type)
         return response
     except Exception as e:
-        print(
-            'The request to OpenAI API failed. Here is the error message:')
+        print('The request to OpenAI API failed. Here is the error message:')
         print(e)
 
 
@@ -139,7 +134,7 @@ def retry_on_exception(func):
             try:
                 return func(*args, **kwargs)
             except Exception as e:
-                print(colored(f'There was a problem with request to openai API:', 'red'))
+                print(red(f'There was a problem with request to openai API:'))
                 print(str(e))
                 user_message = questionary.text(
                     "Do you want to try make the same request again? If yes, just press ENTER. Otherwise, type 'no'.",
@@ -168,8 +163,7 @@ def stream_gpt_completion(data, req_type):
         delete_last_n_lines(lines_printed)
         return result_data
 
-    # spinner = spinner_start(colored("Waiting for OpenAI API response...", 'yellow'))
-    # print(colored("Stream response from OpenAI:", 'yellow'))
+    # spinner = spinner_start(yellow("Waiting for OpenAI API response..."))
     api_key = os.getenv("OPENAI_API_KEY")
 
     logger.info(f'Request data: {data}')
@@ -190,6 +184,7 @@ def stream_gpt_completion(data, req_type):
 
     gpt_response = ''
     function_calls = {'name': '', 'arguments': ''}
+
 
     for line in response.iter_lines():
         # Ignore keep-alive new lines
@@ -226,7 +221,7 @@ def stream_gpt_completion(data, req_type):
 
                 if 'arguments' in json_line['function_call']:
                     function_calls['arguments'] += json_line['function_call']['arguments']
-                    print(json_line['function_call']['arguments'], end='', flush=True)
+                    print(json_line['function_call']['arguments'], type='stream', end='', flush=True)
 
             if 'content' in json_line:
                 content = json_line.get('content')
@@ -239,9 +234,9 @@ def stream_gpt_completion(data, req_type):
                         buffer = ""  # reset the buffer
 
                     gpt_response += content
-                    print(content, end='', flush=True)
+                    print(content, type='stream', end='', flush=True)
 
-    print('\n')
+    print('\n', type='stream')
     if function_calls['arguments'] != '':
         logger.info(f'Response via function call: {function_calls["arguments"]}')
         function_calls['arguments'] = load_data_to_json(function_calls['arguments'])

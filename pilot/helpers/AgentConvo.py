@@ -1,5 +1,5 @@
 import subprocess
-from termcolor import colored
+from fabulous.color import yellow, bold
 
 from database.database import get_development_step_from_hash_id, save_development_step, delete_all_subsequent_steps
 from utils.utils import array_of_objects_to_string
@@ -34,7 +34,7 @@ class AgentConvo:
         development_step = get_development_step_from_hash_id(self.agent.project, prompt_path, prompt_data, self.agent.project.llm_req_num)
         if development_step is not None and self.agent.project.skip_steps:
             # if we do, use it
-            print(colored(f'Restoring development step with id {development_step.id}', 'yellow'))
+            print(yellow(f'Restoring development step with id {development_step.id}'))
             self.agent.project.checkpoints['last_development_step'] = development_step
             self.agent.project.restore_files(development_step.id)
             response = development_step.llm_response
@@ -90,7 +90,7 @@ class AgentConvo:
 
         # Continue conversation until GPT response equals END_RESPONSE
         while response != END_RESPONSE:
-            print(colored("Do you want to add anything else? If not, ", 'yellow') + colored('just press ENTER.', 'yellow', attrs=['bold']))
+            print(yellow("Do you want to add anything else? If not, ") + yellow(bold('just press ENTER.')))
             user_message = ask_user(self.agent.project, response, False)
 
             if user_message == "":
@@ -125,7 +125,7 @@ class AgentConvo:
         print_msg = capitalize_first_word_with_underscores(self.high_level_step)
         if self.log_to_user:
             if self.agent.project.checkpoints['last_development_step'] is not None:
-                print(colored("\nDev step ", 'yellow') + colored(self.agent.project.checkpoints['last_development_step'], 'yellow', attrs=['bold']) + '\n', end='')
+                print(yellow("\nDev step ") + yellow(bold(self.agent.project.checkpoints['last_development_step'])) + '\n', end='')
             print(f"\n{content}\n")
         logger.info(f"{print_msg}: {content}\n")
 

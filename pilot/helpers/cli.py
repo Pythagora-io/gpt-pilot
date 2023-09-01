@@ -7,7 +7,7 @@ import time
 import uuid
 import platform
 
-from termcolor import colored
+from fabulous.color import yellow, green, white, red, bold
 from database.database import get_command_run_from_hash_id, save_command_run
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
 
@@ -74,8 +74,8 @@ def execute_command(project, command, timeout=None, force=False):
         timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
 
     if not force:
-        print(colored(f'\n--------- EXECUTE COMMAND ----------', 'yellow', attrs=['bold']))
-        print(colored(f'Can i execute the command: `') + colored(command, 'yellow', attrs=['bold']) + colored(f'` with {timeout}ms timeout?'))
+        print(yellow(bold(f'\n--------- EXECUTE COMMAND ----------')))
+        print(f'Can i execute the command: `' + yellow(bold(command)) + f'` with {timeout}ms timeout?')
 
         answer = styled_text(
             project,
@@ -87,7 +87,7 @@ def execute_command(project, command, timeout=None, force=False):
     if command_run is not None and project.skip_steps:
         # if we do, use it
         project.checkpoints['last_command_run'] = command_run
-        print(colored(f'Restoring command run response id {command_run.id}:\n```\n{command_run.cli_response}```', 'yellow'))
+        print(yellow(f'Restoring command run response id {command_run.id}:\n```\n{command_run.cli_response}```'))
         return command_run.cli_response
 
     return_value = None
@@ -105,7 +105,7 @@ def execute_command(project, command, timeout=None, force=False):
         while True and return_value is None:
             elapsed_time = time.time() - start_time
             if timeout is not None:
-                print(colored(f'\rt: {round(elapsed_time * 1000)}ms : ', 'white', attrs=['bold']), end='', flush=True)
+                print(white(bold(f'\rt: {round(elapsed_time * 1000)}ms : ')), end='', flush=True)
 
             # Check if process has finished
             if process.poll() is not None:
@@ -114,7 +114,7 @@ def execute_command(project, command, timeout=None, force=False):
                 while not q.empty():
                     output_line = q.get_nowait()
                     if output_line not in output:
-                        print(colored('CLI OUTPUT:', 'green') + output_line, end='')
+                        print(green('CLI OUTPUT:') + output_line, end='')
                         output += output_line
                 break
 
@@ -131,7 +131,7 @@ def execute_command(project, command, timeout=None, force=False):
 
             if line:
                 output += line
-                print(colored('CLI OUTPUT:', 'green') + line, end='')
+                print(green('CLI OUTPUT:') + line, end='')
 
             # Read stderr
             try:
@@ -141,7 +141,7 @@ def execute_command(project, command, timeout=None, force=False):
 
             if stderr_line:
                 stderr_output += stderr_line
-                print(colored('CLI ERROR:', 'red') + stderr_line, end='')  # Print with different color for distinction
+                print(red('CLI ERROR:') + stderr_line, end='')  # Print with different color for distinction
 
     except (KeyboardInterrupt, TimeoutError) as e:
         interrupted = True
@@ -215,9 +215,9 @@ def run_command_until_success(command, timeout, convo, additional_message=None, 
         {'cli_response': cli_response, 'command': command, 'additional_message': additional_message})
 
     if response != 'DONE':
-        print(colored(f'Got incorrect CLI response:', 'red'))
+        print(red(f'Got incorrect CLI response:'))
         print(cli_response)
-        print(colored('-------------------', 'red'))
+        print(red('-------------------'))
 
         debug(convo, {'command': command, 'timeout': timeout})
 

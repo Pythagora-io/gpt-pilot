@@ -1,4 +1,4 @@
-from termcolor import colored
+from fabulous.color import green
 import os
 
 
@@ -11,7 +11,7 @@ def update_file(path, new_content):
     # Write content to the file
     with open(path, 'w') as file:
         file.write(new_content)
-        print(colored(f"Updated file {path}", "green"))
+        print(green(f"Updated file {path}"))
 
 def get_files_content(directory, ignore=[]):
     return_array = []

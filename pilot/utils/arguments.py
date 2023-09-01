@@ -1,8 +1,6 @@
 import sys
 import uuid
 
-from termcolor import colored
-
 from database.database import get_app
 
 
