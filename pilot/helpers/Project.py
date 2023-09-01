@@ -58,11 +58,6 @@ class Project:
         # if development_plan is not None:
         #     self.development_plan = development_plan
 
-        # if '--external-log-process' in args:
-        #     self.ipc_client_instance = IPCClient()
-        # else:
-        #     self.ipc_client_instance = None
-
         print(green(bold('\n------------------ STARTING NEW PROJECT ----------------------')))
         print(f"If you wish to continue with this project in future run:")
         print(green(bold(f'python main.py app_id={args["app_id"]}')))
