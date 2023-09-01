@@ -32,6 +32,22 @@ DB_PORT = os.getenv("DB_PORT")
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 
+def get_created_apps():
+    return [model_to_dict(app) for app in App.select()]
+
+def get_created_apps_with_steps():
+    apps = get_created_apps()
+    for app in apps:
+        app['id'] = str(app['id'])
+        app['steps'] = get_progress_steps(app['id'])
+        app['development_steps'] = get_all_app_development_steps(app['id'])
+        # TODO this is a quick way to remove the unnecessary fields from the response
+        app['steps'] = {outer_k: {k: v for k, v in inner_d.items() if k in {'created_at', 'completeted_at', 'completed'}} if inner_d is not None else None for outer_k, inner_d in app['steps'].items()}
+        app['development_steps'] = [{k: v for k, v in dev_step.items() if k in {'id', 'created_at'}} for dev_step in app['development_steps']]
+    return apps
+
+def get_all_app_development_steps(app_id):
+    return [model_to_dict(dev_step) for dev_step in DevelopmentSteps.select().where(DevelopmentSteps.app == app_id)]
 
 def save_user(user_id, email, password):
     try:

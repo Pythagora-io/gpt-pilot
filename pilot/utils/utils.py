@@ -1,7 +1,9 @@
 # utils/utils.py
 
+import datetime
 import os
 import platform
+import uuid
 import distro
 import json
 import hashlib
@@ -167,3 +169,12 @@ def clean_filename(filename):
     cleaned_filename = re.sub(r'\s', '_', cleaned_filename)
 
     return cleaned_filename
+
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    if isinstance(obj, (datetime.datetime, datetime.date)):
+        return obj.isoformat()
+    elif isinstance(obj, uuid.UUID):
+        return str(obj)
+    else:
+        return str(obj)

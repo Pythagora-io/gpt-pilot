@@ -74,8 +74,6 @@ def num_tokens_from_functions(functions, model="gpt-4"):
                             for o in v['enum']:
                                 function_tokens += 3
                                 function_tokens += len(encoding.encode(o))
-                        # else:
-                        #     print(f"Warning: not supported field {field}")
                 function_tokens += 11
 
         num_tokens += function_tokens
@@ -85,7 +83,8 @@ def num_tokens_from_functions(functions, model="gpt-4"):
 
 
 def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TOKENS_FOR_GPT_RESPONSE,
-                               function_calls=None):
+    function_calls=None):
+
     tokens_in_messages = round(get_tokens_in_messages(messages) * 1.2)  # add 20% to account for not 100% accuracy
     if function_calls is not None:
         tokens_in_messages += round(

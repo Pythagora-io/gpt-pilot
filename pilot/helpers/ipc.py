@@ -3,13 +3,15 @@ import socket
 import json
 import time
 
+from utils.utils import json_serial
+
 class IPCClient:
-    def __init__(self):
+    def __init__(self, port):
         self.ready = False
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print("Connecting to the external process...")
         try:
-            client.connect(('localhost', 8124))
+            client.connect(('localhost', int(port)))
             self.client = client
             print("Connected!")
         except ConnectionRefusedError:
@@ -34,6 +36,10 @@ class IPCClient:
                 return message['content']
 
     def send(self, data):
-        serialized_data = json.dumps(data)
+        serialized_data = json.dumps(data, default=json_serial)
+        print(serialized_data, type='local')
+
+        data_length = len(serialized_data)
+        self.client.sendall(data_length.to_bytes(4, byteorder='big'))
         self.client.sendall(serialized_data.encode('utf-8'))
         time.sleep(0.1)

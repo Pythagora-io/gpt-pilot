@@ -1,3 +1,4 @@
+import json
 import os
 import time
 
@@ -24,7 +25,7 @@ from utils.files import get_parent_folder
 
 class Project:
     def __init__(self, args, name=None, description=None, user_stories=None, user_tasks=None, architecture=None,
-                 development_plan=None, current_step=None):
+                 development_plan=None, current_step=None, ipc_client_instance=None):
         self.args = args
         self.llm_req_num = 0
         self.command_runs_count = 0
@@ -38,6 +39,9 @@ class Project:
         self.root_path = ''
         self.skip_until_dev_step = None
         self.skip_steps = None
+
+        self.ipc_client_instance = ipc_client_instance
+
         # self.restore_files({dev_step_id_to_start_from})
 
         if current_step is not None:
@@ -55,20 +59,31 @@ class Project:
         # if development_plan is not None:
         #     self.development_plan = development_plan
 
-        if '--external-log-process' in args:
-            self.ipc_client_instance = IPCClient()
+        # if '--external-log-process' in args:
+        #     self.ipc_client_instance = IPCClient()
+        # else:
+        #     self.ipc_client_instance = None
 
-        self.log(green(bold('\n------------------ STARTING NEW PROJECT ----------------------')), 'verbose')
-        self.log(f"If you wish to continue with this project in future run:", 'verbose')
-        self.log(green(bold(f'python main.py app_id={args["app_id"]}')), 'verbose')
-        self.log(green(bold('--------------------------------------------------------------\n')), 'verbose')
+        print(green(bold('\n------------------ STARTING NEW PROJECT ----------------------')))
+        print(f"If you wish to continue with this project in future run:")
+        print(green(bold(f'python main.py app_id={args["app_id"]}')))
+        print(green(bold('--------------------------------------------------------------\n')))
 
     def start(self):
         self.project_manager = ProductOwner(self)
+        print(json.dumps({
+            "project_stage": "project_description"
+        }), type='info')
         self.project_manager.get_project_description()
+        print(json.dumps({
+            "project_stage": "user_stories"
+        }), type='info')
         self.user_stories = self.project_manager.get_user_stories()
         # self.user_tasks = self.project_manager.get_user_tasks()
 
+        print(json.dumps({
+            "project_stage": "architecture"
+        }), type='info')
         self.architect = Architect(self)
         self.architecture = self.architect.get_architecture()
 
@@ -88,8 +103,14 @@ class Project:
         # TODO END
 
         self.developer = Developer(self)
+        print(json.dumps({
+            "project_stage": "environment_setup"
+        }), type='info')
         self.developer.set_up_environment();
 
+        print(json.dumps({
+            "project_stage": "coding"
+        }), type='info')
         self.developer.start_coding()
 
     def get_directory_tree(self, with_descriptions=False):
