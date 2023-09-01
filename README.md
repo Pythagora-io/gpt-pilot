@@ -35,7 +35,16 @@ The idea is that AI won't be able to (at least in the near future) create apps f
 
 Obviously, it still can't create any production-ready app but the general concept of how this could work is there.
 
+# 🔌 Requirements
+
+
+- **Python**
+- **PostgreSQL**
+   - DB is needed for multiple reasons like continuing app development if you had to stop at any point or app crashed, going back to specific step so you can change some later steps in development, easier debugging, for future we will add functionality to update project (change some things in existing project or add new features to the project and so on)...
+
+
 # 🚦How to start using gpt-pilot?
+After you have Python and PostgreSQL installed, follow these steps:
 1. `git clone https://github.com/Pythagora-io/gpt-pilot.git` (clone the repo)
 2. `cd gpt-pilot`
 3. `python -m venv pilot-env` (create a virtual environment)
@@ -43,7 +52,7 @@ Obviously, it still can't create any production-ready app but the general concep
 5. `pip install -r requirements.txt` (install the dependencies)
 6. `cd pilot`
 7. `mv .env.example .env` (create the .env file)
-8. Add your OpenAI API key and the database info to the `.env` file
+8. Add your OpenAI API key and the PostgreSQL database info to the `.env` file
 9. `python db_init.py` (initialize the database)
 10. `python main.py` (start GPT Pilot)
 
