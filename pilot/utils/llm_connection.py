@@ -151,7 +151,8 @@ def retry_on_exception(func):
 
 @retry_on_exception
 def stream_gpt_completion(data, req_type):
-    terminal_width = os.get_terminal_size().columns
+    # TODO add type dynamically - this isn't working when connected to the external process
+    terminal_width = 50#os.get_terminal_size().columns
     lines_printed = 2
     buffer = ""  # A buffer to accumulate incoming data
 
