@@ -150,6 +150,7 @@ class Project:
         development_step, created = DevelopmentSteps.get_or_create(id=development_step_id)
 
         for file in files:
+            print(colored(f'Saving file {file["path"] + "/" + file["name"]}', 'light_cyan'))
             # TODO this can be optimized so we don't go to the db each time
             file_in_db, created = File.get_or_create(
                 app=self.app,

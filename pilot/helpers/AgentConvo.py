@@ -52,7 +52,6 @@ class AgentConvo:
             if self.agent.__class__.__name__ == 'Developer':
                 development_step = save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, response)
                 self.agent.project.checkpoints['last_development_step'] = development_step
-                self.agent.project.save_files_snapshot(development_step.id)
 
         # TODO handle errors from OpenAI
         if response == {}:
