@@ -82,6 +82,12 @@ def execute_command(project, command, timeout=None, force=False):
             'If yes, just press ENTER'
         )
 
+
+    # TODO when a shell built-in commands (like cd or source) is executed, the output is not captured properly - this will need to be changed at some point
+    if "cd " in command or "source " in command:
+        command = "bash -c '" + command + "'"
+
+
     project.command_runs_count += 1
     command_run = get_command_run_from_hash_id(project, command)
     if command_run is not None and project.skip_steps:
