@@ -20,15 +20,15 @@ Here are the technologies that you need to use for this project:
 - {{ tech }}{% endfor %}
 ```
 
-{% if parent_task %}
-You are currently working on this task:
+{% if current_task_index != 0 %}
+So far, this code has been implemented
+{% for file in files %}
+**{{ file.path }}**
+```{# file.language #}
+{{ file.content }}
 ```
-{{ array_of_objects_to_string(parent_task) }}
-```
-We've broken it down to these subtasks:
-```{% for subtask in sibling_tasks %}
-- {{ subtask['description'] }}{% endfor %}
-```
+
+{% endfor %}
 {% endif %}
 
 Now, tell me all the code that needs to be written to implement this app and have it fully working and all commands that need to be run to implement this app.

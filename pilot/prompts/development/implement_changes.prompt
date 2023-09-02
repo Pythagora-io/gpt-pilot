@@ -1,14 +1,10 @@
-{% if files|length > 0 %}
-Here is how files look now:
+{% if files|length > 0 %}Here is how files look now:
 {% for file in files %}
 **{{ file.path }}**
 ```{# file.language #}
 {{ file.content }}
 ```
 
-{% endfor %}
-{% endif %}
-
-Now, think step by step and apply the needed changes for step #{{ step_index }} - {{ step_description }}.
+{% endfor %}{% endif %}Now, think step by step and apply the needed changes for step #{{ step_index }} - `{{ step_description }}`.
 
 Within the file modifications, anything needs to be written by the user, add the comment in the same line as the code that starts with `// INPUT_REQUIRED {input_description}` where `input_description` is a description of what needs to be added here by the user. Finally, you can save the modified files on the disk by calling `save_files` function.
