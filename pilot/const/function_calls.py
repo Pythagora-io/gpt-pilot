@@ -40,7 +40,7 @@ def return_array_from_prompt(name_plural, name_singular, return_var_name):
     }
 
 
-def command_definition(description_command=f'A single command that needs to be executed.', description_timeout=f'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.'):
+def command_definition(description_command=f'A single command that needs to be executed.', description_timeout=f'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`'):
     return {
         'type': 'object',
         'description': 'Command that needs to be run to complete the current task. This should be used only if the task is of a type "command".',
@@ -125,7 +125,7 @@ DEV_TASKS_BREAKDOWN = {
                         'description': 'List of smaller development steps that need to be done to complete the entire task.',
                         'items': {
                             'type': 'object',
-                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
+                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
                             'properties': {
                                 'type': {
                                     'type': 'string',
@@ -168,7 +168,7 @@ IMPLEMENT_TASK = {
                         'description': 'List of smaller development steps that need to be done to complete the entire task.',
                         'items': {
                             'type': 'object',
-                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
+                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an  If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
                             'properties': {
                                 'type': {
                                     'type': 'string',
@@ -316,7 +316,7 @@ CODE_CHANGES = {
                         'description': 'List of smaller development steps that need to be done to complete the entire task.',
                         'items': {
                             'type': 'object',
-                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
+                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
                             'properties': {
                                 'type': {
                                     'type': 'string',
@@ -390,7 +390,7 @@ EXECUTE_COMMANDS = {
             'properties': {
                 'commands': {
                     'type': 'array',
-                    'description': f'List of commands that need to be executed.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
+                    'description': f'List of commands that need to be executed.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
                     'items': command_definition(f'A single command that needs to be executed.', f'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.')
                 }
             },
@@ -483,7 +483,7 @@ GET_TEST_TYPE = {
                     'description': f'Type of a test that needs to be run. If this is just an intermediate step in getting a task done, put `no_test` as the type and we\'ll just go onto the next task without testing.',
                     'enum': ['automated_test', 'command_test', 'manual_test', 'no_test']
                 },
-                'command': command_definition('Command that needs to be run to test the changes.', 'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.'),
+                'command': command_definition('Command that needs to be run to test the changes.', 'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`'),
                 'automated_test_description': {
                     'type': 'string',
                     'description': 'Description of an automated test that needs to be run to test the changes. This should be used only if the test type is "automated_test" and it should thoroughly describe what needs to be done to implement the automated test so that when someone looks at this test can know exactly what needs to be done to implement this automated test.',
@@ -515,7 +515,7 @@ DEBUG_STEPS_BREAKDOWN = {
                         'description': 'List of steps that need to be done to debug the problem.',
                         'items': {
                             'type': 'object',
-                            'description': 'A single step that needs to be done to get closer to debugging this issue.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.',
+                            'description': 'A single step that needs to be done to get closer to debugging this issue.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
                             'properties': {
                                 'type': {
                                     'type': 'string',
