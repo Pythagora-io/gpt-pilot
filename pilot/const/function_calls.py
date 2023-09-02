@@ -172,7 +172,7 @@ IMPLEMENT_TASK = {
                             'properties': {
                                 'type': {
                                     'type': 'string',
-                                    'enum': ['command', 'code_change', 'human_invervention'],
+                                    'enum': ['command', 'code_change', 'human_intervention'],
                                     'description': 'Type of the development step that needs to be done to complete the entire task.',
                                 },
                                 'command': command_definition(),
