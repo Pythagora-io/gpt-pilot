@@ -18,6 +18,7 @@ from helpers.cli import execute_command
 class Developer(Agent):
     def __init__(self, project):
         super().__init__('full_stack_developer', project)
+        self.run_command = None
 
     def start_coding(self):
         self.project.current_step = 'coding'
