@@ -95,7 +95,11 @@ class Developer(Agent):
                 # TODO end
 
             elif step['type'] == 'human_intervention':
-                user_feedback = self.project.ask_for_human_intervention('I need human intervention:', step['human_intervention_description'])
+                human_intervention_description = step['human_intervention_description'] + colored('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`', 'yellow', attrs=['bold']) if self.run_command is not None else step['human_intervention_description']
+                user_feedback = self.project.ask_for_human_intervention('I need human intervention:',
+                    human_intervention_description,
+                    cbs={ 'r': lambda: run_command_until_success(self.run_command, None, convo, force=True) })
+
                 if user_feedback is not None and user_feedback != 'continue':
                     debug(convo, user_input=user_feedback, issue_description=step['human_intervention_description'])
 
