@@ -21,6 +21,19 @@ from utils.files import get_parent_folder
 class Project:
     def __init__(self, args, name=None, description=None, user_stories=None, user_tasks=None, architecture=None,
                  development_plan=None, current_step=None):
+        """
+        Initialize a project.
+
+        Args:
+            args (dict): Project arguments.
+            name (str, optional): Project name. Default is None.
+            description (str, optional): Project description. Default is None.
+            user_stories (list, optional): List of user stories. Default is None.
+            user_tasks (list, optional): List of user tasks. Default is None.
+            architecture (str, optional): Project architecture. Default is None.
+            development_plan (str, optional): Development plan. Default is None.
+            current_step (str, optional): Current step in the project. Default is None.
+        """
         self.args = args
         self.llm_req_num = 0
         self.command_runs_count = 0
@@ -52,6 +65,9 @@ class Project:
         #     self.development_plan = development_plan
 
     def start(self):
+        """
+        Start the project.
+        """
         self.project_manager = ProductOwner(self)
         self.project_manager.get_project_description()
         self.user_stories = self.project_manager.get_user_stories()
@@ -81,6 +97,15 @@ class Project:
         self.developer.start_coding()
 
     def get_directory_tree(self, with_descriptions=False):
+        """
+        Get the directory tree of the project.
+
+        Args:
+            with_descriptions (bool, optional): Whether to include descriptions. Default is False.
+
+        Returns:
+            dict: The directory tree.
+        """
         files = {}
         if with_descriptions and False:
             files = File.select().where(File.app_id == self.args['app_id'])
@@ -88,15 +113,36 @@ class Project:
         return build_directory_tree(self.root_path + '/', ignore=IGNORE_FOLDERS, files=files, add_descriptions=False)
 
     def get_test_directory_tree(self):
+        """
+        Get the directory tree of the tests.
+
+        Returns:
+            dict: The directory tree of tests.
+        """
         # TODO remove hardcoded path
         return build_directory_tree(self.root_path + '/tests', ignore=IGNORE_FOLDERS)
 
     def get_all_coded_files(self):
+        """
+        Get all coded files in the project.
+
+        Returns:
+            list: A list of coded files.
+        """
         files = File.select().where(File.app_id == self.args['app_id'])
         files = self.get_files([file.path + '/' + file.name for file in files])
         return files
 
     def get_files(self, files):
+        """
+        Get file contents.
+
+        Args:
+            files (list): List of file paths.
+
+        Returns:
+            list: A list of files with content.
+        """
         files_with_content = []
         for file in files:
             # TODO this is a hack, fix it
@@ -113,6 +159,12 @@ class Project:
         return files_with_content
 
     def save_file(self, data):
+        """
+        Save a file.
+
+        Args:
+            data (dict): File data.
+        """
         # TODO fix this in prompts
         if ' ' in data['name'] or '.' not in data['name']:
             data['name'] = data['path'].rsplit('/', 1)[1]
