@@ -94,7 +94,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
         raise ValueError(f'Too many tokens in messages: {tokens_in_messages}. Please try a different test.')
 
     gpt_data = {
-        'model': 'gpt-4',
+        'model': os.getenv('OPENAI_MODEL', 'gpt-4'),
         'n': 1,
         'max_tokens': min(4096, MAX_GPT_MODEL_TOKENS - tokens_in_messages),
         'temperature': 1,
