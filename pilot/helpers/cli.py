@@ -24,6 +24,19 @@ def enqueue_output(out, q):
     out.close()
 
 def run_command(command, root_path, q_stdout, q_stderr, pid_container):
+    """
+    Execute a command in a subprocess.
+
+    Args:
+        command (str): The command to run.
+        root_path (str): The directory in which to run the command.
+        q_stdout (Queue): A queue to capture stdout.
+        q_stderr (Queue): A queue to capture stderr.
+        pid_container (list): A list to store the process ID.
+
+    Returns:
+        subprocess.Popen: The subprocess object.
+    """
     if platform.system() == 'Windows':  # Check the operating system
         process = subprocess.Popen(
             command,
@@ -68,6 +81,18 @@ def terminate_process(pid):
             pass
 
 def execute_command(project, command, timeout=None, force=False):
+    """
+    Execute a command and capture its output.
+
+    Args:
+        project: The project associated with the command.
+        command (str): The command to run.
+        timeout (int, optional): The maximum execution time in milliseconds. Default is None.
+        force (bool, optional): Whether to execute the command without confirmation. Default is False.
+
+    Returns:
+        str: The command output.
+    """
     if timeout is not None:
         if timeout < 1000:
             timeout *= 1000
@@ -210,12 +235,33 @@ def build_directory_tree(path, prefix="", ignore=None, is_last=False, files=None
     return output
 
 def execute_command_and_check_cli_response(command, timeout, convo):
+    """
+    Execute a command and check its CLI response.
+
+    Args:
+        command (str): The command to run.
+        timeout (int): The maximum execution time in milliseconds.
+        convo (AgentConvo): The conversation object.
+
+    Returns:
+        tuple: A tuple containing the CLI response and the agent's response.
+    """
     cli_response = execute_command(convo.agent.project, command, timeout)
     response = convo.send_message('dev_ops/ran_command.prompt',
         { 'cli_response': cli_response, 'command': command })
     return cli_response, response
 
 def run_command_until_success(command, timeout, convo, additional_message=None, force=False):
+    """
+    Run a command until it succeeds or reaches a timeout.
+
+    Args:
+        command (str): The command to run.
+        timeout (int): The maximum execution time in milliseconds.
+        convo (AgentConvo): The conversation object.
+        additional_message (str, optional): Additional message to include in the response.
+        force (bool, optional): Whether to execute the command without confirmation. Default is False.
+    """
     cli_response = execute_command(convo.agent.project, command, timeout, force)
     response = convo.send_message('dev_ops/ran_command.prompt',
         {'cli_response': cli_response, 'command': command, 'additional_message': additional_message})
@@ -230,6 +276,18 @@ def run_command_until_success(command, timeout, convo, additional_message=None, 
 
 
 def debug(convo, command=None, user_input=None, issue_description=None):
+    """
+    Debug a conversation.
+
+    Args:
+        convo (AgentConvo): The conversation object.
+        command (dict, optional): The command to debug. Default is None.
+        user_input (str, optional): User input for debugging. Default is None.
+        issue_description (str, optional): Description of the issue to debug. Default is None.
+
+    Returns:
+        bool: True if debugging was successful, False otherwise.
+    """
     function_uuid = str(uuid.uuid4())
     convo.save_branch(function_uuid)
     success = False

@@ -11,6 +11,12 @@ from const.llm import END_RESPONSE
 
 
 class AgentConvo:
+    """
+    Represents a conversation with an agent.
+
+    Args:
+        agent: An instance of the agent participating in the conversation.
+    """
     def __init__(self, agent):
         self.messages = []
         self.branches = {}
@@ -22,6 +28,17 @@ class AgentConvo:
         self.messages.append(get_sys_message(self.agent.role))
 
     def send_message(self, prompt_path=None, prompt_data=None, function_calls=None):
+        """
+        Sends a message in the conversation.
+
+        Args:
+            prompt_path: The path to a prompt.
+            prompt_data: Data associated with the prompt.
+            function_calls: Optional function calls to be included in the message.
+
+        Returns:
+            The response from the agent.
+        """
         # craft message
         self.construct_and_add_message_from_prompt(prompt_path, prompt_data)
 
@@ -83,6 +100,17 @@ class AgentConvo:
         return response
 
     def continuous_conversation(self, prompt_path, prompt_data, function_calls=None):
+        """
+        Conducts a continuous conversation with the agent.
+
+        Args:
+            prompt_path: The path to a prompt.
+            prompt_data: Data associated with the prompt.
+            function_calls: Optional function calls to be included in the conversation.
+
+        Returns:
+            List of accepted messages in the conversation.
+        """
         self.log_to_user = False
         accepted_messages = []
         response = self.send_message(prompt_path, prompt_data, function_calls)
@@ -111,6 +139,16 @@ class AgentConvo:
         return len([msg for msg in self.messages if msg['role'] != 'system'])
 
     def postprocess_response(self, response, function_calls):
+        """
+        Post-processes the response from the agent.
+
+        Args:
+            response: The response from the agent.
+            function_calls: Optional function calls associated with the response.
+
+        Returns:
+            The post-processed response.
+        """
         if 'function_calls' in response and function_calls is not None:
             if 'send_convo' in function_calls:
                 response['function_calls']['arguments']['convo']  = self
@@ -121,6 +159,12 @@ class AgentConvo:
         return response
 
     def log_message(self, content):
+        """
+        Logs a message in the conversation.
+
+        Args:
+            content: The content of the message to be logged.
+        """
         print_msg = capitalize_first_word_with_underscores(self.high_level_step)
         if self.log_to_user:
             if self.agent.project.checkpoints['last_development_step'] is not None:
