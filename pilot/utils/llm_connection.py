@@ -174,33 +174,25 @@ def stream_gpt_completion(data, req_type):
 
     # spinner = spinner_start(colored("Waiting for OpenAI API response...", 'yellow'))
     # print(colored("Stream response from OpenAI:", 'yellow'))
-    api_key = os.getenv("OPENAI_API_KEY")
-    azure_api_key = os.getenv('AZURE_API_KEY')
-    headers = {'Content-Type': 'application/json', 'api-key':  azure_api_key}
-    openai_endpoint = 'https://api.openai.com/v1/chat/completions'
 
     logger.info(f'Request data: {data}')
 
     # Check if the ENDPOINT is AZURE
     if endpoint == 'AZURE':
         # If yes, get the AZURE_ENDPOINT from .ENV file
-        azure_endpoint = os.getenv('AZURE_ENDPOINT')
-        
-        # Send the request to the Azure endpoint
-        response = requests.post(
-            azure_endpoint + '/openai/deployments/' + model + '/chat/completions?api-version=2023-05-15',
-            headers=headers,
-            json=data,
-            stream=True
-        )
+        endpoint_url = os.getenv('AZURE_ENDPOINT') + '/openai/deployments/' + model + '/chat/completions?api-version=2023-05-15'
+        headers = {'Content-Type': 'application/json', 'api-key':  os.getenv('AZURE_API_KEY')}
     else:
         # If not, send the request to the OpenAI endpoint
-        response = requests.post(
-            openai_endpoint,
-            headers=headers,
-            json=data,
-            stream=True
-        )
+        headers = {'Content-Type': 'application/json', 'Authorization':  'Bearer ' + os.getenv("OPENAI_API_KEY")}
+        endpoint_url = 'https://api.openai.com/v1/chat/completions'
+
+    response = requests.post(
+        endpoint_url,
+        headers=headers,
+        json=data,
+        stream=True
+    )
 
     # Log the response status code and message
     logger.info(f'Response status code: {response.status_code}')
