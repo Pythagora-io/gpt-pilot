@@ -49,7 +49,7 @@ def get_tokens_in_messages(messages: List[str]) -> int:
 #get endpoint and model name from .ENV file
 model = os.getenv('MODEL_NAME')
 endpoint = os.getenv('ENDPOINT')
-    
+
 def num_tokens_from_functions(functions, model=model):
     """Return the number of tokens used by a list of functions."""
     encoding = tiktoken.get_encoding("cl100k_base")
@@ -97,7 +97,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
         raise ValueError(f'Too many tokens in messages: {tokens_in_messages}. Please try a different test.')
 
     gpt_data = {
-        'model': model,
+        'model': os.getenv('OPENAI_MODEL', 'gpt-4'),
         'n': 1,
         'max_tokens': min(4096, MAX_GPT_MODEL_TOKENS - tokens_in_messages),
         'temperature': 1,

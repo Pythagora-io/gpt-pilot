@@ -18,6 +18,7 @@ from helpers.cli import execute_command
 class Developer(Agent):
     def __init__(self, project):
         super().__init__('full_stack_developer', project)
+        self.run_command = None
 
     def start_coding(self):
         self.project.current_step = 'coding'
@@ -29,13 +30,16 @@ class Developer(Agent):
         print(colored(f"Ok, great, now, let's start with the actual development...\n", "green", attrs=['bold']))
         logger.info(f"Starting to create the actual code...")
 
-        self.implement_task()
+        for i, dev_task in enumerate(self.project.development_plan):
+            self.implement_task(i, dev_task)
 
         # DEVELOPMENT END
 
         logger.info('The app is DONE!!! Yay...you can use it now.')
 
-    def implement_task(self):
+    def implement_task(self, i, development_task=None):
+        print(colored(f'Implementing task #{i + 1}: ', 'green', attrs=['bold']) + colored(f' {development_task["description"]}\n', 'green'));
+
         convo_dev_task = AgentConvo(self)
         task_description = convo_dev_task.send_message('development/task/breakdown.prompt', {
             "name": self.project.args['name'],
@@ -46,13 +50,16 @@ class Developer(Agent):
             "technologies": self.project.architecture,
             "array_of_objects_to_string": array_of_objects_to_string,
             "directory_tree": self.project.get_directory_tree(True),
+            "current_task_index": i,
+            "development_tasks": self.project.development_plan,
+            "files": self.project.get_all_coded_files(),
         })
 
         task_steps = convo_dev_task.send_message('development/parse_task.prompt', {}, IMPLEMENT_TASK)
         convo_dev_task.remove_last_x_messages(2)
-        self.execute_task(convo_dev_task, task_steps, continue_development=True)
+        self.execute_task(convo_dev_task, task_steps, development_task=development_task, continue_development=True)
 
-    def execute_task(self, convo, task_steps, test_command=None, reset_convo=True, test_after_code_changes=True, continue_development=False):
+    def execute_task(self, convo, task_steps, test_command=None, reset_convo=True, test_after_code_changes=True, continue_development=False, development_task=None):
         function_uuid = str(uuid.uuid4())
         convo.save_branch(function_uuid)
 
@@ -88,7 +95,11 @@ class Developer(Agent):
                 # TODO end
 
             elif step['type'] == 'human_intervention':
-                user_feedback = self.project.ask_for_human_intervention('I need human intervention:', step['human_intervention_description'])
+                human_intervention_description = step['human_intervention_description'] + colored('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`', 'yellow', attrs=['bold']) if self.run_command is not None else step['human_intervention_description']
+                user_feedback = self.project.ask_for_human_intervention('I need human intervention:',
+                    human_intervention_description,
+                    cbs={ 'r': lambda: run_command_until_success(self.run_command, None, convo, force=True) })
+
                 if user_feedback is not None and user_feedback != 'continue':
                     debug(convo, user_input=user_feedback, issue_description=step['human_intervention_description'])
 
@@ -112,14 +123,21 @@ class Developer(Agent):
         if self.run_command.endswith('`'):
             self.run_command = self.run_command[:-1]
 
-        if continue_development:
-            self.continue_development(convo)
+        if development_task is not None:
+            convo.remove_last_x_messages(2)
+            detailed_user_review_goal = convo.send_message('development/define_user_review_goal.prompt', {})
 
-    def continue_development(self, iteration_convo):
+        if continue_development:
+            continue_description = detailed_user_review_goal if detailed_user_review_goal is not None else None
+            self.continue_development(convo, continue_description)
+
+    def continue_development(self, iteration_convo, continue_description=''):
         while True:
-            # TODO add description about how can the user check if the app works
+            user_description = ('Here is a description of what should be working: \n\n' + colored(continue_description, 'blue', attrs=['bold']) + '\n') if continue_description != '' else ''
+            user_description = 'Can you check if the app works please? ' + user_description + '\nIf you want to run the app, ' + colored('just type "r" and press ENTER and that will run `' + self.run_command + '`', 'yellow', attrs=['bold'])
+            continue_description = ''
             user_feedback = self.project.ask_for_human_intervention(
-                'Can you check if the app works?\nIf you want to run the app, ' + colored('just type "r" and press ENTER', 'yellow', attrs=['bold']),
+                user_description,
                 cbs={ 'r': lambda: run_command_until_success(self.run_command, None, iteration_convo, force=True) })
 
             if user_feedback == 'continue':

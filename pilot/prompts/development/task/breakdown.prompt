@@ -20,23 +20,30 @@ Here are the technologies that you need to use for this project:
 - {{ tech }}{% endfor %}
 ```
 
-{% if parent_task %}
-You are currently working on this task:
+{% if current_task_index != 0 %}
+So far, this code has been implemented
+{% for file in files %}
+**{{ file.path }}**
+```{# file.language #}
+{{ file.content }}
 ```
-{{ array_of_objects_to_string(parent_task) }}
-```
-We've broken it down to these subtasks:
-```{% for subtask in sibling_tasks %}
-- {{ subtask['description'] }}{% endfor %}
-```
+
+{% endfor %}
 {% endif %}
 
-Now, tell me all the code that needs to be written to implement this app and have it fully working and all commands that need to be run to implement this app.
+We've broken the development of this app down to these tasks:
+```{% for task in development_tasks %}
+- {{ task['description'] }}{% endfor %}
+```
 
-This should be a simple version of the app so you don't need to aim to provide a production ready code but rather something that a developer can run locally and play with the implementation. Do not leave any parts of the code to be written afterwards. Make sure that all the code you provide is working and does as outlined in the description area above.
+You are currently working on this task with the following description: {{ development_tasks[current_task_index]['description'] }}
+After all the code is finished, a human developer will check it works this way - {{ development_tasks[current_task_index]['user_review_goal'] }}
+
+Now, tell me all the code that needs to be written to implement this app and have it fully working and all commands that need to be run to implement this app.
 
 !IMPORTANT!
 Remember, I'm currently in an empty folder where I will start writing files that you tell me.
 Tell me how can I test the app to see if it's working or not.
 You do not need to make any automated tests work.
-DO NOT specify commands to create any folders or files, they will be created automatically - just specify the relative path to each file that needs to be written
+DO NOT specify commands to create any folders or files, they will be created automatically - just specify the relative path to each file that needs to be written.
+Never use the port 5000 to run the app, it's reserved.
