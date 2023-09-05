@@ -46,8 +46,11 @@ def get_tokens_in_messages(messages: List[str]) -> int:
     tokenized_messages = [tokenizer.encode(message['content']) for message in messages]
     return sum(len(tokens) for tokens in tokenized_messages)
 
+#get endpoint and model name from .ENV file
+model = os.getenv('MODEL_NAME')
+endpoint = os.getenv('ENDPOINT')
 
-def num_tokens_from_functions(functions, model="gpt-4"):
+def num_tokens_from_functions(functions, model=model):
     """Return the number of tokens used by a list of functions."""
     encoding = tiktoken.get_encoding("cl100k_base")
 
@@ -171,13 +174,22 @@ def stream_gpt_completion(data, req_type):
 
     # spinner = spinner_start(colored("Waiting for OpenAI API response...", 'yellow'))
     # print(colored("Stream response from OpenAI:", 'yellow'))
-    api_key = os.getenv("OPENAI_API_KEY")
 
     logger.info(f'Request data: {data}')
 
+    # Check if the ENDPOINT is AZURE
+    if endpoint == 'AZURE':
+        # If yes, get the AZURE_ENDPOINT from .ENV file
+        endpoint_url = os.getenv('AZURE_ENDPOINT') + '/openai/deployments/' + model + '/chat/completions?api-version=2023-05-15'
+        headers = {'Content-Type': 'application/json', 'api-key':  os.getenv('AZURE_API_KEY')}
+    else:
+        # If not, send the request to the OpenAI endpoint
+        headers = {'Content-Type': 'application/json', 'Authorization':  'Bearer ' + os.getenv("OPENAI_API_KEY")}
+        endpoint_url = 'https://api.openai.com/v1/chat/completions'
+
     response = requests.post(
-        'https://api.openai.com/v1/chat/completions',
-        headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + api_key},
+        endpoint_url,
+        headers=headers,
         json=data,
         stream=True
     )
