@@ -13,6 +13,7 @@ from logger.logger import logger
 from termcolor import colored
 from utils.utils import get_prompt_components, fix_json
 from utils.spinner import spinner_start, spinner_stop
+from litellm import completion
 
 
 def connect_to_llm():
@@ -174,38 +175,28 @@ def stream_gpt_completion(data, req_type):
     api_key = os.getenv("OPENAI_API_KEY")
 
     logger.info(f'Request data: {data}')
+    try:
+        response = completion(
+            api_key=api_key,
+            stream=True,
+            **data
+        )
+    except Exception as e:
+        logger.debug(f'problem with request, got error: {e}')
+        raise Exception(f"API responded with status code: {e}")
 
-    response = requests.post(
-        'https://api.openai.com/v1/chat/completions',
-        headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + api_key},
-        json=data,
-        stream=True
-    )
+    # Log the response
+    logger.info(f'Response: {response}')
 
-    # Log the response status code and message
-    logger.info(f'Response status code: {response.status_code}')
-
-    if response.status_code != 200:
-        logger.debug(f'problem with request: {response.text}')
-        raise Exception(f"API responded with status code: {response.status_code}. Response text: {response.text}")
 
     gpt_response = ''
     function_calls = {'name': '', 'arguments': ''}
 
-    for line in response.iter_lines():
+    for line in response:
         # Ignore keep-alive new lines
         if line:
-            line = line.decode("utf-8")  # decode the bytes to string
-
-            if line.startswith('data: '):
-                line = line[6:]  # remove the 'data: ' prefix
-
-            # Check if the line is "[DONE]" before trying to parse it as JSON
-            if line == "[DONE]":
-                continue
-
             try:
-                json_line = json.loads(line)
+                json_line = line
                 if 'error' in json_line:
                     logger.error(f'Error in LLM response: {json_line}')
                     raise ValueError(f'Error in LLM response: {json_line["error"]["message"]}')
