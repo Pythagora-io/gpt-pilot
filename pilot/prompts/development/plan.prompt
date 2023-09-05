@@ -34,10 +34,4 @@ Here are the technologies that you need to use for this project:
 {% endfor %}
 ```
 
-OK, now, you need to create code to have this app fully working but before we go into the coding part, I want you to split the development process of creating this app into smaller tasks so that it is easier to debug and make the app work. Each smaller task of this project has to be a whole that can be reviewed by a developer to make sure we're on a right track to create this app completely. However, it cannot be split into tasks that are too small as well.
-
-Each task needs to be related only to the development of this app and nothing else - once the app is fully working, that is it. There shouldn't be a task for deployment, writing documentation, or anything that is not writing the actual code. Think task by task and create the least number of tasks that are relevant for this specific app.
-
-For each task, there must be a way for human developer to check if the task is done or not. Write how should the developer check if the task is done.
-
-Now, based on the app's description, user stories and user tasks, and the technologies that you need to use, think task by task and write up the entire plan for the development. Start from the project setup and specify each task until the moment when the entire app should be fully working. For each task, write a description and a user-review goal.
+Now, based on the app's description, user stories and user tasks, and the technologies that you need to use, think step by step and write up the entire plan for the development. Start from the project setup and specify each step until the moment when the entire app should be fully working. For each step, write a description, a programmatic goal, and a user-review goal.
