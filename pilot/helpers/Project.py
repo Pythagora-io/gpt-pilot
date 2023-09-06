@@ -76,11 +76,8 @@ class Project:
         self.architect = Architect(self)
         self.architecture = self.architect.get_architecture()
 
-        self.developer = Developer(self)
-        self.developer.set_up_environment();
-
-        self.tech_lead = TechLead(self)
-        self.development_plan = self.tech_lead.create_development_plan()
+        # self.tech_lead = TechLead(self)
+        # self.development_plan = self.tech_lead.create_development_plan()
 
         # TODO move to constructor eventually
         if 'skip_until_dev_step' in self.args:
@@ -93,6 +90,9 @@ class Project:
                 FileSnapshot.delete().where(FileSnapshot.app == self.app and FileSnapshot.development_step == self.skip_until_dev_step).execute()
                 self.save_files_snapshot(self.skip_until_dev_step)
         # TODO END
+
+        self.developer = Developer(self)
+        self.developer.set_up_environment();
 
         self.developer.start_coding()
 
