@@ -39,7 +39,7 @@ Obviously, it still can't create any production-ready app but the general concep
 
 
 - **Python**
-- **PostgreSQL**
+- **PostgreSQL** (optional, projects default is SQLite)
    - DB is needed for multiple reasons like continuing app development if you had to stop at any point or app crashed, going back to specific step so you can change some later steps in development, easier debugging, for future we will add functionality to update project (change some things in existing project or add new features to the project and so on)...
 
 
@@ -52,7 +52,8 @@ After you have Python and PostgreSQL installed, follow these steps:
 5. `pip install -r requirements.txt` (install the dependencies)
 6. `cd pilot`
 7. `mv .env.example .env` (create the .env file)
-8. Add your environment (OpenAI/Azure), your API key and the PostgreSQL database info to the `.env` file
+8. Add your environment (OpenAI/Azure), your API key and the SQLite/PostgreSQL database info to the `.env` file
+   - to change from SQLite to PostgreSQL in your .env just set `DATABASE_TYPE=postgres`
 9. `python db_init.py` (initialize the database)
 10. `python main.py` (start GPT Pilot)
 
