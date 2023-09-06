@@ -21,4 +21,6 @@ Here is an overview of the tasks that you need to do:
 
 Let's start with the task #1 Getting additional answers. Think about the description for the {{ app_type }} "{{ name }}" and ask questions that you would like to get cleared before going onto breaking down the user stories.
 
+{{no_microservices}}
+
 {{single_question}}

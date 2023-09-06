@@ -31,5 +31,5 @@ Tell me all the new code that needs to be written or modified to implement this 
 #}
 Remember, I'm currently in an empty folder where I will start writing files that you tell me. You do not need to make any automated tests work.
 
-!!IMPORTANT!!
+**IMPORTANT**
 Do not tell me anything about setting up the database or anything OS related - only if some dependencies need to be installed.
