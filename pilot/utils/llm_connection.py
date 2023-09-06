@@ -89,17 +89,10 @@ def num_tokens_from_functions(functions, model=model):
 
 def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TOKENS_FOR_GPT_RESPONSE,
                                function_calls=None):
-    tokens_in_messages = round(get_tokens_in_messages(messages) * 1.2)  # add 20% to account for not 100% accuracy
-    if function_calls is not None:
-        tokens_in_messages += round(
-            num_tokens_from_functions(function_calls['definitions']) * 1.2)  # add 20% to account for not 100% accuracy
-    if tokens_in_messages + min_tokens > MAX_GPT_MODEL_TOKENS:
-        raise ValueError(f'Too many tokens in messages: {tokens_in_messages}. Please try a different test.')
-
     gpt_data = {
         'model': os.getenv('OPENAI_MODEL', 'gpt-4'),
         'n': 1,
-        'max_tokens': min(4096, MAX_GPT_MODEL_TOKENS - tokens_in_messages),
+        'max_tokens': 4096,
         'temperature': 1,
         'top_p': 1,
         'presence_penalty': 0,
@@ -119,9 +112,14 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
         response = stream_gpt_completion(gpt_data, req_type)
         return response
     except Exception as e:
-        print(
-            'The request to OpenAI API failed. Here is the error message:')
-        print(e)
+        error_message = str(e)
+
+        # Check if the error message is related to token limit
+        if "context_length_exceeded" in error_message.lower():
+            raise Exception(f'Too many tokens in the request. Please try to continue the project with some previous development step.')
+        else:
+            print('The request to OpenAI API failed. Here is the error message:')
+            print(e)
 
 
 def delete_last_n_lines(n):
@@ -143,8 +141,16 @@ def retry_on_exception(func):
             try:
                 return func(*args, **kwargs)
             except Exception as e:
+                # Convert exception to string
+                err_str = str(e)
+
+                # If the specific error "context_length_exceeded" is present, simply return without retry
+                if "context_length_exceeded" in err_str:
+                    raise Exception("context_length_exceeded")
+
                 print(colored(f'There was a problem with request to openai API:', 'red'))
-                print(str(e))
+                print(err_str)
+
                 user_message = questionary.text(
                     "Do you want to try make the same request again? If yes, just press ENTER. Otherwise, type 'no'.",
                     style=questionary.Style([
