@@ -79,8 +79,12 @@ python main.py app_id=<ID_OF_THE_APP> step=<STEP_FROM_CONST_COMMON>
 ```bash
 python main.py app_id=<ID_OF_THE_APP> skip_until_dev_step=<DEV_STEP>
 ```
-This is basically the same as `step` but during the actual development process. If you want to play around with gpt-pilot, this is likely the flag you will often use
+This is basically the same as `step` but during the actual development process. If you want to play around with gpt-pilot, this is likely the flag you will often use.
 <br>
+- erase all development steps previously done and continue working on an existing app from start of development
+```bash
+python main.py app_id=<ID_OF_THE_APP> skip_until_dev_step=0
+```
 
 # 🔎 Examples
 
