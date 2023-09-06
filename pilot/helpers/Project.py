@@ -1,7 +1,7 @@
 import os
 
 from termcolor import colored
-from const.common import IGNORE_FOLDERS
+from const.common import IGNORE_FOLDERS, STEPS
 from database.models.app import App
 from database.database import get_app, delete_unconnected_steps_from, delete_all_app_development_data
 from utils.questionary import styled_text
@@ -80,6 +80,11 @@ class Project:
         # self.development_plan = self.tech_lead.create_development_plan()
 
         # TODO move to constructor eventually
+        if self.args['step'] is not None and STEPS.index(self.args['step']) < STEPS.index('coding'):
+            clear_directory(self.root_path)
+            delete_all_app_development_data(self.args['app_id'])
+            self.skip_steps = False
+
         if 'skip_until_dev_step' in self.args:
             self.skip_until_dev_step = self.args['skip_until_dev_step']
             if self.args['skip_until_dev_step'] == '0':
