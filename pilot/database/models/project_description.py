@@ -1,7 +1,4 @@
 from peewee import *
-
-from playhouse.postgres_ext import BinaryJSONField
-
 from database.models.components.progress_step import ProgressStep
 
 
