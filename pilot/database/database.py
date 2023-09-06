@@ -4,12 +4,12 @@ from termcolor import colored
 from functools import reduce
 import operator
 import psycopg2
-import os
 from const.common import PROMPT_DATA_TO_IGNORE
 from logger.logger import logger
 from psycopg2.extensions import quote_ident
 
 from utils.utils import hash_data
+from database.config import DB_NAME, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DATABASE_TYPE
 from database.models.components.base_models import database
 from database.models.user import User
 from database.models.app import App
@@ -25,12 +25,6 @@ from database.models.file_snapshot import FileSnapshot
 from database.models.command_runs import CommandRuns
 from database.models.user_inputs import UserInputs
 from database.models.files import File
-
-DB_NAME = os.getenv("DB_NAME")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 
 def save_user(user_id, email, password):
@@ -383,7 +377,14 @@ def drop_tables():
             UserInputs,
             File,
         ]:
-            database.execute_sql(f'DROP TABLE IF EXISTS "{table._meta.table_name}" CASCADE')
+            if DATABASE_TYPE == "postgresql":
+                sql = f'DROP TABLE IF EXISTS "{table._meta.table_name}" CASCADE'
+            elif DATABASE_TYPE == "sqlite":
+                sql = f'DROP TABLE IF EXISTS "{table._meta.table_name}"'
+            else:
+                raise ValueError(f"Unsupported DATABASE_TYPE: {DATABASE_TYPE}")
+
+            database.execute_sql(sql)
 
 
 def database_exists():
@@ -396,35 +397,42 @@ def database_exists():
 
 
 def create_database():
-    # Connect to the default 'postgres' database to create a new database
-    conn = psycopg2.connect(
-        dbname='postgres',
-        user=DB_USER,
-        password=DB_PASSWORD,
-        host=DB_HOST,
-        port=DB_PORT
-    )
-    conn.autocommit = True
-    cursor = conn.cursor()
+    if DATABASE_TYPE == "postgres":
+        # Connect to the default 'postgres' database to create a new database
+        conn = psycopg2.connect(
+            dbname='postgres',
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+        conn.autocommit = True
+        cursor = conn.cursor()
 
-    # Safely quote the database name
-    safe_db_name = quote_ident(DB_NAME, conn)
+        # Safely quote the database name
+        safe_db_name = quote_ident(DB_NAME, conn)
 
-    # Use the safely quoted database name in the SQL query
-    cursor.execute(f"CREATE DATABASE {safe_db_name}")
+        # Use the safely quoted database name in the SQL query
+        cursor.execute(f"CREATE DATABASE {safe_db_name}")
 
-    cursor.close()
-    conn.close()
+        cursor.close()
+        conn.close()
+    else:
+        pass
 
 
 def tables_exist():
     tables = [User, App, ProjectDescription, UserStories, UserTasks, Architecture, DevelopmentPlanning,
               DevelopmentSteps, EnvironmentSetup, Development, FileSnapshot, CommandRuns, UserInputs, File]
-    for table in tables:
-        try:
-            database.get_tables().index(table._meta.table_name)
-        except ValueError:
-            return False
+
+    if DATABASE_TYPE == "postgres":
+        for table in tables:
+            try:
+                database.get_tables().index(table._meta.table_name)
+            except ValueError:
+                return False
+    else:
+        pass
     return True
 
 

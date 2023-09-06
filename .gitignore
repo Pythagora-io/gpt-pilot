@@ -163,5 +163,8 @@ cython_debug/
 # Logger
 /pilot/logger/debug.log
 
+#sqlite
+/pilot/gpt-pilot
+
 # workspace
 workspace
