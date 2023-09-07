@@ -43,4 +43,4 @@ def get_user_feedback():
     config = {
         'style': custom_style,
     }
-    return questionary.text("Thank you for trying GPT-Pilot. Please give us your feedback or just press ENTER to exit: ", **config).unsafe_ask()
+    return questionary.text("How did GPT Pilot do? Were you able to create any app that works? Please write any feedback you have or just press ENTER to exit: ", **config).unsafe_ask()
