@@ -37,3 +37,10 @@ def styled_text(project, question):
     print('\n\n', end='')
 
     return response
+
+
+def get_user_feedback():
+    config = {
+        'style': custom_style,
+    }
+    return questionary.text("Thank you for trying GPT-Pilot. Please give us your feedback or just press ENTER to exit: ", **config).unsafe_ask()

@@ -1,12 +1,15 @@
 # main.py
 from __future__ import print_function, unicode_literals
 
+import sys
+
 from dotenv import load_dotenv
 load_dotenv()
 
 from helpers.Project import Project
 
 from utils.arguments import get_arguments
+from utils.exit import exit_gpt_pilot
 from logger.logger import logger
 from database.database import database_exists, create_database, tables_exist, create_tables
 
@@ -28,8 +31,13 @@ def init():
 
 
 if __name__ == "__main__":
-    args = init()
-
-    # TODO get checkpoint from database and fill the project with it
-    project = Project(args)
-    project.start()
+    try:
+        args = init()
+        project = Project(args)
+        project.start()
+    except KeyboardInterrupt:
+        exit_gpt_pilot()
+    except Exception as e:
+        exit_gpt_pilot()
+    finally:
+        sys.exit(0)
