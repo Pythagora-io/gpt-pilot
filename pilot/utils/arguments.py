@@ -35,6 +35,9 @@ def get_arguments():
     else:
         arguments['app_id'] = str(uuid.uuid4())
 
+    if 'workspace' not in arguments:
+        arguments['workspace'] = None
+
     if 'user_id' not in arguments:
         arguments['user_id'] = str(uuid.uuid4())
 
