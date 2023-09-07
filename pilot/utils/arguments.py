@@ -1,3 +1,4 @@
+import getpass
 import os
 import re
 import sys
@@ -38,7 +39,7 @@ def get_arguments():
         arguments['app_id'] = str(uuid.uuid4())
 
     if 'user_id' not in arguments:
-        arguments['user_id'] = str(uuid.uuid4())
+        arguments['user_id'] = getpass.getuser()
 
     if 'email' not in arguments:
         arguments['email'] = get_email()
