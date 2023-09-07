@@ -377,7 +377,7 @@ def drop_tables():
             UserInputs,
             File,
         ]:
-            if DATABASE_TYPE == "postgresql":
+            if DATABASE_TYPE == "postgres":
                 sql = f'DROP TABLE IF EXISTS "{table._meta.table_name}" CASCADE'
             elif DATABASE_TYPE == "sqlite":
                 sql = f'DROP TABLE IF EXISTS "{table._meta.table_name}"'
