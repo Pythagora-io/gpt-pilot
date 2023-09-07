@@ -1,3 +1,4 @@
+import getpass
 import sys
 import uuid
 
@@ -36,7 +37,7 @@ def get_arguments():
         arguments['app_id'] = str(uuid.uuid4())
 
     if 'user_id' not in arguments:
-        arguments['user_id'] = str(uuid.uuid4())
+        arguments['user_id'] = getpass.getuser()
 
     if 'email' not in arguments:
         # todo change email so its not uuid4 but make sure to fix storing of development steps where
