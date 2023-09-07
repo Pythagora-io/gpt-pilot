@@ -13,6 +13,7 @@ from logger.logger import logger
 from fabulous.color import red
 from utils.utils import get_prompt_components, fix_json
 from utils.spinner import spinner_start, spinner_stop
+import const.config
 
 
 def get_prompt(prompt_name, data=None):
@@ -165,7 +166,7 @@ def stream_gpt_completion(data, req_type):
         return result_data
 
     # spinner = spinner_start(yellow("Waiting for OpenAI API response..."))
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = const.config.API_KEY
 
     logger.info(f'Request data: {data}')
 

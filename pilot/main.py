@@ -15,6 +15,7 @@ from helpers.Project import Project
 from utils.arguments import get_arguments
 from logger.logger import logger
 from database.database import database_exists, create_database, tables_exist, create_tables, get_created_apps_with_steps
+import const.config
 
 def init():
     # Check if the "euclid" database exists, if not, create it
@@ -74,6 +75,9 @@ if __name__ == "__main__":
     args = init()
 
     builtins.print, ipc_client_instance = get_custom_print(args)
+    if '--api-key' in args:
+        const.config.API_KEY = args['--api-key']
+
 
     if '--get-created-apps-with-steps' in args:
         print({ 'db_data': get_created_apps_with_steps() }, type='info')
