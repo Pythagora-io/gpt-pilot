@@ -1,3 +1,5 @@
+import os
+import re
 import sys
 import uuid
 
@@ -39,9 +41,7 @@ def get_arguments():
         arguments['user_id'] = str(uuid.uuid4())
 
     if 'email' not in arguments:
-        # todo change email so its not uuid4 but make sure to fix storing of development steps where
-        #  1 user can have multiple apps. In that case each app should have its own development steps
-        arguments['email'] = str(uuid.uuid4())
+        arguments['email'] = get_email()
 
     if 'password' not in arguments:
         arguments['password'] = 'password'
@@ -54,3 +54,23 @@ def get_arguments():
     print(colored(f'python main.py app_id={arguments["app_id"]}', 'green', attrs=['bold']))
     print(colored('--------------------------------------------------------------\n', 'green', attrs=['bold']))
     return arguments
+
+
+def get_email():
+    # Attempt to get email from .gitconfig
+    gitconfig_path = os.path.expanduser('~/.gitconfig')
+
+    if os.path.exists(gitconfig_path):
+        with open(gitconfig_path, 'r') as file:
+            content = file.read()
+
+            # Use regex to search for email address
+            email_match = re.search(r'email\s*=\s*([\w\.-]+@[\w\.-]+)', content)
+
+            if email_match:
+                return email_match.group(1)
+
+    # If not found, return a UUID
+    # todo change email so its not uuid4 but make sure to fix storing of development steps where
+    #  1 user can have multiple apps. In that case each app should have its own development steps
+    return str(uuid.uuid4())
