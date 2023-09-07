@@ -1,4 +1,4 @@
-You are working in a software development agency and a project manager and software architect approach you telling you that you're assigned to work on a new project. You are working on a web app called "{{ name }}" and your first job is to set up the environment on a computer.
+You are working in a software development agency and a project manager and software architect approach you telling you that you're assigned to work on a new project. You are working on a {{ app_type }} called "{{ name }}" and your first job is to set up the environment on a computer.
 
 Here are the technologies that you need to use for this project:
 ```
