@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 import xml.etree.ElementTree as ET
 from .detector import Detector
 from .detected_config import DetectedConfig
-from pilot.helpers.files import read_json
+from ..files import read_json
 # from ..Project import Project
 
 

@@ -178,7 +178,7 @@ class Developer(Agent):
             { "name": self.project.args['name'], "os_info": os_info, "technologies": self.project.architecture }, FILTER_OS_TECHNOLOGIES)
 
         for technology in os_specific_techologies:
-            # TODO move the functions definisions to function_calls.py
+            # TODO move the functions definitions to function_calls.py
             cli_response, llm_response = self.convo_os_specific_tech.send_message('development/env_setup/install_next_technology.prompt',
                 { 'technology': technology}, {
                     'definitions': [{
