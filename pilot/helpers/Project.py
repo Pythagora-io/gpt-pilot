@@ -97,7 +97,7 @@ class Project:
         # TODO END
 
         self.developer = Developer(self)
-        self.developer.set_up_environment();
+        self.developer.set_up_environment()
 
         self.developer.start_coding()
 
