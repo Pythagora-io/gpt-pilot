@@ -78,6 +78,8 @@ if __name__ == "__main__":
     if '--api-key' in args:
         const.config.API_KEY = args['--api-key']
 
+    if '--root-folder' in args:
+        const.config.ROOT_FOLDER = args['--root-folder']
 
     if '--get-created-apps-with-steps' in args:
         print({ 'db_data': get_created_apps_with_steps() }, type='info')
