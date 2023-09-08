@@ -53,11 +53,15 @@ def get_arguments():
             # Handle the error as needed, possibly exiting the script
     else:
         arguments['app_id'] = str(uuid.uuid4())
-
         print(colored('\n------------------ STARTING NEW PROJECT ----------------------', 'green', attrs=['bold']))
         print(f"If you wish to continue with this project in future run:")
         print(colored(f'python {sys.argv[0]} app_id={arguments["app_id"]}', 'green', attrs=['bold']))
         print(colored('--------------------------------------------------------------\n', 'green', attrs=['bold']))
+
+
+
+    if 'user_id' not in arguments:
+        arguments['user_id'] = username_to_uuid(getpass.getuser())
 
     if 'email' not in arguments:
         # todo change email so its not uuid4 but make sure to fix storing of development steps where
