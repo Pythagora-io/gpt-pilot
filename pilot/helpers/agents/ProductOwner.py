@@ -32,7 +32,7 @@ class ProductOwner(Agent):
         # PROJECT DESCRIPTION
         self.project.args['app_type'] = ask_for_app_type()
         # Don't ask project name if it has been provided by CLI or run_detectors()
-        if self.project.args['name'] is None:
+        if not hasattr(self.project.args, 'name'):
             self.project.args['name'] = clean_filename(ask_user(self.project, 'What is the project name?'))
 
         self.project.root_path = setup_workspace(self.project.args['name'])
