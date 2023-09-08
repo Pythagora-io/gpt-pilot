@@ -156,7 +156,7 @@ Other than the research, GPT Pilot needs to be debugged to work in different sce
 # 🔗 Connect with us
 🌟 As an open source tool, it would mean the world to us if you starred the GPT-pilot repo 🌟
 
-💬 Join [the Discord server](https://discord.gg/FWnRZdCb) to get in touch.
+💬 Join [the Discord server](https://discord.gg/HaqXugmxr9) to get in touch.
 <br><br>
 <br><br>
 
