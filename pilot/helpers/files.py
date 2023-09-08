@@ -1,5 +1,8 @@
 from termcolor import colored
+from typing import Any, Dict
+import json
 import os
+import xml.etree.ElementTree as ET
 
 
 def update_file(path, new_content):
@@ -12,6 +15,7 @@ def update_file(path, new_content):
     with open(path, 'w') as file:
         file.write(new_content)
         print(colored(f"Updated file {path}", "green"))
+
 
 def get_files_content(directory, ignore=[]):
     return_array = []
@@ -38,6 +42,26 @@ def get_files_content(directory, ignore=[]):
             })
 
     return return_array
+
+
+def read_json(path: str, fail_if_not_exist: bool = False) -> Dict[str, Any]:
+    try:
+        with open(path, mode='r') as file:
+            return json.loads(file.read())
+    except FileNotFoundError:
+        if fail_if_not_exist:
+            raise
+        return {}
+
+
+def read_xml(filename: str, encoding: str = 'utf-8', fail_if_not_exist: bool = False) -> ET.Element:
+    try:
+        return ET.parse(filename).getroot()
+    except FileNotFoundError:
+        if fail_if_not_exist:
+            raise
+        return ET.Element('')
+
 
 def clear_directory(dir_path, ignore=[]):
     for root, dirs, files in os.walk(dir_path, topdown=True):

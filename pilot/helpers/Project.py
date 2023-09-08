@@ -4,6 +4,7 @@ from termcolor import colored
 from const.common import IGNORE_FOLDERS, STEPS
 from database.models.app import App
 from database.database import get_app, delete_unconnected_steps_from, delete_all_app_development_data
+from helpers.detectors.run_detectors import run_detectors
 from utils.questionary import styled_text
 from helpers.files import get_files_content, clear_directory, update_file
 from helpers.cli import build_directory_tree
@@ -68,6 +69,7 @@ class Project:
         """
         Start the project.
         """
+        run_detectors(self)
         self.project_manager = ProductOwner(self)
         self.project_manager.get_project_description()
         self.user_stories = self.project_manager.get_user_stories()

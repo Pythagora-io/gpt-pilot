@@ -31,7 +31,9 @@ class ProductOwner(Agent):
 
         # PROJECT DESCRIPTION
         self.project.args['app_type'] = ask_for_app_type()
-        self.project.args['name'] = clean_filename(ask_user(self.project, 'What is the project name?'))
+        # Don't ask project name if it has been provided by CLI or run_detectors()
+        if self.project.args['name'] is None:
+            self.project.args['name'] = clean_filename(ask_user(self.project, 'What is the project name?'))
 
         self.project.root_path = setup_workspace(self.project.args['name'])
 
