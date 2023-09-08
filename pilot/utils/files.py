@@ -11,10 +11,13 @@ def get_parent_folder(folder_name):
     return current_path.parent
 
 
-def setup_workspace(project_name):
+def setup_workspace(args):
+    if args['workspace'] is not None:
+        return args['workspace']
+
     root = get_parent_folder('pilot')
     create_directory(root, 'workspace')
-    project_path = create_directory(os.path.join(root, 'workspace'), project_name)
+    project_path = create_directory(os.path.join(root, 'workspace'), args['name'])
     create_directory(project_path, 'tests')
     return project_path
 
