@@ -168,7 +168,7 @@ class AgentConvo:
         print_msg = capitalize_first_word_with_underscores(self.high_level_step)
         if self.log_to_user:
             if self.agent.project.checkpoints['last_development_step'] is not None:
-                print(colored("\nDev step ", 'yellow') + colored(self.agent.project.checkpoints['last_development_step'], 'yellow', attrs=['bold']) + '\n', end='')
+                print(colored("\nDev step ", 'yellow') + colored(str(self.agent.project.checkpoints['last_development_step']), 'yellow', attrs=['bold']) + '\n', end='')
             print(f"\n{content}\n")
         logger.info(f"{print_msg}: {content}\n")
 
