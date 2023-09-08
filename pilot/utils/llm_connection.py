@@ -90,7 +90,7 @@ def num_tokens_from_functions(functions, model=model):
 def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TOKENS_FOR_GPT_RESPONSE,
                                function_calls=None):
     gpt_data = {
-        'model': os.getenv('OPENAI_MODEL', 'gpt-4'),
+        'model': os.getenv('MODEL_NAME', 'gpt-4'),
         'n': 1,
         'max_tokens': 4096,
         'temperature': 1,
@@ -100,6 +100,13 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
         'messages': messages,
         'stream': True
     }
+
+    # delete some keys if using "OpenRouter" API
+    if os.getenv('ENDPOINT') == "OPENROUTER":
+        keys_to_delete = ['n', 'max_tokens', 'temperature', 'top_p', 'presence_penalty', 'frequency_penalty']
+        for key in keys_to_delete:
+            if key in gpt_data:
+                del gpt_data[key]
 
     if function_calls is not None:
         gpt_data['functions'] = function_calls['definitions']
@@ -188,10 +195,14 @@ def stream_gpt_completion(data, req_type):
         # If yes, get the AZURE_ENDPOINT from .ENV file
         endpoint_url = os.getenv('AZURE_ENDPOINT') + '/openai/deployments/' + model + '/chat/completions?api-version=2023-05-15'
         headers = {'Content-Type': 'application/json', 'api-key':  os.getenv('AZURE_API_KEY')}
+    elif endpoint == 'OPENROUTER':
+        # If so, send the request to the OpenRouter API endpoint
+        headers = {'Content-Type': 'application/json', 'Authorization':  'Bearer ' + os.getenv("OPENROUTER_API_KEY"), 'HTTP-Referer': 'http://localhost:3000', 'X-Title': 'GPT Pilot (LOCAL)'}
+        endpoint_url = os.getenv("OPENROUTER_ENDPOINT") or 'https://openrouter.ai/api/v1/chat/completions'
     else:
         # If not, send the request to the OpenAI endpoint
         headers = {'Content-Type': 'application/json', 'Authorization':  'Bearer ' + os.getenv("OPENAI_API_KEY")}
-        endpoint_url = 'https://api.openai.com/v1/chat/completions'
+        endpoint_url = os.getenv("OPENAI_ENDPOINT") or 'https://api.openai.com/v1/chat/completions'
 
     response = requests.post(
         endpoint_url,
