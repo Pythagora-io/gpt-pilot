@@ -1,4 +1,5 @@
 import getpass
+import hashlib
 import sys
 import uuid
 
@@ -37,7 +38,7 @@ def get_arguments():
         arguments['app_id'] = str(uuid.uuid4())
 
     if 'user_id' not in arguments:
-        arguments['user_id'] = getpass.getuser()
+        arguments['user_id'] = username_to_uuid(getpass.getuser())
 
     if 'email' not in arguments:
         # todo change email so its not uuid4 but make sure to fix storing of development steps where
@@ -55,3 +56,10 @@ def get_arguments():
     print(colored(f'python main.py app_id={arguments["app_id"]}', 'green', attrs=['bold']))
     print(colored('--------------------------------------------------------------\n', 'green', attrs=['bold']))
     return arguments
+
+
+# TODO can we make BaseModel.id a CharField with default=uuid4?
+def username_to_uuid(username):
+    sha1 = hashlib.sha1(username.encode()).hexdigest()
+    uuid_str = "{}-{}-{}-{}-{}".format(sha1[:8], sha1[8:12], sha1[12:16], sha1[16:20], sha1[20:32])
+    return str(uuid.UUID(uuid_str))
