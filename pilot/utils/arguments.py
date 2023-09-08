@@ -25,7 +25,6 @@ def get_arguments():
             arguments[arg] = True
 
     if 'user_id' not in arguments:
-        # arguments['user_id'] = str(uuid.uuid4())
         arguments['user_id'] = username_to_uuid(getpass.getuser())
 
     app = None
