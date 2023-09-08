@@ -248,7 +248,7 @@ class Developer(Agent):
             'step_type': type,
             'directory_tree': directory_tree,
             'step_index': step_index
-        }, EXECUTE_COMMANDS);
+        }, EXECUTE_COMMANDS)
         if type == 'COMMAND':
             for cmd in step_details:
                 run_command_until_success(cmd['command'], cmd['timeout'], convo)
