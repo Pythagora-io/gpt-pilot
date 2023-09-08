@@ -1,6 +1,8 @@
 import json
 import uuid
 from termcolor import colored
+from helpers.exceptions.TokenLimitError import TokenLimitError
+from const.code_execution import MAX_COMMAND_DEBUG_TRIES
 from utils.questionary import styled_text
 from helpers.files import update_file
 from utils.utils import step_already_finished
@@ -64,58 +66,90 @@ class Developer(Agent):
         convo.save_branch(function_uuid)
 
         for (i, step) in enumerate(task_steps):
-            if reset_convo:
-                convo.load_branch(function_uuid)
 
-            if step['type'] == 'command':
-                # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
-                if isinstance(step['command'], str):
-                    data = step
-                else:
-                    data = step['command']
-                # TODO END
-                additional_message = 'Let\'s start with the step #0:\n\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i)) } are finished so let\'s do step #{i + 1} now.\n\n'
-                run_command_until_success(data['command'], data['timeout'], convo, additional_message=additional_message)
+            tries = 0
+            max_retry_times = 1
 
-            elif step['type'] == 'code_change' and 'code_change_description' in step:
-                # TODO this should be refactored so it always uses the same function call
-                print(f'Implementing code changes for `{step["code_change_description"]}`')
-                code_monkey = CodeMonkey(self.project, self)
-                updated_convo = code_monkey.implement_code_changes(convo, step['code_change_description'], i)
-                if test_after_code_changes:
-                    self.test_code_changes(code_monkey, updated_convo)
+            step_uuid = str(uuid.uuid4())
+            convo.save_branch(step_uuid)
 
-            elif step['type'] == 'code_change':
-                # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
-                if 'code_change' not in step:
-                    data = step
-                else:
-                    data = step['code_change']
-                self.project.save_file(data)
-                # TODO end
+            while tries < max_retry_times:
+                tries += 1
+                try:
+                    if reset_convo:
+                        convo.load_branch(function_uuid)
 
-            elif step['type'] == 'human_intervention':
-                human_intervention_description = step['human_intervention_description'] + colored('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`', 'yellow', attrs=['bold']) if self.run_command is not None else step['human_intervention_description']
-                user_feedback = self.project.ask_for_human_intervention('I need human intervention:',
-                    human_intervention_description,
-                    cbs={ 'r': lambda: run_command_until_success(self.run_command, None, convo, force=True) })
+                    if max_retry_times > 1:
+                        # this means that we are retrying the entire development step
+                        convo.load_branch(step_uuid)
 
-                if user_feedback is not None and user_feedback != 'continue':
-                    debug(convo, user_input=user_feedback, issue_description=step['human_intervention_description'])
+                    if step['type'] == 'command':
+                        # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
+                        if isinstance(step['command'], str):
+                            data = step
+                        else:
+                            data = step['command']
+                        # TODO END
+                        additional_message = 'Let\'s start with the step #0:\n\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i)) } are finished so let\'s do step #{i + 1} now.\n\n'
+                        run_command_until_success(data['command'], data['timeout'], convo, additional_message=additional_message)
 
-            if test_command is not None and ('check_if_fixed' not in step or step['check_if_fixed']):
-                should_rerun_command = convo.send_message('dev_ops/should_rerun_command.prompt',
-                    test_command)
-                if should_rerun_command == 'NO':
-                    return True
-                elif should_rerun_command == 'YES':
-                    cli_response, llm_response = execute_command_and_check_cli_response(test_command['command'], test_command['timeout'], convo)
-                    if llm_response == 'NEEDS_DEBUGGING':
-                        print(colored(f'Got incorrect CLI response:', 'red'))
-                        print(cli_response)
-                        print(colored('-------------------', 'red'))
-                    if llm_response == 'DONE':
-                        return True
+                    elif step['type'] == 'code_change' and 'code_change_description' in step:
+                        # TODO this should be refactored so it always uses the same function call
+                        print(f'Implementing code changes for `{step["code_change_description"]}`')
+                        code_monkey = CodeMonkey(self.project, self)
+                        updated_convo = code_monkey.implement_code_changes(convo, step['code_change_description'], i)
+                        if test_after_code_changes:
+                            self.test_code_changes(code_monkey, updated_convo)
+
+                    elif step['type'] == 'code_change':
+                        # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
+                        if 'code_change' not in step:
+                            data = step
+                        else:
+                            data = step['code_change']
+                        self.project.save_file(data)
+                        # TODO end
+
+                    elif step['type'] == 'human_intervention':
+                        human_intervention_description = step['human_intervention_description'] + colored('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`', 'yellow', attrs=['bold']) if self.run_command is not None else step['human_intervention_description']
+                        user_feedback = self.project.ask_for_human_intervention('I need human intervention:',
+                            human_intervention_description,
+                            cbs={ 'r': lambda: run_command_until_success(self.run_command, None, convo, force=True) })
+
+                        if user_feedback is not None and user_feedback != 'continue':
+                            debug(convo, user_input=user_feedback, issue_description=step['human_intervention_description'])
+
+                    if test_command is not None and ('check_if_fixed' not in step or step['check_if_fixed']):
+                        should_rerun_command = convo.send_message('dev_ops/should_rerun_command.prompt',
+                            test_command)
+                        if should_rerun_command == 'NO':
+                            return True
+                        elif should_rerun_command == 'YES':
+                            cli_response, llm_response = execute_command_and_check_cli_response(test_command['command'], test_command['timeout'], convo)
+                            if llm_response == 'NEEDS_DEBUGGING':
+                                print(colored(f'Got incorrect CLI response:', 'red'))
+                                print(cli_response)
+                                print(colored('-------------------', 'red'))
+                            if llm_response == 'DONE':
+                                return True
+                except TokenLimitError as e:
+                    if max_retry_times >= MAX_COMMAND_DEBUG_TRIES:
+                        print(colored('I can\'t figure this out - sorry! Closing...'))
+                        exit(0)
+
+                    print(colored(f'\n--------- LLM Reached Token Limit ----------', 'red', attrs=['bold']))
+                    print(colored(f'Can I retry implementing the entire development step?', 'red', attrs=['bold']))
+
+                    answer = styled_text(
+                        self.project,
+                        'Type y/n'
+                    )
+
+                    if answer == 'y':
+                        max_retry_times += 1
+                    else:
+                        print(colored('Ok - exiting...', 'red', attrs=['bold']))
+                        exit(0)
 
         self.run_command = convo.send_message('development/get_run_command.prompt', {})
         if self.run_command.startswith('`'):

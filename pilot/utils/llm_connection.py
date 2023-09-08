@@ -11,6 +11,7 @@ from jinja2 import Environment, FileSystemLoader
 from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS, MAX_QUESTIONS, END_RESPONSE
 from logger.logger import logger
 from termcolor import colored
+from helpers.exceptions.TokenLimitError import TokenLimitError
 from utils.utils import get_prompt_components, fix_json
 from utils.spinner import spinner_start, spinner_stop
 
@@ -89,10 +90,17 @@ def num_tokens_from_functions(functions, model=model):
 
 def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TOKENS_FOR_GPT_RESPONSE,
                                function_calls=None):
+    tokens_in_messages = round(get_tokens_in_messages(messages) * 1.2)  # add 20% to account for not 100% accuracy
+    if function_calls is not None:
+        tokens_in_messages += round(
+            num_tokens_from_functions(function_calls['definitions']) * 1.2)  # add 20% to account for not 100% accuracy
+    if tokens_in_messages + min_tokens > MAX_GPT_MODEL_TOKENS:
+        raise TokenLimitError(tokens_in_messages + min_tokens, MAX_GPT_MODEL_TOKENS)
+
     gpt_data = {
         'model': os.getenv('OPENAI_MODEL', 'gpt-4'),
         'n': 1,
-        'max_tokens': 4096,
+        'max_tokens': min(MAX_GPT_MODEL_TOKENS - tokens_in_messages, 2048),
         'temperature': 1,
         'top_p': 1,
         'presence_penalty': 0,
