@@ -29,11 +29,20 @@ def get_arguments():
             arguments['app_type'] = app.app_type
             arguments['name'] = app.name
             # Add any other fields from the App model you wish to include
+
+            print(colored('\n------------------ LOADING PROJECT ----------------------', 'green', attrs=['bold']))
+            print(colored(f'app_id={arguments["app_id"]} "{app.name}', 'green', attrs=['bold']))
+            print(colored('--------------------------------------------------------------\n', 'green', attrs=['bold']))
         except ValueError as e:
             print(e)
             # Handle the error as needed, possibly exiting the script
     else:
         arguments['app_id'] = str(uuid.uuid4())
+
+        print(colored('\n------------------ STARTING NEW PROJECT ----------------------', 'green', attrs=['bold']))
+        print(f"If you wish to continue with this project in future run:")
+        print(colored(f'python main.py app_id={arguments["app_id"]}', 'green', attrs=['bold']))
+        print(colored('--------------------------------------------------------------\n', 'green', attrs=['bold']))
 
     if 'user_id' not in arguments:
         arguments['user_id'] = str(uuid.uuid4())
@@ -49,8 +58,4 @@ def get_arguments():
     if 'step' not in arguments:
         arguments['step'] = None
 
-    print(colored('\n------------------ STARTING NEW PROJECT ----------------------', 'green', attrs=['bold']))
-    print(f"If you wish to continue with this project in future run:")
-    print(colored(f'python main.py app_id={arguments["app_id"]}', 'green', attrs=['bold']))
-    print(colored('--------------------------------------------------------------\n', 'green', attrs=['bold']))
     return arguments
