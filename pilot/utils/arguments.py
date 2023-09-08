@@ -1,3 +1,5 @@
+import getpass
+import hashlib
 import sys
 import uuid
 
@@ -23,7 +25,8 @@ def get_arguments():
             arguments[arg] = True
 
     if 'user_id' not in arguments:
-        arguments['user_id'] = str(uuid.uuid4())
+        # arguments['user_id'] = str(uuid.uuid4())
+        arguments['user_id'] = username_to_uuid(getpass.getuser())
 
     app = None
     if 'workspace' in arguments:
@@ -36,7 +39,7 @@ def get_arguments():
     if 'app_id' in arguments:
         try:
             if app is None:
-            app = get_app(arguments['app_id'])
+                app = get_app(arguments['app_id'])
 
             # arguments['user_id'] = str(app.user.id)
             arguments['app_type'] = app.app_type
@@ -69,3 +72,10 @@ def get_arguments():
         arguments['step'] = None
 
     return arguments
+
+
+# TODO can we make BaseModel.id a CharField with default=uuid4?
+def username_to_uuid(username):
+    sha1 = hashlib.sha1(username.encode()).hexdigest()
+    uuid_str = "{}-{}-{}-{}-{}".format(sha1[:8], sha1[8:12], sha1[12:16], sha1[16:20], sha1[20:32])
+    return str(uuid.UUID(uuid_str))
