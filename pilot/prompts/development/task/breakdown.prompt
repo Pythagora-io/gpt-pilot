@@ -1,4 +1,4 @@
-You are working on a web app called "{{ name }}" and you need to write code for the entire application based on the tasks that the tech lead gives you. So that you understand better what you're working on, you're given other specs for "{{ name }}" as well.
+You are working on a {{ app_type }} called "{{ name }}" and you need to write code for the entire application based on the tasks that the tech lead gives you. So that you understand better what you're working on, you're given other specs for "{{ name }}" as well.
 
 Here is a high level description of "{{ name }}":
 ```

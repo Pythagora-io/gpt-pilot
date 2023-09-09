@@ -13,7 +13,7 @@ class CommandRuns(BaseModel):
     previous_step = ForeignKeyField('self', null=True, column_name='previous_step')
 
     class Meta:
-        db_table = 'command_runs'
+        table_name = 'command_runs'
         indexes = (
             (('app', 'hash_id'), True),
         )
