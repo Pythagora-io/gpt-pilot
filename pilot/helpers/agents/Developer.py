@@ -259,7 +259,7 @@ class Developer(Agent):
         if type == 'COMMAND':
             for cmd in step_details:
                 run_command_until_success(cmd['command'], cmd['timeout'], convo)
-        elif type == 'CODE_CHANGE':
-            code_changes_details = get_step_code_changes()
+        # elif type == 'CODE_CHANGE':
+        #     code_changes_details = get_step_code_changes()
             # TODO: give to code monkey for implementation
         pass
