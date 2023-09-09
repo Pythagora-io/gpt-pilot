@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, mock_open
 import uuid
-from .arguments import get_email
+from .arguments import get_email, username_to_uuid
 
 
 def test_email_found_in_gitconfig():
@@ -32,3 +32,7 @@ def test_gitconfig_not_present():
     with patch('os.path.exists', return_value=False):
         with patch.object(uuid, "uuid4", return_value=mock_uuid):
             assert get_email() == mock_uuid
+
+
+def test_username_to_uuid():
+    assert username_to_uuid("test_user") == "31676025-316f-b555-e0bf-a12f0bcfd0ea"
