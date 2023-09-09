@@ -245,7 +245,7 @@ def stream_gpt_completion(data, req_type):
 
                 if json_line['choices'][0]['finish_reason'] == 'function_call':
                     function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
-                    return return_result({'function_calls': function_calls}, lines_printed);
+                    return return_result({'function_calls': function_calls}, lines_printed)
 
                 json_line = json_line['choices'][0]['delta']
 
