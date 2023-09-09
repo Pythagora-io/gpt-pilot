@@ -27,7 +27,7 @@ class Developer(Agent):
             self.project.skip_steps = False if ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0') else True
 
         # DEVELOPMENT
-        print(colored(f"Ok, great, now, let's start with the actual development...\n", "green", attrs=['bold']))
+        print(colored(f"🚀 Now for the actual development...\n", "green", attrs=['bold']))
         logger.info(f"Starting to create the actual code...")
 
         self.implement_task()

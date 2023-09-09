@@ -118,7 +118,7 @@ def execute_step(matching_step, current_step):
 def step_already_finished(args, step):
     args.update(step['app_data'])
 
-    message = f"{capitalize_first_word_with_underscores(step['step'])} already done for this app_id: {args['app_id']}. Moving to next step..."
+    message = f"✅  {capitalize_first_word_with_underscores(step['step'])}"
     print(colored(message, "green"))
     logger.info(message)
 
