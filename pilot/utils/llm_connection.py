@@ -139,8 +139,11 @@ def count_lines_based_on_width(content, width):
 
 def retry_on_exception(func):
     def wrapper(*args, **kwargs):
+        spinner = None
+
         while True:
             try:
+                spinner_stop(spinner)
                 return func(*args, **kwargs)
             except Exception as e:
                 # Convert exception to string
@@ -148,15 +151,18 @@ def retry_on_exception(func):
 
                 # If the specific error "context_length_exceeded" is present, simply return without retry
                 if "context_length_exceeded" in err_str:
+                    spinner_stop(spinner)
                     raise Exception("context_length_exceeded")
                 if "rate_limit_exceeded" in err_str:
                     # Extracting the duration from the error string
                     match = re.search(r"Please try again in (\d+)ms.", err_str)
                     if match:
+                        spinner = spinner_start(colored("Rate limited. Waiting...", 'yellow'))
                         wait_duration = int(match.group(1)) / 1000
                         time.sleep(wait_duration)
                     continue
 
+                spinner_stop(spinner)
                 print(colored(f'There was a problem with request to openai API:', 'red'))
                 print(err_str)
 
