@@ -2,18 +2,17 @@ import json
 import uuid
 from termcolor import colored
 from utils.questionary import styled_text
-from helpers.files import update_file
 from utils.utils import step_already_finished
 from helpers.agents.CodeMonkey import CodeMonkey
 from logger.logger import logger
 from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import execute_step, array_of_objects_to_string, generate_app_data
-from helpers.cli import build_directory_tree, run_command_until_success, execute_command_and_check_cli_response, debug
-from const.function_calls import FILTER_OS_TECHNOLOGIES, DEVELOPMENT_PLAN, EXECUTE_COMMANDS, GET_TEST_TYPE, DEV_TASKS_BREAKDOWN, IMPLEMENT_TASK
-from database.database import save_progress, get_progress_steps, save_file_description
+from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, debug
+from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK
+from database.database import save_progress, get_progress_steps
 from utils.utils import get_os_info
-from helpers.cli import execute_command
+
 
 class Developer(Agent):
     def __init__(self, project):
@@ -168,15 +167,15 @@ class Developer(Agent):
         while user_input.lower() != 'done':
             user_input = styled_text(self.project, 'Please set up your local environment so that the technologies above can be utilized. When you\'re done, write "DONE"')
         save_progress(self.project.args['app_id'], self.project.current_step, {
-            "os_specific_techologies": [], "newly_installed_technologies": [], "app_data": generate_app_data(self.project.args)
+            "os_specific_technologies": [], "newly_installed_technologies": [], "app_data": generate_app_data(self.project.args)
         })
         return
         # ENVIRONMENT SETUP
-        print(colored(f"Setting up the environment...\n", "green"))
-        logger.info(f"Setting up the environment...")
+        print(colored("Setting up the environment...\n", "green"))
+        logger.info("Setting up the environment...")
 
         os_info = get_os_info()
-        os_specific_techologies = self.convo_os_specific_tech.send_message('development/env_setup/specs.prompt',
+        os_specific_technologies = self.convo_os_specific_tech.send_message('development/env_setup/specs.prompt',
             {
                 "name": self.project.args['name'],
                 "app_type": self.project.args['app_type'],
@@ -184,7 +183,7 @@ class Developer(Agent):
                 "technologies": self.project.architecture
             }, FILTER_OS_TECHNOLOGIES)
 
-        for technology in os_specific_techologies:
+        for technology in os_specific_technologies:
             # TODO move the functions definisions to function_calls.py
             cli_response, llm_response = self.convo_os_specific_tech.send_message('development/env_setup/install_next_technology.prompt',
                 { 'technology': technology}, {
@@ -200,7 +199,7 @@ class Developer(Agent):
                                 },
                                 'timeout': {
                                     'type': 'number',
-                                    'description': f'Timeout in seconds for the approcimate time this command takes to finish.',
+                                    'description': 'Timeout in seconds for the approcimate time this command takes to finish.',
                                 }
                             },
                             'required': ['command', 'timeout'],
@@ -219,10 +218,10 @@ class Developer(Agent):
                     for cmd in installation_commands:
                         run_command_until_success(cmd['command'], cmd['timeout'], self.convo_os_specific_tech)
 
-        logger.info('The entire tech stack neede is installed and ready to be used.')
+        logger.info('The entire tech stack is installed and ready to be used.')
 
         save_progress(self.project.args['app_id'], self.project.current_step, {
-            "os_specific_techologies": os_specific_techologies, "newly_installed_technologies": [], "app_data": generate_app_data(self.project.args)
+            "os_specific_technologies": os_specific_technologies, "newly_installed_technologies": [], "app_data": generate_app_data(self.project.args)
         })
 
         # ENVIRONMENT SETUP END
@@ -259,7 +258,7 @@ class Developer(Agent):
         if type == 'COMMAND':
             for cmd in step_details:
                 run_command_until_success(cmd['command'], cmd['timeout'], convo)
-        elif type == 'CODE_CHANGE':
-            code_changes_details = get_step_code_changes()
-            # TODO: give to code monkey for implementation
+        # elif type == 'CODE_CHANGE':
+        #     code_changes_details = get_step_code_changes()
+        #     # TODO: give to code monkey for implementation
         pass
