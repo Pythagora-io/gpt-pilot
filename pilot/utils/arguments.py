@@ -53,7 +53,7 @@ def get_arguments():
     else:
         arguments['app_id'] = str(uuid.uuid4())
         print(colored('\n------------------ STARTING NEW PROJECT ----------------------', 'green', attrs=['bold']))
-        print(f"If you wish to continue with this project in future run:")
+        print("If you wish to continue with this project in future run:")
         print(colored(f'python {sys.argv[0]} app_id={arguments["app_id"]}', 'green', attrs=['bold']))
         print(colored('--------------------------------------------------------------\n', 'green', attrs=['bold']))
 
