@@ -4,6 +4,7 @@ from __future__ import print_function, unicode_literals
 import sys
 
 from dotenv import load_dotenv
+from termcolor import colored
 load_dotenv()
 
 from helpers.Project import Project
@@ -38,6 +39,9 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         exit_gpt_pilot()
     except Exception as e:
+        print(colored('---------- GPT PILOT EXITING WITH ERROR ----------', 'red'))
+        print(colored(e, 'red'))
+        print(colored('--------------------------------------------------', 'red'))
         exit_gpt_pilot()
     finally:
         sys.exit(0)

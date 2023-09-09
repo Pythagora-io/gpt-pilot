@@ -25,7 +25,7 @@ class Project:
         Initialize a project.
 
         Args:
-            args (dict): Project arguments.
+            args (dict): Project arguments - app_id, (app_type, name), user_id, email, password, step
             name (str, optional): Project name. Default is None.
             description (str, optional): Project description. Default is None.
             user_stories (list, optional): List of user stories. Default is None.
@@ -97,7 +97,7 @@ class Project:
         # TODO END
 
         self.developer = Developer(self)
-        self.developer.set_up_environment();
+        self.developer.set_up_environment()
 
         self.developer.start_coding()
 

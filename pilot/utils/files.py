@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-
+from database.database import save_user_app
 
 def get_parent_folder(folder_name):
     current_path = Path(os.path.abspath(__file__))  # get the path of the current script
@@ -11,10 +11,18 @@ def get_parent_folder(folder_name):
     return current_path.parent
 
 
-def setup_workspace(project_name):
+def setup_workspace(args):
+    if args['workspace'] is not None:
+        try:
+            save_user_app(args['user_id'], args['app_id'], args['workspace'])
+        except Exception as e:
+            print(str(e))
+
+        return args['workspace']
+
     root = get_parent_folder('pilot')
     create_directory(root, 'workspace')
-    project_path = create_directory(os.path.join(root, 'workspace'), project_name)
+    project_path = create_directory(os.path.join(root, 'workspace'), args['name'])
     create_directory(project_path, 'tests')
     return project_path
 

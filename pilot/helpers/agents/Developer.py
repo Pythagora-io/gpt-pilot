@@ -40,6 +40,7 @@ class Developer(Agent):
         convo_dev_task = AgentConvo(self)
         task_description = convo_dev_task.send_message('development/task/breakdown.prompt', {
             "name": self.project.args['name'],
+            "app_type": self.project.args['app_type'],
             "app_summary": self.project.project_description,
             "clarification": [],
             "user_stories": self.project.user_stories,
@@ -134,6 +135,7 @@ class Developer(Agent):
                 iteration_convo = AgentConvo(self)
                 iteration_convo.send_message('development/iteration.prompt', {
                     "name": self.project.args['name'],
+                    "app_type": self.project.args['app_type'],
                     "app_summary": self.project.project_description,
                     "clarification": [],
                     "user_stories": self.project.user_stories,
@@ -175,7 +177,12 @@ class Developer(Agent):
 
         os_info = get_os_info()
         os_specific_techologies = self.convo_os_specific_tech.send_message('development/env_setup/specs.prompt',
-            { "name": self.project.args['name'], "os_info": os_info, "technologies": self.project.architecture }, FILTER_OS_TECHNOLOGIES)
+            {
+                "name": self.project.args['name'],
+                "app_type": self.project.args['app_type'],
+                "os_info": os_info,
+                "technologies": self.project.architecture
+            }, FILTER_OS_TECHNOLOGIES)
 
         for technology in os_specific_techologies:
             # TODO move the functions definisions to function_calls.py
@@ -248,7 +255,7 @@ class Developer(Agent):
             'step_type': type,
             'directory_tree': directory_tree,
             'step_index': step_index
-        }, EXECUTE_COMMANDS);
+        }, EXECUTE_COMMANDS)
         if type == 'COMMAND':
             for cmd in step_details:
                 run_command_until_success(cmd['command'], cmd['timeout'], convo)
