@@ -30,7 +30,7 @@ jobs:
 
     - name: Lint
       run: |
-        pip install flake8
+        pip install flake8 ruff
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # stop the build if there are Python syntax errors or undefined names
         ruff --format=github --select=E9,F63,F7,F82 --target-version=py37 .
