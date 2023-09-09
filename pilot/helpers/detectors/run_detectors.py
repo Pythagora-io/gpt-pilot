@@ -7,7 +7,7 @@ from .detected_config import DetectedConfig
 
 def run_detectors(project) -> DetectedConfig:
     config = DetectedConfig()
-    workspace = project.args['workspace'] if hasattr(project.args, 'workspace') else None
+    workspace = project.args['workspace'] if 'workspace' in project.args else None
 
     if workspace is not None:
         # TODO can/should ask_user accept a default project name inferred from the directory name?
