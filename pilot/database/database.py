@@ -4,10 +4,10 @@ from termcolor import colored
 from functools import reduce
 import operator
 import psycopg2
-from const.common import PROMPT_DATA_TO_IGNORE
-from logger.logger import logger
 from psycopg2.extensions import quote_ident
 
+from const.common import PROMPT_DATA_TO_IGNORE
+from logger.logger import logger
 from utils.utils import hash_data
 from database.config import DB_NAME, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DATABASE_TYPE
 from database.models.components.base_models import database

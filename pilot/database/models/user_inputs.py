@@ -13,7 +13,7 @@ class UserInputs(BaseModel):
     previous_step = ForeignKeyField('self', null=True, column_name='previous_step')
 
     class Meta:
-        db_table = 'user_inputs'
+        table_name = 'user_inputs'
         indexes = (
             (('app', 'hash_id'), True),
         )

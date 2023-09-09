@@ -7,4 +7,4 @@ class ProjectDescription(ProgressStep):
     summary = TextField()
 
     class Meta:
-        db_table = 'project_description'
+        table_name = 'project_description'
