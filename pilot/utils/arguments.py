@@ -1,7 +1,7 @@
 import os
 import re
-import hashlib
 import getpass
+import hashlib
 import sys
 import uuid
 
@@ -60,6 +60,7 @@ def get_arguments():
         print(f"If you wish to continue with this project in future run:")
         print(colored(f'python {sys.argv[0]} app_id={arguments["app_id"]}', 'green', attrs=['bold']))
         print(colored('--------------------------------------------------------------\n', 'green', attrs=['bold']))
+
 
     if 'email' not in arguments:
         arguments['email'] = get_email()
