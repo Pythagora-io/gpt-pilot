@@ -20,7 +20,7 @@ class DevelopmentSteps(BaseModel):
     previous_step = ForeignKeyField('self', null=True, column_name='previous_step')
 
     class Meta:
-        db_table = 'development_steps'
+        table_name = 'development_steps'
         indexes = (
             (('app', 'hash_id'), True),
         )

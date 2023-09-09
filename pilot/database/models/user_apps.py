@@ -12,7 +12,7 @@ class UserApps(BaseModel):
     workspace = CharField(null=True)
 
     class Meta:
-        db_table = 'user_apps'
+        table_name = 'user_apps'
         indexes = (
             (('app', 'user'), True),
         )

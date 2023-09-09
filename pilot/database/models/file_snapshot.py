@@ -12,7 +12,7 @@ class FileSnapshot(BaseModel):
     content = TextField()
 
     class Meta:
-        db_table = 'file_snapshot'
+        table_name = 'file_snapshot'
         indexes = (
             (('development_step', 'file'), True),
         )
