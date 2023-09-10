@@ -37,6 +37,7 @@ class Architect(Agent):
             #  'user_tasks': self.project.user_tasks,
              'app_type': self.project.args['app_type']}, ARCHITECTURE)
 
+        # TODO: Project.args should be a defined class so that all of the possible args are more obvious
         if self.project.args.get('advanced', False):
             architecture = get_additional_info_from_user(self.project, architecture, 'architect')
 
