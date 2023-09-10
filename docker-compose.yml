@@ -1,0 +1,34 @@
+version: '3'
+services:
+    gpt-pilot:
+        environment:
+            - ENDPOINT=OPENAI
+            - OPENAI_API_KEY=
+            - MODEL_NAME=gpt-4
+            - MAX_TOKENS=8192
+            - DB_NAME=gpt-pilot
+            - DB_HOST=postgres
+            - DB_PORT=5432
+            - DB_USER=gpt-pilot
+            - DB_PASSWORD=gpt-pilot
+        build:
+            context: .
+            dockerfile: Dockerfile
+    pgadmin:
+        container_name: pgadmin4_container
+        image: dpage/pgadmin4
+        restart: always
+        environment:
+            PGADMIN_DEFAULT_EMAIL: admin@admin.com
+            PGADMIN_DEFAULT_PASSWORD: gpt-pilot
+        ports:
+            - "5050:80"
+    postgres:
+        image: postgres
+        restart: always
+        environment:
+            POSTGRES_USER: gpt-pilot
+            POSTGRES_PASSWORD: gpt-pilot
+            POSTGRES_DB: gpt-pilot
+        ports:
+        - "5432:5432"
