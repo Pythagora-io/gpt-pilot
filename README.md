@@ -73,7 +73,7 @@ All generated code will be stored in the folder `workspace` inside the folder na
 6. `python db_init.py` (initialize the database)
 7. `python main.py` (start GPT Pilot)
 
-This will start two containers, one being a new image built by the `Dockerfile` and a postgres database. The new image also has (ttyd)[https://github.com/tsl0922/ttyd] installed so you can easily interact with gpt-pilot.
+This will start two containers, one being a new image built by the `Dockerfile` and a postgres database. The new image also has [ttyd](https://github.com/tsl0922/ttyd) installed so you can easily interact with gpt-pilot.
 
 # 🧑‍💻️ Other arguments
 - continue working on an existing app
