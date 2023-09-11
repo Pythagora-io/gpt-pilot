@@ -7,12 +7,14 @@ from helpers.agents.CodeMonkey import CodeMonkey
 from logger.logger import logger
 from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
-from utils.utils import execute_step, array_of_objects_to_string, generate_app_data
-from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, debug
-from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK
-from database.database import save_progress, get_progress_steps
+from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
+from helpers.cli import build_directory_tree, run_command_until_success, execute_command_and_check_cli_response, debug
+from const.function_calls import FILTER_OS_TECHNOLOGIES, DEVELOPMENT_PLAN, EXECUTE_COMMANDS, GET_TEST_TYPE, DEV_TASKS_BREAKDOWN, IMPLEMENT_TASK
+from database.database import save_progress, get_progress_steps, save_file_description
 from utils.utils import get_os_info
 
+
+ENVIRONMENT_SETUP_STEP = 'environment_setup'
 
 class Developer(Agent):
     def __init__(self, project):
@@ -154,12 +156,12 @@ class Developer(Agent):
 
 
     def set_up_environment(self):
-        self.project.current_step = 'environment_setup'
+        self.project.current_step = ENVIRONMENT_SETUP_STEP
         self.convo_os_specific_tech = AgentConvo(self)
 
         # If this app_id already did this step, just get all data from DB and don't ask user again
-        step = get_progress_steps(self.project.args['app_id'], self.project.current_step)
-        if step and not execute_step(self.project.args['step'], self.project.current_step):
+        step = get_progress_steps(self.project.args['app_id'], ENVIRONMENT_SETUP_STEP)
+        if step and not should_execute_step(self.project.args['step'], ENVIRONMENT_SETUP_STEP):
             step_already_finished(self.project.args, step)
             return
 
@@ -184,7 +186,7 @@ class Developer(Agent):
             }, FILTER_OS_TECHNOLOGIES)
 
         for technology in os_specific_technologies:
-            # TODO move the functions definisions to function_calls.py
+            # TODO move the functions definitions to function_calls.py
             cli_response, llm_response = self.convo_os_specific_tech.send_message('development/env_setup/install_next_technology.prompt',
                 { 'technology': technology}, {
                     'definitions': [{
