@@ -76,6 +76,17 @@ All generated code will be stored in the folder `workspace` inside the folder na
 **IMPORTANT: To run GPT Pilot, you need to have PostgreSQL set up on your machine**
 <br>
 
+# 🐳 How to start gpt-pilot in docker?
+1. `git clone https://github.com/Pythagora-io/gpt-pilot.git` (clone the repo)
+2. Update the `docker-compose.yml` environment variables
+3. run `docker compose build`. this will build a gpt-pilot container for you.
+4. run `docker compose up`.
+5. access web terminal on `port 7681`
+6. `python db_init.py` (initialize the database)
+7. `python main.py` (start GPT Pilot)
+
+This will start two containers, one being a new image built by the `Dockerfile` and a postgres database. The new image also has [ttyd](https://github.com/tsl0922/ttyd) installed so you can easily interact with gpt-pilot.
+
 # 🧑‍💻️ Other arguments
 - continue working on an existing app
 ```bash
