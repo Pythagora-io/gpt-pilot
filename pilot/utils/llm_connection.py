@@ -239,6 +239,10 @@ def stream_gpt_completion(data, req_type):
 
             try:
                 json_line = json.loads(line)
+
+                if len(json_line['choices']) == 0:
+                    continue
+                
                 if 'error' in json_line:
                     logger.error(f'Error in LLM response: {json_line}')
                     raise ValueError(f'Error in LLM response: {json_line["error"]["message"]}')
