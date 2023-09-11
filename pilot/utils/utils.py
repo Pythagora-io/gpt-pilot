@@ -135,6 +135,7 @@ def hash_data(data):
     serialized_data = json.dumps(replace_functions(data), sort_keys=True).encode('utf-8')
     return hashlib.sha256(serialized_data).hexdigest()
 
+
 def replace_functions(obj):
     if isinstance(obj, dict):
         return {k: replace_functions(v) for k, v in obj.items()}
@@ -145,11 +146,13 @@ def replace_functions(obj):
     else:
         return obj
 
+
 def fix_json(s):
     s = s.replace('True', 'true')
     s = s.replace('False', 'false')
     # s = s.replace('`', '"')
     return fix_json_newlines(s)
+
 
 def fix_json_newlines(s):
     pattern = r'("(?:\\\\n|\\.|[^"\\])*")'
@@ -158,6 +161,7 @@ def fix_json_newlines(s):
         return match.group(1).replace('\n', '\\n')
 
     return re.sub(pattern, replace_newlines, s)
+
 
 def clean_filename(filename):
     # Remove invalid characters

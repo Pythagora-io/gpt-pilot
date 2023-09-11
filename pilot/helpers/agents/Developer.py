@@ -18,6 +18,7 @@ from helpers.cli import execute_command
 class Developer(Agent):
     def __init__(self, project):
         super().__init__('full_stack_developer', project)
+        self.run_command = None
 
     def start_coding(self):
         self.project.current_step = 'coding'
@@ -26,7 +27,7 @@ class Developer(Agent):
             self.project.skip_steps = False if ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0') else True
 
         # DEVELOPMENT
-        print(colored(f"Ok, great, now, let's start with the actual development...\n", "green"))
+        print(colored(f"Ok, great, now, let's start with the actual development...\n", "green", attrs=['bold']))
         logger.info(f"Starting to create the actual code...")
 
         self.implement_task()
@@ -39,6 +40,7 @@ class Developer(Agent):
         convo_dev_task = AgentConvo(self)
         task_description = convo_dev_task.send_message('development/task/breakdown.prompt', {
             "name": self.project.args['name'],
+            "app_type": self.project.args['app_type'],
             "app_summary": self.project.project_description,
             "clarification": [],
             "user_stories": self.project.user_stories,
@@ -88,7 +90,11 @@ class Developer(Agent):
                 # TODO end
 
             elif step['type'] == 'human_intervention':
-                user_feedback = self.project.ask_for_human_intervention('I need your help! Can you try debugging this yourself and let me take over afterwards? Here are the details about the issue:', step['human_intervention_description'])
+                human_intervention_description = step['human_intervention_description'] + colored('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`', 'yellow', attrs=['bold']) if self.run_command is not None else step['human_intervention_description']
+                user_feedback = self.project.ask_for_human_intervention('I need human intervention:',
+                    human_intervention_description,
+                    cbs={ 'r': lambda: run_command_until_success(self.run_command, None, convo, force=True) })
+
                 if user_feedback is not None and user_feedback != 'continue':
                     debug(convo, user_input=user_feedback, issue_description=step['human_intervention_description'])
 
@@ -129,6 +135,7 @@ class Developer(Agent):
                 iteration_convo = AgentConvo(self)
                 iteration_convo.send_message('development/iteration.prompt', {
                     "name": self.project.args['name'],
+                    "app_type": self.project.args['app_type'],
                     "app_summary": self.project.project_description,
                     "clarification": [],
                     "user_stories": self.project.user_stories,
@@ -170,7 +177,12 @@ class Developer(Agent):
 
         os_info = get_os_info()
         os_specific_techologies = self.convo_os_specific_tech.send_message('development/env_setup/specs.prompt',
-            { "name": self.project.args['name'], "os_info": os_info, "technologies": self.project.architecture }, FILTER_OS_TECHNOLOGIES)
+            {
+                "name": self.project.args['name'],
+                "app_type": self.project.args['app_type'],
+                "os_info": os_info,
+                "technologies": self.project.architecture
+            }, FILTER_OS_TECHNOLOGIES)
 
         for technology in os_specific_techologies:
             # TODO move the functions definisions to function_calls.py
@@ -243,11 +255,11 @@ class Developer(Agent):
             'step_type': type,
             'directory_tree': directory_tree,
             'step_index': step_index
-        }, EXECUTE_COMMANDS);
+        }, EXECUTE_COMMANDS)
         if type == 'COMMAND':
             for cmd in step_details:
                 run_command_until_success(cmd['command'], cmd['timeout'], convo)
-        elif type == 'CODE_CHANGE':
-            code_changes_details = get_step_code_changes()
+        # elif type == 'CODE_CHANGE':
+        #     code_changes_details = get_step_code_changes()
             # TODO: give to code monkey for implementation
         pass

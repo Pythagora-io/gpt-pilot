@@ -5,6 +5,7 @@ import threading
 import queue
 import time
 import uuid
+import platform
 
 from termcolor import colored
 from database.database import get_command_run_from_hash_id, save_command_run
@@ -23,15 +24,39 @@ def enqueue_output(out, q):
     out.close()
 
 def run_command(command, root_path, q_stdout, q_stderr, pid_container):
-    process = subprocess.Popen(
-        command,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        preexec_fn=os.setsid,
-        cwd=root_path
-    )
+    """
+    Execute a command in a subprocess.
+
+    Args:
+        command (str): The command to run.
+        root_path (str): The directory in which to run the command.
+        q_stdout (Queue): A queue to capture stdout.
+        q_stderr (Queue): A queue to capture stderr.
+        pid_container (list): A list to store the process ID.
+
+    Returns:
+        subprocess.Popen: The subprocess object.
+    """
+    if platform.system() == 'Windows':  # Check the operating system
+        process = subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            cwd=root_path
+        )
+    else:
+        process = subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            preexec_fn=os.setsid,  # Use os.setsid only for Unix-like systems
+            cwd=root_path
+        )
+
     pid_container[0] = process.pid
     t_stdout = threading.Thread(target=enqueue_output, args=(process.stdout, q_stdout))
     t_stderr = threading.Thread(target=enqueue_output, args=(process.stderr, q_stderr))
@@ -41,20 +66,52 @@ def run_command(command, root_path, q_stdout, q_stderr, pid_container):
     t_stderr.start()
     return process
 
+def terminate_process(pid):
+    if platform.system() == "Windows":
+        try:
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)])
+        except subprocess.CalledProcessError:
+            # Handle any potential errors here
+            pass
+    else:  # Unix-like systems
+        try:
+            os.killpg(pid, signal.SIGKILL)
+        except OSError:
+            # Handle any potential errors here
+            pass
 
 def execute_command(project, command, timeout=None, force=False):
+    """
+    Execute a command and capture its output.
+
+    Args:
+        project: The project associated with the command.
+        command (str): The command to run.
+        timeout (int, optional): The maximum execution time in milliseconds. Default is None.
+        force (bool, optional): Whether to execute the command without confirmation. Default is False.
+
+    Returns:
+        str: The command output.
+    """
     if timeout is not None:
         if timeout < 1000:
             timeout *= 1000
         timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
 
     if not force:
-        print(colored(f'Can i execute the command: `') + colored(command, 'white', attrs=['bold']) + colored(f'` with {timeout}ms timeout?'))
+        print(colored(f'\n--------- EXECUTE COMMAND ----------', 'yellow', attrs=['bold']))
+        print(colored(f'Can i execute the command: `') + colored(command, 'yellow', attrs=['bold']) + colored(f'` with {timeout}ms timeout?'))
 
         answer = styled_text(
             project,
             'If yes, just press ENTER'
         )
+
+
+    # TODO when a shell built-in commands (like cd or source) is executed, the output is not captured properly - this will need to be changed at some point
+    if "cd " in command or "source " in command:
+        command = "bash -c '" + command + "'"
+
 
     project.command_runs_count += 1
     command_run = get_command_run_from_hash_id(project, command)
@@ -124,7 +181,7 @@ def execute_command(project, command, timeout=None, force=False):
         else:
             print("\nTimeout detected. Stopping command execution...")
 
-        os.killpg(pid_container[0], signal.SIGKILL)  # Kill the process group
+        terminate_process(pid_container[0])
 
     # stderr_output = ''
     # while not q_stderr.empty():
@@ -178,12 +235,33 @@ def build_directory_tree(path, prefix="", ignore=None, is_last=False, files=None
     return output
 
 def execute_command_and_check_cli_response(command, timeout, convo):
+    """
+    Execute a command and check its CLI response.
+
+    Args:
+        command (str): The command to run.
+        timeout (int): The maximum execution time in milliseconds.
+        convo (AgentConvo): The conversation object.
+
+    Returns:
+        tuple: A tuple containing the CLI response and the agent's response.
+    """
     cli_response = execute_command(convo.agent.project, command, timeout)
     response = convo.send_message('dev_ops/ran_command.prompt',
         { 'cli_response': cli_response, 'command': command })
     return cli_response, response
 
 def run_command_until_success(command, timeout, convo, additional_message=None, force=False):
+    """
+    Run a command until it succeeds or reaches a timeout.
+
+    Args:
+        command (str): The command to run.
+        timeout (int): The maximum execution time in milliseconds.
+        convo (AgentConvo): The conversation object.
+        additional_message (str, optional): Additional message to include in the response.
+        force (bool, optional): Whether to execute the command without confirmation. Default is False.
+    """
     cli_response = execute_command(convo.agent.project, command, timeout, force)
     response = convo.send_message('dev_ops/ran_command.prompt',
         {'cli_response': cli_response, 'command': command, 'additional_message': additional_message})
@@ -198,6 +276,18 @@ def run_command_until_success(command, timeout, convo, additional_message=None, 
 
 
 def debug(convo, command=None, user_input=None, issue_description=None):
+    """
+    Debug a conversation.
+
+    Args:
+        convo (AgentConvo): The conversation object.
+        command (dict, optional): The command to debug. Default is None.
+        user_input (str, optional): User input for debugging. Default is None.
+        issue_description (str, optional): Description of the issue to debug. Default is None.
+
+    Returns:
+        bool: True if debugging was successful, False otherwise.
+    """
     function_uuid = str(uuid.uuid4())
     convo.save_branch(function_uuid)
     success = False

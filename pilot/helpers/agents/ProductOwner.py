@@ -24,16 +24,17 @@ class ProductOwner(Agent):
         step = get_progress_steps(self.project.args['app_id'], self.project.current_step)
         if step and not execute_step(self.project.args['step'], self.project.current_step):
             step_already_finished(self.project.args, step)
-            self.project.root_path = setup_workspace(self.project.args['name'])
+            self.project.root_path = setup_workspace(self.project.args)
             self.project.project_description = step['summary']
             self.project.project_description_messages = step['messages']
             return
 
         # PROJECT DESCRIPTION
         self.project.args['app_type'] = ask_for_app_type()
-        self.project.args['name'] = clean_filename(ask_user(self.project, 'What is the project name?'))
+        if 'name' not in self.project.args:
+            self.project.args['name'] = clean_filename(ask_user(self.project, 'What is the project name?'))
 
-        self.project.root_path = setup_workspace(self.project.args['name'])
+        self.project.root_path = setup_workspace(self.project.args)
 
         self.project.app = save_app(self.project.args)
 
@@ -43,8 +44,11 @@ class ProductOwner(Agent):
             self.project,
             generate_messages_from_description(main_prompt, self.project.args['app_type'], self.project.args['name']))
 
+        print(colored('Project Summary:\n', 'green', attrs=['bold']))
         high_level_summary = convo_project_description.send_message('utils/summary.prompt',
-            {'conversation': '\n'.join([f"{msg['role']}: {msg['content']}" for msg in high_level_messages])})
+                                                                    {'conversation': '\n'.join(
+                                                                        [f"{msg['role']}: {msg['content']}" for msg in
+                                                                         high_level_messages])})
 
         save_progress(self.project.args['app_id'], self.project.current_step, {
             "prompt": main_prompt,
@@ -58,7 +62,6 @@ class ProductOwner(Agent):
         return
         # PROJECT DESCRIPTION END
 
-
     def get_user_stories(self):
         self.project.current_step = 'user_stories'
         self.convo_user_stories = AgentConvo(self)
@@ -71,7 +74,7 @@ class ProductOwner(Agent):
             return step['user_stories']
 
         # USER STORIES
-        msg = f"Generating USER STORIES...\n"
+        msg = f"User Stories:\n"
         print(colored(msg, "green", attrs=['bold']))
         logger.info(msg)
 
@@ -105,12 +108,12 @@ class ProductOwner(Agent):
             return step['user_tasks']
 
         # USER TASKS
-        msg = f"Generating USER TASKS...\n"
+        msg = f"User Tasks:\n"
         print(colored(msg, "green", attrs=['bold']))
         logger.info(msg)
 
         self.project.user_tasks = self.convo_user_stories.continuous_conversation('user_stories/user_tasks.prompt',
-            { 'END_RESPONSE': END_RESPONSE })
+                                                                                  {'END_RESPONSE': END_RESPONSE})
 
         logger.info(f"Final user tasks: {self.project.user_tasks}")
 

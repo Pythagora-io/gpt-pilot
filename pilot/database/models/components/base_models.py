@@ -1,23 +1,17 @@
-import os
 from peewee import *
 from datetime import datetime
 from uuid import uuid4
 
-DB_NAME = os.getenv("DB_NAME")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
+from database.config import DATABASE_TYPE
+from database.connection.postgres import get_postgres_database
+from database.connection.sqlite import get_sqlite_database
 
 
 # Establish connection to the database
-database = PostgresqlDatabase(
-    DB_NAME,
-    user=DB_USER,
-    password=DB_PASSWORD,
-    host=DB_HOST,
-    port=DB_PORT
-)
+if DATABASE_TYPE == "postgres":
+    database = get_postgres_database()
+else:
+    database = get_sqlite_database()
 
 
 class BaseModel(Model):

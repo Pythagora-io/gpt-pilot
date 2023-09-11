@@ -33,4 +33,14 @@ def styled_text(project, question):
     }
     response = questionary.text(question, **config).unsafe_ask()  # .ask() is included here
     user_input = save_user_input(project, question, response)
+
+    print('\n\n', end='')
+
     return response
+
+
+def get_user_feedback():
+    config = {
+        'style': custom_style,
+    }
+    return questionary.text("How did GPT Pilot do? Were you able to create any app that works? Please write any feedback you have or just press ENTER to exit: ", **config).unsafe_ask()

@@ -1,4 +1,4 @@
-You are working on a web app called "{{ name }}" and you need to write code for the entire application.
+You are working on a {{ app_type }} called "{{ name }}" and you need to write code for the entire application.
 
 Here is a high level description of "{{ name }}":
 ```
@@ -31,5 +31,5 @@ Tell me all the new code that needs to be written or modified to implement this 
 #}
 Remember, I'm currently in an empty folder where I will start writing files that you tell me. You do not need to make any automated tests work.
 
-!!IMPORTANT!!
+**IMPORTANT**
 Do not tell me anything about setting up the database or anything OS related - only if some dependencies need to be installed.

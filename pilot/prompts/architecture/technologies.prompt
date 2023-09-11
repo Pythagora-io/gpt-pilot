@@ -30,3 +30,5 @@ Here are user tasks that specify what users need to do to interact with "{{ name
 Now, based on the app's description, user stories and user tasks, think step by step and write up all technologies that will be used by your development team to create the app "{{ name }}". Do not write any explanations behind your choices but only a list of technologies that will be used.
 
 You do not need to list any technologies related to automated tests like Jest, Cypress, Mocha, Selenium, etc.
+
+{{no_microservices}}

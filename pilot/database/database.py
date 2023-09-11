@@ -4,12 +4,12 @@ from termcolor import colored
 from functools import reduce
 import operator
 import psycopg2
-import os
-from const.common import PROMPT_DATA_TO_IGNORE
-from logger.logger import logger
 from psycopg2.extensions import quote_ident
 
+from const.common import PROMPT_DATA_TO_IGNORE
+from logger.logger import logger
 from utils.utils import hash_data
+from database.config import DB_NAME, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DATABASE_TYPE
 from database.models.components.base_models import database
 from database.models.user import User
 from database.models.app import App
@@ -23,14 +23,9 @@ from database.models.environment_setup import EnvironmentSetup
 from database.models.development import Development
 from database.models.file_snapshot import FileSnapshot
 from database.models.command_runs import CommandRuns
+from database.models.user_apps import UserApps
 from database.models.user_inputs import UserInputs
 from database.models.files import File
-
-DB_NAME = os.getenv("DB_NAME")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 
 def save_user(user_id, email, password):
@@ -90,6 +85,16 @@ def save_app(args):
     return app
 
 
+def save_user_app(user_id, app_id, workspace):
+    try:
+        user_app = UserApps.get((UserApps.user == user_id) & (UserApps.app == app_id))
+        user_app.workspace = workspace
+        user_app.save()
+    except DoesNotExist:
+        user_app = UserApps.create(user=user_id, app=app_id, workspace=workspace)
+
+    return user_app
+
 def save_progress(app_id, step, data):
     progress_table_map = {
         'project_description': ProjectDescription,
@@ -128,6 +133,14 @@ def get_app(app_id):
         return app
     except DoesNotExist:
         raise ValueError(f"No app with id: {app_id}")
+
+
+def get_app_by_user_workspace(user_id, workspace):
+    try:
+        user_app = UserApps.get((UserApps.user == user_id) & (UserApps.workspace == workspace))
+        return user_app.app
+    except DoesNotExist:
+        return None
 
 
 def get_progress_steps(app_id, step=None):
@@ -215,9 +228,13 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
         'previous_step': project.checkpoints['last_development_step'],
     }
 
-    development_step = hash_and_save_step(DevelopmentSteps, project.args['app_id'], hash_data_args, data_fields,
-                                          "Saved Development Step")
+    development_step = hash_and_save_step(DevelopmentSteps, project.args['app_id'], hash_data_args, data_fields, "Saved Development Step")
     project.checkpoints['last_development_step'] = development_step
+
+
+    project.save_files_snapshot(development_step.id)
+
+
     return development_step
 
 
@@ -311,7 +328,7 @@ def get_all_connected_steps(step, previous_step_field_name):
 
 
 def delete_all_app_development_data(app):
-    models = [DevelopmentSteps, CommandRuns, UserInputs, File, FileSnapshot]
+    models = [DevelopmentSteps, CommandRuns, UserInputs, UserApps, File, FileSnapshot]
     for model in models:
         model.delete().where(model.app == app).execute()
 
@@ -356,6 +373,7 @@ def create_tables():
             Development,
             FileSnapshot,
             CommandRuns,
+            UserApps,
             UserInputs,
             File,
         ])
@@ -376,10 +394,18 @@ def drop_tables():
             Development,
             FileSnapshot,
             CommandRuns,
+            UserApps,
             UserInputs,
             File,
         ]:
-            database.execute_sql(f'DROP TABLE IF EXISTS "{table._meta.table_name}" CASCADE')
+            if DATABASE_TYPE == "postgres":
+                sql = f'DROP TABLE IF EXISTS "{table._meta.table_name}" CASCADE'
+            elif DATABASE_TYPE == "sqlite":
+                sql = f'DROP TABLE IF EXISTS "{table._meta.table_name}"'
+            else:
+                raise ValueError(f"Unsupported DATABASE_TYPE: {DATABASE_TYPE}")
+
+            database.execute_sql(sql)
 
 
 def database_exists():
@@ -392,35 +418,42 @@ def database_exists():
 
 
 def create_database():
-    # Connect to the default 'postgres' database to create a new database
-    conn = psycopg2.connect(
-        dbname='postgres',
-        user=DB_USER,
-        password=DB_PASSWORD,
-        host=DB_HOST,
-        port=DB_PORT
-    )
-    conn.autocommit = True
-    cursor = conn.cursor()
+    if DATABASE_TYPE == "postgres":
+        # Connect to the default 'postgres' database to create a new database
+        conn = psycopg2.connect(
+            dbname='postgres',
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
+        )
+        conn.autocommit = True
+        cursor = conn.cursor()
 
-    # Safely quote the database name
-    safe_db_name = quote_ident(DB_NAME, conn)
+        # Safely quote the database name
+        safe_db_name = quote_ident(DB_NAME, conn)
 
-    # Use the safely quoted database name in the SQL query
-    cursor.execute(f"CREATE DATABASE {safe_db_name}")
+        # Use the safely quoted database name in the SQL query
+        cursor.execute(f"CREATE DATABASE {safe_db_name}")
 
-    cursor.close()
-    conn.close()
+        cursor.close()
+        conn.close()
+    else:
+        pass
 
 
 def tables_exist():
     tables = [User, App, ProjectDescription, UserStories, UserTasks, Architecture, DevelopmentPlanning,
-              DevelopmentSteps, EnvironmentSetup, Development, FileSnapshot, CommandRuns, UserInputs, File]
-    for table in tables:
-        try:
-            database.get_tables().index(table._meta.table_name)
-        except ValueError:
-            return False
+              DevelopmentSteps, EnvironmentSetup, Development, FileSnapshot, CommandRuns, UserApps, UserInputs, File]
+
+    if DATABASE_TYPE == "postgres":
+        for table in tables:
+            try:
+                database.get_tables().index(table._meta.table_name)
+            except ValueError:
+                return False
+    else:
+        pass
     return True
 
 

@@ -29,7 +29,7 @@ class CodeMonkey(Agent):
         }, IMPLEMENT_CHANGES)
         convo.remove_last_x_messages(1)
 
-        if (not self.project.args['update_files_before_start']) or (self.project.skip_until_dev_step != str(self.project.checkpoints['last_development_step'].id)):
+        if ('update_files_before_start' not in self.project.args) or (self.project.skip_until_dev_step != str(self.project.checkpoints['last_development_step'].id)):
             for file_data in changes:
                 self.project.save_file(file_data)
 

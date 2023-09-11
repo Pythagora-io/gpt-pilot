@@ -1,6 +1,8 @@
+import re
 import requests
 import os
 import sys
+import time
 import json
 import tiktoken
 import questionary
@@ -46,8 +48,11 @@ def get_tokens_in_messages(messages: List[str]) -> int:
     tokenized_messages = [tokenizer.encode(message['content']) for message in messages]
     return sum(len(tokens) for tokens in tokenized_messages)
 
+#get endpoint and model name from .ENV file
+model = os.getenv('MODEL_NAME')
+endpoint = os.getenv('ENDPOINT')
 
-def num_tokens_from_functions(functions, model="gpt-4"):
+def num_tokens_from_functions(functions, model=model):
     """Return the number of tokens used by a list of functions."""
     encoding = tiktoken.get_encoding("cl100k_base")
 
@@ -74,8 +79,8 @@ def num_tokens_from_functions(functions, model="gpt-4"):
                             for o in v['enum']:
                                 function_tokens += 3
                                 function_tokens += len(encoding.encode(o))
-                        else:
-                            print(f"Warning: not supported field {field}")
+                        # else:
+                        #     print(f"Warning: not supported field {field}")
                 function_tokens += 11
 
         num_tokens += function_tokens
@@ -86,17 +91,10 @@ def num_tokens_from_functions(functions, model="gpt-4"):
 
 def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TOKENS_FOR_GPT_RESPONSE,
                                function_calls=None):
-    tokens_in_messages = round(get_tokens_in_messages(messages) * 1.2)  # add 20% to account for not 100% accuracy
-    if function_calls is not None:
-        tokens_in_messages += round(
-            num_tokens_from_functions(function_calls['definitions']) * 1.2)  # add 20% to account for not 100% accuracy
-    if tokens_in_messages + min_tokens > MAX_GPT_MODEL_TOKENS:
-        raise ValueError(f'Too many tokens in messages: {tokens_in_messages}. Please try a different test.')
-
     gpt_data = {
-        'model': 'gpt-4',
+        'model': os.getenv('OPENAI_MODEL', 'gpt-4'),
         'n': 1,
-        'max_tokens': min(4096, MAX_GPT_MODEL_TOKENS - tokens_in_messages),
+        'max_tokens': 4096,
         'temperature': 1,
         'top_p': 1,
         'presence_penalty': 0,
@@ -116,9 +114,14 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
         response = stream_gpt_completion(gpt_data, req_type)
         return response
     except Exception as e:
-        print(
-            'The request to OpenAI API failed. Here is the error message:')
-        print(e)
+        error_message = str(e)
+
+        # Check if the error message is related to token limit
+        if "context_length_exceeded" in error_message.lower():
+            raise Exception('Too many tokens in the request. Please try to continue the project with some previous development step.')
+        else:
+            print('The request to OpenAI API failed. Here is the error message:')
+            print(e)
 
 
 def delete_last_n_lines(n):
@@ -140,8 +143,23 @@ def retry_on_exception(func):
             try:
                 return func(*args, **kwargs)
             except Exception as e:
-                print(colored(f'There was a problem with request to openai API:', 'red'))
-                print(str(e))
+                # Convert exception to string
+                err_str = str(e)
+
+                # If the specific error "context_length_exceeded" is present, simply return without retry
+                if "context_length_exceeded" in err_str:
+                    raise Exception("context_length_exceeded")
+                if "rate_limit_exceeded" in err_str:
+                    # Extracting the duration from the error string
+                    match = re.search(r"Please try again in (\d+)ms.", err_str)
+                    if match:
+                        wait_duration = int(match.group(1)) / 1000
+                        time.sleep(wait_duration)
+                    continue
+
+                print(colored('There was a problem with request to openai API:', 'red'))
+                print(err_str)
+
                 user_message = questionary.text(
                     "Do you want to try make the same request again? If yes, just press ENTER. Otherwise, type 'no'.",
                     style=questionary.Style([
@@ -170,14 +188,29 @@ def stream_gpt_completion(data, req_type):
         return result_data
 
     # spinner = spinner_start(colored("Waiting for OpenAI API response...", 'yellow'))
-    print(colored("Waiting for OpenAI API response...", 'yellow'))
-    api_key = os.getenv("OPENAI_API_KEY")
+    # print(colored("Stream response from OpenAI:", 'yellow'))
 
     logger.info(f'Request data: {data}')
 
+    # Check if the ENDPOINT is AZURE
+    if endpoint == 'AZURE':
+        # If yes, get the AZURE_ENDPOINT from .ENV file
+        endpoint_url = os.getenv('AZURE_ENDPOINT') + '/openai/deployments/' + model + '/chat/completions?api-version=2023-05-15'
+        headers = {
+            'Content-Type': 'application/json',
+            'api-key':  os.getenv('AZURE_API_KEY')
+        }
+    else:
+        # If not, send the request to the OpenAI endpoint
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + os.getenv("OPENAI_API_KEY")
+        }
+        endpoint_url = 'https://api.openai.com/v1/chat/completions'
+
     response = requests.post(
-        'https://api.openai.com/v1/chat/completions',
-        headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + api_key},
+        endpoint_url,
+        headers=headers,
         json=data,
         stream=True
     )
@@ -212,7 +245,7 @@ def stream_gpt_completion(data, req_type):
 
                 if json_line['choices'][0]['finish_reason'] == 'function_call':
                     function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
-                    return return_result({'function_calls': function_calls}, lines_printed);
+                    return return_result({'function_calls': function_calls}, lines_printed)
 
                 json_line = json_line['choices'][0]['delta']
 
