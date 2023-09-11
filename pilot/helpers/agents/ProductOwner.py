@@ -4,11 +4,15 @@ from helpers.AgentConvo import AgentConvo
 from helpers.Agent import Agent
 from logger.logger import logger
 from database.database import save_progress, save_app, get_progress_steps
-from utils.utils import execute_step, generate_app_data, step_already_finished, clean_filename
+from utils.utils import should_execute_step, generate_app_data, step_already_finished, clean_filename
 from utils.files import setup_workspace
 from prompts.prompts import ask_for_app_type, ask_for_main_app_definition, get_additional_info_from_openai, \
     generate_messages_from_description, ask_user
 from const.llm import END_RESPONSE
+
+PROJECT_DESCRIPTION_STEP = 'project_description'
+USER_STORIES_STEP = 'user_stories'
+USER_TASKS_STEP = 'user_tasks'
 
 
 class ProductOwner(Agent):
@@ -17,12 +21,11 @@ class ProductOwner(Agent):
 
     def get_project_description(self):
         self.project.app = save_app(self.project.args)
-        self.project.current_step = 'project_description'
-        convo_project_description = AgentConvo(self)
+        self.project.current_step = PROJECT_DESCRIPTION_STEP
 
         # If this app_id already did this step, just get all data from DB and don't ask user again
-        step = get_progress_steps(self.project.args['app_id'], self.project.current_step)
-        if step and not execute_step(self.project.args['step'], self.project.current_step):
+        step = get_progress_steps(self.project.args['app_id'], PROJECT_DESCRIPTION_STEP)
+        if step and not should_execute_step(self.project.args['step'], PROJECT_DESCRIPTION_STEP):
             step_already_finished(self.project.args, step)
             self.project.root_path = setup_workspace(self.project.args)
             self.project.project_description = step['summary']
@@ -30,7 +33,8 @@ class ProductOwner(Agent):
             return
 
         # PROJECT DESCRIPTION
-        self.project.args['app_type'] = ask_for_app_type()
+        if 'app_type' not in self.project.args:
+            self.project.args['app_type'] = ask_for_app_type()
         if 'name' not in self.project.args:
             self.project.args['name'] = clean_filename(ask_user(self.project, 'What is the project name?'))
 
@@ -45,6 +49,7 @@ class ProductOwner(Agent):
             generate_messages_from_description(main_prompt, self.project.args['app_type'], self.project.args['name']))
 
         print(colored('Project Summary:\n', 'green', attrs=['bold']))
+        convo_project_description = AgentConvo(self)
         high_level_summary = convo_project_description.send_message('utils/summary.prompt',
                                                                     {'conversation': '\n'.join(
                                                                         [f"{msg['role']}: {msg['content']}" for msg in
@@ -63,12 +68,12 @@ class ProductOwner(Agent):
         # PROJECT DESCRIPTION END
 
     def get_user_stories(self):
-        self.project.current_step = 'user_stories'
+        self.project.current_step = USER_STORIES_STEP
         self.convo_user_stories = AgentConvo(self)
 
         # If this app_id already did this step, just get all data from DB and don't ask user again
-        step = get_progress_steps(self.project.args['app_id'], self.project.current_step)
-        if step and not execute_step(self.project.args['step'], self.project.current_step):
+        step = get_progress_steps(self.project.args['app_id'], USER_STORIES_STEP)
+        if step and not should_execute_step(self.project.args['step'], USER_STORIES_STEP):
             step_already_finished(self.project.args, step)
             self.convo_user_stories.messages = step['messages']
             return step['user_stories']
@@ -98,12 +103,12 @@ class ProductOwner(Agent):
         # USER STORIES END
 
     def get_user_tasks(self):
-        self.project.current_step = 'user_tasks'
+        self.project.current_step = USER_TASKS_STEP
         self.convo_user_stories.high_level_step = self.project.current_step
 
         # If this app_id already did this step, just get all data from DB and don't ask user again
-        step = get_progress_steps(self.project.args['app_id'], self.project.current_step)
-        if step and not execute_step(self.project.args['step'], self.project.current_step):
+        step = get_progress_steps(self.project.args['app_id'], USER_TASKS_STEP)
+        if step and not should_execute_step(self.project.args['step'], USER_TASKS_STEP):
             step_already_finished(self.project.args, step)
             return step['user_tasks']
 
