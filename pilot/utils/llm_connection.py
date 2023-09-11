@@ -1,6 +1,8 @@
+import re
 import requests
 import os
 import sys
+import time
 import json
 import tiktoken
 import questionary
@@ -123,7 +125,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
 
         # Check if the error message is related to token limit
         if "context_length_exceeded" in error_message.lower():
-            raise Exception(f'Too many tokens in the request. Please try to continue the project with some previous development step.')
+            raise Exception('Too many tokens in the request. Please try to continue the project with some previous development step.')
         else:
             print('The request to OpenAI API failed. Here is the error message:')
             print(e)
@@ -154,8 +156,15 @@ def retry_on_exception(func):
                 # If the specific error "context_length_exceeded" is present, simply return without retry
                 if "context_length_exceeded" in err_str:
                     raise Exception("context_length_exceeded")
+                if "rate_limit_exceeded" in err_str:
+                    # Extracting the duration from the error string
+                    match = re.search(r"Please try again in (\d+)ms.", err_str)
+                    if match:
+                        wait_duration = int(match.group(1)) / 1000
+                        time.sleep(wait_duration)
+                    continue
 
-                print(colored(f'There was a problem with request to openai API:', 'red'))
+                print(colored('There was a problem with request to openai API:', 'red'))
                 print(err_str)
 
                 user_message = questionary.text(
@@ -198,11 +207,11 @@ def stream_gpt_completion(data, req_type):
     elif endpoint == 'OPENROUTER':
         # If so, send the request to the OpenRouter API endpoint
         headers = {'Content-Type': 'application/json', 'Authorization':  'Bearer ' + os.getenv("OPENROUTER_API_KEY"), 'HTTP-Referer': 'http://localhost:3000', 'X-Title': 'GPT Pilot (LOCAL)'}
-        endpoint_url = os.getenv("OPENROUTER_ENDPOINT") or 'https://openrouter.ai/api/v1/chat/completions'
+        endpoint_url = os.getenv("OPENROUTER_ENDPOINT", 'https://openrouter.ai/api/v1/chat/completions')
     else:
         # If not, send the request to the OpenAI endpoint
         headers = {'Content-Type': 'application/json', 'Authorization':  'Bearer ' + os.getenv("OPENAI_API_KEY")}
-        endpoint_url = os.getenv("OPENAI_ENDPOINT") or 'https://api.openai.com/v1/chat/completions'
+        endpoint_url = os.getenv("OPENAI_ENDPOINT", 'https://api.openai.com/v1/chat/completions')
 
     response = requests.post(
         endpoint_url,
@@ -241,7 +250,7 @@ def stream_gpt_completion(data, req_type):
 
                 if json_line['choices'][0]['finish_reason'] == 'function_call':
                     function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
-                    return return_result({'function_calls': function_calls}, lines_printed);
+                    return return_result({'function_calls': function_calls}, lines_printed)
 
                 json_line = json_line['choices'][0]['delta']
 

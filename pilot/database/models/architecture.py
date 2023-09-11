@@ -12,4 +12,4 @@ class Architecture(ProgressStep):
         architecture = JSONField()  # Custom JSON field for SQLite
 
     class Meta:
-        db_table = 'architecture'
+        table_name = 'architecture'

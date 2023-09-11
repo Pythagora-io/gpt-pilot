@@ -168,9 +168,4 @@ cython_debug/
 
 # workspace
 workspace
-
-# pilot env
-pilot-env
-./pilot-env/**/*
-pilot-env/**/*
-pilot-env/bin
+pilot-env/
