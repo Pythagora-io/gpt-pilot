@@ -1,17 +1,19 @@
 # 🧑‍✈️ GPT PILOT
 ### GPT Pilot helps developers build apps 20x faster
 
+You specify what kind of an app you want to build. Then, GPT Pilot asks clarifying questions, creates the product and technical requirements, sets up the environment, and **starts coding the app step by step, like in real life while you oversee the development process**. It asks you to review each task it finishes or to help when it gets stuck. This way, GPT Pilot acts as a coder while you are a lead dev who reviews code and helps when needed.
+
 ---
 
 <!-- TOC -->
 * [🔌 Requirements](#-requirements)
 * [🚦How to start using gpt-pilot?](#how-to-start-using-gpt-pilot)
-* [🧑‍💻️ Other arguments](#-other-arguments)
+* [🧑‍💻️ Other arguments](#%EF%B8%8F-other-arguments)
 * [🔎 Examples](#-examples)
     * [Real-time chat app](#-real-time-chat-app)
     * [Markdown editor](#-markdown-editor)
     * [Timer app](#%EF%B8%8F-timer-app)
-* [🏛 Main pillars of GPT Pilot](#main-pillars-of-gpt-pilot)
+* [🏛 Main pillars of GPT Pilot](#-main-pillars-of-gpt-pilot)
 * [🏗 How GPT Pilot works?](#-how-gpt-pilot-works)
 * [🕴How's GPT Pilot different from _Smol developer_ and _GPT engineer_?](#hows-gpt-pilot-different-from-smol-developer-and-gpt-engineer)
 * [🍻 Contributing](#-contributing)
@@ -151,11 +153,9 @@ Here are the steps GPT Pilot takes to create an app:
 <br>
 
 # 🕴How's GPT Pilot different from _Smol developer_ and _GPT engineer_?
-- **Human developer is involved throughout the process** - I don't think that AI can (at least in the near future) create apps without a developer being involved. Also, I think it's hard for a developer to get into a big codebase and try debugging it. That's why my idea was for AI to develop the app step by step where each step is reviewed by the developer. If you want to change some code yourself, you can just change it and GPT Pilot will continue developing on top of those changes.
+- **GPT Pilot works with the developer to create fully working production-ready app** - I don't think that AI can (at least in the near future) create apps without a developer being involved. So, **GPT Pilot codes the app step by step** just like a developer would in real life. This way, it can debug issues as they arise throughout the development process. If it gets stuck, you, the developer in charge, can review the code and fix the issue. Other similar tools give you the entire codebase at once - this way, bugs are much harder to fix both for AI and for you as a developer.
   <br><br>
-- **Continuous development loops** - The goal behind this project was to see how we can create recursive conversations with GPT so that it can debug any issue and implement any feature. For example, after the app is generated, you can always add more instructions about what you want to implement or debug. I wanted to see if this can be so flexible that, regardless of the app's size, it can just iterate and build bigger and bigger apps
-  <br><br>
-- **Auto debugging** - when it detects an error, it debugs it by itself. I still haven't implemented writing automated tests which should make this fully autonomous but for now, you can input the error that's happening (eg. within a UI) and GPT Pilot will debug it from there. The plan is to make it write automated tests in Cypress as well so that it can test it by itself and debug without the developer's explanation.
+- **Works at scale** - GPT Pilot isn't meant to create simple apps but rather so it can work at any scale. It has mechanisms that filter out the code so in each LLM conversation, it doesn't need to store the entire codebase in context but it shows the LLM only the code that is relevant for the current task it's working on. Once an app is finished, you can always continue working on it by writing instructions on what feature you want to add.
 
 # 🍻 Contributing
 If you are interested in contributing to GPT Pilot, I would be more than happy to have you on board but also help you get started. Feel free to ping [zvonimir@pythagora.ai](mailto:zvonimir@pythagora.ai) and I'll help you get started.
