@@ -37,7 +37,6 @@ Obviously, it still can't create any production-ready app but the general concep
 
 # 🔌 Requirements
 
-
 - **Python**
 - **PostgreSQL** (optional, projects default is SQLite)
    - DB is needed for multiple reasons like continuing app development if you had to stop at any point or app crashed, going back to specific step so you can change some later steps in development, easier debugging, for future we will add functionality to update project (change some things in existing project or add new features to the project and so on)...
@@ -64,27 +63,91 @@ All generated code will be stored in the folder `workspace` inside the folder na
 **IMPORTANT: To run GPT Pilot, you need to have PostgreSQL set up on your machine**
 <br>
 
-# 🧑‍💻️ Other arguments
-- continue working on an existing app
+# 🧑‍💻️ CLI arguments
+
+## `app_type` and `name`
+If not provided, the ProductOwner will ask for these values
+
+`app_type` is used as a hint to the LLM as to what kind of architecture, language options and conventions would apply. If not provided, `prompts.prompts.ask_for_app_type()` will ask for it.
+
+See `const.common.ALL_TYPES`: 'Web App', 'Script', 'Mobile App', 'Chrome Extension'
+
+
+## `app_id` and `workspace`
+Continue working on an existing app using **`app_id`**
 ```bash
 python main.py app_id=<ID_OF_THE_APP>
 ```
 
-- continue working on an existing app from a specific step
+_or_ **`workspace`** path:
+
+```bash
+python main.py workspace=<PATH_TO_PROJECT_WORKSPACE>
+```
+
+Each user can have their own workspace path for each App.
+
+
+## `user_id`, `email` and `password`
+These values will be saved to the User table in the DB.
+
+```bash
+python main.py user_id=me_at_work
+```
+
+If not specified, `user_id` defaults to the OS username, but can be provided explicitly if your OS username differs from your GitHub or work username. This value is used to load the `App` config when the `workspace` arg is provided.
+
+If not specified `email` will be parsed from `~/.gitconfig` if the file exists.
+
+See also [What's the purpose of arguments.password / User.password?](https://github.com/Pythagora-io/gpt-pilot/discussions/55)
+
+
+## `advanced`
+The Architect by default favours certain technologies including: 
+
+- Node.JS
+- MongoDB
+- PeeWee ORM
+- Jest & PyUnit
+- Bootstrap
+- Vanilla JavaScript
+- Socket.io
+
+If you have your own preferences, you can have a deeper conversation with the Architect.
+
+```bash
+python main.py advanced=True
+```
+
+
+## `step`
+Continue working on an existing app from a specific **`step`** (eg: `user_tasks`)
 ```bash
 python main.py app_id=<ID_OF_THE_APP> step=<STEP_FROM_CONST_COMMON>
 ```
 
-- continue working on an existing app from a specific development step
+
+## `skip_until_dev_step`
+Continue working on an existing app from a specific **development step**
 ```bash
 python main.py app_id=<ID_OF_THE_APP> skip_until_dev_step=<DEV_STEP>
 ```
 This is basically the same as `step` but during the actual development process. If you want to play around with gpt-pilot, this is likely the flag you will often use.
 <br>
-- erase all development steps previously done and continue working on an existing app from start of development
+
+Erase all development steps previously done and continue working on an existing app from start of development
+
 ```bash
 python main.py app_id=<ID_OF_THE_APP> skip_until_dev_step=0
 ```
+
+
+## `delete_unrelated_steps`
+
+
+## `update_files_before_start`
+
+
 
 # 🔎 Examples
 
@@ -130,8 +193,10 @@ Here are the steps GPT Pilot takes to create an app:
 4. **Architect agent** writes up technologies that will be used for the app
 5. **DevOps agent** checks if all technologies are installed on the machine and installs them if they are not
 6. **Tech Lead agent** writes up development tasks that Developer will need to implement. This is an important part because, for each step, Tech Lead needs to specify how the user (real world developer) can review if the task is done (eg. open localhost:3000 and do something)
-7. **Developer agent** takes each task and writes up what needs to be done to implement it. The description is in human readable form.
-8. Finally, **Code Monkey agent** takes the Developer's description and the currently implement file and implements the changes into it. We realized this works much better than giving it to Developer right away to implement changes.
+7. **Developer agent** takes each task and writes up what needs to be done to implement it. The description is in human-readable form.
+8. Finally, **Code Monkey agent** takes the Developer's description and the existing file and implements the changes into it. We realized this works much better than giving it to Developer right away to implement changes.
+
+For more details on the roles of agents employed by GPT Pilot refer to [AGENTS.md](https://github.com/Pythagora-io/gpt-pilot/blob/main/pilot/helpers/agents/AGENTS.md)
 
 ![GPT Pilot Coding Workflow](https://github.com/Pythagora-io/gpt-pilot/assets/10895136/54a8ec24-a2ea-43a6-a494-03139d4e43f5)
 
