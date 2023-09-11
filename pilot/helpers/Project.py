@@ -168,7 +168,7 @@ class Project:
         Save a file.
 
         Args:
-            data (dict): File data.
+            data: { name: 'hello.py', path: 'path/to/hello.py', content: 'print("Hello!")' }
         """
         # TODO fix this in prompts
         if ' ' in data['name'] or '.' not in data['name']:
