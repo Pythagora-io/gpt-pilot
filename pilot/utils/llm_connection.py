@@ -166,7 +166,7 @@ def stream_gpt_completion(data, req_type):
         return result_data
 
     # spinner = spinner_start(yellow("Waiting for OpenAI API response..."))
-    api_key = const.config.API_KEY
+    api_key = os.getenv("OPENAI_API_KEY")
 
     logger.info(f'Request data: {data}')
 

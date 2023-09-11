@@ -1,7 +1,7 @@
 # main.py
 from __future__ import print_function, unicode_literals
 import builtins
-import json
+import os
 
 from dotenv import load_dotenv
 
@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
     builtins.print, ipc_client_instance = get_custom_print(args)
     if '--api-key' in args:
-        const.config.API_KEY = args['--api-key']
+        os.environ["OPENAI_API_KEY"] = args['--api-key']
 
     if '--root-folder' in args:
         const.config.ROOT_FOLDER = args['--root-folder']
