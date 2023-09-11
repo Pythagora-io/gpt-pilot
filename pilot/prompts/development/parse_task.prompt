@@ -1,0 +1,1 @@
+Ok, now, take your previous message and convert it to actionable items. An item might be a code change or a command run. When you need to change code, make sure that you put the entire content of the file in the value of `content` key even though you will likely copy and paste the most of the previous messsage.

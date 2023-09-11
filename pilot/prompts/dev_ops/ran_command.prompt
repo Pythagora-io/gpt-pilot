@@ -1,0 +1,6 @@
+{{ additional_info }}I ran the command `{{ command }}` and for this response from CLI:
+```
+{{ cli_response }}
+```
+
+If the command was successfully executed, respond with `DONE` and if it wasn't, respond with `NEEDS_DEBUGGING`.
