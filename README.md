@@ -4,7 +4,7 @@
 ---
 
 <!-- TOC -->
-* [Requirements](#requirements)
+* [🔌 Requirements](#-requirements)
 * [🚦How to start using gpt-pilot?](#how-to-start-using-gpt-pilot)
 * [🧑‍💻️ Other arguments](#-other-arguments)
 * [🔎 Examples](#-examples)
