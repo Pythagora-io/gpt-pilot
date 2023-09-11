@@ -1,9 +1,11 @@
 # 🧑‍✈️ GPT PILOT
-### GPT Pilot codes the entire app as you oversee the code being written
+### GPT Pilot helps developers build apps 20x faster
 
 ---
 
-This is a research project to see how can GPT-4 be utilized to generate fully working, production-ready, apps. **The main idea is that AI can write most of the code for an app (maybe 95%) but for the rest 5%, a developer is and will be needed until we get full AGI**.
+The goal of GPT Pilot is to research how much can GPT-4 be utilized to generate fully working, production-ready apps while the developer oversees the implementation.
+
+**The main idea is that AI can write most of the code for an app (maybe 95%) but for the rest 5%, a developer is and will be needed until we get full AGI**.
 
 I've broken down the idea behind GPT Pilot and how it works in the following blog posts:
 
@@ -15,7 +17,12 @@ I've broken down the idea behind GPT Pilot and how it works in the following blo
 
 ---
 
+
+<div align="center">
+
 ### **[👉 Examples of apps written by GPT Pilot 👈](#-examples)**
+
+</div>
 
 <br>
 
@@ -90,34 +97,22 @@ python main.py app_id=<ID_OF_THE_APP> skip_until_dev_step=0
 
 Here are a couple of example apps GPT Pilot created by itself:
 
-### Real-time chat app
+### 📱 Real-time chat app
 - 💬 Prompt: `A simple chat app with real time communication`
 - ▶️ [Video of the app creation process](https://youtu.be/bUj9DbMRYhA)
 - 💻️ [GitHub repo](https://github.com/Pythagora-io/gpt-pilot-chat-app-demo)
 
-<p align="left">
-  <img src="https://github.com/Pythagora-io/gpt-pilot/assets/10895136/85bc705c-be88-4ca1-9a3b-033700b97a22" alt="gpt-pilot demo chat app" width="500px"/>
-</p>
 
-
-### Markdown editor
+### 📝 Markdown editor
 - 💬 Prompt: `Build a simple markdown editor using HTML, CSS, and JavaScript. Allow users to input markdown text and display the formatted output in real-time.`
 - ▶️ [Video of the app creation process](https://youtu.be/uZeA1iX9dgg)
 - 💻️ [GitHub repo](https://github.com/Pythagora-io/gpt-pilot-demo-markdown-editor.git)
 
-<p align="left">
-  <img src="https://github.com/Pythagora-io/gpt-pilot/assets/10895136/dbe1ccc3-b126-4df0-bddb-a524d6a386a8" alt="gpt-pilot demo markdown editor" width="500px"/>
-</p>
 
-
-### Timer app
+### ⏱️ Timer app
 - 💬 Prompt: `Create a simple timer app using HTML, CSS, and JavaScript that allows users to set a countdown timer and receive an alert when the time is up.`
 - ▶️ [Video of the app creation process](https://youtu.be/CMN3W18zfiE)
 - 💻️ [GitHub repo](https://github.com/Pythagora-io/gpt-pilot-timer-app-demo)
-
-<p align="left">
-  <img src="https://github.com/Pythagora-io/gpt-pilot/assets/10895136/93bed40b-b769-4c8b-b16d-b80fb6fc73e0" alt="gpt-pilot demo markdown editor" width="500px"/>
-</p>
 
 # 🏗 How GPT Pilot works?
 Here are the steps GPT Pilot takes to create an app:
@@ -133,7 +128,8 @@ Here are the steps GPT Pilot takes to create an app:
 7. **Developer agent** takes each task and writes up what needs to be done to implement it. The description is in human readable form.
 8. Finally, **Code Monkey agent** takes the Developer's description and the currently implement file and implements the changes into it. We realized this works much better than giving it to Developer right away to implement changes.
 
-![GPT Pilot Coding Workflow](https://github.com/Pythagora-io/gpt-pilot/assets/10895136/54a8ec24-a2ea-43a6-a494-03139d4e43f5)
+![GPT Pilot Coding Workflow](https://github.com/Pythagora-io/gpt-pilot/assets/10895136/53ea246c-cefe-401c-8ba0-8e4dd49c987b)
+
 
 <br>
 
