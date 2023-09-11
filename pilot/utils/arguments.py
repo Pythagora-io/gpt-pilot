@@ -1,12 +1,10 @@
+import hashlib
 import os
 import re
-import getpass
-import hashlib
 import sys
 import uuid
-
+from getpass import getuser
 from termcolor import colored
-
 from database.database import get_app, get_app_by_user_workspace
 
 
@@ -27,7 +25,7 @@ def get_arguments():
             arguments[arg] = True
 
     if 'user_id' not in arguments:
-        arguments['user_id'] = username_to_uuid(getpass.getuser())
+        arguments['user_id'] = username_to_uuid(getuser())
 
     app = None
     if 'workspace' in arguments:
@@ -42,7 +40,6 @@ def get_arguments():
             if app is None:
                 app = get_app(arguments['app_id'])
 
-            # arguments['user_id'] = str(app.user.id)
             arguments['app_type'] = app.app_type
             arguments['name'] = app.name
             # Add any other fields from the App model you wish to include
@@ -57,10 +54,9 @@ def get_arguments():
         arguments['app_id'] = str(uuid.uuid4())
 
         print(colored('\n------------------ STARTING NEW PROJECT ----------------------', 'green', attrs=['bold']))
-        print(f"If you wish to continue with this project in future run:")
+        print("If you wish to continue with this project in future run:")
         print(colored(f'python {sys.argv[0]} app_id={arguments["app_id"]}', 'green', attrs=['bold']))
         print(colored('--------------------------------------------------------------\n', 'green', attrs=['bold']))
-
 
     if 'email' not in arguments:
         arguments['email'] = get_email()

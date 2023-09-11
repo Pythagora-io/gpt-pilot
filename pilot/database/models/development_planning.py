@@ -12,4 +12,4 @@ class DevelopmentPlanning(ProgressStep):
         development_plan = JSONField()  # Custom JSON field for SQLite
 
     class Meta:
-        db_table = 'development_planning'
+        table_name = 'development_planning'

@@ -2,13 +2,10 @@
 from __future__ import print_function, unicode_literals
 
 import sys
-
 from dotenv import load_dotenv
-from termcolor import colored
 load_dotenv()
-
+from termcolor import colored
 from helpers.Project import Project
-
 from utils.arguments import get_arguments
 from utils.exit import exit_gpt_pilot
 from logger.logger import logger

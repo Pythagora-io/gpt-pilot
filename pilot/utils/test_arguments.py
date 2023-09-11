@@ -10,8 +10,9 @@ def test_email_found_in_gitconfig():
         name = test_user
         email = test@example.com
     """
-    with patch('builtins.open', mock_open(read_data=mock_file_content)):
-        assert get_email() == "test@example.com"
+    with patch('os.path.exists', return_value=True):
+        with patch('builtins.open', mock_open(read_data=mock_file_content)):
+            assert get_email() == "test@example.com"
 
 
 def test_email_not_found_in_gitconfig():
@@ -21,9 +22,10 @@ def test_email_not_found_in_gitconfig():
     """
     mock_uuid = "12345678-1234-5678-1234-567812345678"
 
-    with patch('builtins.open', mock_open(read_data=mock_file_content)):
-        with patch.object(uuid, "uuid4", return_value=mock_uuid):
-            assert get_email() == mock_uuid
+    with patch('os.path.exists', return_value=True):
+        with patch('builtins.open', mock_open(read_data=mock_file_content)):
+            with patch.object(uuid, "uuid4", return_value=mock_uuid):
+                assert get_email() == mock_uuid
 
 
 def test_gitconfig_not_present():
