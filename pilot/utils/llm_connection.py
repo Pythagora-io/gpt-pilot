@@ -100,7 +100,6 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
     gpt_data = {
         'model': os.getenv('OPENAI_MODEL', 'gpt-4'),
         'n': 1,
-        'max_tokens': min(MAX_GPT_MODEL_TOKENS - tokens_in_messages, 2048),
         'temperature': 1,
         'top_p': 1,
         'presence_penalty': 0,
