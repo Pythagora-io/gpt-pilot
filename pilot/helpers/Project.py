@@ -147,7 +147,17 @@ class Project:
             list: A list of coded files.
         """
         files = File.select().where(File.app_id == self.args['app_id'])
+
+        # TODO temoprary fix to eliminate files that are not in the project
+        files = [file for file in files if len(FileSnapshot.select().where(FileSnapshot.file_id == file.id)) > 0]
+        # TODO END
+
         files = self.get_files([file.path + '/' + file.name for file in files])
+
+        # TODO temoprary fix to eliminate files that are not in the project
+        files = [file for file in files if file['content'] != '']
+        # TODO END
+
         return files
 
     def get_files(self, files):
