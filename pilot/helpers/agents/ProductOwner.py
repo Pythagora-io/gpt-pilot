@@ -31,6 +31,7 @@ class ProductOwner(Agent):
 
         # PROJECT DESCRIPTION
         self.project.args['app_type'] = ask_for_app_type()
+        # Don't ask project name if it has been provided by CLI or run_detectors()
         if 'name' not in self.project.args:
             self.project.args['name'] = clean_filename(ask_user(self.project, 'What is the project name?'))
 

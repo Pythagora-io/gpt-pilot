@@ -262,6 +262,7 @@ def run_command_until_success(command, timeout, convo, additional_message=None, 
         additional_message (str, optional): Additional message to include in the response.
         force (bool, optional): Whether to execute the command without confirmation. Default is False.
     """
+    # TODO refactor into execute_command_and_check_cli_response()
     cli_response = execute_command(convo.agent.project, command, timeout, force)
     response = convo.send_message('dev_ops/ran_command.prompt',
         {'cli_response': cli_response, 'command': command, 'additional_message': additional_message})
