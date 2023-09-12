@@ -231,9 +231,7 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
     development_step = hash_and_save_step(DevelopmentSteps, project.args['app_id'], hash_data_args, data_fields, "Saved Development Step")
     project.checkpoints['last_development_step'] = development_step
 
-
     project.save_files_snapshot(development_step.id)
-
 
     return development_step
 
