@@ -18,6 +18,7 @@ class DevelopmentSteps(BaseModel):
         llm_response = JSONField(null=False)  # Custom JSON field for SQLite
 
     previous_step = ForeignKeyField('self', null=True, column_name='previous_step')
+    high_level_step = CharField(null=True)
 
     class Meta:
         db_table = 'development_steps'

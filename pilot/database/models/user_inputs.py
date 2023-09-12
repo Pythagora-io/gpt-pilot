@@ -11,6 +11,7 @@ class UserInputs(BaseModel):
     query = TextField(null=True)
     user_input = TextField(null=True)
     previous_step = ForeignKeyField('self', null=True, column_name='previous_step')
+    high_level_step = CharField(null=True)
 
     class Meta:
         db_table = 'user_inputs'

@@ -157,9 +157,9 @@ def get_progress_steps(app_id, step=None):
         return steps
 
 
-def get_db_model_from_hash_id(model, app_id, previous_step):
+def get_db_model_from_hash_id(model, app_id, previous_step, high_level_step):
     try:
-        db_row = model.get((model.app == app_id) & (model.previous_step == previous_step))
+        db_row = model.get((model.app == app_id) & (model.previous_step == previous_step) & (model.high_level_step == high_level_step))
     except DoesNotExist:
         return None
     return db_row
@@ -207,6 +207,7 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
         'messages': messages,
         'llm_response': llm_response,
         'previous_step': project.checkpoints['last_development_step'],
+        'high_level_step': project.current_step,
     }
 
     development_step = hash_and_save_step(DevelopmentSteps, project.args['app_id'], hash_data_args, data_fields, "Saved Development Step")
@@ -227,11 +228,14 @@ def get_development_step_from_hash_id(project, prompt_path, prompt_data, llm_req
         'llm_req_num': llm_req_num
     }
     development_step = get_db_model_from_hash_id(DevelopmentSteps, project.args['app_id'],
-                                                 project.checkpoints['last_development_step'])
+                                                 project.checkpoints['last_development_step'], project.current_step)
     return development_step
 
 
 def save_command_run(project, command, cli_response):
+    if project.current_step != 'coding':
+        return
+
     hash_data_args = {
         'command': command,
         'command_runs_count': project.command_runs_count,
@@ -240,6 +244,7 @@ def save_command_run(project, command, cli_response):
         'command': command,
         'cli_response': cli_response,
         'previous_step': project.checkpoints['last_command_run'],
+        'high_level_step': project.current_step,
     }
     command_run = hash_and_save_step(CommandRuns, project.args['app_id'], hash_data_args, data_fields,
                                      "Saved Command Run")
@@ -253,11 +258,14 @@ def get_command_run_from_hash_id(project, command):
         'command_runs_count': project.command_runs_count
     }
     command_run = get_db_model_from_hash_id(CommandRuns, project.args['app_id'],
-                                            project.checkpoints['last_command_run'])
+                                            project.checkpoints['last_command_run'], project.current_step)
     return command_run
 
 
 def save_user_input(project, query, user_input):
+    if project.current_step != 'coding':
+        return
+
     hash_data_args = {
         'query': query,
         'user_inputs_count': project.user_inputs_count,
@@ -266,6 +274,7 @@ def save_user_input(project, query, user_input):
         'query': query,
         'user_input': user_input,
         'previous_step': project.checkpoints['last_user_input'],
+        'high_level_step': project.current_step,
     }
     user_input = hash_and_save_step(UserInputs, project.args['app_id'], hash_data_args, data_fields, "Saved User Input")
     project.checkpoints['last_user_input'] = user_input
@@ -277,7 +286,7 @@ def get_user_input_from_hash_id(project, query):
         'query': query,
         'user_inputs_count': project.user_inputs_count
     }
-    user_input = get_db_model_from_hash_id(UserInputs, project.args['app_id'], project.checkpoints['last_user_input'])
+    user_input = get_db_model_from_hash_id(UserInputs, project.args['app_id'], project.checkpoints['last_user_input'], project.current_step)
     return user_input
 
 

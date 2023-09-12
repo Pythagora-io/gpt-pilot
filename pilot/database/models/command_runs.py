@@ -11,6 +11,7 @@ class CommandRuns(BaseModel):
     command = TextField(null=True)
     cli_response = TextField(null=True)
     previous_step = ForeignKeyField('self', null=True, column_name='previous_step')
+    high_level_step = CharField(null=True)
 
     class Meta:
         db_table = 'command_runs'
