@@ -91,6 +91,22 @@ def num_tokens_from_functions(functions, model=model):
 
 def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TOKENS_FOR_GPT_RESPONSE,
                                function_calls=None):
+    """
+    Called from:
+      - AgentConvo.send_message() - these calls often have `function_calls`, usually from `pilot/const/function_calls.py`
+         - convo.continuous_conversation()
+      - prompts.get_additional_info_from_openai()
+      - prompts.get_additional_info_from_user() after the user responds to each
+            "Please check this message and say what needs to be changed... {message}"
+    :param messages: [{ "role": "system"|"assistant"|"user", "content": string }, ... ]
+    :param req_type: 'project_description' etc. See common.STEPS
+    :param min_tokens: defaults to 600
+    :param function_calls: (optional) {'definitions': [{ 'name': str }, ...]}
+        see `IMPLEMENT_CHANGES` etc. in `pilot/const/function_calls.py`
+    :return: {'text': new_code}
+        or if `function_calls` param provided
+             {'function_calls': {'name': str, arguments: {...}}}
+    """
     gpt_data = {
         'model': os.getenv('MODEL_NAME', 'gpt-4'),
         'n': 1,
@@ -111,6 +127,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
                 del gpt_data[key]
 
     if function_calls is not None:
+        # Advise the LLM of the JSON response schema we are expecting
         gpt_data['functions'] = function_calls['definitions']
         if len(function_calls['definitions']) > 1:
             gpt_data['function_call'] = 'auto'
@@ -182,6 +199,12 @@ def retry_on_exception(func):
 
 @retry_on_exception
 def stream_gpt_completion(data, req_type):
+    """
+    Called from create_gpt_chat_completion()
+    :param data:
+    :param req_type: 'project_description' etc. See common.STEPS
+    :return: {'text': str} or {'function_calls': {'name': str, arguments: '{...}'}}
+    """
     terminal_width = os.get_terminal_size().columns
     lines_printed = 2
     buffer = ""  # A buffer to accumulate incoming data
@@ -258,6 +281,7 @@ def stream_gpt_completion(data, req_type):
                 logger.error(f'Unable to decode line: {line}')
                 continue  # skip to the next line
 
+            # handle the streaming response
             if 'function_call' in json_line:
                 if 'name' in json_line['function_call']:
                     function_calls['name'] = json_line['function_call']['name']
