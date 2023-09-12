@@ -61,6 +61,10 @@ def get_prompt_components():
 
 
 def get_sys_message(role):
+    """
+    :param role: 'product_owner', 'architect', 'dev_ops', 'tech_lead', 'full_stack_developer', 'code_monkey'
+    :return: { "role": "system", "content": "You are a {role}... You do..." }
+    """
     # Create a FileSystemLoader
     file_loader = FileSystemLoader('prompts/system_messages')
 

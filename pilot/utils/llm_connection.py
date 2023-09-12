@@ -130,6 +130,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
         # Advise the LLM of the JSON response schema we are expecting
         gpt_data['functions'] = function_calls['definitions']
         if len(function_calls['definitions']) > 1:
+            # DEV_STEPS
             gpt_data['function_call'] = 'auto'
         else:
             gpt_data['function_call'] = {'name': function_calls['definitions'][0]['name']}
@@ -318,7 +319,7 @@ def stream_gpt_completion(data, req_type):
     return return_result({'text': new_code}, lines_printed)
 
 
-def postprocessing(gpt_response, req_type):
+def postprocessing(gpt_response: str, req_type) -> str:
     return gpt_response
 
 
