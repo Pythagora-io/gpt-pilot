@@ -10,12 +10,18 @@ from prompts.prompts import ask_for_app_type, ask_for_main_app_definition, get_a
     generate_messages_from_description, ask_user
 from const.llm import END_RESPONSE
 
+USER_STORIES_STEP = 'user_stories'
+
 
 class ProductOwner(Agent):
     def __init__(self, project):
         super().__init__('product_owner', project)
 
-    def get_project_description(self):
+    def get_project_description(self) -> None:
+        """
+        Prompt user for app_type, name, description and ask clarifying questions.
+        Use the LLM to generate a summary of the project.
+        """
         self.project.app = save_app(self.project.args)
         self.project.current_step = 'project_description'
         convo_project_description = AgentConvo(self)
@@ -38,8 +44,10 @@ class ProductOwner(Agent):
 
         self.project.app = save_app(self.project.args)
 
+        # "Describe your app in as much detail as possible"
         main_prompt = ask_for_main_app_definition(self.project)
 
+        # Ask clarifying questions
         high_level_messages = get_additional_info_from_openai(
             self.project,
             generate_messages_from_description(main_prompt, self.project.args['app_type'], self.project.args['name']))
@@ -62,8 +70,14 @@ class ProductOwner(Agent):
         return
         # PROJECT DESCRIPTION END
 
-    def get_user_stories(self):
-        self.project.current_step = 'user_stories'
+
+    def get_user_stories(self) -> list[str]:
+        """
+        Sends several requests to the LLM to generate user stories, given the project description and clarifications.
+        Asks the user if they have anything to add for each proposed story.
+        :return: a list of brief story descriptions.
+        """
+        self.project.current_step = USER_STORIES_STEP
         self.convo_user_stories = AgentConvo(self)
 
         # If this app_id already did this step, just get all data from DB and don't ask user again
@@ -88,7 +102,7 @@ class ProductOwner(Agent):
 
         logger.info(f"Final user stories: {self.project.user_stories}")
 
-        save_progress(self.project.args['app_id'], self.project.current_step, {
+        save_progress(self.project.args['app_id'], USER_STORIES_STEP, {
             "messages": self.convo_user_stories.messages,
             "user_stories": self.project.user_stories,
             "app_data": generate_app_data(self.project.args)

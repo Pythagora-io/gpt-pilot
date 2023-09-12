@@ -2,18 +2,19 @@ import json
 import uuid
 from termcolor import colored
 from utils.questionary import styled_text
-from helpers.files import update_file
 from utils.utils import step_already_finished
 from helpers.agents.CodeMonkey import CodeMonkey
 from logger.logger import logger
 from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import execute_step, array_of_objects_to_string, generate_app_data
-from helpers.cli import build_directory_tree, run_command_until_success, execute_command_and_check_cli_response, debug
-from const.function_calls import FILTER_OS_TECHNOLOGIES, DEVELOPMENT_PLAN, EXECUTE_COMMANDS, GET_TEST_TYPE, DEV_TASKS_BREAKDOWN, IMPLEMENT_TASK
-from database.database import save_progress, get_progress_steps, save_file_description
+from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, debug
+from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK
+from database.database import save_progress, get_progress_steps
 from utils.utils import get_os_info
-from helpers.cli import execute_command
+
+ENVIRONMENT_SETUP_STEP = 'environment_setup'
+
 
 class Developer(Agent):
     def __init__(self, project):
@@ -54,7 +55,22 @@ class Developer(Agent):
         convo_dev_task.remove_last_x_messages(2)
         self.execute_task(convo_dev_task, task_steps, continue_development=True)
 
-    def execute_task(self, convo, task_steps, test_command=None, reset_convo=True, test_after_code_changes=True, continue_development=False):
+    def execute_task(self, convo: AgentConvo, task_steps, test_command=None, reset_convo=True, test_after_code_changes=True, continue_development=False):
+        """
+        :param convo:
+        :param task_steps: [{
+                type: 'command|code_change|human_intervention',
+                command: { command: '', timeout: 1000ms }
+                code_change: { name: 'file name', path: '/path/to/file', content: "console.info('Hello');" },
+                (or code_change_description: str)
+                human_intervention_description: 'description of step in debugging'
+            }, ...]
+        :param test_command: None
+        :param reset_convo: True
+        :param test_after_code_changes: True
+        :param continue_development: False
+        :return:
+        """
         function_uuid = str(uuid.uuid4())
         convo.save_branch(function_uuid)
 
@@ -73,6 +89,7 @@ class Developer(Agent):
                 run_command_until_success(data['command'], data['timeout'], convo, additional_message=additional_message)
 
             elif step['type'] == 'code_change' and 'code_change_description' in step:
+                # DEV_TASKS_BREAKDOWN
                 # TODO this should be refactored so it always uses the same function call
                 print(f'Implementing code changes for `{step["code_change_description"]}`')
                 code_monkey = CodeMonkey(self.project, self)
@@ -81,6 +98,7 @@ class Developer(Agent):
                     self.test_code_changes(code_monkey, updated_convo)
 
             elif step['type'] == 'code_change':
+                # IMPLEMENT_TASK
                 # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
                 if 'code_change' not in step:
                     data = step
@@ -155,8 +173,7 @@ class Developer(Agent):
 
 
     def set_up_environment(self):
-        self.project.current_step = 'environment_setup'
-        self.convo_os_specific_tech = AgentConvo(self)
+        self.project.current_step = ENVIRONMENT_SETUP_STEP
 
         # If this app_id already did this step, just get all data from DB and don't ask user again
         step = get_progress_steps(self.project.args['app_id'], self.project.current_step)
@@ -176,7 +193,8 @@ class Developer(Agent):
         logger.info(f"Setting up the environment...")
 
         os_info = get_os_info()
-        os_specific_techologies = self.convo_os_specific_tech.send_message('development/env_setup/specs.prompt',
+        convo_os_specific_tech = AgentConvo(self)
+        os_specific_technologies = convo_os_specific_tech.send_message('development/env_setup/specs.prompt',
             {
                 "name": self.project.args['name'],
                 "app_type": self.project.args['app_type'],
@@ -184,9 +202,10 @@ class Developer(Agent):
                 "technologies": self.project.architecture
             }, FILTER_OS_TECHNOLOGIES)
 
-        for technology in os_specific_techologies:
-            # TODO move the functions definisions to function_calls.py
-            cli_response, llm_response = self.convo_os_specific_tech.send_message('development/env_setup/install_next_technology.prompt',
+
+        for technology in os_specific_technologies:
+            # TODO move the functions definitions to function_calls.py
+            cli_response, llm_response = convo_os_specific_tech.send_message('development/env_setup/install_next_technology.prompt',
                 { 'technology': technology}, {
                     'definitions': [{
                         'name': 'execute_command',
@@ -213,11 +232,11 @@ class Developer(Agent):
                 })
 
             if llm_response != 'DONE':
-                installation_commands = self.convo_os_specific_tech.send_message('development/env_setup/unsuccessful_installation.prompt',
+                installation_commands = convo_os_specific_tech.send_message('development/env_setup/unsuccessful_installation.prompt',
                     { 'technology': technology }, EXECUTE_COMMANDS)
                 if installation_commands is not None:
                     for cmd in installation_commands:
-                        run_command_until_success(cmd['command'], cmd['timeout'], self.convo_os_specific_tech)
+                        run_command_until_success(cmd['command'], cmd['timeout'], convo_os_specific_tech)
 
         logger.info('The entire tech stack neede is installed and ready to be used.')
 

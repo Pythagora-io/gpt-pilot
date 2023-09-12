@@ -100,12 +100,13 @@ def execute_command(project, command, timeout=None, force=False):
 
     if not force:
         print(colored(f'\n--------- EXECUTE COMMAND ----------', 'yellow', attrs=['bold']))
-        print(colored(f'Can i execute the command: `') + colored(command, 'yellow', attrs=['bold']) + colored(f'` with {timeout}ms timeout?'))
+        print(colored(f'Can I execute the command: `') + colored(command, 'yellow', attrs=['bold']) + colored(f'` with {timeout}ms timeout?'))
 
         answer = styled_text(
             project,
             'If yes, just press ENTER'
         )
+        # TODO: handle "no"
 
 
     # TODO when a shell built-in commands (like cd or source) is executed, the output is not captured properly - this will need to be changed at some point
