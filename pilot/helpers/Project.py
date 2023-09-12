@@ -193,8 +193,22 @@ class Project:
             data (dict): File data.
         """
         # TODO fix this in prompts
+        if 'path' not in data:
+            data['path'] = ''
+
+        if 'name' not in data:
+            data['name'] = ''
+
         if ' ' in data['name'] or '.' not in data['name']:
+            if not data['path'].startswith('./') and not data['path'].startswith('/'):
+                data['path'] = './' + data['path']
             data['name'] = data['path'].rsplit('/', 1)[1]
+
+        if '/' in data['name']:
+            if data['path'] == '':
+                data['path'] = data['name'].rsplit('/', 1)[0]
+            data['name'] = data['name'].rsplit('/', 1)[1]
+        # TODO END
 
         data['path'], data['full_path'] = self.get_full_file_path(data['path'], data['name'])
         update_file(data['full_path'], data['content'])
