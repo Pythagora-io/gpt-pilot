@@ -64,6 +64,27 @@ All generated code will be stored in the folder `workspace` inside the folder na
 <br>
 
 # 🧑‍💻️ CLI arguments
+Continue working on an existing app from a specific **`step`** (eg: `user_tasks`)
+```bash
+python main.py app_id=<ID_OF_THE_APP> step=<STEP_FROM_CONST_COMMON>
+```
+
+---
+
+Continue working on an existing app from a specific **development step**
+```bash
+python main.py app_id=<ID_OF_THE_APP> skip_until_dev_step=<DEV_STEP>
+```
+This is basically the same as `step` but during the actual development process. If you want to play around with gpt-pilot, this is likely the flag you will often use.
+<br>
+
+Erase all development steps previously done and continue working on an existing app from start of development
+
+```bash
+python main.py app_id=<ID_OF_THE_APP> skip_until_dev_step=0
+```
+
+---
 
 ## `app_type` and `name`
 If not provided, the ProductOwner will ask for these values
@@ -117,28 +138,6 @@ If you have your own preferences, you can have a deeper conversation with the Ar
 
 ```bash
 python main.py advanced=True
-```
-
-
-## `step`
-Continue working on an existing app from a specific **`step`** (eg: `user_tasks`)
-```bash
-python main.py app_id=<ID_OF_THE_APP> step=<STEP_FROM_CONST_COMMON>
-```
-
-
-## `skip_until_dev_step`
-Continue working on an existing app from a specific **development step**
-```bash
-python main.py app_id=<ID_OF_THE_APP> skip_until_dev_step=<DEV_STEP>
-```
-This is basically the same as `step` but during the actual development process. If you want to play around with gpt-pilot, this is likely the flag you will often use.
-<br>
-
-Erase all development steps previously done and continue working on an existing app from start of development
-
-```bash
-python main.py app_id=<ID_OF_THE_APP> skip_until_dev_step=0
 ```
 
 
