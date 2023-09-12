@@ -1,2 +1,1 @@
-API_KEY = ''
 ROOT_FOLDER = ''

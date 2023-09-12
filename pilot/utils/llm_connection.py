@@ -13,8 +13,6 @@ from logger.logger import logger
 from fabulous.color import red
 from utils.utils import get_prompt_components, fix_json
 from utils.spinner import spinner_start, spinner_stop
-import const.config
-
 
 def get_prompt(prompt_name, data=None):
     if data is None:
