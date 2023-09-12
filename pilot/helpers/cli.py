@@ -190,7 +190,7 @@ def execute_command(project, command, timeout=None, force=False):
     if return_value is None:
         return_value = ''
         if stderr_output != '':
-            return_value = 'stderr:\n```\n' + stderr_output[-MAX_COMMAND_OUTPUT_LENGTH:] + '\n```\n'
+            return_value = 'stderr:\n```\n' + stderr_output[0:MAX_COMMAND_OUTPUT_LENGTH] + '\n```\n'
         return_value += 'stdout:\n```\n' + output[-MAX_COMMAND_OUTPUT_LENGTH:] + '\n```'
 
     command_run = save_command_run(project, command, return_value)
