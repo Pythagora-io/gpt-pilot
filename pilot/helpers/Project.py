@@ -94,9 +94,21 @@ class Project:
                 clear_directory(self.root_path)
                 delete_all_app_development_data(self.args['app_id'])
                 self.skip_steps = False
-            elif 'update_files_before_start' in self.args and self.skip_until_dev_step is not None:
-                FileSnapshot.delete().where(FileSnapshot.app == self.app and FileSnapshot.development_step == self.skip_until_dev_step).execute()
-                self.save_files_snapshot(self.skip_until_dev_step)
+            elif self.skip_until_dev_step is not None:
+                should_overwrite_files = ''
+                while should_overwrite_files != 'y' or should_overwrite_files != 'n':
+                    should_overwrite_files = styled_text(
+                        self,
+                        f'Do you want to overwrite the dev step {self.args["skip_until_dev_step"]} code with system changes? Type y/n',
+                        ignore_user_input_count=True
+                    )
+
+                    if should_overwrite_files == 'n':
+                        break
+                    elif should_overwrite_files == 'y':
+                        FileSnapshot.delete().where(FileSnapshot.app == self.app and FileSnapshot.development_step == self.skip_until_dev_step).execute()
+                        self.save_files_snapshot(self.skip_until_dev_step)
+                        break
         # TODO END
 
         self.developer.start_coding()
