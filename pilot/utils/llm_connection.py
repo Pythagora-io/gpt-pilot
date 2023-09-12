@@ -103,10 +103,12 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
     :param min_tokens: defaults to 600
     :param function_calls: (optional) {'definitions': [{ 'name': str }, ...]}
         see `IMPLEMENT_CHANGES` etc. in `pilot/const/function_calls.py`
-    :return: {'text': new_code} or (if `function_calls` param provided) {'function_calls': function_calls}
+    :return: {'text': new_code}
+        or if `function_calls` param provided
+             {'function_calls': {'name': str, arguments: {...}}}
     """
     gpt_data = {
-        'model': os.getenv('OPENAI_MODEL', 'gpt-4'),
+        'model': os.getenv('MODEL_NAME', 'gpt-4'),
         'n': 1,
         'max_tokens': 4096,
         'temperature': 1,
@@ -117,7 +119,15 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
         'stream': True
     }
 
+    # delete some keys if using "OpenRouter" API
+    if os.getenv('ENDPOINT') == "OPENROUTER":
+        keys_to_delete = ['n', 'max_tokens', 'temperature', 'top_p', 'presence_penalty', 'frequency_penalty']
+        for key in keys_to_delete:
+            if key in gpt_data:
+                del gpt_data[key]
+
     if function_calls is not None:
+        # Advise the LLM of the JSON response schema we are expecting
         gpt_data['functions'] = function_calls['definitions']
         if len(function_calls['definitions']) > 1:
             # DEV_STEPS
@@ -200,7 +210,7 @@ def stream_gpt_completion(data, req_type):
     Called from create_gpt_chat_completion()
     :param data:
     :param req_type: 'project_description' etc. See common.STEPS
-    :return: {'text': str} or {'function_calls': function_calls}
+    :return: {'text': str} or {'function_calls': {'name': str, arguments: '{...}'}}
     """
     terminal_width = os.get_terminal_size().columns
     lines_printed = 2
@@ -223,17 +233,15 @@ def stream_gpt_completion(data, req_type):
     if endpoint == 'AZURE':
         # If yes, get the AZURE_ENDPOINT from .ENV file
         endpoint_url = os.getenv('AZURE_ENDPOINT') + '/openai/deployments/' + model + '/chat/completions?api-version=2023-05-15'
-        headers = {
-            'Content-Type': 'application/json',
-            'api-key':  os.getenv('AZURE_API_KEY')
-        }
+        headers = {'Content-Type': 'application/json', 'api-key':  os.getenv('AZURE_API_KEY')}
+    elif endpoint == 'OPENROUTER':
+        # If so, send the request to the OpenRouter API endpoint
+        headers = {'Content-Type': 'application/json', 'Authorization':  'Bearer ' + os.getenv("OPENROUTER_API_KEY"), 'HTTP-Referer': 'http://localhost:3000', 'X-Title': 'GPT Pilot (LOCAL)'}
+        endpoint_url = os.getenv("OPENROUTER_ENDPOINT", 'https://openrouter.ai/api/v1/chat/completions')
     else:
         # If not, send the request to the OpenAI endpoint
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + os.getenv("OPENAI_API_KEY")
-        }
-        endpoint_url = 'https://api.openai.com/v1/chat/completions'
+        headers = {'Content-Type': 'application/json', 'Authorization':  'Bearer ' + os.getenv("OPENAI_API_KEY")}
+        endpoint_url = os.getenv("OPENAI_ENDPOINT", 'https://api.openai.com/v1/chat/completions')
 
     response = requests.post(
         endpoint_url,
@@ -266,6 +274,10 @@ def stream_gpt_completion(data, req_type):
 
             try:
                 json_line = json.loads(line)
+
+                if len(json_line['choices']) == 0:
+                    continue
+                
                 if 'error' in json_line:
                     logger.error(f'Error in LLM response: {json_line}')
                     raise ValueError(f'Error in LLM response: {json_line["error"]["message"]}')
@@ -280,6 +292,7 @@ def stream_gpt_completion(data, req_type):
                 logger.error(f'Unable to decode line: {line}')
                 continue  # skip to the next line
 
+            # handle the streaming response
             if 'function_call' in json_line:
                 if 'name' in json_line['function_call']:
                     function_calls['name'] = json_line['function_call']['name']
