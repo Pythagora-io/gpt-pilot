@@ -3,6 +3,8 @@ import uuid
 from termcolor import colored
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES
+from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
+from helpers.Debugger import Debugger
 from utils.questionary import styled_text
 from helpers.files import update_file
 from utils.utils import step_already_finished
@@ -11,7 +13,7 @@ from logger.logger import logger
 from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import execute_step, array_of_objects_to_string, generate_app_data
-from helpers.cli import build_directory_tree, run_command_until_success, execute_command_and_check_cli_response, debug
+from helpers.cli import build_directory_tree, run_command_until_success, execute_command_and_check_cli_response
 from const.function_calls import FILTER_OS_TECHNOLOGIES, DEVELOPMENT_PLAN, EXECUTE_COMMANDS, GET_TEST_TYPE, DEV_TASKS_BREAKDOWN, IMPLEMENT_TASK
 from database.database import save_progress, get_progress_steps, save_file_description
 from utils.utils import get_os_info
@@ -21,6 +23,7 @@ class Developer(Agent):
     def __init__(self, project):
         super().__init__('full_stack_developer', project)
         self.run_command = None
+        self.debugger = Debugger(self)
 
     def start_coding(self):
         self.project.current_step = 'coding'
@@ -59,98 +62,70 @@ class Developer(Agent):
 
         task_steps = convo_dev_task.send_message('development/parse_task.prompt', {}, IMPLEMENT_TASK)
         convo_dev_task.remove_last_x_messages(2)
-        self.execute_task(convo_dev_task, task_steps, development_task=development_task, continue_development=True)
+        self.execute_task(convo_dev_task, task_steps, development_task=development_task, continue_development=True, is_root_task=True)
 
-    def execute_task(self, convo, task_steps, test_command=None, reset_convo=True, test_after_code_changes=True, continue_development=False, development_task=None):
-        function_uuid = str(uuid.uuid4())
-        convo.save_branch(function_uuid)
+    def step_code_change(self, convo, step, i, test_after_code_changes):
+        if step['type'] == 'code_change' and 'code_change_description' in step:
+            # TODO this should be refactored so it always uses the same function call
+            print(f'Implementing code changes for `{step["code_change_description"]}`')
+            code_monkey = CodeMonkey(self.project, self)
+            updated_convo = code_monkey.implement_code_changes(convo, step['code_change_description'], i)
+            if test_after_code_changes:
+                return self.test_code_changes(code_monkey, updated_convo)
+            else:
+                return { "success": True }
 
-        for (i, step) in enumerate(task_steps):
+        elif step['type'] == 'code_change':
+            # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
+            if 'code_change' not in step:
+                data = step
+            else:
+                data = step['code_change']
+            self.project.save_file(data)
+            # TODO end
 
-            tries = 0
-            max_retry_times = 1
+    def step_command_run(self, convo, step, i):
+        # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
+        if isinstance(step['command'], str):
+            data = step
+        else:
+            data = step['command']
+        # TODO END
+        additional_message = 'Let\'s start with the step #0:\n\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i)) } are finished so let\'s do step #{i + 1} now.\n\n'
+        return run_command_until_success(data['command'], data['timeout'], convo, additional_message=additional_message)
 
-            step_uuid = str(uuid.uuid4())
-            convo.save_branch(step_uuid)
+    def step_human_intervention(self, convo, step):
+        while True:
+            human_intervention_description = step['human_intervention_description'] + colored('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`', 'yellow', attrs=['bold']) if self.run_command is not None else step['human_intervention_description']
+            response = self.project.ask_for_human_intervention('I need human intervention:',
+                human_intervention_description,
+                cbs={ 'r': lambda: run_command_until_success(self.run_command, None, convo, force=True, return_cli_response=True) })
 
-            while tries < max_retry_times:
-                tries += 1
-                try:
-                    if reset_convo:
-                        convo.load_branch(function_uuid)
+            if 'user_input' not in response:
+                continue
 
-                    if max_retry_times > 1:
-                        # this means that we are retrying the entire development step
-                        convo.load_branch(step_uuid)
+            if response['user_input'] != 'continue':
+                return_value = self.debugger.debug(convo, user_input=response['user_input'], issue_description=step['human_intervention_description'])
+                return_value['user_input'] = response['user_input']
+                return return_value
+            else:
+                return response
 
-                    if step['type'] == 'command':
-                        # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
-                        if isinstance(step['command'], str):
-                            data = step
-                        else:
-                            data = step['command']
-                        # TODO END
-                        additional_message = 'Let\'s start with the step #0:\n\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i)) } are finished so let\'s do step #{i + 1} now.\n\n'
-                        run_command_until_success(data['command'], data['timeout'], convo, additional_message=additional_message)
+    def step_test(self, convo, test_command):
+        should_rerun_command = convo.send_message('dev_ops/should_rerun_command.prompt',
+            test_command)
+        if should_rerun_command == 'NO':
+            return { "success": True }
+        elif should_rerun_command == 'YES':
+            cli_response, llm_response = execute_command_and_check_cli_response(test_command['command'], test_command['timeout'], convo)
+            if llm_response == 'NEEDS_DEBUGGING':
+                print(colored(f'Got incorrect CLI response:', 'red'))
+                print(cli_response)
+                print(colored('-------------------', 'red'))
 
-                    elif step['type'] == 'code_change' and 'code_change_description' in step:
-                        # TODO this should be refactored so it always uses the same function call
-                        print(f'Implementing code changes for `{step["code_change_description"]}`')
-                        code_monkey = CodeMonkey(self.project, self)
-                        updated_convo = code_monkey.implement_code_changes(convo, step['code_change_description'], i)
-                        if test_after_code_changes:
-                            self.test_code_changes(code_monkey, updated_convo)
+            return { "success": llm_response == 'DONE', "cli_response": cli_response, "llm_response": llm_response }
 
-                    elif step['type'] == 'code_change':
-                        # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
-                        if 'code_change' not in step:
-                            data = step
-                        else:
-                            data = step['code_change']
-                        self.project.save_file(data)
-                        # TODO end
-
-                    elif step['type'] == 'human_intervention':
-                        human_intervention_description = step['human_intervention_description'] + colored('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`', 'yellow', attrs=['bold']) if self.run_command is not None else step['human_intervention_description']
-                        user_feedback = self.project.ask_for_human_intervention('I need human intervention:',
-                            human_intervention_description,
-                            cbs={ 'r': lambda: run_command_until_success(self.run_command, None, convo, force=True) })
-
-                        if user_feedback is not None and user_feedback != 'continue':
-                            debug(convo, user_input=user_feedback, issue_description=step['human_intervention_description'])
-
-                    if test_command is not None and ('check_if_fixed' not in step or step['check_if_fixed']):
-                        should_rerun_command = convo.send_message('dev_ops/should_rerun_command.prompt',
-                            test_command)
-                        if should_rerun_command == 'NO':
-                            return True
-                        elif should_rerun_command == 'YES':
-                            cli_response, llm_response = execute_command_and_check_cli_response(test_command['command'], test_command['timeout'], convo)
-                            if llm_response == 'NEEDS_DEBUGGING':
-                                print(colored(f'Got incorrect CLI response:', 'red'))
-                                print(cli_response)
-                                print(colored('-------------------', 'red'))
-                            if llm_response == 'DONE':
-                                return True
-                except TokenLimitError as e:
-                    if max_retry_times >= MAX_COMMAND_DEBUG_TRIES:
-                        print(colored('I can\'t figure this out - sorry! Closing...'))
-                        exit(0)
-
-                    print(colored(f'\n--------- LLM Reached Token Limit ----------', 'red', attrs=['bold']))
-                    print(colored(f'Can I retry implementing the entire development step?', 'red', attrs=['bold']))
-
-                    answer = styled_text(
-                        self.project,
-                        'Type y/n'
-                    )
-
-                    if answer == 'y':
-                        max_retry_times += 1
-                    else:
-                        print(colored('Ok - exiting...', 'red', attrs=['bold']))
-                        exit(0)
-
+    def task_postprocessing(self, convo, development_task, continue_development, task_result):
         self.run_command = convo.send_message('development/get_run_command.prompt', {})
         if self.run_command.startswith('`'):
             self.run_command = self.run_command[1:]
@@ -160,22 +135,130 @@ class Developer(Agent):
         if development_task is not None:
             convo.remove_last_x_messages(2)
             detailed_user_review_goal = convo.send_message('development/define_user_review_goal.prompt', {})
+            convo.remove_last_x_messages(2)
 
-        if continue_development:
-            continue_description = detailed_user_review_goal if detailed_user_review_goal is not None else None
-            self.continue_development(convo, continue_description)
+        try:
+            if continue_development:
+                continue_description = detailed_user_review_goal if detailed_user_review_goal is not None else None
+                return self.continue_development(convo, continue_description)
+        except TooDeepRecursionError as e:
+            return self.dev_help_needed(e.message)
+
+        return task_result
+
+    def should_retry_step_implementation(self, step, step_implementation_try):
+        if step_implementation_try >= MAX_COMMAND_DEBUG_TRIES:
+            self.dev_help_needed(step)
+
+        print(colored(f'\n--------- LLM Reached Token Limit ----------', 'red', attrs=['bold']))
+        print(colored(f'Can I retry implementing the entire development step?', 'red', attrs=['bold']))
+
+        answer = ''
+        while answer != 'y':
+            answer = styled_text(
+                self.project,
+                'Type y/n'
+            )
+
+            if answer == 'n':
+                return self.dev_help_needed(step)
+
+        return { "success": False, "retry": True }
+
+    def dev_help_needed(self, description):
+
+        # TODO remove this
+        def extract_substring(s):
+            start_idx = s.find('```')
+            end_idx = s.find('```', start_idx + 3)
+
+            if start_idx != -1 and end_idx != -1:
+                return s[start_idx + 3:end_idx]
+            else:
+                return s
+        # TODO end
+
+        answer = ''
+        while answer != 'continue':
+            print(colored(f'\n----------------------------- I need your help ------------------------------', 'red', attrs=['bold']))
+            print(colored(f'Please implement the following task', 'red', attrs=['bold']))
+
+            print(colored(extract_substring(description), 'red'))
+            print(colored(f'\n-----------------------------------------------------------------------------', 'red', attrs=['bold']))
+            answer = styled_text(
+                self.project,
+                'Once you\'re done, type "continue"?'
+            )
+
+        return { "success": True, "user_input": answer }
+
+    def execute_task(self, convo, task_steps, test_command=None, reset_convo=True,
+                     test_after_code_changes=True, continue_development=False,
+                     development_task=None, is_root_task=False):
+        function_uuid = str(uuid.uuid4())
+        convo.save_branch(function_uuid)
+
+        for (i, step) in enumerate(task_steps):
+
+            result = None
+            step_implementation_try = 0
+
+            while True:
+                try:
+                    if reset_convo:
+                        convo.load_branch(function_uuid)
+
+                    if step['type'] == 'command':
+                        result = self.step_command_run(convo, step, i)
+
+                    elif step['type'] == 'code_change':
+                        result = self.step_code_change(convo, step, i, test_after_code_changes)
+
+                    elif step['type'] == 'human_intervention':
+                        result = self.step_human_intervention(convo, step)
+
+                    if test_command is not None and ('check_if_fixed' not in step or step['check_if_fixed']):
+                        is_fixed = self.step_test(convo, test_command)
+                        if is_fixed['success']:
+                            return is_fixed
+                        else:
+                            result = is_fixed
+
+                    break
+                except TokenLimitError as e:
+                    if is_root_task:
+                        response = self.should_retry_step_implementation(step, step_implementation_try)
+                        if 'retry' in response:
+                            # TODO we can rewind this convo even more
+                            convo.load_branch(function_uuid)
+                            continue
+                        elif 'success' in response:
+                            result = response
+                            break
+                    else:
+                        raise e
+                except TooDeepRecursionError as e:
+                    if is_root_task:
+                        result = self.dev_help_needed(step)
+                        break
+                    else:
+                        raise e
+
+        convo.load_branch(function_uuid)
+        return self.task_postprocessing(convo, development_task, continue_development, result)
 
     def continue_development(self, iteration_convo, continue_description=''):
         while True:
             user_description = ('Here is a description of what should be working: \n\n' + colored(continue_description, 'blue', attrs=['bold']) + '\n') if continue_description != '' else ''
             user_description = 'Can you check if the app works please? ' + user_description + '\nIf you want to run the app, ' + colored('just type "r" and press ENTER and that will run `' + self.run_command + '`', 'yellow', attrs=['bold'])
-            continue_description = ''
-            user_feedback = self.project.ask_for_human_intervention(
+            # continue_description = ''
+            response = self.project.ask_for_human_intervention(
                 user_description,
-                cbs={ 'r': lambda: run_command_until_success(self.run_command, None, iteration_convo, force=True) })
+                cbs={ 'r': lambda: run_command_until_success(self.run_command, None, iteration_convo, force=True, return_cli_response=True, is_root_task=True) })
 
+            user_feedback = response['user_input'] if 'user_input' in response else None
             if user_feedback == 'continue':
-                return True
+                return { "success": True, "user_input": user_feedback }
 
             if user_feedback is not None:
                 iteration_convo = AgentConvo(self)
@@ -192,11 +275,12 @@ class Developer(Agent):
                     "user_input": user_feedback,
                 })
 
-                # debug(iteration_convo, user_input=user_feedback)
+                # self.debugger.debug(iteration_convo, user_input=user_feedback)
 
                 task_steps = iteration_convo.send_message('development/parse_task.prompt', {}, IMPLEMENT_TASK)
                 iteration_convo.remove_last_x_messages(2)
-                self.execute_task(iteration_convo, task_steps, continue_development=False)
+
+                self.execute_task(iteration_convo, task_steps, is_root_task=True)
 
 
     def set_up_environment(self):
@@ -274,17 +358,24 @@ class Developer(Agent):
             GET_TEST_TYPE)
 
         if test_type == 'command_test':
-            run_command_until_success(command['command'], command['timeout'], convo)
+            return run_command_until_success(command['command'], command['timeout'], convo)
         elif test_type == 'automated_test':
-            code_monkey.implement_code_changes(convo, automated_test_description, 0)
+            # TODO get code monkey to implement the automated test
+            pass
         elif test_type == 'manual_test':
             # TODO make the message better
-            user_feedback = self.project.ask_for_human_intervention(
+            response = self.project.ask_for_human_intervention(
                 'Message from Pilot: I need your help. Can you please test if this was successful?',
                 manual_test_description
             )
-            if user_feedback is not None:
-                debug(convo, user_input=user_feedback, issue_description=manual_test_description)
+
+            user_feedback = response['user_input']
+            if user_feedback is not None and user_feedback != 'continue':
+                return_value = self.debugger.debug(convo, user_input=user_feedback, issue_description=manual_test_description)
+                return_value['user_input'] = user_feedback
+                return return_value
+            else:
+                return { "success": True, "user_input": user_feedback }
 
     def implement_step(self, convo, step_index, type, description):
         # TODO remove hardcoded folder path

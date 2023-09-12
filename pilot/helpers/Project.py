@@ -290,4 +290,4 @@ class Project:
             if answer in cbs:
                 return cbs[answer]()
             elif answer != '':
-                return answer
+                return { 'user_input': answer }

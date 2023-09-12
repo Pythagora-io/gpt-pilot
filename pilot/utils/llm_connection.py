@@ -123,7 +123,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
 
         # Check if the error message is related to token limit
         if "context_length_exceeded" in error_message.lower():
-            raise Exception(f'Too many tokens in the request. Please try to continue the project with some previous development step.')
+            raise TokenLimitError(tokens_in_messages + min_tokens, MAX_GPT_MODEL_TOKENS)
         else:
             print('The request to OpenAI API failed. Here is the error message:')
             print(e)
@@ -153,7 +153,7 @@ def retry_on_exception(func):
 
                 # If the specific error "context_length_exceeded" is present, simply return without retry
                 if "context_length_exceeded" in err_str:
-                    raise Exception("context_length_exceeded")
+                    raise TokenLimitError(tokens_in_messages + min_tokens, MAX_GPT_MODEL_TOKENS)
 
                 print(colored(f'There was a problem with request to openai API:', 'red'))
                 print(err_str)

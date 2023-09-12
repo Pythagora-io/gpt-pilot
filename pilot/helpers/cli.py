@@ -10,6 +10,7 @@ import platform
 from termcolor import colored
 from database.database import get_command_run_from_hash_id, save_command_run
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
+from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
 
 from utils.questionary import styled_text
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MIN_COMMAND_RUN_TIME, MAX_COMMAND_RUN_TIME, MAX_COMMAND_OUTPUT_LENGTH
@@ -251,7 +252,7 @@ def execute_command_and_check_cli_response(command, timeout, convo):
         { 'cli_response': cli_response, 'command': command })
     return cli_response, response
 
-def run_command_until_success(command, timeout, convo, additional_message=None, force=False):
+def run_command_until_success(command, timeout, convo, additional_message=None, force=False, return_cli_response=False, is_root_task=False):
     """
     Run a command until it succeeds or reaches a timeout.
 
@@ -271,55 +272,13 @@ def run_command_until_success(command, timeout, convo, additional_message=None, 
         print(cli_response)
         print(colored('-------------------', 'red'))
 
-        debug(convo, {'command': command, 'timeout': timeout})
-
-
-
-def debug(convo, command=None, user_input=None, issue_description=None):
-    """
-    Debug a conversation.
-
-    Args:
-        convo (AgentConvo): The conversation object.
-        command (dict, optional): The command to debug. Default is None.
-        user_input (str, optional): User input for debugging. Default is None.
-        issue_description (str, optional): Description of the issue to debug. Default is None.
-
-    Returns:
-        bool: True if debugging was successful, False otherwise.
-    """
-    function_uuid = str(uuid.uuid4())
-    convo.save_branch(function_uuid)
-    success = False
-
-    for i in range(MAX_COMMAND_DEBUG_TRIES):
-        if success:
-            break
-
-        convo.load_branch(function_uuid)
-
-        debugging_plan = convo.send_message('dev_ops/debug.prompt',
-            { 'command': command['command'] if command is not None else None, 'user_input': user_input, 'issue_description': issue_description },
-            DEBUG_STEPS_BREAKDOWN)
-
-        # TODO refactor to nicely get the developer agent
-        success = convo.agent.project.developer.execute_task(
-            convo,
-            debugging_plan,
-            command,
-            False,
-            False)
-
-
-    if not success:
-        # TODO explain better how should the user approach debugging
-        # we can copy the entire convo to clipboard so they can paste it in the playground
-        user_input = convo.agent.project.ask_for_human_intervention(
-            'It seems like I cannot debug this problem by myself. Can you please help me and try debugging it yourself?' if user_input is None else f'Can you check this again:\n{issue_description}?',
-            command
-        )
-
-        if user_input == 'continue':
-            success = True
-
-    return success
+        try:
+            # This catch is necessary to return the correct value (cli_response) to continue development function so
+            # the developer can debug the appropriate issue
+            # this snippet represents the first entry point into debugging recursion because of return_cli_response
+            return convo.agent.debugger.debug(convo, {'command': command, 'timeout': timeout}, is_root_task=is_root_task)
+        except TooDeepRecursionError as e:
+            # this is only to put appropriate message in the response after TooDeepRecursionError is raised
+            raise TooDeepRecursionError(cli_response) if return_cli_response else e
+    else:
+        return { 'success': True, 'cli_response': cli_response }
