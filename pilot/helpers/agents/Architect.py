@@ -4,11 +4,13 @@ import json
 from termcolor import colored
 from const.function_calls import ARCHITECTURE
 
-from utils.utils import execute_step, find_role_from_step, generate_app_data
+from utils.utils import should_execute_step, find_role_from_step, generate_app_data
 from database.database import save_progress, get_progress_steps
 from logger.logger import logger
 from prompts.prompts import get_additional_info_from_user
 from helpers.AgentConvo import AgentConvo
+
+ARCHITECTURE_STEP = 'architecture'
 
 
 class Architect(Agent):
@@ -17,12 +19,11 @@ class Architect(Agent):
         self.convo_architecture = None
 
     def get_architecture(self):
-        self.project.current_step = 'architecture'
-        self.convo_architecture = AgentConvo(self)
+        self.project.current_step = ARCHITECTURE_STEP
 
         # If this app_id already did this step, just get all data from DB and don't ask user again
-        step = get_progress_steps(self.project.args['app_id'], self.project.current_step)
-        if step and not execute_step(self.project.args['step'], self.project.current_step):
+        step = get_progress_steps(self.project.args['app_id'], ARCHITECTURE_STEP)
+        if step and not should_execute_step(self.project.args['step'], ARCHITECTURE_STEP):
             step_already_finished(self.project.args, step)
             return step['architecture']
 
@@ -30,6 +31,7 @@ class Architect(Agent):
         print(colored(f"Planning project architecture...\n", "green", attrs=['bold']))
         logger.info(f"Planning project architecture...")
 
+        self.convo_architecture = AgentConvo(self)
         architecture = self.convo_architecture.send_message('architecture/technologies.prompt',
             {'name': self.project.args['name'],
              'prompt': self.project.project_description,
