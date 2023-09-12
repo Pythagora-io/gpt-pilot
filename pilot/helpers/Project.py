@@ -277,7 +277,9 @@ class Project:
     def ask_for_human_intervention(self, message, description=None, cbs={}):
         print(colored(message, "yellow", attrs=['bold']))
         if description is not None:
-            print(description)
+            print('\n' + '-'*100 + '\n' +
+                colored(description, 'white', attrs=['bold']) +
+                '\n' + '-'*100 + '\n')
         answer = ''
         while answer != 'continue':
             answer = styled_text(
