@@ -39,15 +39,21 @@ class Developer(Agent):
 
     def implement_task(self):
         convo_dev_task = AgentConvo(self)
+        # TODO: why "This should be a simple version of the app so you don't need to aim to provide a production ready code"?
+        # TODO: why `no_microservices`? Is that even applicable?
         task_description = convo_dev_task.send_message('development/task/breakdown.prompt', {
             "name": self.project.args['name'],
             "app_type": self.project.args['app_type'],
             "app_summary": self.project.project_description,
             "clarification": [],
+            # TODO: why all stories at once?
             "user_stories": self.project.user_stories,
             # "user_tasks": self.project.user_tasks,
+            # TODO: "I'm currently in an empty folder" may not always be true?
             "technologies": self.project.architecture,
+            # TODO: `array_of_objects_to_string` does not seem to be used by the prompt template?
             "array_of_objects_to_string": array_of_objects_to_string,
+            # TODO: prompt lists `files` if `current_task_index` != 0
             "directory_tree": self.project.get_directory_tree(True),
         })
 
