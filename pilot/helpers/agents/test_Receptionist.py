@@ -25,7 +25,8 @@ class TestReceptionist:
 
         self.receptionist = Receptionist(self.project)
 
-    def test_route_ProductOwner(self):
+    @patch('helpers.AgentConvo.get_development_step_from_hash_id', return_value=None)
+    def test_route_ProductOwner(self, mock_get_dev):
         # Given
         mock_value = {'function_calls': {'arguments': {'agent': 'ProductOwner'}, 'name': 'route_initial_input'}}
 
@@ -35,7 +36,8 @@ class TestReceptionist:
         # Then
         assert route == 'ProductOwner'
 
-    def test_route_CodeMonkey(self):
+    @patch('helpers.AgentConvo.get_development_step_from_hash_id', return_value=None)
+    def test_route_CodeMonkey(self, mock_get_dev):
         # Given
         mock_value = {'function_calls': {'arguments': {'agent': 'CodeMonkey'}, 'name': 'route_initial_input'}}
 
