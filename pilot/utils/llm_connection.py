@@ -4,9 +4,13 @@ import sys
 import json
 import tiktoken
 import questionary
+import inspect
 
 from typing import List
 from jinja2 import Environment, FileSystemLoader
+
+import os
+import openai
 
 from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS, MAX_QUESTIONS, END_RESPONSE
 from logger.logger import logger
@@ -14,10 +18,15 @@ from termcolor import colored
 from utils.utils import get_prompt_components, fix_json
 from utils.spinner import spinner_start, spinner_stop
 
+# Azure API config
+openai.api_type = "azure"
+openai.api_base = os.getenv("AZURE_OPENAI_ENDPOINT")
+openai.api_version = "2023-07-01-preview"
+openai.api_key = os.getenv("AZURE_API_KEY")
+azure_deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
 
 def connect_to_llm():
     pass
-
 
 def get_prompt(prompt_name, data=None):
     if data is None:
@@ -83,7 +92,20 @@ def num_tokens_from_functions(functions, model="gpt-4"):
     num_tokens += 12
     return num_tokens
 
+def check_args(function, args):
+    sig = inspect.signature(function)
+    params = sig.parameters
 
+    # Check if there are extra arguments
+    for name in args:
+        if name not in params:
+            return False
+    # Check if the required arguments are provided 
+    for name, param in params.items():
+        if param.default is param.empty and name not in args:
+            return False
+
+    return True
 def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TOKENS_FOR_GPT_RESPONSE,
                                function_calls=None):
     tokens_in_messages = round(get_tokens_in_messages(messages) * 1.2)  # add 20% to account for not 100% accuracy
@@ -111,14 +133,105 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
             gpt_data['function_call'] = 'auto'
         else:
             gpt_data['function_call'] = {'name': function_calls['definitions'][0]['name']}
+    else:
+        gpt_data['functions'] = []
+        gpt_data['function_call'] = 'auto'
+    # try:
+    #     response = stream_gpt_completion(gpt_data, req_type)
+    #     return response
+    # except Exception as e:
+    #     print(
+    #         'The request to OpenAI API failed. Here is the error message:')
+    #     print(e)
+    # console.log(gpt_data[messages])
+    # print(gpt_data['messages'])
+    while True:
+        try:
+            if function_calls is None:
+                response = openai.ChatCompletion.create(
+                engine=azure_deployment_name,
+                messages = gpt_data['messages'],
+                temperature=0.7,
+                max_tokens=800,
+                top_p=0.95,
+                frequency_penalty=0,
+                presence_penalty=0,
+                stop=None
+                )
+            else:
+                response = openai.ChatCompletion.create(
+                engine=azure_deployment_name,
+                messages = gpt_data['messages'],
+                functions= gpt_data['functions'],
+                function_call=gpt_data['function_call'],
+                # temperature=0.7,
+                max_tokens=16000,
+                # top_p=0.95,
+                frequency_penalty=0,
+                presence_penalty=0,
+                # stop=None
+                )
+            # logger.info(f'Response message: {response["choices"][0]["message"]["content"]}')
+            while response["choices"][0]["finish_reason"] == 'function_call' or \
+                    (response["choices"][0]["finish_reason"] == 'stop' and "function_call" in response["choices"][0]["message"]):
+                response_message = response["choices"][0]["message"]
+                print("Recommended Function call:")
+                print(response_message.get("function_call"))
+                print()
+                
+                # Step 3: call the function
+                # Note: the JSON response may not always be valid; be sure to handle errors
+                
+                function_name = response_message["function_call"]["name"]
+                return {"function_calls":{
+                    "name":function_name,
+                    "arguments": json.loads(response_message["function_call"]["arguments"])
+                }}
+                
+                # # Step 4: send the info on the function call and function response to GPT
+                
+                # # adding assistant response to messages
+                # messages.append(
+                #     {
+                #         "role": response_message["role"],
+                #         "function_call": {
+                #             "name": response_message["function_call"]["name"],
+                #             "arguments": response_message["function_call"]["arguments"],
+                #         },
+                #         "content": None
+                #     }
+                # )
 
-    try:
-        response = stream_gpt_completion(gpt_data, req_type)
-        return response
-    except Exception as e:
-        print(
-            'The request to OpenAI API failed. Here is the error message:')
-        print(e)
+                # # adding function response to messages
+                # messages.append(
+                #     {
+                #         "role": "function",
+                #         "name": function_name,
+                #         "content": function_response,
+                #     }
+                # )  # extend conversation with function response
+
+                # print("Messages in next request:")
+                # for message in messages:
+                #     print(message)
+                # print()
+            return {"text":response["choices"][0]["message"]["content"]}
+
+            # return response["choices"][0]["message"]["content"]
+        
+        except Exception as e:
+            print(colored(f'There was a problem with request to openai API:', 'red'))
+            print(str(e))
+
+            user_message = questionary.text(
+                "Do you want to try make the same request again? If yes, just press ENTER. Otherwise, type 'no'.",
+                style=questionary.Style([
+                    ('question', 'fg:red'),
+                    ('answer', 'fg:orange')
+                ])).ask()
+
+            if user_message != '':
+                return {}
 
 
 def delete_last_n_lines(n):

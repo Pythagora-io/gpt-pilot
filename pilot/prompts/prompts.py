@@ -74,9 +74,11 @@ def get_additional_info_from_openai(project, messages):
         response = create_gpt_chat_completion(messages, 'additional_info')
 
         if response is not None:
-            if response['text'].strip() == END_RESPONSE:
-                print(response['text'] + '\n')
-                return messages
+            # if response['text'].strip() == END_RESPONSE:
+            if END_RESPONSE in response['text']:
+                logger.info('END_RESPONSE is triggered')
+                if ask_user(project, "is_complete") == "yes":
+                    return messages
 
             # Ask the question to the user
             answer = ask_user(project, response['text'])

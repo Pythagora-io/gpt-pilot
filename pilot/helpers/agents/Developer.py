@@ -123,12 +123,13 @@ class Developer(Agent):
         if self.run_command.endswith('`'):
             self.run_command = self.run_command[:-1]
 
-        if development_task is not None:
-            convo.remove_last_x_messages(2)
-            detailed_user_review_goal = convo.send_message('development/define_user_review_goal.prompt', {})
+        # if development_task is not None:
+        #     convo.remove_last_x_messages(2)
+        #     detailed_user_review_goal = convo.send_message('development/define_user_review_goal.prompt', {})
 
         if continue_development:
-            continue_description = detailed_user_review_goal if detailed_user_review_goal is not None else None
+            # continue_description = detailed_user_review_goal if detailed_user_review_goal is not None else None
+            continue_description = ''
             self.continue_development(convo, continue_description)
 
     def continue_development(self, iteration_convo, continue_description=''):

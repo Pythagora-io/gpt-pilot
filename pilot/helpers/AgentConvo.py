@@ -22,6 +22,8 @@ class AgentConvo:
         self.messages.append(get_sys_message(self.agent.role))
 
     def send_message(self, prompt_path=None, prompt_data=None, function_calls=None):
+        # print("send_message to openai")
+        # return
         # craft message
         self.construct_and_add_message_from_prompt(prompt_path, prompt_data)
 
@@ -89,7 +91,8 @@ class AgentConvo:
 
         # Continue conversation until GPT response equals END_RESPONSE
         while response != END_RESPONSE:
-            print(colored("Do you want to add anything else? If not, ", 'yellow') + colored('just press ENTER.', 'yellow', attrs=['bold']))
+        # while response['text'].strip() != END_RESPONSE:
+            # print(colored("Do you want to add anything else? If not, ", 'yellow') + colored('just press ENTER.', 'yellow', attrs=['bold']))
             user_message = ask_user(self.agent.project, response, False)
 
             if user_message == "":
