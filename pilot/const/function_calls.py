@@ -112,6 +112,29 @@ COMMANDS_TO_RUN = {
     },
 }
 
+ROUTE_INITIAL_INPUT = {
+    'definitions': [
+        {
+            'name': 'route_initial_input',
+            'description': 'Routes the user to the agent best suited to handle a call.',
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'agent': {
+                        'type': 'string',
+                        'description': 'Name of the agent that is best suited to handle a call.',
+                        'enum': ['ProductOwner', 'Architect', 'TechLead', 'Developer', 'CodeMonkey'],
+                    },
+                },
+                'required': ['agent'],
+            },
+        },
+    ],
+    'functions': {
+        'route_initial_input': lambda agent: agent
+    },
+}
+
 DEV_TASKS_BREAKDOWN = {
     'definitions': [
         {

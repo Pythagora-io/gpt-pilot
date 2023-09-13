@@ -1,3 +1,4 @@
+from unittest.mock import Mock
 from .utils import should_execute_step
 
 
@@ -17,3 +18,9 @@ class TestShouldExecuteStep:
         assert should_execute_step('unknown', 'project_description') is False
         assert should_execute_step('unknown', None) is False
         assert should_execute_step(None, None) is False
+
+
+def mock_terminal_size():
+    mock_size = Mock()
+    mock_size.columns = 80  # or whatever width you want
+    return mock_size
