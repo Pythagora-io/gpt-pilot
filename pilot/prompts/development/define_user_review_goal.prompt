@@ -1,0 +1,8 @@
+How can a human user test if this task was completed successfully? If you specify a command that needs to be run or give example, be very specific. You don't want the user to have to think anything through but rather that they jsut follow your instructions.
+
+!IMPORTANT!
+In case the task can be tested by making an API request, do not suggest how can a request be made with Postman but rather write a full cURL command that the user can just run.
+!IMPORTANT!
+Do not require any code writing form the user for testing this task.
+
+If it is difficult to test the task, you can just write that there is nothing specific to test and that the best thing is to move on to another task. If this is the case, answer with only this sentence - `There is nothing specific to test for this task so you can write "continue" and we'll move on to the next task.`
