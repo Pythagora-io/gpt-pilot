@@ -1,6 +1,6 @@
 import json
 import uuid
-from termcolor import colored
+from fabulous.color import yellow, green, red, bold
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
@@ -32,7 +32,7 @@ class Developer(Agent):
             self.project.skip_steps = False if ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0') else True
 
         # DEVELOPMENT
-        print(colored(f"Ok, great, now, let's start with the actual development...\n", "green", attrs=['bold']))
+        print(green(bold(f"Ok, great, now, let's start with the actual development...\n")))
         logger.info(f"Starting to create the actual code...")
 
         for i, dev_task in enumerate(self.project.development_plan):
@@ -301,7 +301,7 @@ class Developer(Agent):
         })
         return
         # ENVIRONMENT SETUP
-        print(colored(f"Setting up the environment...\n", "green"))
+        print(green(f"Setting up the environment...\n"))
         logger.info(f"Setting up the environment...")
 
         os_info = get_os_info()

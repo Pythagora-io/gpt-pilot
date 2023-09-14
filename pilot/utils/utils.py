@@ -1,13 +1,15 @@
 # utils/utils.py
 
+import datetime
 import os
 import platform
+import uuid
 import distro
 import json
 import hashlib
 import re
 from jinja2 import Environment, FileSystemLoader
-from termcolor import colored
+from fabulous.color import green
 
 from const.llm import MAX_QUESTIONS, END_RESPONSE
 from const.common import ROLES, STEPS
@@ -119,7 +121,7 @@ def step_already_finished(args, step):
     args.update(step['app_data'])
 
     message = f"{capitalize_first_word_with_underscores(step['step'])} already done for this app_id: {args['app_id']}. Moving to next step..."
-    print(colored(message, "green"))
+    print(green(message))
     logger.info(message)
 
 
@@ -171,3 +173,12 @@ def clean_filename(filename):
     cleaned_filename = re.sub(r'\s', '_', cleaned_filename)
 
     return cleaned_filename
+
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    if isinstance(obj, (datetime.datetime, datetime.date)):
+        return obj.isoformat()
+    elif isinstance(obj, uuid.UUID):
+        return str(obj)
+    else:
+        return str(obj)

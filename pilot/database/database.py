@@ -1,6 +1,6 @@
 from playhouse.shortcuts import model_to_dict
 from peewee import *
-from termcolor import colored
+from fabulous.color import yellow, red
 from functools import reduce
 import operator
 import psycopg2
@@ -26,6 +26,28 @@ from database.models.command_runs import CommandRuns
 from database.models.user_inputs import UserInputs
 from database.models.files import File
 
+DB_NAME = os.getenv("DB_NAME")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+
+def get_created_apps():
+    return [model_to_dict(app) for app in App.select()]
+
+def get_created_apps_with_steps():
+    apps = get_created_apps()
+    for app in apps:
+        app['id'] = str(app['id'])
+        app['steps'] = get_progress_steps(app['id'])
+        app['development_steps'] = get_all_app_development_steps(app['id'])
+        # TODO this is a quick way to remove the unnecessary fields from the response
+        app['steps'] = {outer_k: {k: v for k, v in inner_d.items() if k in {'created_at', 'completeted_at', 'completed'}} if inner_d is not None else None for outer_k, inner_d in app['steps'].items()}
+        app['development_steps'] = [{k: v for k, v in dev_step.items() if k in {'id', 'created_at'}} for dev_step in app['development_steps']]
+    return apps
+
+def get_all_app_development_steps(app_id):
+    return [model_to_dict(dev_step) for dev_step in DevelopmentSteps.select().where(DevelopmentSteps.app == app_id)]
 
 def save_user(user_id, email, password):
     try:
@@ -188,7 +210,7 @@ def hash_and_save_step(Model, app_id, hash_data_args, data_fields, message):
                        .execute())
 
         record = Model.get_by_id(inserted_id)
-        logger.debug(colored(f"{message} with id {record.id}", "yellow"))
+        logger.debug(yellow(f"{message} with id {record.id}"))
     except IntegrityError:
         print(f"A record with hash_id {hash_id} already exists for {Model.__name__}.")
         return None
@@ -299,7 +321,7 @@ def delete_all_subsequent_steps(project):
 def delete_subsequent_steps(model, step):
     if step is None:
         return
-    logger.info(colored(f"Deleting subsequent {model.__name__} steps after {step.id}", "red"))
+    logger.info(red(f"Deleting subsequent {model.__name__} steps after {step.id}"))
     subsequent_steps = model.select().where(model.previous_step == step.id)
     for subsequent_step in subsequent_steps:
         if subsequent_step:
@@ -335,7 +357,7 @@ def delete_unconnected_steps_from(step, previous_step_field_name):
     ).order_by(DevelopmentSteps.id.desc())
 
     for unconnected_step in unconnected_steps:
-        print(colored(f"Deleting unconnected {step.__class__.__name__} step {unconnected_step.id}", "red"))
+        print(red(f"Deleting unconnected {step.__class__.__name__} step {unconnected_step.id}"))
         unconnected_step.delete_instance()
 
 

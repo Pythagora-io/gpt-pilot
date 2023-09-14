@@ -10,14 +10,10 @@ from jinja2 import Environment, FileSystemLoader
 
 from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS, MAX_QUESTIONS, END_RESPONSE
 from logger.logger import logger
-from termcolor import colored
+from fabulous.color import red
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from utils.utils import get_prompt_components, fix_json
 from utils.spinner import spinner_start, spinner_stop
-
-
-def connect_to_llm():
-    pass
 
 
 def get_prompt(prompt_name, data=None):
@@ -78,8 +74,6 @@ def num_tokens_from_functions(functions, model=model):
                             for o in v['enum']:
                                 function_tokens += 3
                                 function_tokens += len(encoding.encode(o))
-                        # else:
-                        #     print(f"Warning: not supported field {field}")
                 function_tokens += 11
 
         num_tokens += function_tokens
@@ -89,7 +83,8 @@ def num_tokens_from_functions(functions, model=model):
 
 
 def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TOKENS_FOR_GPT_RESPONSE,
-                               function_calls=None):
+    function_calls=None):
+
     tokens_in_messages = round(get_tokens_in_messages(messages) * 1.2)  # add 20% to account for not 100% accuracy
     if function_calls is not None:
         tokens_in_messages += round(
@@ -173,7 +168,8 @@ def retry_on_exception(func):
 
 @retry_on_exception
 def stream_gpt_completion(data, req_type):
-    terminal_width = os.get_terminal_size().columns
+    # TODO add type dynamically - this isn't working when connected to the external process
+    terminal_width = 50#os.get_terminal_size().columns
     lines_printed = 2
     buffer = ""  # A buffer to accumulate incoming data
 
@@ -187,6 +183,7 @@ def stream_gpt_completion(data, req_type):
 
     # spinner = spinner_start(colored("Waiting for OpenAI API response...", 'yellow'))
     # print(colored("Stream response from OpenAI:", 'yellow'))
+    api_key = os.getenv("OPENAI_API_KEY")
 
     logger.info(f'Request data: {data}')
 
@@ -216,6 +213,7 @@ def stream_gpt_completion(data, req_type):
 
     gpt_response = ''
     function_calls = {'name': '', 'arguments': ''}
+
 
     for line in response.iter_lines():
         # Ignore keep-alive new lines
@@ -252,7 +250,7 @@ def stream_gpt_completion(data, req_type):
 
                 if 'arguments' in json_line['function_call']:
                     function_calls['arguments'] += json_line['function_call']['arguments']
-                    print(json_line['function_call']['arguments'], end='', flush=True)
+                    print(json_line['function_call']['arguments'], type='stream', end='', flush=True)
 
             if 'content' in json_line:
                 content = json_line.get('content')
@@ -265,9 +263,9 @@ def stream_gpt_completion(data, req_type):
                         buffer = ""  # reset the buffer
 
                     gpt_response += content
-                    print(content, end='', flush=True)
+                    print(content, type='stream', end='', flush=True)
 
-    print('\n')
+    print('\n', type='stream')
     if function_calls['arguments'] != '':
         logger.info(f'Response via function call: {function_calls["arguments"]}')
         function_calls['arguments'] = load_data_to_json(function_calls['arguments'])

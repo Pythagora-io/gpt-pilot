@@ -1,6 +1,6 @@
 # prompts/prompts.py
 
-from termcolor import colored
+from fabulous.color import yellow
 import questionary
 
 from const import common
@@ -102,14 +102,13 @@ def get_additional_info_from_user(project,  messages, role):
         while True:
             if isinstance(message, dict) and 'text' in message:
                 message = message['text']
-            print(colored(
-                f"Please check this message and say what needs to be changed. If everything is ok just press ENTER",
-                "yellow"))
+            print(yellow(f"Please check this message and say what needs to be changed. If everything is ok just press ENTER",))
             answer = ask_user(project, message, False)
             if answer.lower() == '':
                 break
             response = create_gpt_chat_completion(
-                generate_messages_from_custom_conversation(role, [get_prompt('utils/update.prompt'), message, answer], 'user'), 'additional_info')
+                generate_messages_from_custom_conversation(role, [get_prompt('utils/update.prompt'), message, answer], 'user'),
+                'additional_info')
 
             message = response
 

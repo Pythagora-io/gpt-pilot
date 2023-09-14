@@ -1,9 +1,13 @@
+import json
 import os
+import time
 
-from termcolor import colored
+from fabulous.color import bold, green, yellow
 from const.common import IGNORE_FOLDERS, STEPS
 from database.models.app import App
 from database.database import get_app, delete_unconnected_steps_from, delete_all_app_development_data
+from helpers.ipc import IPCClient
+from const.ipc import MESSAGE_TYPE
 from utils.questionary import styled_text
 from helpers.files import get_files_content, clear_directory, update_file
 from helpers.cli import build_directory_tree
@@ -20,7 +24,7 @@ from utils.files import get_parent_folder
 
 class Project:
     def __init__(self, args, name=None, description=None, user_stories=None, user_tasks=None, architecture=None,
-                 development_plan=None, current_step=None):
+                 development_plan=None, current_step=None, ipc_client_instance=None):
         """
         Initialize a project.
 
@@ -47,6 +51,9 @@ class Project:
         self.root_path = ''
         self.skip_until_dev_step = None
         self.skip_steps = None
+
+        self.ipc_client_instance = ipc_client_instance
+
         # self.restore_files({dev_step_id_to_start_from})
 
         if current_step is not None:
@@ -64,15 +71,29 @@ class Project:
         # if development_plan is not None:
         #     self.development_plan = development_plan
 
+        print(green(bold('\n------------------ STARTING NEW PROJECT ----------------------')))
+        print(f"If you wish to continue with this project in future run:")
+        print(green(bold(f'python main.py app_id={args["app_id"]}')))
+        print(green(bold('--------------------------------------------------------------\n')))
+
     def start(self):
         """
         Start the project.
         """
         self.project_manager = ProductOwner(self)
+        print(json.dumps({
+            "project_stage": "project_description"
+        }), type='info')
         self.project_manager.get_project_description()
+        print(json.dumps({
+            "project_stage": "user_stories"
+        }), type='info')
         self.user_stories = self.project_manager.get_user_stories()
         # self.user_tasks = self.project_manager.get_user_tasks()
 
+        print(json.dumps({
+            "project_stage": "architecture"
+        }), type='info')
         self.architect = Architect(self)
         self.architecture = self.architect.get_architecture()
 
@@ -111,6 +132,15 @@ class Project:
                         break
         # TODO END
 
+        self.developer = Developer(self)
+        print(json.dumps({
+            "project_stage": "environment_setup"
+        }), type='info')
+        self.developer.set_up_environment();
+
+        print(json.dumps({
+            "project_stage": "coding"
+        }), type='info')
         self.developer.start_coding()
 
     def get_directory_tree(self, with_descriptions=False):
@@ -275,7 +305,7 @@ class Project:
         delete_unconnected_steps_from(self.checkpoints['last_user_input'], 'previous_step')
 
     def ask_for_human_intervention(self, message, description=None, cbs={}):
-        print(colored(message, "yellow", attrs=['bold']))
+        print(yellow(bold(message)))
         if description is not None:
             print('\n' + '-'*100 + '\n' +
                 colored(description, 'white', attrs=['bold']) +
@@ -291,3 +321,14 @@ class Project:
                 return cbs[answer]()
             elif answer != '':
                 return { 'user_input': answer }
+
+    def log(self, text, message_type):
+        if self.ipc_client_instance is None or self.ipc_client_instance.client is None:
+            print(text)
+        else:
+            self.ipc_client_instance.send({
+                'type': MESSAGE_TYPE[message_type],
+                'content': str(text),
+            })
+            if message_type == MESSAGE_TYPE['user_input_request']:
+                return self.ipc_client_instance.listen()
