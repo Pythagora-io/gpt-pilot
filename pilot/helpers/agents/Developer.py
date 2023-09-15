@@ -1,6 +1,6 @@
 import json
 import uuid
-from fabulous.color import yellow, green, red, bold
+from fabulous.color import yellow, green, red, bold, blue, white
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
@@ -43,7 +43,7 @@ class Developer(Agent):
         logger.info('The app is DONE!!! Yay...you can use it now.')
 
     def implement_task(self, i, development_task=None):
-        print(colored(f'Implementing task #{i + 1}: ', 'green', attrs=['bold']) + colored(f' {development_task["description"]}\n', 'green'));
+        print(green(bold(f'Implementing task #{i + 1}: ')) + green(f' {development_task["description"]}\n'))
 
         convo_dev_task = AgentConvo(self)
         task_description = convo_dev_task.send_message('development/task/breakdown.prompt', {
@@ -96,7 +96,7 @@ class Developer(Agent):
 
     def step_human_intervention(self, convo, step):
         while True:
-            human_intervention_description = step['human_intervention_description'] + colored('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`', 'yellow', attrs=['bold']) if self.run_command is not None else step['human_intervention_description']
+            human_intervention_description = step['human_intervention_description'] + yellow(bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')) if self.run_command is not None else step['human_intervention_description']
             response = self.project.ask_for_human_intervention('I need human intervention:',
                 human_intervention_description,
                 cbs={ 'r': lambda: run_command_until_success(self.run_command, None, convo, force=True, return_cli_response=True) })
@@ -119,9 +119,9 @@ class Developer(Agent):
         elif should_rerun_command == 'YES':
             cli_response, llm_response = execute_command_and_check_cli_response(test_command['command'], test_command['timeout'], convo)
             if llm_response == 'NEEDS_DEBUGGING':
-                print(colored(f'Got incorrect CLI response:', 'red'))
+                print(red(f'Got incorrect CLI response:'))
                 print(cli_response)
-                print(colored('-------------------', 'red'))
+                print(red('-------------------'))
 
             return { "success": llm_response == 'DONE', "cli_response": cli_response, "llm_response": llm_response }
 
@@ -150,8 +150,8 @@ class Developer(Agent):
         if step_implementation_try >= MAX_COMMAND_DEBUG_TRIES:
             self.dev_help_needed(step)
 
-        print(colored(f'\n--------- LLM Reached Token Limit ----------', 'red', attrs=['bold']))
-        print(colored(f'Can I retry implementing the entire development step?', 'red', attrs=['bold']))
+        print(red(bold(f'\n--------- LLM Reached Token Limit ----------')))
+        print(red(bold(f'Can I retry implementing the entire development step?')))
 
         answer = ''
         while answer != 'y':
@@ -249,8 +249,8 @@ class Developer(Agent):
 
     def continue_development(self, iteration_convo, continue_description=''):
         while True:
-            user_description = ('Here is a description of what should be working: \n\n' + colored(continue_description, 'blue', attrs=['bold']) + '\n') if continue_description != '' else ''
-            user_description = 'Can you check if the app works please? ' + user_description + '\nIf you want to run the app, ' + colored('just type "r" and press ENTER and that will run `' + self.run_command + '`', 'yellow', attrs=['bold'])
+            user_description = ('Here is a description of what should be working: \n\n' + blue(bold(continue_description)) + '\n') if continue_description != '' else ''
+            user_description = 'Can you check if the app works please? ' + user_description + '\nIf you want to run the app, ' + yellow(bold('just type "r" and press ENTER and that will run `' + self.run_command + '`'))
             # continue_description = ''
             response = self.project.ask_for_human_intervention(
                 user_description,

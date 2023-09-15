@@ -2,7 +2,7 @@ import json
 import os
 import time
 
-from fabulous.color import bold, green, yellow
+from fabulous.color import bold, green, yellow, cyan, white
 from const.common import IGNORE_FOLDERS, STEPS
 from database.models.app import App
 from database.database import get_app, delete_unconnected_steps_from, delete_all_app_development_data
@@ -273,7 +273,7 @@ class Project:
         development_step, created = DevelopmentSteps.get_or_create(id=development_step_id)
 
         for file in files:
-            print(colored(f'Saving file {file["path"] + "/" + file["name"]}', 'light_cyan'))
+            print(cyan(f'Saving file {file["path"] + "/" + file["name"]}'))
             # TODO this can be optimized so we don't go to the db each time
             file_in_db, created = File.get_or_create(
                 app=self.app,
@@ -308,7 +308,7 @@ class Project:
         print(yellow(bold(message)))
         if description is not None:
             print('\n' + '-'*100 + '\n' +
-                colored(description, 'white', attrs=['bold']) +
+                white(bold(description)) +
                 '\n' + '-'*100 + '\n')
         answer = ''
         while answer != 'continue':

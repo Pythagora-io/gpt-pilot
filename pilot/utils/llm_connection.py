@@ -150,7 +150,7 @@ def retry_on_exception(func):
                 if "context_length_exceeded" in err_str:
                     raise TokenLimitError(tokens_in_messages + min_tokens, MAX_GPT_MODEL_TOKENS)
 
-                print(colored(f'There was a problem with request to openai API:', 'red'))
+                print(red(f'There was a problem with request to openai API:'))
                 print(err_str)
 
                 user_message = questionary.text(
@@ -181,8 +181,8 @@ def stream_gpt_completion(data, req_type):
         delete_last_n_lines(lines_printed)
         return result_data
 
-    # spinner = spinner_start(colored("Waiting for OpenAI API response...", 'yellow'))
-    # print(colored("Stream response from OpenAI:", 'yellow'))
+    # spinner = spinner_start(yellow("Waiting for OpenAI API response..."))
+    # print(yellow("Stream response from OpenAI:"))
     api_key = os.getenv("OPENAI_API_KEY")
 
     logger.info(f'Request data: {data}')
