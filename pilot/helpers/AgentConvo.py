@@ -1,5 +1,6 @@
 import re
 import subprocess
+import uuid
 from fabulous.color import yellow, bold
 
 from database.database import get_saved_development_step, save_development_step, delete_all_subsequent_steps
@@ -132,8 +133,11 @@ class AgentConvo:
         self.log_to_user = True
         return accepted_messages
 
-    def save_branch(self, branch_name):
+    def save_branch(self, branch_name=None):
+        if branch_name is None:
+            branch_name = str(uuid.uuid4())
         self.branches[branch_name] = self.messages.copy()
+        return branch_name
 
     def load_branch(self, branch_name, reload_files=True):
         self.messages = self.branches[branch_name].copy()
