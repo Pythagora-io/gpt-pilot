@@ -6,11 +6,11 @@ import json
 import sys
 
 from dotenv import load_dotenv
+load_dotenv()
 
 from helpers.ipc import IPCClient
 from const.ipc import MESSAGE_TYPE
 from utils.utils import json_serial
-load_dotenv()
 
 from helpers.Project import Project
 
