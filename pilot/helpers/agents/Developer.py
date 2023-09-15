@@ -142,7 +142,7 @@ class Developer(Agent):
                 continue_description = detailed_user_review_goal if detailed_user_review_goal is not None else None
                 return self.continue_development(convo, continue_description)
         except TooDeepRecursionError as e:
-            return self.dev_help_needed(e.message)
+            return self.dev_help_needed({"type": "human_intervention", "human_intervention_description": e.message})
 
         return task_result
 
@@ -165,7 +165,16 @@ class Developer(Agent):
 
         return { "success": False, "retry": True }
 
-    def dev_help_needed(self, description):
+    def dev_help_needed(self, step):
+
+        if step['type'] == 'command':
+            help_description = (red(bold(f'I tried running the following command but it doesn\'t seem to work:\n\n')) +
+                white(bold(step['command']['command'])) +
+                red(bold(f'\n\nCan you please make it work?')))
+        elif step['type'] == 'code_change':
+            help_description = step['code_change_description']
+        elif step['type'] == 'human_intervention':
+            help_description = step['human_intervention_description']
 
         # TODO remove this
         def extract_substring(s):
@@ -180,11 +189,9 @@ class Developer(Agent):
 
         answer = ''
         while answer != 'continue':
-            print(colored(f'\n----------------------------- I need your help ------------------------------', 'red', attrs=['bold']))
-            print(colored(f'Please implement the following task', 'red', attrs=['bold']))
-
-            print(colored(extract_substring(description), 'red'))
-            print(colored(f'\n-----------------------------------------------------------------------------', 'red', attrs=['bold']))
+            print(red(bold(f'\n----------------------------- I need your help ------------------------------')))
+            print(extract_substring(str(help_description)))
+            print(red(bold(f'\n-----------------------------------------------------------------------------')))
             answer = styled_text(
                 self.project,
                 'Once you\'re done, type "continue"?'

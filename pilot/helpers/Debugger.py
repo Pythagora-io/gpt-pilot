@@ -27,6 +27,7 @@ class Debugger():
 
         self.recursion_layer += 1
         if self.recursion_layer > MAX_RECUSION_LAYER:
+            self.recursion_layer = 0
             raise TooDeepRecursionError()
 
         function_uuid = str(uuid.uuid4())
