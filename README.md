@@ -8,6 +8,7 @@ You specify what kind of an app you want to build. Then, GPT Pilot asks clarifyi
 <!-- TOC -->
 * [🔌 Requirements](#-requirements)
 * [🚦How to start using gpt-pilot?](#how-to-start-using-gpt-pilot)
+    * [🐳 How to start gpt-pilot in docker?](#how-to-start-using-gpt-pilot-in-docker)
 * [🧑‍💻️ Other arguments](#%EF%B8%8F-other-arguments)
 * [🔎 Examples](#-examples)
     * [Real-time chat app](#-real-time-chat-app)
@@ -76,7 +77,7 @@ All generated code will be stored in the folder `workspace` inside the folder na
 **IMPORTANT: To run GPT Pilot, you need to have PostgreSQL set up on your machine**
 <br>
 
-# 🐳 How to start gpt-pilot in docker?
+## 🐳 How to start gpt-pilot in docker?
 1. `git clone https://github.com/Pythagora-io/gpt-pilot.git` (clone the repo)
 2. Update the `docker-compose.yml` environment variables
 3. run `docker compose build`. this will build a gpt-pilot container for you.
