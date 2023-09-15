@@ -2,7 +2,7 @@ from prompt_toolkit.styles import Style
 import questionary
 from fabulous.color import yellow, bold
 
-from database.database import save_user_input, get_user_input_from_hash_id
+from database.database import save_user_input, get_saved_user_input
 from const.ipc import MESSAGE_TYPE
 
 custom_style = Style.from_dict({
@@ -22,7 +22,7 @@ def styled_select(*args, **kwargs):
 def styled_text(project, question, ignore_user_input_count=False):
     if not ignore_user_input_count:
         project.user_inputs_count += 1
-        user_input = get_user_input_from_hash_id(project, question)
+        user_input = get_saved_user_input(project, question)
         if user_input is not None and user_input.user_input is not None and project.skip_steps:
             # if we do, use it
             project.checkpoints['last_user_input'] = user_input

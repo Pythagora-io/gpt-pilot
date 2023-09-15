@@ -8,7 +8,7 @@ import uuid
 import platform
 
 from fabulous.color import yellow, green, white, red, bold
-from database.database import get_command_run_from_hash_id, save_command_run
+from database.database import get_saved_command_run, save_command_run
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
 
@@ -115,7 +115,7 @@ def execute_command(project, command, timeout=None, force=False):
 
 
     project.command_runs_count += 1
-    command_run = get_command_run_from_hash_id(project, command)
+    command_run = get_saved_command_run(project, command)
     if command_run is not None and project.skip_steps:
         # if we do, use it
         project.checkpoints['last_command_run'] = command_run

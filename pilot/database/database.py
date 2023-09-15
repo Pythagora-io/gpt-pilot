@@ -187,52 +187,49 @@ def get_db_model_from_hash_id(model, app_id, previous_step, high_level_step):
     return db_row
 
 
-def hash_and_save_step(Model, app_id, hash_data_args, data_fields, message):
+def hash_and_save_step(Model, app_id, unique_data_fields, data_fields, message):
     app = get_app(app_id)
-    hash_id = hash_data(hash_data_args)
 
-    data_to_insert = {
-        'app': app,
-        'hash_id': hash_id
-    }
-
-    fields_to_preserve = [getattr(Model, field) for field in list(data_to_insert.keys())]
+    fields_to_preserve = [getattr(Model, field) for field in list(unique_data_fields.keys())]
 
     for field, value in data_fields.items():
-        data_to_insert[field] = value
+        unique_data_fields[field] = value
 
     try:
+        existing_record = Model.get_or_none((Model.app == app) & (Model.previous_step == unique_data_fields['previous_step']) & (Model.high_level_step == unique_data_fields['high_level_step']))
         inserted_id = (Model
-                       .insert(**data_to_insert)
-                       .on_conflict(conflict_target=[Model.app, Model.hash_id],
-                                    preserve=fields_to_preserve,
-                                    update=data_fields)
+                       .insert(**unique_data_fields)
+                    #    .on_conflict(conflict_target=[Model.app, Model.previous_step, Model.high_level_step],
+                    #                 preserve=fields_to_preserve,
+                    #                 update=data_fields)
                        .execute())
 
         record = Model.get_by_id(inserted_id)
         logger.debug(yellow(f"{message} with id {record.id}"))
-    except IntegrityError:
-        print(f"A record with hash_id {hash_id} already exists for {Model.__name__}.")
+    except IntegrityError as e:
+        print(f"A record with data {unique_data_fields} already exists for {Model.__name__}.")
         return None
     return record
 
 
 def save_development_step(project, prompt_path, prompt_data, messages, llm_response):
-    hash_data_args = {
-        'prompt_path': prompt_path,
-        'prompt_data': {} if prompt_data is None else {k: v for k, v in prompt_data.items() if
-                                                       k not in PROMPT_DATA_TO_IGNORE},
-        'llm_req_num': project.llm_req_num
-    }
 
     data_fields = {
         'messages': messages,
         'llm_response': llm_response,
+        'prompt_path': prompt_path,
+        'prompt_data': {} if prompt_data is None else {k: v for k, v in prompt_data.items() if
+            k not in PROMPT_DATA_TO_IGNORE and not callable(v)},
+        'llm_req_num': project.llm_req_num,
+    }
+
+    unique_data = {
+        'app': project.args['app_id'],
         'previous_step': project.checkpoints['last_development_step'],
         'high_level_step': project.current_step,
     }
 
-    development_step = hash_and_save_step(DevelopmentSteps, project.args['app_id'], hash_data_args, data_fields, "Saved Development Step")
+    development_step = hash_and_save_step(DevelopmentSteps, project.args['app_id'], unique_data, data_fields, "Saved Development Step")
     project.checkpoints['last_development_step'] = development_step
 
 
@@ -242,15 +239,9 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
     return development_step
 
 
-def get_development_step_from_hash_id(project, prompt_path, prompt_data, llm_req_num):
-    data_to_hash = {
-        'prompt_path': prompt_path,
-        'prompt_data': {} if prompt_data is None else {k: v for k, v in prompt_data.items() if
-                                                       k not in PROMPT_DATA_TO_IGNORE},
-        'llm_req_num': llm_req_num
-    }
+def get_saved_development_step(project):
     development_step = get_db_model_from_hash_id(DevelopmentSteps, project.args['app_id'],
-                                                 project.checkpoints['last_development_step'], project.current_step)
+        project.checkpoints['last_development_step'], project.current_step)
     return development_step
 
 
@@ -258,23 +249,23 @@ def save_command_run(project, command, cli_response):
     if project.current_step != 'coding':
         return
 
-    hash_data_args = {
-        'command': command,
-        'command_runs_count': project.command_runs_count,
-    }
-    data_fields = {
-        'command': command,
-        'cli_response': cli_response,
+    unique_data = {
+        'app': project.args['app_id'],
         'previous_step': project.checkpoints['last_command_run'],
         'high_level_step': project.current_step,
     }
-    command_run = hash_and_save_step(CommandRuns, project.args['app_id'], hash_data_args, data_fields,
-                                     "Saved Command Run")
+
+    data_fields = {
+        'command': command,
+        'cli_response': cli_response,
+    }
+
+    command_run = hash_and_save_step(CommandRuns, project.args['app_id'], unique_data, data_fields, "Saved Command Run")
     project.checkpoints['last_command_run'] = command_run
     return command_run
 
 
-def get_command_run_from_hash_id(project, command):
+def get_saved_command_run(project, command):
     data_to_hash = {
         'command': command,
         'command_runs_count': project.command_runs_count
@@ -288,22 +279,21 @@ def save_user_input(project, query, user_input):
     if project.current_step != 'coding':
         return
 
-    hash_data_args = {
-        'query': query,
-        'user_inputs_count': project.user_inputs_count,
+    unique_data = {
+        'app': project.args['app_id'],
+        'previous_step': project.checkpoints['last_user_input'],
+        'high_level_step': project.current_step,
     }
     data_fields = {
         'query': query,
         'user_input': user_input,
-        'previous_step': project.checkpoints['last_user_input'],
-        'high_level_step': project.current_step,
     }
-    user_input = hash_and_save_step(UserInputs, project.args['app_id'], hash_data_args, data_fields, "Saved User Input")
+    user_input = hash_and_save_step(UserInputs, project.args['app_id'], unique_data, data_fields, "Saved User Input")
     project.checkpoints['last_user_input'] = user_input
     return user_input
 
 
-def get_user_input_from_hash_id(project, query):
+def get_saved_user_input(project, query):
     data_to_hash = {
         'query': query,
         'user_inputs_count': project.user_inputs_count

@@ -8,14 +8,17 @@ from playhouse.postgres_ext import BinaryJSONField
 class DevelopmentSteps(BaseModel):
     id = AutoField()  # This will serve as the primary key
     app = ForeignKeyField(App, on_delete='CASCADE')
-    hash_id = CharField(null=False)
+    prompt_path = TextField(null=True)
+    llm_req_num = IntegerField(null=True)
 
     if DATABASE_TYPE == 'postgres':
         messages = BinaryJSONField(null=True)
         llm_response = BinaryJSONField(null=False)
+        prompt_data = BinaryJSONField(null=True)
     else:
         messages = JSONField(null=True)  # Custom JSON field for SQLite
         llm_response = JSONField(null=False)  # Custom JSON field for SQLite
+        prompt_data = JSONField(null=True)
 
     previous_step = ForeignKeyField('self', null=True, column_name='previous_step')
     high_level_step = CharField(null=True)
@@ -23,5 +26,5 @@ class DevelopmentSteps(BaseModel):
     class Meta:
         db_table = 'development_steps'
         indexes = (
-            (('app', 'hash_id'), True),
+            (('app', 'previous_step', 'high_level_step'), True),
         )
