@@ -226,10 +226,7 @@ class Developer(Agent):
 
                     if test_command is not None and ('check_if_fixed' not in step or step['check_if_fixed']):
                         is_fixed = self.step_test(convo, test_command)
-                        if is_fixed['success']:
-                            return is_fixed
-                        else:
-                            result = is_fixed
+                        return is_fixed
 
                     break
                 except TokenLimitError as e:
@@ -251,6 +248,7 @@ class Developer(Agent):
                     else:
                         raise e
 
+        result = { "success": True } # if all steps are finished, the task has been successfully implemented
         convo.load_branch(function_uuid)
         return self.task_postprocessing(convo, development_task, continue_development, result)
 
@@ -287,7 +285,7 @@ class Developer(Agent):
                 task_steps = iteration_convo.send_message('development/parse_task.prompt', {}, IMPLEMENT_TASK)
                 iteration_convo.remove_last_x_messages(2)
 
-                self.execute_task(iteration_convo, task_steps, is_root_task=True)
+                return self.execute_task(iteration_convo, task_steps, is_root_task=True)
 
 
     def set_up_environment(self):
