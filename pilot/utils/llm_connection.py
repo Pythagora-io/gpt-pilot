@@ -25,6 +25,8 @@ def get_prompt(prompt_name, data=None):
     if data is None:
         data = {}
 
+    # TODO: move this back out to the Agent, Receptionist doesn't need `no_micro_services` and `single_question`.
+    #       Also, this breaks the Single Responsibility Principle. It should just get the prompt as suggested by the function name.
     data.update(get_prompt_components())
 
     logger.debug(f"Getting prompt for {prompt_name}")  # logging here

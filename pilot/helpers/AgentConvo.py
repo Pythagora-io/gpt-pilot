@@ -42,6 +42,7 @@ class AgentConvo:
         # craft message
         self.construct_and_add_message_from_prompt(prompt_path, prompt_data)
 
+        # TODO: should all of this move into the Developer class?
         # check if we already have the LLM response saved
         if self.agent.__class__.__name__ == 'Developer':
             self.agent.project.llm_req_num += 1

@@ -37,6 +37,17 @@ class TestReceptionist:
         assert route == 'ProductOwner'
 
     @patch('helpers.AgentConvo.get_development_step_from_hash_id', return_value=None)
+    def test_route_TechLead_by_name_with_spaces(self, mock_get_dev):
+        # Given
+        mock_value = {'function_calls': {'arguments': {'agent': 'TechLead'}, 'name': 'route_initial_input'}}
+
+        # When
+        route = self.call_route_initial_input('I want to speak with the tech lead', mock_value)
+
+        # Then
+        assert route == 'TechLead'
+
+    @patch('helpers.AgentConvo.get_development_step_from_hash_id', return_value=None)
     def test_route_CodeMonkey(self, mock_get_dev):
         # Given
         mock_value = {'function_calls': {'arguments': {'agent': 'CodeMonkey'}, 'name': 'route_initial_input'}}
