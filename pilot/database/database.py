@@ -303,19 +303,20 @@ def get_saved_user_input(project, query):
 
 
 def delete_all_subsequent_steps(project):
-    delete_subsequent_steps(DevelopmentSteps, project.checkpoints['last_development_step'])
-    delete_subsequent_steps(CommandRuns, project.checkpoints['last_command_run'])
-    delete_subsequent_steps(UserInputs, project.checkpoints['last_user_input'])
+    app = get_app(project.args['app_id'])
+    delete_subsequent_steps(DevelopmentSteps, app, project.checkpoints['last_development_step'])
+    delete_subsequent_steps(CommandRuns, app, project.checkpoints['last_command_run'])
+    delete_subsequent_steps(UserInputs, app, project.checkpoints['last_user_input'])
 
 
-def delete_subsequent_steps(model, step):
-    if step is None:
-        return
-    logger.info(red(f"Deleting subsequent {model.__name__} steps after {step.id}"))
-    subsequent_steps = model.select().where(model.previous_step == step.id)
+def delete_subsequent_steps(Model, app, step):
+    # if step is None:
+    #     return
+    logger.info(red(f"Deleting subsequent {Model.__name__} steps after {step.id if step is not None else None}"))
+    subsequent_steps = Model.select().where((Model.app == app) & (Model.previous_step == (step.id if step is not None else None)))
     for subsequent_step in subsequent_steps:
         if subsequent_step:
-            delete_subsequent_steps(model, subsequent_step)
+            delete_subsequent_steps(Model, app, subsequent_step)
             subsequent_step.delete_instance()
 
 
