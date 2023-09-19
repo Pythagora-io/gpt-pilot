@@ -311,6 +311,12 @@ class Project:
             reset_branch_id = convo.save_branch()
 
         while answer != 'continue':
+            print(yellow(bold(message)))
+            if description is not None:
+                print('\n' + '-'*100 + '\n' +
+                    white(bold(description)) +
+                    '\n' + '-'*100 + '\n')
+
             answer = styled_text(
                 self,
                 'If something is wrong, tell me or type "continue" to continue.',
