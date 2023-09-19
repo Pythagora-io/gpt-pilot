@@ -6,6 +6,7 @@ import operator
 import psycopg2
 from psycopg2.extensions import quote_ident
 
+import os
 from const.common import PROMPT_DATA_TO_IGNORE
 from logger.logger import logger
 from utils.utils import hash_data
