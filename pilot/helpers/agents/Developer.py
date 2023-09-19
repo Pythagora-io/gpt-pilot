@@ -62,7 +62,7 @@ class Developer(Agent):
 
         task_steps = convo_dev_task.send_message('development/parse_task.prompt', {}, IMPLEMENT_TASK)
         convo_dev_task.remove_last_x_messages(2)
-        self.execute_task(convo_dev_task, task_steps, development_task=development_task, continue_development=True, is_root_task=True)
+        return self.execute_task(convo_dev_task, task_steps, development_task=development_task, continue_development=True, is_root_task=True)
 
     def step_code_change(self, convo, step, i, test_after_code_changes):
         if step['type'] == 'code_change' and 'code_change_description' in step:
