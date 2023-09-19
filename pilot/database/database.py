@@ -212,7 +212,7 @@ def hash_and_save_step(Model, app_id, unique_data_fields, data_fields, message):
     return record
 
 
-def save_development_step(project, prompt_path, prompt_data, messages, llm_response):
+def save_development_step(project, prompt_path, prompt_data, messages, llm_response, exception=None):
 
     data_fields = {
         'messages': messages,
@@ -221,6 +221,7 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
         'prompt_data': {} if prompt_data is None else {k: v for k, v in prompt_data.items() if
             k not in PROMPT_DATA_TO_IGNORE and not callable(v)},
         'llm_req_num': project.llm_req_num,
+        'token_limit_exception_raised': exception
     }
 
     unique_data = {

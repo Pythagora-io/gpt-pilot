@@ -99,7 +99,8 @@ class Developer(Agent):
             human_intervention_description = step['human_intervention_description'] + yellow(bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')) if self.run_command is not None else step['human_intervention_description']
             response = self.project.ask_for_human_intervention('I need human intervention:',
                 human_intervention_description,
-                cbs={ 'r': lambda: run_command_until_success(self.run_command, None, convo, force=True, return_cli_response=True) })
+                cbs={ 'r': lambda conv: run_command_until_success(self.run_command, None, conv, force=True, return_cli_response=True) },
+                convo=convo)
 
             if 'user_input' not in response:
                 continue
@@ -125,7 +126,7 @@ class Developer(Agent):
 
             return { "success": llm_response == 'DONE', "cli_response": cli_response, "llm_response": llm_response }
 
-    def task_postprocessing(self, convo, development_task, continue_development, task_result):
+    def task_postprocessing(self, convo, development_task, continue_development, task_result, last_branch_name):
         self.run_command = convo.send_message('development/get_run_command.prompt', {})
         if self.run_command.startswith('`'):
             self.run_command = self.run_command[1:]
@@ -140,7 +141,7 @@ class Developer(Agent):
         try:
             if continue_development:
                 continue_description = detailed_user_review_goal if detailed_user_review_goal is not None else None
-                return self.continue_development(convo, continue_description)
+                return self.continue_development(convo, last_branch_name, continue_description)
         except TooDeepRecursionError as e:
             return self.dev_help_needed({"type": "human_intervention", "human_intervention_description": e.message})
 
@@ -250,16 +251,19 @@ class Developer(Agent):
 
         result = { "success": True } # if all steps are finished, the task has been successfully implemented
         convo.load_branch(function_uuid)
-        return self.task_postprocessing(convo, development_task, continue_development, result)
+        return self.task_postprocessing(convo, development_task, continue_development, result, function_uuid)
 
-    def continue_development(self, iteration_convo, continue_description=''):
+    def continue_development(self, iteration_convo, last_branch_name, continue_description=''):
         while True:
+            iteration_convo.load_branch(last_branch_name)
             user_description = ('Here is a description of what should be working: \n\n' + blue(bold(continue_description)) + '\n') if continue_description != '' else ''
             user_description = 'Can you check if the app works please? ' + user_description + '\nIf you want to run the app, ' + yellow(bold('just type "r" and press ENTER and that will run `' + self.run_command + '`'))
             # continue_description = ''
             response = self.project.ask_for_human_intervention(
                 user_description,
-                cbs={ 'r': lambda: run_command_until_success(self.run_command, None, iteration_convo, force=True, return_cli_response=True, is_root_task=True) })
+                cbs={ 'r': lambda convo: run_command_until_success(self.run_command, None, convo, force=True, return_cli_response=True, is_root_task=True) },
+                convo=iteration_convo,
+                is_root_task=True)
 
             user_feedback = response['user_input'] if 'user_input' in response else None
             if user_feedback == 'continue':

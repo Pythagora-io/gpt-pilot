@@ -6,6 +6,7 @@ from fabulous.color import yellow, bold
 from database.database import get_saved_development_step, save_development_step, delete_all_subsequent_steps
 from helpers.files import get_files_content
 from const.common import IGNORE_FOLDERS
+from helpers.exceptions.TokenLimitError import TokenLimitError
 from utils.utils import array_of_objects_to_string
 from utils.llm_connection import get_prompt, create_gpt_chat_completion
 from utils.utils import get_sys_message, find_role_from_step, capitalize_first_word_with_underscores
@@ -67,9 +68,17 @@ class AgentConvo:
 
                 if 'delete_unrelated_steps' in self.agent.project.args and self.agent.project.args['delete_unrelated_steps']:
                     self.agent.project.delete_all_steps_except_current_branch()
+
+            if development_step.token_limit_exception_raised:
+                raise TokenLimitError(development_step.token_limit_exception_raised)
         else:
             # if we don't, get the response from LLM
-            response = create_gpt_chat_completion(self.messages, self.high_level_step, function_calls=function_calls)
+            try:
+                response = create_gpt_chat_completion(self.messages, self.high_level_step, function_calls=function_calls)
+            except TokenLimitError as e:
+                save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, '', str(e))
+                raise e
+
             if self.agent.__class__.__name__ == 'Developer':
                 development_step = save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, response)
                 self.agent.project.checkpoints['last_development_step'] = development_step

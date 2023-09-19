@@ -8,6 +8,7 @@ from database.models.app import App
 from database.database import get_app, delete_unconnected_steps_from, delete_all_app_development_data
 from helpers.ipc import IPCClient
 from const.ipc import MESSAGE_TYPE
+from helpers.exceptions.TokenLimitError import TokenLimitError
 from utils.questionary import styled_text
 from helpers.files import get_files_content, clear_directory, update_file
 from helpers.cli import build_directory_tree
@@ -304,23 +305,28 @@ class Project:
         delete_unconnected_steps_from(self.checkpoints['last_command_run'], 'previous_step')
         delete_unconnected_steps_from(self.checkpoints['last_user_input'], 'previous_step')
 
-    def ask_for_human_intervention(self, message, description=None, cbs={}):
-        print(yellow(bold(message)))
-        if description is not None:
-            print('\n' + '-'*100 + '\n' +
-                white(bold(description)) +
-                '\n' + '-'*100 + '\n')
+    def ask_for_human_intervention(self, message, description=None, cbs={}, convo=None, is_root_task=False):
         answer = ''
+        if convo is not None:
+            reset_branch_id = convo.save_branch()
+
         while answer != 'continue':
             answer = styled_text(
                 self,
                 'If something is wrong, tell me or type "continue" to continue.',
             )
 
-            if answer in cbs:
-                return cbs[answer]()
-            elif answer != '':
-                return { 'user_input': answer }
+            try:
+                if answer in cbs:
+                    return cbs[answer](convo)
+                elif answer != '':
+                    return { 'user_input': answer }
+            except TokenLimitError as e:
+                if is_root_task and answer not in cbs and answer != '':
+                    convo.load_branch(reset_branch_id)
+                    return { 'user_input': answer }
+                else:
+                    raise e
 
     def log(self, text, message_type):
         if self.ipc_client_instance is None or self.ipc_client_instance.client is None:

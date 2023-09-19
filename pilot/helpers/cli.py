@@ -11,6 +11,7 @@ from fabulous.color import yellow, green, white, red, bold
 from database.database import get_saved_command_run, save_command_run
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
+from helpers.exceptions.TokenLimitError import TokenLimitError
 
 from utils.questionary import styled_text
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MIN_COMMAND_RUN_TIME, MAX_COMMAND_RUN_TIME, MAX_COMMAND_OUTPUT_LENGTH
@@ -263,22 +264,30 @@ def run_command_until_success(command, timeout, convo, additional_message=None, 
         additional_message (str, optional): Additional message to include in the response.
         force (bool, optional): Whether to execute the command without confirmation. Default is False.
     """
-    cli_response = execute_command(convo.agent.project, command, timeout, force)
-    response = convo.send_message('dev_ops/ran_command.prompt',
-        {'cli_response': cli_response, 'command': command, 'additional_message': additional_message})
+    cli_response, response = execute_command(convo.agent.project, command, timeout, force)
+    if response is None:
+        response = convo.send_message('dev_ops/ran_command.prompt',
+            {'cli_response': cli_response, 'command': command, 'additional_message': additional_message})
 
     if response != 'DONE':
         print(red(f'Got incorrect CLI response:'))
         print(cli_response)
         print(red('-------------------'))
 
-        try:
-            # This catch is necessary to return the correct value (cli_response) to continue development function so
-            # the developer can debug the appropriate issue
-            # this snippet represents the first entry point into debugging recursion because of return_cli_response
-            return convo.agent.debugger.debug(convo, {'command': command, 'timeout': timeout}, is_root_task=is_root_task)
-        except TooDeepRecursionError as e:
-            # this is only to put appropriate message in the response after TooDeepRecursionError is raised
-            raise TooDeepRecursionError(cli_response) if return_cli_response else e
+        reset_branch_id = convo.save_branch()
+        while True:
+            try:
+                # This catch is necessary to return the correct value (cli_response) to continue development function so
+                # the developer can debug the appropriate issue
+                # this snippet represents the first entry point into debugging recursion because of return_cli_response
+                return convo.agent.debugger.debug(convo, {'command': command, 'timeout': timeout})
+            except TooDeepRecursionError as e:
+                # this is only to put appropriate message in the response after TooDeepRecursionError is raised
+                raise TooDeepRecursionError(cli_response) if return_cli_response else e
+            except TokenLimitError as e:
+                if is_root_task:
+                    convo.load_branch(reset_branch_id)
+                else:
+                    raise e
     else:
         return { 'success': True, 'cli_response': cli_response }

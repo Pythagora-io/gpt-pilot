@@ -10,6 +10,7 @@ class DevelopmentSteps(BaseModel):
     app = ForeignKeyField(App, on_delete='CASCADE')
     prompt_path = TextField(null=True)
     llm_req_num = IntegerField(null=True)
+    token_limit_exception_raised = TextField(null=True)
 
     if DATABASE_TYPE == 'postgres':
         messages = BinaryJSONField(null=True)
