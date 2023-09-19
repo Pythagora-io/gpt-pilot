@@ -25,7 +25,7 @@ class DevelopmentSteps(BaseModel):
     high_level_step = CharField(null=True)
 
     class Meta:
-        db_table = 'development_steps'
+        table_name = 'development_steps'
         indexes = (
             (('app', 'previous_step', 'high_level_step'), True),
         )

@@ -13,7 +13,7 @@ class UserInputs(BaseModel):
     high_level_step = CharField(null=True)
 
     class Meta:
-        db_table = 'user_inputs'
+        table_name = 'user_inputs'
         indexes = (
             (('app', 'previous_step', 'high_level_step'), True),
         )

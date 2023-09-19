@@ -12,4 +12,4 @@ class UserTasks(ProgressStep):
         user_tasks = JSONField()  # Custom JSON field for SQLite
 
     class Meta:
-        db_table = 'user_tasks'
+        table_name = 'user_tasks'

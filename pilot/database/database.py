@@ -4,10 +4,10 @@ from fabulous.color import yellow, red
 from functools import reduce
 import operator
 import psycopg2
-from const.common import PROMPT_DATA_TO_IGNORE
-from logger.logger import logger
 from psycopg2.extensions import quote_ident
 
+from const.common import PROMPT_DATA_TO_IGNORE
+from logger.logger import logger
 from utils.utils import hash_data
 from database.config import DB_NAME, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DATABASE_TYPE
 from database.models.components.base_models import database
@@ -23,6 +23,7 @@ from database.models.environment_setup import EnvironmentSetup
 from database.models.development import Development
 from database.models.file_snapshot import FileSnapshot
 from database.models.command_runs import CommandRuns
+from database.models.user_apps import UserApps
 from database.models.user_inputs import UserInputs
 from database.models.files import File
 
@@ -106,6 +107,16 @@ def save_app(args):
     return app
 
 
+def save_user_app(user_id, app_id, workspace):
+    try:
+        user_app = UserApps.get((UserApps.user == user_id) & (UserApps.app == app_id))
+        user_app.workspace = workspace
+        user_app.save()
+    except DoesNotExist:
+        user_app = UserApps.create(user=user_id, app=app_id, workspace=workspace)
+
+    return user_app
+
 def save_progress(app_id, step, data):
     progress_table_map = {
         'project_description': ProjectDescription,
@@ -144,6 +155,14 @@ def get_app(app_id):
         return app
     except DoesNotExist:
         raise ValueError(f"No app with id: {app_id}")
+
+
+def get_app_by_user_workspace(user_id, workspace):
+    try:
+        user_app = UserApps.get((UserApps.user == user_id) & (UserApps.workspace == workspace))
+        return user_app.app
+    except DoesNotExist:
+        return None
 
 
 def get_progress_steps(app_id, step=None):
@@ -230,9 +249,7 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
     development_step = hash_and_save_step(DevelopmentSteps, project.args['app_id'], unique_data, data_fields, "Saved Development Step")
     project.checkpoints['last_development_step'] = development_step
 
-
     project.save_files_snapshot(development_step.id)
-
 
     return development_step
 
@@ -327,7 +344,7 @@ def get_all_connected_steps(step, previous_step_field_name):
 
 
 def delete_all_app_development_data(app):
-    models = [DevelopmentSteps, CommandRuns, UserInputs, File, FileSnapshot]
+    models = [DevelopmentSteps, CommandRuns, UserInputs, UserApps, File, FileSnapshot]
     for model in models:
         model.delete().where(model.app == app).execute()
 
@@ -372,6 +389,7 @@ def create_tables():
             Development,
             FileSnapshot,
             CommandRuns,
+            UserApps,
             UserInputs,
             File,
         ])
@@ -392,10 +410,11 @@ def drop_tables():
             Development,
             FileSnapshot,
             CommandRuns,
+            UserApps,
             UserInputs,
             File,
         ]:
-            if DATABASE_TYPE == "postgresql":
+            if DATABASE_TYPE == "postgres":
                 sql = f'DROP TABLE IF EXISTS "{table._meta.table_name}" CASCADE'
             elif DATABASE_TYPE == "sqlite":
                 sql = f'DROP TABLE IF EXISTS "{table._meta.table_name}"'
@@ -441,7 +460,7 @@ def create_database():
 
 def tables_exist():
     tables = [User, App, ProjectDescription, UserStories, UserTasks, Architecture, DevelopmentPlanning,
-              DevelopmentSteps, EnvironmentSetup, Development, FileSnapshot, CommandRuns, UserInputs, File]
+              DevelopmentSteps, EnvironmentSetup, Development, FileSnapshot, CommandRuns, UserApps, UserInputs, File]
 
     if DATABASE_TYPE == "postgres":
         for table in tables:

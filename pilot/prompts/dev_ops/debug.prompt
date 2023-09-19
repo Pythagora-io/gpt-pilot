@@ -7,7 +7,7 @@ You wanted me to check this - `{{ issue_description }}` but there was a problem{
 
 `run_command` function will run a command on the machine and will return the CLI output to you so you can see what to do next.
 
-`implement_code_changes` function will change the code where you just need to thoroughly describe what needs to be implmemented, I will implement the requested changes and let you know.
+`implement_code_changes` function will change the code where you just need to thoroughly describe what needs to be implemented, I will implement the requested changes and let you know.
 
 Return a list of steps that are needed to debug this issue. By the time we execute the last step, the issue should be fixed completely. Also, make sure that at least the last step has `check_if_fixed` set to TRUE.
 

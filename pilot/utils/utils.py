@@ -110,11 +110,16 @@ def get_os_info():
     return array_of_objects_to_string(os_info)
 
 
-def execute_step(matching_step, current_step):
-    matching_step_index = STEPS.index(matching_step) if matching_step in STEPS else None
+def should_execute_step(arg_step, current_step):
+    """
+    :param arg_step: `project.args['step']`, may be None
+    :param current_step:  The step that would be executed next by the calling method.
+    :return: True if `current_step` should be executed.
+    """
+    arg_step_index = 0 if arg_step is None else STEPS.index(arg_step) if arg_step in STEPS else None
     current_step_index = STEPS.index(current_step) if current_step in STEPS else None
 
-    return matching_step_index is not None and current_step_index is not None and current_step_index >= matching_step_index
+    return arg_step_index is not None and current_step_index is not None and current_step_index >= arg_step_index
 
 
 def step_already_finished(args, step):

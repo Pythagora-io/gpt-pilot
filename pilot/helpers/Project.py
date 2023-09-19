@@ -1,12 +1,8 @@
 import json
-import os
-import time
 
 from fabulous.color import bold, green, yellow, cyan, white
 from const.common import IGNORE_FOLDERS, STEPS
-from database.models.app import App
-from database.database import get_app, delete_unconnected_steps_from, delete_all_app_development_data
-from helpers.ipc import IPCClient
+from database.database import delete_unconnected_steps_from, delete_all_app_development_data
 from const.ipc import MESSAGE_TYPE
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from utils.questionary import styled_text
@@ -20,7 +16,6 @@ from helpers.agents.ProductOwner import ProductOwner
 from database.models.development_steps import DevelopmentSteps
 from database.models.file_snapshot import FileSnapshot
 from database.models.files import File
-from utils.files import get_parent_folder
 
 
 class Project:
@@ -30,7 +25,7 @@ class Project:
         Initialize a project.
 
         Args:
-            args (dict): Project arguments.
+            args (dict): Project arguments - app_id, (app_type, name), user_id, email, password, step
             name (str, optional): Project name. Default is None.
             description (str, optional): Project description. Default is None.
             user_stories (list, optional): List of user stories. Default is None.
@@ -137,7 +132,7 @@ class Project:
         print(json.dumps({
             "project_stage": "environment_setup"
         }), type='info')
-        self.developer.set_up_environment();
+        self.developer.set_up_environment()
 
         print(json.dumps({
             "project_stage": "coding"
@@ -221,7 +216,7 @@ class Project:
         Save a file.
 
         Args:
-            data (dict): File data.
+            data: { name: 'hello.py', path: 'path/to/hello.py', content: 'print("Hello!")' }
         """
         # TODO fix this in prompts
         if 'path' not in data:

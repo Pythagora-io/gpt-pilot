@@ -11,4 +11,4 @@ class UserStories(ProgressStep):
     else:
         user_stories = JSONField()  # Custom JSON field for SQLite
     class Meta:
-        db_table = 'user_stories'
+        table_name = 'user_stories'

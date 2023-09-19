@@ -47,9 +47,6 @@ class AgentConvo:
         # craft message
         self.construct_and_add_message_from_prompt(prompt_path, prompt_data)
 
-        if function_calls is not None and 'function_calls' in function_calls:
-            self.messages[-1]['content'] += '\nMAKE SURE THAT YOU RESPOND WITH A CORRECT JSON FORMAT!!!'
-
         # check if we already have the LLM response saved
         if self.agent.__class__.__name__ == 'Developer':
             self.agent.project.llm_req_num += 1

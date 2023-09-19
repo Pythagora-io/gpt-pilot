@@ -1,4 +1,4 @@
-APP_TYPES = ['Web App', 'Script', 'Mobile App (unavailable)', 'Chrome Extension (unavailable)']
+APP_TYPES = ['Web App', 'Script', 'Mobile App', 'Chrome Extension']
 ROLES = {
     'product_owner': ['project_description', 'user_stories', 'user_tasks'],
     'architect': ['architecture'],

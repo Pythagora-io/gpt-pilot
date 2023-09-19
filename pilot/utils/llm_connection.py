@@ -1,6 +1,8 @@
+import re
 import requests
 import os
 import sys
+import time
 import json
 import tiktoken
 import questionary
@@ -83,7 +85,23 @@ def num_tokens_from_functions(functions, model=model):
 
 
 def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TOKENS_FOR_GPT_RESPONSE,
-    function_calls=None):
+                               function_calls=None):
+    """
+    Called from:
+      - AgentConvo.send_message() - these calls often have `function_calls`, usually from `pilot/const/function_calls.py`
+         - convo.continuous_conversation()
+      - prompts.get_additional_info_from_openai()
+      - prompts.get_additional_info_from_user() after the user responds to each
+            "Please check this message and say what needs to be changed... {message}"
+    :param messages: [{ "role": "system"|"assistant"|"user", "content": string }, ... ]
+    :param req_type: 'project_description' etc. See common.STEPS
+    :param min_tokens: defaults to 600
+    :param function_calls: (optional) {'definitions': [{ 'name': str }, ...]}
+        see `IMPLEMENT_CHANGES` etc. in `pilot/const/function_calls.py`
+    :return: {'text': new_code}
+        or if `function_calls` param provided
+             {'function_calls': {'name': str, arguments: {...}}}
+    """
 
     tokens_in_messages = round(get_tokens_in_messages(messages) * 1.2)  # add 20% to account for not 100% accuracy
     if function_calls is not None:
@@ -93,7 +111,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
         raise TokenLimitError(tokens_in_messages + min_tokens, MAX_GPT_MODEL_TOKENS)
 
     gpt_data = {
-        'model': os.getenv('OPENAI_MODEL', 'gpt-4'),
+        'model': os.getenv('MODEL_NAME', 'gpt-4'),
         'n': 1,
         'temperature': 1,
         'top_p': 1,
@@ -103,7 +121,15 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
         'stream': True
     }
 
+    # delete some keys if using "OpenRouter" API
+    if os.getenv('ENDPOINT') == "OPENROUTER":
+        keys_to_delete = ['n', 'max_tokens', 'temperature', 'top_p', 'presence_penalty', 'frequency_penalty']
+        for key in keys_to_delete:
+            if key in gpt_data:
+                del gpt_data[key]
+
     if function_calls is not None:
+        # Advise the LLM of the JSON response schema we are expecting
         gpt_data['functions'] = function_calls['definitions']
         if len(function_calls['definitions']) > 1:
             gpt_data['function_call'] = 'auto'
@@ -149,6 +175,13 @@ def retry_on_exception(func):
                 # If the specific error "context_length_exceeded" is present, simply return without retry
                 if "context_length_exceeded" in err_str:
                     raise TokenLimitError(tokens_in_messages + min_tokens, MAX_GPT_MODEL_TOKENS)
+                if "rate_limit_exceeded" in err_str:
+                    # Extracting the duration from the error string
+                    match = re.search(r"Please try again in (\d+)ms.", err_str)
+                    if match:
+                        wait_duration = int(match.group(1)) / 1000
+                        time.sleep(wait_duration)
+                    continue
 
                 print(red(f'There was a problem with request to openai API:'))
                 print(err_str)
@@ -168,6 +201,13 @@ def retry_on_exception(func):
 
 @retry_on_exception
 def stream_gpt_completion(data, req_type):
+    """
+    Called from create_gpt_chat_completion()
+    :param data:
+    :param req_type: 'project_description' etc. See common.STEPS
+    :return: {'text': str} or {'function_calls': {'name': str, arguments: '{...}'}}
+    """
+
     # TODO add type dynamically - this isn't working when connected to the external process
     terminal_width = 50#os.get_terminal_size().columns
     lines_printed = 2
@@ -192,10 +232,14 @@ def stream_gpt_completion(data, req_type):
         # If yes, get the AZURE_ENDPOINT from .ENV file
         endpoint_url = os.getenv('AZURE_ENDPOINT') + '/openai/deployments/' + model + '/chat/completions?api-version=2023-05-15'
         headers = {'Content-Type': 'application/json', 'api-key':  os.getenv('AZURE_API_KEY')}
+    elif endpoint == 'OPENROUTER':
+        # If so, send the request to the OpenRouter API endpoint
+        headers = {'Content-Type': 'application/json', 'Authorization':  'Bearer ' + os.getenv("OPENROUTER_API_KEY"), 'HTTP-Referer': 'http://localhost:3000', 'X-Title': 'GPT Pilot (LOCAL)'}
+        endpoint_url = os.getenv("OPENROUTER_ENDPOINT", 'https://openrouter.ai/api/v1/chat/completions')
     else:
         # If not, send the request to the OpenAI endpoint
         headers = {'Content-Type': 'application/json', 'Authorization':  'Bearer ' + os.getenv("OPENAI_API_KEY")}
-        endpoint_url = 'https://api.openai.com/v1/chat/completions'
+        endpoint_url = os.getenv("OPENAI_ENDPOINT", 'https://api.openai.com/v1/chat/completions')
 
     response = requests.post(
         endpoint_url,
@@ -229,13 +273,17 @@ def stream_gpt_completion(data, req_type):
 
             try:
                 json_line = json.loads(line)
+
+                if len(json_line['choices']) == 0:
+                    continue
+
                 if 'error' in json_line:
                     logger.error(f'Error in LLM response: {json_line}')
                     raise ValueError(f'Error in LLM response: {json_line["error"]["message"]}')
 
                 if json_line['choices'][0]['finish_reason'] == 'function_call':
                     function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
-                    return return_result({'function_calls': function_calls}, lines_printed);
+                    return return_result({'function_calls': function_calls}, lines_printed)
 
                 json_line = json_line['choices'][0]['delta']
 
@@ -243,6 +291,7 @@ def stream_gpt_completion(data, req_type):
                 logger.error(f'Unable to decode line: {line}')
                 continue  # skip to the next line
 
+            # handle the streaming response
             if 'function_call' in json_line:
                 if 'name' in json_line['function_call']:
                     function_calls['name'] = json_line['function_call']['name']

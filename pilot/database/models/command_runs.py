@@ -13,7 +13,7 @@ class CommandRuns(BaseModel):
     high_level_step = CharField(null=True)
 
     class Meta:
-        db_table = 'command_runs'
+        table_name = 'command_runs'
         indexes = (
             (('app', 'previous_step', 'high_level_step'), True),
         )
