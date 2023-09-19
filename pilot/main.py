@@ -11,6 +11,8 @@ from termcolor import colored
 from helpers.ipc import IPCClient
 from const.ipc import MESSAGE_TYPE
 from utils.utils import json_serial
+from fabulous.color import red
+
 from helpers.Project import Project
 from utils.arguments import get_arguments
 from utils.exit import exit_gpt_pilot
@@ -85,9 +87,9 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         exit_gpt_pilot()
     except Exception as e:
-        print(colored('---------- GPT PILOT EXITING WITH ERROR ----------', 'red'))
+        print(red('---------- GPT PILOT EXITING WITH ERROR ----------'))
         traceback.print_exc()
-        print(colored('--------------------------------------------------', 'red'))
+        print(red('--------------------------------------------------'))
         exit_gpt_pilot()
     finally:
         sys.exit(0)
