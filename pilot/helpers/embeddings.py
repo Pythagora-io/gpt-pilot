@@ -42,17 +42,9 @@ def closest_items(query_embedding, items, top_n=5, distance_metric="cosine"):
     distances = [(item, distance_function(query_embedding, item['embedding'])) for item in items]
 
     sorted_items = sorted(distances, key=lambda x: x[1])
-    # sorted_items = sorted(distances, key=lambda x: (x[1], -x[0]['data']['stars']))
+    sorted_items = sorted_items[:top_n]
 
-    return [item[0]['data'] for item in sorted_items[:top_n]]
-    # result = []
-    # for item, distance in sorted_items[:top_n]:
-    #     item_copy = item.copy()
-    #     del item_copy['embedding']
-    #     item_copy['distance'] = distance
-    #     result.append(item_copy)
-    #
-    # return result
+    return [item[0]['data'] for item in sorted_items]
 
 
 def distances_from_embeddings(query_embedding, embeddings, distance_metric="cosine"):

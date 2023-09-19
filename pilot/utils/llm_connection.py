@@ -222,19 +222,7 @@ def stream_gpt_completion(data, req_type):
 
     logger.info(f'Request data: {data}')
 
-    # Check if the ENDPOINT is AZURE
-    if endpoint == 'AZURE':
-        # If yes, get the AZURE_ENDPOINT from .ENV file
-        endpoint_url = os.getenv('AZURE_ENDPOINT') + '/openai/deployments/' + model + '/chat/completions?api-version=2023-05-15'
-        headers = {'Content-Type': 'application/json', 'api-key':  os.getenv('AZURE_API_KEY')}
-    elif endpoint == 'OPENROUTER':
-        # If so, send the request to the OpenRouter API endpoint
-        headers = {'Content-Type': 'application/json', 'Authorization':  'Bearer ' + os.getenv("OPENROUTER_API_KEY"), 'HTTP-Referer': 'http://localhost:3000', 'X-Title': 'GPT Pilot (LOCAL)'}
-        endpoint_url = os.getenv("OPENROUTER_ENDPOINT", 'https://openrouter.ai/api/v1/chat/completions')
-    else:
-        # If not, send the request to the OpenAI endpoint
-        headers = {'Content-Type': 'application/json', 'Authorization':  'Bearer ' + os.getenv("OPENAI_API_KEY")}
-        endpoint_url = os.getenv("OPENAI_ENDPOINT", 'https://api.openai.com/v1/chat/completions')
+    endpoint_url, headers = _endpoint_and_headers()
 
     response = requests.post(
         endpoint_url,
@@ -318,10 +306,33 @@ def stream_gpt_completion(data, req_type):
     return return_result({'text': new_code}, lines_printed)
 
 
-def get_embedding(text: str):
-    headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + os.getenv("OPENAI_API_KEY")}
-    endpoint_url = os.getenv("OPENAI_ENDPOINT", 'https://api.openai.com/v1/chat/completions')\
-        .replace('chat/completions', 'embeddings')
+def _endpoint_and_headers():
+    if endpoint == 'AZURE':
+        endpoint_url = os.getenv('AZURE_ENDPOINT') + f'/openai/deployments/{model}/chat/completions?api-version=2023-05-15'
+        headers = {
+            'Content-Type': 'application/json',
+            'api-key': os.getenv('AZURE_API_KEY')
+        }
+    elif endpoint == 'OPENROUTER':
+        endpoint_url = os.getenv('OPENROUTER_ENDPOINT', 'https://openrouter.ai/api/v1/chat/completions')
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + os.getenv("OPENROUTER_API_KEY"),
+            'HTTP-Referer': 'http://localhost:3000', 'X-Title': 'GPT Pilot (LOCAL)'
+        }
+    else:
+        endpoint_url = os.getenv('OPENAI_ENDPOINT', 'https://api.openai.com/v1/chat/completions')
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + os.getenv("OPENAI_API_KEY")
+        }
+
+    return endpoint_url, headers
+
+
+def create_embedding(text: str):
+    endpoint_url, headers = _endpoint_and_headers()
+    endpoint_url = endpoint_url.replace('chat/completions', 'embeddings')
 
     response = requests.post(endpoint_url, headers=headers, json={'input': text, 'model': 'text-embedding-ada-002'})
     return response.json()['data'][0]['embedding']
