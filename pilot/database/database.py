@@ -199,9 +199,6 @@ def hash_and_save_step(Model, app_id, unique_data_fields, data_fields, message):
         existing_record = Model.get_or_none((Model.app == app) & (Model.previous_step == unique_data_fields['previous_step']) & (Model.high_level_step == unique_data_fields['high_level_step']))
         inserted_id = (Model
                        .insert(**unique_data_fields)
-                    #    .on_conflict(conflict_target=[Model.app, Model.previous_step, Model.high_level_step],
-                    #                 preserve=fields_to_preserve,
-                    #                 update=data_fields)
                        .execute())
 
         record = Model.get_by_id(inserted_id)
@@ -311,8 +308,6 @@ def delete_all_subsequent_steps(project):
 
 
 def delete_subsequent_steps(Model, app, step):
-    # if step is None:
-    #     return
     logger.info(red(f"Deleting subsequent {Model.__name__} steps after {step.id if step is not None else None}"))
     subsequent_steps = Model.select().where((Model.app == app) & (Model.previous_step == (step.id if step is not None else None)))
     for subsequent_step in subsequent_steps:
