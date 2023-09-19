@@ -318,6 +318,15 @@ def stream_gpt_completion(data, req_type):
     return return_result({'text': new_code}, lines_printed)
 
 
+def get_embedding(text: str):
+    headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + os.getenv("OPENAI_API_KEY")}
+    endpoint_url = os.getenv("OPENAI_ENDPOINT", 'https://api.openai.com/v1/chat/completions')\
+        .replace('chat/completions', 'embeddings')
+
+    response = requests.post(endpoint_url, headers=headers, json={'input': text, 'model': 'text-embedding-ada-002'})
+    return response.json()['data'][0]['embedding']
+
+
 def postprocessing(gpt_response, req_type):
     return gpt_response
 
