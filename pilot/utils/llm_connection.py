@@ -7,12 +7,12 @@ import json
 import tiktoken
 import questionary
 
+from utils.style import red
 from typing import List
 from jinja2 import Environment, FileSystemLoader
 
 from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS, MAX_QUESTIONS, END_RESPONSE
 from logger.logger import logger
-from fabulous.color import red
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from utils.utils import get_prompt_components, fix_json
 from utils.spinner import spinner_start, spinner_stop

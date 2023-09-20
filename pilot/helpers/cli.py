@@ -7,7 +7,7 @@ import time
 import uuid
 import platform
 
-from fabulous.color import yellow, green, white, red, bold
+from utils.style import yellow, green, white, red, yellow_bold, white_bold
 from database.database import get_saved_command_run, save_command_run
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
@@ -101,8 +101,8 @@ def execute_command(project, command, timeout=None, force=False):
         timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
 
     if not force:
-        print(yellow(bold(f'\n--------- EXECUTE COMMAND ----------')))
-        print(f'Can i execute the command: `' + yellow(bold(command)) + f'` with {timeout}ms timeout?')
+        print(yellow_bold(f'\n--------- EXECUTE COMMAND ----------'))
+        print(f'Can i execute the command: `' + yellow_bold(command) + f'` with {timeout}ms timeout?')
 
         answer = styled_text(
             project,
@@ -143,7 +143,7 @@ def execute_command(project, command, timeout=None, force=False):
         while True and return_value is None:
             elapsed_time = time.time() - start_time
             if timeout is not None:
-                print(white(bold(f'\rt: {round(elapsed_time * 1000)}ms : ')), end='', flush=True)
+                print(white_bold(f'\rt: {round(elapsed_time * 1000)}ms : '), end='', flush=True)
 
             # Check if process has finished
             if process.poll() is not None:

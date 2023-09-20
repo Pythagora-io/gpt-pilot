@@ -1,5 +1,5 @@
 import uuid
-from fabulous.color import yellow, green, red, bold, blue, white
+from utils.style import yellow, green, red, blue, white, green_bold, yellow_bold, red_bold, blue_bold, white_bold
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
@@ -31,7 +31,7 @@ class Developer(Agent):
             self.project.skip_steps = False if ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0') else True
 
         # DEVELOPMENT
-        print(green(bold(f"Ok, great, now, let's start with the actual development...\n")))
+        print(green_bold(f"Ok, great, now, let's start with the actual development...\n"))
         logger.info(f"Starting to create the actual code...")
 
         for i, dev_task in enumerate(self.project.development_plan):
@@ -42,7 +42,7 @@ class Developer(Agent):
         logger.info('The app is DONE!!! Yay...you can use it now.')
 
     def implement_task(self, i, development_task=None):
-        print(green(bold(f'Implementing task #{i + 1}: ')) + green(f' {development_task["description"]}\n'))
+        print(green_bold(f'Implementing task #{i + 1}: ') + green(f' {development_task["description"]}\n'))
 
         convo_dev_task = AgentConvo(self)
         task_description = convo_dev_task.send_message('development/task/breakdown.prompt', {
@@ -96,7 +96,7 @@ class Developer(Agent):
 
     def step_human_intervention(self, convo, step):
         while True:
-            human_intervention_description = step['human_intervention_description'] + yellow(bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')) if self.run_command is not None else step['human_intervention_description']
+            human_intervention_description = step['human_intervention_description'] + yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`') if self.run_command is not None else step['human_intervention_description']
             response = self.project.ask_for_human_intervention('I need human intervention:',
                 human_intervention_description,
                 cbs={ 'r': lambda conv: run_command_until_success(self.run_command, None, conv, force=True, return_cli_response=True) },
@@ -151,8 +151,8 @@ class Developer(Agent):
         if step_implementation_try >= MAX_COMMAND_DEBUG_TRIES:
             self.dev_help_needed(step)
 
-        print(red(bold(f'\n--------- LLM Reached Token Limit ----------')))
-        print(red(bold(f'Can I retry implementing the entire development step?')))
+        print(red_bold(f'\n--------- LLM Reached Token Limit ----------'))
+        print(red_bold(f'Can I retry implementing the entire development step?'))
 
         answer = ''
         while answer != 'y':
@@ -169,9 +169,9 @@ class Developer(Agent):
     def dev_help_needed(self, step):
 
         if step['type'] == 'command':
-            help_description = (red(bold(f'I tried running the following command but it doesn\'t seem to work:\n\n')) +
-                white(bold(step['command']['command'])) +
-                red(bold(f'\n\nCan you please make it work?')))
+            help_description = (red_bold(f'I tried running the following command but it doesn\'t seem to work:\n\n') +
+                white_bold(step['command']['command']) +
+                red_bold(f'\n\nCan you please make it work?'))
         elif step['type'] == 'code_change':
             help_description = step['code_change_description']
         elif step['type'] == 'human_intervention':
@@ -190,9 +190,9 @@ class Developer(Agent):
 
         answer = ''
         while answer != 'continue':
-            print(red(bold(f'\n----------------------------- I need your help ------------------------------')))
+            print(red_bold(f'\n----------------------------- I need your help ------------------------------'))
             print(extract_substring(str(help_description)))
-            print(red(bold(f'\n-----------------------------------------------------------------------------')))
+            print(red_bold(f'\n-----------------------------------------------------------------------------'))
             answer = styled_text(
                 self.project,
                 'Once you\'re done, type "continue"?'
@@ -256,8 +256,8 @@ class Developer(Agent):
     def continue_development(self, iteration_convo, last_branch_name, continue_description=''):
         while True:
             iteration_convo.load_branch(last_branch_name)
-            user_description = ('Here is a description of what should be working: \n\n' + blue(bold(continue_description)) + '\n') if continue_description != '' else ''
-            user_description = 'Can you check if the app works please? ' + user_description + '\nIf you want to run the app, ' + yellow(bold('just type "r" and press ENTER and that will run `' + self.run_command + '`'))
+            user_description = ('Here is a description of what should be working: \n\n' + blue_bold(continue_description) + '\n') if continue_description != '' else ''
+            user_description = 'Can you check if the app works please? ' + user_description + '\nIf you want to run the app, ' + yellow_bold('just type "r" and press ENTER and that will run `' + self.run_command + '`')
             # continue_description = ''
             response = self.project.ask_for_human_intervention(
                 user_description,

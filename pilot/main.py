@@ -11,7 +11,7 @@ from termcolor import colored
 from helpers.ipc import IPCClient
 from const.ipc import MESSAGE_TYPE
 from utils.utils import json_serial
-from fabulous.color import red
+from utils.style import red
 
 from helpers.Project import Project
 from utils.arguments import get_arguments
@@ -34,8 +34,6 @@ def init():
     logger.info(f"Starting with args: {arguments}")
 
     return arguments
-
-
 
 
 def get_custom_print(args):

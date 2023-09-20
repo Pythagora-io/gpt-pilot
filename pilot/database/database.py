@@ -1,6 +1,6 @@
 from playhouse.shortcuts import model_to_dict
 from peewee import *
-from fabulous.color import yellow, red
+from utils.style import yellow, red
 from functools import reduce
 import operator
 import psycopg2

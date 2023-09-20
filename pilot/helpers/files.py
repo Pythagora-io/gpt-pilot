@@ -1,4 +1,4 @@
-from fabulous.color import green
+from utils.style import green
 import os
 
 

@@ -1,7 +1,7 @@
 import re
 import subprocess
 import uuid
-from fabulous.color import yellow, bold
+from utils.style import yellow, yellow_bold
 
 from database.database import get_saved_development_step, save_development_step, delete_all_subsequent_steps
 from helpers.files import get_files_content
@@ -126,7 +126,7 @@ class AgentConvo:
 
         # Continue conversation until GPT response equals END_RESPONSE
         while response != END_RESPONSE:
-            print(yellow("Do you want to add anything else? If not, ") + yellow(bold('just press ENTER.')))
+            print(yellow("Do you want to add anything else? If not, ") + yellow_bold('just press ENTER.'))
             user_message = ask_user(self.agent.project, response, False)
 
             if user_message == "":
@@ -204,7 +204,7 @@ class AgentConvo:
         print_msg = capitalize_first_word_with_underscores(self.high_level_step)
         if self.log_to_user:
             if self.agent.project.checkpoints['last_development_step'] is not None:
-                print(yellow("\nDev step ") + yellow(bold(str(self.agent.project.checkpoints['last_development_step']))) + '\n', end='')
+                print(yellow("\nDev step ") + yellow_bold(str(self.agent.project.checkpoints['last_development_step'])) + '\n', end='')
             print(f"\n{content}\n")
         logger.info(f"{print_msg}: {content}\n")
 

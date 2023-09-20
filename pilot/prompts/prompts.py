@@ -1,8 +1,5 @@
 # prompts/prompts.py
-
-from fabulous.color import yellow
-import questionary
-
+from utils.style import yellow
 from const import common
 from const.llm import MAX_QUESTIONS, END_RESPONSE
 from utils.llm_connection import create_gpt_chat_completion, get_prompt
