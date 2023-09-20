@@ -4,7 +4,7 @@ from unittest.mock import patch
 from dotenv import load_dotenv
 load_dotenv()
 
-from database.database import create_tables, drop_tables
+from database.database import create_tables
 from helpers.Project import Project
 from .main import init, get_custom_print
 
@@ -40,7 +40,7 @@ class MockQuestionary():
         elif self.state == 'DONE':
             answer = 'DONE'
         else:  # if self.state == 'project_description':
-            answer = next(self.answers)
+            answer = next(self.answers, '')
 
         print('User:', answer)
         return answer

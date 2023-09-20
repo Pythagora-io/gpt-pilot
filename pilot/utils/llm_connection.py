@@ -14,7 +14,8 @@ from logger.logger import logger
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from utils.utils import fix_json
 
-
+model = os.getenv('MODEL_NAME')
+endpoint = os.getenv('ENDPOINT')
 
 
 def get_tokens_in_messages(messages: List[str]) -> int:
@@ -22,9 +23,6 @@ def get_tokens_in_messages(messages: List[str]) -> int:
     tokenized_messages = [tokenizer.encode(message['content']) for message in messages]
     return sum(len(tokens) for tokens in tokenized_messages)
 
-#get endpoint and model name from .ENV file
-model = os.getenv('MODEL_NAME')
-endpoint = os.getenv('ENDPOINT')
 
 def num_tokens_from_functions(functions, model=model):
     """Return the number of tokens used by a list of functions."""
