@@ -1,4 +1,4 @@
-# logger.py
+import os
 import logging
 
 
@@ -7,7 +7,7 @@ def setup_logger():
     log_format = "%(asctime)s [%(filename)s:%(lineno)s - %(funcName)20s() ] %(levelname)s: %(message)s"
 
     # Create a log handler for file output
-    file_handler = logging.FileHandler(filename='logger/debug.log', mode='w')
+    file_handler = logging.FileHandler(filename=os.path.join(os.path.dirname(__file__), 'debug.log'), mode='w')
     file_handler.setLevel(logging.DEBUG)
 
     # Apply the custom format to the handler
