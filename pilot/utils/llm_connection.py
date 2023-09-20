@@ -9,35 +9,12 @@ import questionary
 
 from utils.style import red
 from typing import List
-from jinja2 import Environment, FileSystemLoader
-
-from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS, MAX_QUESTIONS, END_RESPONSE
+from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS
 from logger.logger import logger
 from helpers.exceptions.TokenLimitError import TokenLimitError
-from utils.utils import get_prompt_components, fix_json
-from utils.spinner import spinner_start, spinner_stop
+from utils.utils import fix_json
 
 
-def get_prompt(prompt_name, data=None):
-    if data is None:
-        data = {}
-
-    data.update(get_prompt_components())
-
-    logger.debug(f"Getting prompt for {prompt_name}")  # logging here
-    # Create a file system loader with the directory of the templates
-    file_loader = FileSystemLoader('prompts')
-
-    # Create the Jinja2 environment
-    env = Environment(loader=file_loader)
-
-    # Load the template
-    template = env.get_template(prompt_name)
-
-    # Render the template with the provided data
-    output = template.render(data)
-
-    return output
 
 
 def get_tokens_in_messages(messages: List[str]) -> int:

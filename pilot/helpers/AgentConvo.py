@@ -7,8 +7,8 @@ from database.database import get_saved_development_step, save_development_step,
 from helpers.files import get_files_content
 from const.common import IGNORE_FOLDERS
 from helpers.exceptions.TokenLimitError import TokenLimitError
-from utils.utils import array_of_objects_to_string
-from utils.llm_connection import get_prompt, create_gpt_chat_completion
+from utils.utils import array_of_objects_to_string, get_prompt
+from utils.llm_connection import create_gpt_chat_completion
 from utils.utils import get_sys_message, find_role_from_step, capitalize_first_word_with_underscores
 from logger.logger import logger
 from prompts.prompts import ask_user
