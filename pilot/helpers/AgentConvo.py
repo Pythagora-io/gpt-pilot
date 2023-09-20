@@ -23,7 +23,8 @@ class AgentConvo:
         agent: An instance of the agent participating in the conversation.
     """
     def __init__(self, agent):
-        self.messages = []
+        # [{'role': 'system'|'user'|'assistant', 'content': ''}, ...]
+        self.messages: list[dict] = []
         self.branches = {}
         self.log_to_user = True
         self.agent = agent

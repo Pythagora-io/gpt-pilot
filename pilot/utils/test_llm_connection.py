@@ -49,14 +49,14 @@ class TestLlmConnection:
                                                     })
 
         messages = convo.messages
-        # messages = [{"role": "user", "content": "I want to create a website"}]
 
         # When
         response = create_gpt_chat_completion(messages, '', function_calls=ARCHITECTURE)
+
         # Then
-        # You are and experienced software architect...
-        # You are working in a software development agency...
         assert len(convo.messages) == 2
+        assert convo.messages[0]['content'].startswith('You are an experienced software architect')
+        assert convo.messages[1]['content'].startswith('You are working in a software development agency')
         assert response is not None
         assert len(response) > 0
         technologies: list[str] = response['function_calls']['arguments']['technologies']
