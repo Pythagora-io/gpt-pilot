@@ -1,5 +1,4 @@
 import os
-# import sys
 import inspect
 from dotenv import load_dotenv
 from helpers.embeddings import save_embeddings_to_file, load_embeddings_from_file, closest_items
@@ -24,7 +23,7 @@ class ProjectGenerators:
 
         return closest_items(user_embedding, embeddings, top_n=5)
 
-    def generate_embeddings(self):
+    def get_embeddings(self):
         if os.path.exists(EMBEDDING_FILE_NAME):
             return load_embeddings_from_file(EMBEDDING_FILE_NAME)
 

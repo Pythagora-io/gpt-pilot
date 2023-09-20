@@ -4,12 +4,12 @@ generators = ProjectGenerators()
 
 
 class TestProjectGenerators:
-    def test_generate_embeddings(self):
+    def test_get_embeddings(self):
         # When
-        embeddings = generators.generate_embeddings()
+        embeddings = generators.get_embeddings()
 
         # Then
-        assert len(embeddings) > 0
+        assert len(embeddings) == 3
 
     def test_recommend_web(self):
         # When
@@ -18,6 +18,7 @@ class TestProjectGenerators:
         # Then
         assert len(recommended) > 0
         assert recommended[0]['name'] == 'create-react-app'
+
 
     def test_recommend_next(self):
         # When

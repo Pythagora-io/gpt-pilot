@@ -11,6 +11,7 @@ from helpers.Project import Project
 load_dotenv()
 
 EMBEDDING_FILE_NAME = os.path.join(os.path.dirname(__file__), 'template_repo_embeddings.pkl')
+PRIVATE_EMBEDDING_FILE_NAME = os.path.join(os.path.dirname(__file__), 'template_repo_private_embeddings.pkl')
 
 
 class GitHubTemplates:
@@ -20,22 +21,10 @@ class GitHubTemplates:
         auth = Auth.Token(self.access_token)
         self.g = Github(auth=auth)
 
-    def get_template_repos(self, organization: str = None):
-        one_year_ago = datetime.now() - timedelta(days=365)
-        # No disrespect to cirosantilli or his cause, but his templates are not useful for project generation
-        query = f'template:true -user:cirosantilli pushed:>{one_year_ago.strftime("%Y-%m-%d")}'
-        user = self.g.get_user().login
-
-        if organization is not None:
-            query += f' (stars:>100 OR user:{user} OR org:{organization})'
-        else:
-            query += f' (stars:>100 OR user:{user})'
-
-        return self.g.search_repositories(query, sort='stars', order='desc')
-
     def create_new_project(self, project: Project, template_repo_full_name: str, organization: str = None):
         """
             Clones a GitHub template repo into the project workspace.
+            Should call recommend_template_repositories() and set template_repo_full_name to the preferred repo.
             See: https://github.com/topics/template-repository
 
             Args:
@@ -66,9 +55,6 @@ class GitHubTemplates:
         if repo_embeddings is None:
             repo_embeddings = load_embeddings_from_file(EMBEDDING_FILE_NAME)
 
-        # for item in repo_embeddings:
-        #     print(item['data']['repo'])
-
         user_embedding = create_embedding(user_description)
 
         # if (technologies is not None):
@@ -78,11 +64,55 @@ class GitHubTemplates:
 
         return sorted(closest_items(user_embedding, repo_embeddings, top_n=5), key=lambda x: -x['stars'])
 
-    def generate_embeddings_for_repos(self):
-        if os.path.exists(EMBEDDING_FILE_NAME):
-            return load_embeddings_from_file(EMBEDDING_FILE_NAME)
+    def get_template_repos(self):
+        one_year_ago = datetime.now() - timedelta(days=365)
+        # See https://docs.github.com/en/search-github/searching-on-github/searching-for-repositories
+        # No disrespect to cirosantilli or his cause, but his templates are not useful for project generation
+        # leisurelicht/wtfpython-cn is also not a good template.
+        query = f'template:true -user:cirosantilli -user:leisurelicht ' \
+                f'stars:>100 pushed:>{one_year_ago.strftime("%Y-%m-%d")}'
 
+        return self.g.search_repositories(query, sort='stars', order='desc')
+
+    def get_private_template_repos(self, organization: str = None):
+        query = f'template:true is:private'
+        user = self.g.get_user().login
+
+        if organization is not None:
+            query += f' (user:{user} OR org:{organization})'
+        else:
+            query += f' user:{user}'
+
+        return self.g.search_repositories(query, sort='stars', order='desc')
+
+    def get_embeddings(self, organization: str = None):
+        # Generating embeddings for public template repos takes a long time, so we save them to a file
+        if os.path.exists(EMBEDDING_FILE_NAME):
+            embeddings = load_embeddings_from_file(EMBEDDING_FILE_NAME)
+        else:
+            repos = self.get_template_repos()
+            embeddings = self._generate_embeddings_for_repos(repos, EMBEDDING_FILE_NAME)
+
+        # Update the embeddings for private template repos only if the number of repos has changed
+        if os.path.exists(PRIVATE_EMBEDDING_FILE_NAME):
+            private_embeddings = load_embeddings_from_file(PRIVATE_EMBEDDING_FILE_NAME)
+        else:
+            private_embeddings = []
+
+        private_repos = self.get_private_template_repos(organization)
+        if private_repos.totalCount != len(private_embeddings):
+            private_embeddings = self._generate_embeddings_for_repos(private_repos, PRIVATE_EMBEDDING_FILE_NAME)
+
+        if len(private_embeddings) > 0:
+            embeddings.extend(private_embeddings)
+
+        return embeddings
+
+    def generate_embeddings_for_public_repos(self):
         repos = self.get_template_repos()
+        return self._generate_embeddings_for_repos(repos, EMBEDDING_FILE_NAME)
+
+    def _generate_embeddings_for_repos(self, repos, file_name):
         repo_embeddings = []
 
         print('Generating embedding for template repositories...')
@@ -122,7 +152,7 @@ class GitHubTemplates:
             # TODO: If saving to the DB, probably better as { type, data, embedding }
             # save_template_repo(repo.full_name, language, description, embedding)
 
-        save_embeddings_to_file(repo_embeddings, EMBEDDING_FILE_NAME)
+        save_embeddings_to_file(repo_embeddings, file_name)
         return repo_embeddings
 
     def _get_readme_content(self, repo):

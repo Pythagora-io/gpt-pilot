@@ -41,4 +41,4 @@ jobs:
       run: |
         pip install pytest
         cd pilot
-        PYTHONPATH=. pytest
+        PYTHONPATH=. pytest -m "not slow"
