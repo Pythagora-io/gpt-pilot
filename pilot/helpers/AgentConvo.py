@@ -1,11 +1,10 @@
+import json
 import re
 import subprocess
 import uuid
 from utils.style import yellow, yellow_bold
 
 from database.database import get_saved_development_step, save_development_step, delete_all_subsequent_steps
-from helpers.files import get_files_content
-from const.common import IGNORE_FOLDERS
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from utils.utils import array_of_objects_to_string, get_prompt
 from utils.llm_connection import create_gpt_chat_completion
@@ -188,10 +187,17 @@ class AgentConvo:
         """
         if 'function_calls' in response and function_calls is not None:
             if 'send_convo' in function_calls:
-                response['function_calls']['arguments']['convo']  = self
+                response['function_calls']['arguments']['convo'] = self
             response = function_calls['functions'][response['function_calls']['name']](**response['function_calls']['arguments'])
         elif 'text' in response:
-            response = response['text']
+            if function_calls:
+                values = list(json.loads(response['text']).values())
+                if len(values) == 1:
+                    return values[0]
+                else:
+                    return tuple(values)
+            else:
+                response = response['text']
 
         return response
 

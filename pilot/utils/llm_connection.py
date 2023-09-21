@@ -7,16 +7,14 @@ import json
 import tiktoken
 import questionary
 
+
 from utils.style import red
 from typing import List
 from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS
 from logger.logger import logger
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from utils.utils import fix_json
-
-model = os.getenv('MODEL_NAME')
-endpoint = os.getenv('ENDPOINT')
-
+from utils.function_calling import add_function_calls_to_request
 
 def get_tokens_in_messages(messages: List[str]) -> int:
     tokenizer = tiktoken.get_encoding("cl100k_base")  # GPT-4 tokenizer
@@ -24,7 +22,7 @@ def get_tokens_in_messages(messages: List[str]) -> int:
     return sum(len(tokens) for tokens in tokenized_messages)
 
 
-def num_tokens_from_functions(functions, model=model):
+def num_tokens_from_functions(functions):
     """Return the number of tokens used by a list of functions."""
     encoding = tiktoken.get_encoding("cl100k_base")
 
@@ -96,13 +94,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
             if key in gpt_data:
                 del gpt_data[key]
 
-    if function_calls is not None:
-        # Advise the LLM of the JSON response schema we are expecting
-        gpt_data['functions'] = function_calls['definitions']
-        if len(function_calls['definitions']) > 1:
-            gpt_data['function_call'] = 'auto'
-        else:
-            gpt_data['function_call'] = {'name': function_calls['definitions'][0]['name']}
+    add_function_calls_to_request(gpt_data, function_calls)
 
     try:
         response = stream_gpt_completion(gpt_data, req_type)
@@ -110,7 +102,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
     except TokenLimitError as e:
         raise e
     except Exception as e:
-        print('The request to OpenAI API failed. Here is the error message:')
+        print(f'The request to {os.getenv("ENDPOINT")} API failed. Here is the error message:')
         print(e)
 
 
@@ -125,6 +117,7 @@ def delete_last_n_lines(n):
 def count_lines_based_on_width(content, width):
     lines_required = sum(len(line) // width + 1 for line in content.split('\n'))
     return lines_required
+
 
 def get_tokens_in_messages_from_openai_error(error_message):
     """
@@ -208,7 +201,10 @@ def stream_gpt_completion(data, req_type):
 
     logger.info(f'Request data: {data}')
 
-    # Check if the ENDPOINT is AZURE
+    # Configure for the selected ENDPOINT
+    model = os.getenv('MODEL_NAME')
+    endpoint = os.getenv('ENDPOINT')
+
     if endpoint == 'AZURE':
         # If yes, get the AZURE_ENDPOINT from .ENV file
         endpoint_url = os.getenv('AZURE_ENDPOINT') + '/openai/deployments/' + model + '/chat/completions?api-version=2023-05-15'
@@ -239,10 +235,9 @@ def stream_gpt_completion(data, req_type):
     gpt_response = ''
     function_calls = {'name': '', 'arguments': ''}
 
-
     for line in response.iter_lines():
         # Ignore keep-alive new lines
-        if line:
+        if line and line != b': OPENROUTER PROCESSING':
             line = line.decode("utf-8")  # decode the bytes to string
 
             if line.startswith('data: '):
@@ -262,11 +257,13 @@ def stream_gpt_completion(data, req_type):
                     logger.error(f'Error in LLM response: {json_line}')
                     raise ValueError(f'Error in LLM response: {json_line["error"]["message"]}')
 
-                if json_line['choices'][0]['finish_reason'] == 'function_call':
+                choice = json_line['choices'][0]
+
+                if 'finish_reason' in choice and choice['finish_reason'] == 'function_call':
                     function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
                     return return_result({'function_calls': function_calls}, lines_printed)
 
-                json_line = json_line['choices'][0]['delta']
+                json_line = choice['delta']
 
             except json.JSONDecodeError:
                 logger.error(f'Unable to decode line: {line}')
