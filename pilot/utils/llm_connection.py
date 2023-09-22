@@ -264,6 +264,8 @@ def stream_gpt_completion(data, req_type):
                     return return_result({'function_calls': function_calls}, lines_printed)
 
                 json_line = choice['delta']
+                # TODO: token healing? https://github.com/1rgs/jsonformer-claude
+                #       ...Is this what local_llm_function_calling.constrainer is for?
 
             except json.JSONDecodeError:
                 logger.error(f'Unable to decode line: {line}')

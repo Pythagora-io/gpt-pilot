@@ -1,7 +1,7 @@
 from local_llm_function_calling.prompter import CompletionModelPrompter, InstructModelPrompter
 
 from const.function_calls import ARCHITECTURE, DEV_STEPS
-from .function_calling import parse_agent_response, LlamaInstructPrompter
+from .function_calling import parse_agent_response, JsonPrompter
 
 
 class TestFunctionCalling:
@@ -140,7 +140,7 @@ Function call: '''
 
 def test_llama_instruct_function_prompter_named():
     # Given
-    prompter = LlamaInstructPrompter()
+    prompter = JsonPrompter()
 
     # When
     prompt = prompter.prompt('Create a web-based chat app', ARCHITECTURE['definitions'], 'process_technologies')
