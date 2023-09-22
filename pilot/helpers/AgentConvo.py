@@ -1,4 +1,3 @@
-import json
 import re
 import subprocess
 import uuid
@@ -6,9 +5,9 @@ from utils.style import yellow, yellow_bold
 
 from database.database import get_saved_development_step, save_development_step, delete_all_subsequent_steps
 from helpers.exceptions.TokenLimitError import TokenLimitError
-from utils.utils import array_of_objects_to_string, get_prompt
+from utils.function_calling import parse_agent_response
 from utils.llm_connection import create_gpt_chat_completion
-from utils.utils import get_sys_message, find_role_from_step, capitalize_first_word_with_underscores
+from utils.utils import array_of_objects_to_string, get_prompt, get_sys_message, capitalize_first_word_with_underscores
 from logger.logger import logger
 from prompts.prompts import ask_user
 from const.llm import END_RESPONSE
@@ -83,7 +82,7 @@ class AgentConvo:
         if response == {}:
             raise Exception("OpenAI API error happened.")
 
-        response = self.postprocess_response(response, function_calls)
+        response = parse_agent_response(response, function_calls)
 
         # TODO remove this once the database is set up properly
         message_content = response[0] if type(response) == tuple else response
@@ -174,32 +173,6 @@ class AgentConvo:
     def convo_length(self):
         return len([msg for msg in self.messages if msg['role'] != 'system'])
 
-    def postprocess_response(self, response, function_calls):
-        """
-        Post-processes the response from the agent.
-
-        Args:
-            response: The response from the agent.
-            function_calls: Optional function calls associated with the response.
-
-        Returns:
-            The post-processed response.
-        """
-        if 'function_calls' in response and function_calls is not None:
-            if 'send_convo' in function_calls:
-                response['function_calls']['arguments']['convo'] = self
-            response = function_calls['functions'][response['function_calls']['name']](**response['function_calls']['arguments'])
-        elif 'text' in response:
-            if function_calls:
-                values = list(json.loads(response['text']).values())
-                if len(values) == 1:
-                    return values[0]
-                else:
-                    return tuple(values)
-            else:
-                response = response['text']
-
-        return response
 
     def log_message(self, content):
         """

@@ -1,4 +1,5 @@
 import json
+import re
 # from local_llm_function_calling import Generator
 # from local_llm_function_calling.model.llama import LlamaModel
 # from local_llm_function_calling.model.huggingface import HuggingfaceModel
@@ -38,6 +39,29 @@ def add_function_calls_to_request(gpt_data, function_calls: FunctionCallSet | No
         'role': 'user',
         'content': prompter.prompt('', function_calls['definitions'], function_call)
     })
+
+
+def parse_agent_response(response, function_calls: FunctionCallSet | None):
+    """
+    Post-processes the response from the agent.
+
+    Args:
+        response: The response from the agent.
+        function_calls: Optional function calls associated with the response.
+
+    Returns:
+        The post-processed response.
+    """
+
+    if function_calls:
+        text = re.sub(r'^```json\n', '', response['text'])
+        values = list(json.loads(text.strip('` \n')).values())
+        if len(values) == 1:
+            return values[0]
+        else:
+            return tuple(values)
+
+    return response['text']
 
 
 class LlamaInstructPrompter:
