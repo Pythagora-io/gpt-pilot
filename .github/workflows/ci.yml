@@ -43,4 +43,4 @@ jobs:
       run: |
         pip install pytest
         cd pilot
-        PYTHONPATH=. pytest -m "not slow"
+        PYTHONPATH=. pytest -m "not slow and not uses_tokens"

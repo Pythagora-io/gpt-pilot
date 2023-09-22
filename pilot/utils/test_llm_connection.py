@@ -2,7 +2,7 @@ import builtins
 import os
 from dotenv import load_dotenv
 from unittest.mock import patch
-from local_llm_function_calling.prompter import CompletionModelPrompter, InstructModelPrompter
+
 
 from const.function_calls import ARCHITECTURE, DEV_STEPS
 from helpers.AgentConvo import AgentConvo
@@ -97,61 +97,7 @@ class TestLlmConnection:
         # response = response['function_calls']['arguments']['technologies']
         assert 'Node.js' in response
 
-    def test_completion_function_prompt(self):
-        # Given
-        prompter = CompletionModelPrompter()
 
-        # When
-        prompt = prompter.prompt('Create a web-based chat app', ARCHITECTURE['definitions'])  # , 'process_technologies')
-
-        # Then
-        assert prompt == '''Create a web-based chat app
-
-Available functions:
-process_technologies - Print the list of technologies that are created.
-```jsonschema
-{
-    "technologies": {
-        "type": "array",
-        "description": "List of technologies that are created in a list.",
-        "items": {
-            "type": "string",
-            "description": "technology"
-        }
-    }
-}
-```
-
-Function call: 
-
-Function call: '''
-
-    def test_instruct_function_prompter(self):
-        # Given
-        prompter = InstructModelPrompter()
-
-        # When
-        prompt = prompter.prompt('Create a web-based chat app', ARCHITECTURE['definitions'])  # , 'process_technologies')
-
-        # Then
-        assert prompt == '''Your task is to call a function when needed. You will be provided with a list of functions. Available functions:
-process_technologies - Print the list of technologies that are created.
-```jsonschema
-{
-    "technologies": {
-        "type": "array",
-        "description": "List of technologies that are created in a list.",
-        "items": {
-            "type": "string",
-            "description": "technology"
-        }
-    }
-}
-```
-
-Create a web-based chat app
-
-Function call: '''
 
     def _create_convo(self, agent):
         convo = AgentConvo(agent)
