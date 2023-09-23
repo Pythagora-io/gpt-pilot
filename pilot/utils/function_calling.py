@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Literal, NotRequired, TypedDict, Callable
+from typing import Literal, Optional, TypedDict, Callable
 
 JsonType = str | int | float | bool | None | list["JsonType"] | dict[str, "JsonType"]
 
@@ -10,14 +10,14 @@ class FunctionParameters(TypedDict):
 
     type: Literal["object"]
     properties: dict[str, JsonType]
-    required: NotRequired[list[str]]
+    required: Optional[list[str]]
 
 
 class FunctionType(TypedDict):
     """Function type"""
 
     name: str
-    description: NotRequired[str]
+    description: Optional[str]
     parameters: FunctionParameters
 
 

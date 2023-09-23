@@ -1,5 +1,3 @@
-from local_llm_function_calling.prompter import CompletionModelPrompter, InstructModelPrompter
-
 from const.function_calls import ARCHITECTURE, DEV_STEPS
 from .function_calling import parse_agent_response, JsonPrompter
 
@@ -61,81 +59,40 @@ class TestFunctionCalling:
         assert name == 'John'
 
 
-def test_completion_function_prompt():
+def test_json_prompter():
     # Given
-    prompter = CompletionModelPrompter()
+    prompter = JsonPrompter()
 
     # When
     prompt = prompter.prompt('Create a web-based chat app', ARCHITECTURE['definitions'])  # , 'process_technologies')
 
     # Then
-    assert prompt == '''Create a web-based chat app
+    assert prompt == '''Help choose the appropriate function to call to answer the user's question.
+The response should contain only the JSON object, with no additional text or explanation.
 
 Available functions:
-process_technologies - Print the list of technologies that are created.
-```jsonschema
-{
-    "technologies": {
-        "type": "array",
-        "description": "List of technologies.",
-        "items": {
-            "type": "string",
-            "description": "technology"
-        }
-    }
-}
-```
+- process_technologies - Print the list of technologies that are created.
 
-Function call: 
-
-Function call: '''
+Create a web-based chat app'''
 
 
-def test_instruct_function_prompter():
+def test_llama_json_prompter():
     # Given
-    prompter = InstructModelPrompter()
+    prompter = JsonPrompter(is_llama=True)
 
     # When
     prompt = prompter.prompt('Create a web-based chat app', ARCHITECTURE['definitions'])  # , 'process_technologies')
 
     # Then
-    assert prompt == '''Your task is to call a function when needed. You will be provided with a list of functions. Available functions:
-process_technologies - Print the list of technologies that are created.
-```jsonschema
-{
-    "technologies": {
-        "type": "array",
-        "description": "List of technologies.",
-        "items": {
-            "type": "string",
-            "description": "technology"
-        }
-    }
-}
-```
+    assert prompt == '''[INST] <<SYS>>
+Help choose the appropriate function to call to answer the user's question.
+The response should contain only the JSON object, with no additional text or explanation.
 
-Create a web-based chat app
+Available functions:
+- process_technologies - Print the list of technologies that are created.
+<</SYS>>
 
-Function call: '''
-
-
-# def test_json_prompter():
-#     # Given
-#     prompter = JsonPrompter()
-#
-#     # When
-#     prompt = prompter.prompt('Create a web-based chat app', ARCHITECTURE['definitions'])  # , 'process_technologies')
-#
-#     # Then
-#     assert prompt == '''[INST] <<SYS>>
-# Help choose the appropriate function to call to answer the user's question.
-# In your response you must only use JSON output and provide no notes or commentary.
-#
-# Available functions:
-# - process_technologies - Print the list of technologies that are created.
-# <</SYS>>
-#
-# Create a web-based chat app [/INST]'''
+Create a web-based chat app [/INST]'''
 
 
 def test_json_prompter_named():
