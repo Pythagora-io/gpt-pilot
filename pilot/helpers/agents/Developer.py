@@ -324,31 +324,57 @@ class Developer(Agent):
             }, FILTER_OS_TECHNOLOGIES)
 
         for technology in os_specific_technologies:
-            # TODO move the functions definitions to function_calls.py
-            cli_response, llm_response = self.convo_os_specific_tech.send_message('development/env_setup/install_next_technology.prompt',
-                { 'technology': technology}, {
-                    'definitions': [{
-                        'name': 'execute_command',
-                        'description': f'Executes a command that should check if {technology} is installed on the machine. ',
-                        'parameters': {
-                            'type': 'object',
-                            'properties': {
-                                'command': {
-                                    'type': 'string',
-                                    'description': f'Command that needs to be executed to check if {technology} is installed on the machine.',
-                                },
-                                'timeout': {
-                                    'type': 'number',
-                                'description': 'Timeout in seconds for the approximate time this command takes to finish.',
-                                }
+            llm_response = self.install_technology(technology)
+
+            # TODO: I don't think llm_response would ever be 'DONE'?
+            if llm_response != 'DONE':
+                installation_commands = self.convo_os_specific_tech.send_message(
+                    'development/env_setup/unsuccessful_installation.prompt',
+                    {'technology': technology},
+                    EXECUTE_COMMANDS)
+
+                if installation_commands is not None:
+                    for cmd in installation_commands:
+                        run_command_until_success(cmd['command'], cmd['timeout'], self.convo_os_specific_tech)
+
+        logger.info('The entire tech stack needed is installed and ready to be used.')
+
+        save_progress(self.project.args['app_id'], self.project.current_step, {
+            "os_specific_technologies": os_specific_technologies,
+            "newly_installed_technologies": [],
+            "app_data": generate_app_data(self.project.args)
+        })
+
+        # ENVIRONMENT SETUP END
+
+    # TODO: This is only called from the unreachable section of set_up_environment()
+    def install_technology(self, technology):
+        # TODO move the functions definitions to function_calls.py
+        cmd, timeout_val = self.convo_os_specific_tech.send_message(
+            'development/env_setup/install_next_technology.prompt',
+            {'technology': technology}, {
+                'definitions': [{
+                    'name': 'execute_command',
+                    'description': f'Executes a command that should check if {technology} is installed on the machine. ',
+                    'parameters': {
+                        'type': 'object',
+                        'properties': {
+                            'command': {
+                                'type': 'string',
+                                'description': f'Command that needs to be executed to check if {technology} is installed on the machine.',
                             },
-                            'required': ['command', 'timeout'],
+                            'timeout': {
+                                'type': 'number',
+                                'description': 'Timeout in seconds for the approximate time this command takes to finish.',
+                            }
                         },
-                    }],
-                    'functions': {
+                        'required': ['command', 'timeout'],
+                    },
+                }],
+                'functions': {
                     'execute_command': lambda command, timeout: (command, timeout)
                 }
-                })
+            })
 
         cli_response, llm_response = execute_command_and_check_cli_response(cmd, timeout_val, self.convo_os_specific_tech)
 
