@@ -1,12 +1,31 @@
 import json
 import re
-# from local_llm_function_calling import Generator
-# from local_llm_function_calling.model.llama import LlamaModel
-# from local_llm_function_calling.model.huggingface import HuggingfaceModel
-from local_llm_function_calling.prompter import FunctionType, CompletionModelPrompter, InstructModelPrompter
-# from local_llm_function_calling.model.llama import LlamaInstructPrompter
+from typing import Literal, NotRequired, TypedDict, Callable
 
-from typing import Literal, NotRequired, Protocol, TypeVar, TypedDict, Callable
+JsonType = str | int | float | bool | None | list["JsonType"] | dict[str, "JsonType"]
+
+
+class FunctionParameters(TypedDict):
+    """Function parameters"""
+
+    type: Literal["object"]
+    properties: dict[str, JsonType]
+    required: NotRequired[list[str]]
+
+
+class FunctionType(TypedDict):
+    """Function type"""
+
+    name: str
+    description: NotRequired[str]
+    parameters: FunctionParameters
+
+
+class FunctionCall(TypedDict):
+    """Function call"""
+
+    name: str
+    parameters: str
 
 
 class FunctionCallSet(TypedDict):
@@ -29,8 +48,6 @@ def add_function_calls_to_request(gpt_data, function_calls: FunctionCallSet | No
     #         gpt_data['function_call'] = {'name': function_calls['definitions'][0]['name']}
     #     return
 
-    # prompter = CompletionModelPrompter()
-    # prompter = InstructModelPrompter()
     prompter = JsonPrompter(is_llama)
 
     if len(function_calls['definitions']) > 1:
@@ -39,9 +56,6 @@ def add_function_calls_to_request(gpt_data, function_calls: FunctionCallSet | No
         function_call = function_calls['definitions'][0]['name']
 
     role = 'user' if '/' in model else 'system'
-    # role = 'user'
-    # role = 'system'
-    # is_llama = True
 
     gpt_data['messages'].append({
         'role': role,
@@ -186,8 +200,6 @@ class JsonPrompter:
             "Help choose the appropriate function to call to answer the user's question."
             if function_to_call is None
             else f"Define the arguments for {function_to_call} to answer the user's question."
-        # ) + "\nYou must return a JSON object without notes or commentary."
-        # ) + " \nIn your response you must only use JSON output and provide no explanation or commentary."
         ) + " \nThe response should contain only the JSON object, with no additional text or explanation."
 
         data = (

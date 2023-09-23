@@ -88,7 +88,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
     }
 
     # delete some keys if using "OpenRouter" API
-    if os.getenv('ENDPOINT') == "OPENROUTER":
+    if os.getenv('ENDPOINT') == 'OPENROUTER':
         keys_to_delete = ['n', 'max_tokens', 'temperature', 'top_p', 'presence_penalty', 'frequency_penalty']
         for key in keys_to_delete:
             if key in gpt_data:
