@@ -42,10 +42,7 @@ class TestDeveloper:
     @patch('helpers.AgentConvo.get_saved_development_step')
     @patch('helpers.AgentConvo.save_development_step')
     @patch('helpers.AgentConvo.create_gpt_chat_completion',
-           return_value={'function_calls': {
-               'name': 'execute_command',
-               'arguments': {'command': 'python --version', 'timeout': 10}
-           }})
+           return_value={'text': '{"command": "python --version", "timeout": 10}'})
     @patch('helpers.cli.styled_text', return_value='no')
     @patch('helpers.cli.execute_command', return_value=('', 'DONE'))
     def test_install_technology(self, mock_execute_command, mock_styled_text,
