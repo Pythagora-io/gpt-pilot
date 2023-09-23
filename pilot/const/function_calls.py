@@ -28,7 +28,7 @@ def return_array_from_prompt(name_plural, name_singular, return_var_name):
             "properties": {
                 f"{return_var_name}": {
                     "type": "array",
-                    "description": f"List of {name_plural} that are created in a list.",
+                    "description": f"List of {name_plural}.",
                     "items": {
                         "type": "string",
                         "description": f"{name_singular}"

@@ -339,32 +339,20 @@ class Developer(Agent):
                                 },
                                 'timeout': {
                                     'type': 'number',
-                                    'description': 'Timeout in seconds for the approcimate time this command takes to finish.',
+                                'description': 'Timeout in seconds for the approximate time this command takes to finish.',
                                 }
                             },
                             'required': ['command', 'timeout'],
                         },
                     }],
                     'functions': {
-                        'execute_command': execute_command_and_check_cli_response
-                    },
-                    'send_convo': True
+                    'execute_command': lambda command, timeout: (command, timeout)
+                }
                 })
 
-            if llm_response != 'DONE':
-                installation_commands = self.convo_os_specific_tech.send_message('development/env_setup/unsuccessful_installation.prompt',
-                    { 'technology': technology }, EXECUTE_COMMANDS)
-                if installation_commands is not None:
-                    for cmd in installation_commands:
-                        run_command_until_success(cmd['command'], cmd['timeout'], self.convo_os_specific_tech)
+        cli_response, llm_response = execute_command_and_check_cli_response(command, timeout, self.convo_os_specific_tech)
 
-        logger.info('The entire tech stack needed is installed and ready to be used.')
-
-        save_progress(self.project.args['app_id'], self.project.current_step, {
-            "os_specific_technologies": os_specific_technologies, "newly_installed_technologies": [], "app_data": generate_app_data(self.project.args)
-        })
-
-        # ENVIRONMENT SETUP END
+        return llm_response
 
     def test_code_changes(self, code_monkey, convo):
         (test_type, command, automated_test_description, manual_test_description) = convo.send_message(

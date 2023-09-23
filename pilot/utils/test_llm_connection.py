@@ -63,10 +63,10 @@ class TestLlmConnection:
         ("OPENROUTER", "openai/gpt-3.5-turbo"),              # role: user
         ("OPENROUTER", "meta-llama/codellama-34b-instruct"), # rule: user, is_llama   missed "choices"
         ("OPENROUTER", "google/palm-2-chat-bison"),          # role: user/system
-
-        # See https://github.com/1rgs/jsonformer-claude/blob/main/jsonformer_claude/main.py
-        ("OPENROUTER", "anthropic/claude-2"),  # role: user, prompt 2 - sometimes JSON, sometimes Python to generate JSON
-        # ("OPENROUTER", "google/palm-2-codechat-bison"),      # not working
+        ("OPENROUTER", "google/palm-2-codechat-bison"),
+        # TODO: See https://github.com/1rgs/jsonformer-claude/blob/main/jsonformer_claude/main.py
+        #           https://github.com/guidance-ai/guidance - token healing
+        ("OPENROUTER", "anthropic/claude-2"),              # role: user, is_llama
     ])
     def test_chat_completion_Architect(self, endpoint, model, monkeypatch):
         # Given
