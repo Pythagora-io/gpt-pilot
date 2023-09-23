@@ -77,7 +77,7 @@ process_technologies - Print the list of technologies that are created.
 {
     "technologies": {
         "type": "array",
-        "description": "List of technologies that are created in a list.",
+        "description": "List of technologies.",
         "items": {
             "type": "string",
             "description": "technology"
@@ -105,7 +105,7 @@ process_technologies - Print the list of technologies that are created.
 {
     "technologies": {
         "type": "array",
-        "description": "List of technologies that are created in a list.",
+        "description": "List of technologies.",
         "items": {
             "type": "string",
             "description": "technology"
@@ -138,7 +138,7 @@ Function call: '''
 # Create a web-based chat app [/INST]'''
 
 
-def test_llama_instruct_function_prompter_named():
+def test_json_prompter_named():
     # Given
     prompter = JsonPrompter()
 
@@ -146,17 +146,46 @@ def test_llama_instruct_function_prompter_named():
     prompt = prompter.prompt('Create a web-based chat app', ARCHITECTURE['definitions'], 'process_technologies')
 
     # Then
-    assert prompt == '''[INST] <<SYS>>
-Define the arguments for process_technologies to answer the user's question.
-In your response you must only use JSON output and provide no notes or commentary.
+    assert prompt == '''Define the arguments for process_technologies to answer the user's question.
+The response should contain only the JSON object, with no additional text or explanation.
 
-Function description: Print the list of technologies that are created.
-Function parameters should follow this schema:
-```jsonschema
+Print the list of technologies that are created.
+The response should be a JSON object matching this schema:
+```json
 {
     "technologies": {
         "type": "array",
-        "description": "List of technologies that are created in a list.",
+        "description": "List of technologies.",
+        "items": {
+            "type": "string",
+            "description": "technology"
+        }
+    }
+}
+```
+
+Create a web-based chat app'''
+
+
+def test_llama_json_prompter_named():
+    # Given
+    prompter = JsonPrompter(is_llama=True)
+
+    # When
+    prompt = prompter.prompt('Create a web-based chat app', ARCHITECTURE['definitions'], 'process_technologies')
+
+    # Then
+    assert prompt == '''[INST] <<SYS>>
+Define the arguments for process_technologies to answer the user's question.
+The response should contain only the JSON object, with no additional text or explanation.
+
+Print the list of technologies that are created.
+The response should be a JSON object matching this schema:
+```json
+{
+    "technologies": {
+        "type": "array",
+        "description": "List of technologies.",
         "items": {
             "type": "string",
             "description": "technology"
