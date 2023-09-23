@@ -19,7 +19,7 @@ def add_function_calls_to_request(gpt_data, function_calls: FunctionCallSet | No
         return
 
     model: str = gpt_data['model']
-    is_llama = 'llama' in model
+    is_llama = 'llama' in model or 'anthropic' in model
 
     # if model == 'gpt-4':
     #     gpt_data['functions'] = function_calls['definitions']
@@ -93,7 +93,7 @@ class JsonPrompter:
                 (empty if the function doesn't exist or has no description)
         """
         return [
-            "Function description: " + function["description"]
+            function["description"]
             for function in functions
             if function["name"] == function_to_call and "description" in function
         ]
@@ -131,8 +131,8 @@ class JsonPrompter:
         return "\n".join(
             self.function_descriptions(functions, function_to_call)
             + [
-                "Function parameters should follow this schema:",
-                "```jsonschema",
+                "The response should be a JSON object matching this schema:",
+                "```json",
                 self.function_parameters(functions, function_to_call),
                 "```",
             ]
@@ -187,7 +187,8 @@ class JsonPrompter:
             if function_to_call is None
             else f"Define the arguments for {function_to_call} to answer the user's question."
         # ) + "\nYou must return a JSON object without notes or commentary."
-        ) + " \nIn your response you must only use JSON output and provide no explanation or commentary."
+        # ) + " \nIn your response you must only use JSON output and provide no explanation or commentary."
+        ) + " \nThe response should contain only the JSON object, with no additional text or explanation."
 
         data = (
             self.function_data(functions, function_to_call)

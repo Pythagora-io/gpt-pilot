@@ -61,11 +61,11 @@ class TestLlmConnection:
     @pytest.mark.parametrize("endpoint, model", [
         ("OPENAI", "gpt-4"),                                 # role: system
         ("OPENROUTER", "openai/gpt-3.5-turbo"),              # role: user
-        ("OPENROUTER", "meta-llama/codellama-34b-instruct"), # rule: user, is_llama
+        ("OPENROUTER", "meta-llama/codellama-34b-instruct"), # rule: user, is_llama   missed "choices"
         ("OPENROUTER", "google/palm-2-chat-bison"),          # role: user/system
 
         # See https://github.com/1rgs/jsonformer-claude/blob/main/jsonformer_claude/main.py
-        # ("OPENROUTER", "anthropic/claude-2"),  # role: user, prompt 2
+        ("OPENROUTER", "anthropic/claude-2"),  # role: user, prompt 2 - sometimes JSON, sometimes Python to generate JSON
         # ("OPENROUTER", "google/palm-2-codechat-bison"),      # not working
     ])
     def test_chat_completion_Architect(self, endpoint, model, monkeypatch):
