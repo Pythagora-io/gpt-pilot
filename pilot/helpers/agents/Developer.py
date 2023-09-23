@@ -350,7 +350,7 @@ class Developer(Agent):
                 }
                 })
 
-        cli_response, llm_response = execute_command_and_check_cli_response(command, timeout, self.convo_os_specific_tech)
+        cli_response, llm_response = execute_command_and_check_cli_response(cmd, timeout_val, self.convo_os_specific_tech)
 
         return llm_response
 
