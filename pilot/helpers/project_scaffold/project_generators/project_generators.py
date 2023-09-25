@@ -14,6 +14,7 @@ from .gradle_init import GradleInit
 from .spring_init import SpringInit
 # Maven archetype?
 # TODO: generator for Python projects - best practices (venv/conda/pipenv/poetry?) or cookiecutter?
+# TODO: VS Code extension - `npm install -g yo generator-code` and `yo code`
 
 load_dotenv()
 
