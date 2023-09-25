@@ -9,7 +9,7 @@ import json
 import hashlib
 import re
 from jinja2 import Environment, FileSystemLoader
-from termcolor import colored
+from .style import green
 
 from const.llm import MAX_QUESTIONS, END_RESPONSE
 from const.common import ROLES, STEPS
@@ -138,7 +138,7 @@ def step_already_finished(args, step):
     args.update(step['app_data'])
 
     message = f"{capitalize_first_word_with_underscores(step['step'])} already done for this app_id: {args['app_id']}. Moving to next step..."
-    print(colored(message, 'green'))
+    print(green(message))
     logger.info(message)
 
 

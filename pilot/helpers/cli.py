@@ -93,7 +93,10 @@ def execute_command(project, command, timeout=None, force=False):
         force (bool, optional): Whether to execute the command without confirmation. Default is False.
 
     Returns:
-        str: The command output.
+        cli_response (str): The command output
+                            or: '', 'DONE' if user answered 'no' or 'skip'
+        llm_response (str): The response from the agent.
+                            TODO: this seems to be 'DONE' (no or skip) or None
     """
     if timeout is not None:
         if timeout < 1000:
@@ -109,6 +112,9 @@ def execute_command(project, command, timeout=None, force=False):
             'If yes, just press ENTER'
         )
 
+        # TODO: I think AutoGPT allows other feedback here, like:
+        #       "That's not going to work, let's do X instead"
+        #       We don't explicitly make "no" or "skip" options to the user
         if answer == 'no':
             return '', 'DONE'
         elif answer == 'skip':
@@ -252,12 +258,15 @@ def execute_command_and_check_cli_response(command, timeout, convo):
 
     Returns:
         tuple: A tuple containing the CLI response and the agent's response.
+            - cli_response (str): The command output.
+            - llm_response (str): 'DONE' or 'NEEDS_DEBUGGING'
     """
-    cli_response, response = execute_command(convo.agent.project, command, timeout)
-    if response is None:
-        response = convo.send_message('dev_ops/ran_command.prompt',
+    # TODO: Prompt mentions `command` could be `INSTALLED` or `NOT_INSTALLED`, where is this handled?
+    cli_response, llm_response = execute_command(convo.agent.project, command, timeout)
+    if llm_response is None:
+        llm_response = convo.send_message('dev_ops/ran_command.prompt',
             { 'cli_response': cli_response, 'command': command })
-    return cli_response, response
+    return cli_response, llm_response
 
 def run_command_until_success(command, timeout, convo, additional_message=None, force=False, return_cli_response=False, is_root_task=False):
     """

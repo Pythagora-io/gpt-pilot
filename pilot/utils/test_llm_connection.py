@@ -24,7 +24,7 @@ class TestLlmConnection:
     @pytest.mark.parametrize("endpoint, model", [
         ("OPENAI", "gpt-4"),                                 # role: system
         ("OPENROUTER", "openai/gpt-3.5-turbo"),              # role: user
-        ("OPENROUTER", "meta-llama/codellama-34b-instruct"), # rule: user, is_llama   missed "choices"
+        ("OPENROUTER", "meta-llama/codellama-34b-instruct"), # rule: user, is_llama
         ("OPENROUTER", "google/palm-2-chat-bison"),          # role: user/system
         ("OPENROUTER", "google/palm-2-codechat-bison"),
         # TODO: See https://github.com/1rgs/jsonformer-claude/blob/main/jsonformer_claude/main.py
