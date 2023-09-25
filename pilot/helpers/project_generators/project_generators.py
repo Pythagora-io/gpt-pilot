@@ -5,9 +5,13 @@ from helpers.embeddings import save_embeddings_to_file, load_embeddings_from_fil
 from utils.llm_connection import create_embedding
 from .project_generator import generators
 
-from .gradle_init import GradleInit
 from .create_react_app import CreateReactApp
 from .create_next_app import CreateNextApp
+from .create_vite import CreateVite
+from .flutter import Flutter
+from .gradle_init import GradleInit
+from .spring_init import SpringInit
+# Maven archetype?
 
 load_dotenv()
 
