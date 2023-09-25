@@ -1,15 +1,18 @@
+import pytest
+
 from .project_generators import ProjectGenerators
 
 generators = ProjectGenerators()
 
 
+@pytest.mark.uses_tokens
 class TestProjectGenerators:
     def test_get_embeddings(self):
         # When
         embeddings = generators.get_embeddings()
 
         # Then
-        assert len(embeddings) == 3
+        assert len(embeddings) == 7
 
     def test_recommend_web(self):
         # When
@@ -35,3 +38,11 @@ class TestProjectGenerators:
         # Then
         assert len(recommended) > 0
         assert recommended[0]['name'] == 'Gradle Init'
+
+    def test_recommend_mobile(self):
+        # When
+        recommended = generators.recommend('A mobile app')
+
+        # Then
+        assert len(recommended) > 0
+        assert recommended[0]['name'] == 'flutter'

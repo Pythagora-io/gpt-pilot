@@ -4,14 +4,16 @@ from helpers.Project import Project
 from .project_generator import project_generator
 
 
-@project_generator(name="spring init",
-                   language="Java, Kotlin",
-                   topics=["Spring", "Java", "Kotlin"])
+@project_generator(name='spring init',
+                   language='Java, Kotlin',
+                   topics=['Spring', 'Java', 'Kotlin'])
 class SpringInit:
     """
     Creates a new Spring Boot app using Spring Initializr
-    See https://docs.spring.io/spring-boot/docs/current/reference/html/cli.html
     """
+
+    def get_documentation_url(self):
+        return 'https://docs.spring.io/spring-boot/docs/current/reference/html/cli.html'
 
     def create_new_project(self, project: Project):
         cmd = ['spring', 'init',

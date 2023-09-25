@@ -5,6 +5,7 @@ from helpers.embeddings import save_embeddings_to_file, load_embeddings_from_fil
 from utils.llm_connection import create_embedding
 from .project_generator import generators
 
+from .create_expo_app import CreateExpoApp
 from .create_react_app import CreateReactApp
 from .create_next_app import CreateNextApp
 from .create_vite import CreateVite

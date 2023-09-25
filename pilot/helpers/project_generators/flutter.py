@@ -4,20 +4,23 @@ from helpers.Project import Project
 from .project_generator import project_generator
 
 
-@project_generator(name="flutter",
-                   language="Dart, Kotlin, Swift",
-                   topics=["Flutter", "mobile", "dart", "kotlin", "swift"])
+@project_generator(name='flutter',
+                   language='Dart, Kotlin, Swift',
+                   topics=['Flutter', 'mobile', 'dart', 'kotlin', 'swift', 'android', 'ios',
+                           'web', 'desktop', 'macos', 'windows', 'linux'])
 class Flutter:
     """
-    Creates a Next.JS web app using create-next-app.
-    See https://docs.flutter.dev/reference/flutter-cli
+    Creates a mobile, desktop or web app using Flutter.
     """
 
-    def create_new_project(self, project: Project):
-        cmd = ["flutter", "create", project.name]
+    def get_documentation_url(self):
+        return 'https://docs.flutter.dev/reference/flutter-cli'
 
-        # if (project.language == "TypeScript"):
-        #     cmd.append("--template typescript")
+    def create_new_project(self, project: Project):
+        cmd = ['flutter', 'create', project.name]
+
+        # if (project.language == 'TypeScript'):
+        #     cmd.append('--template typescript')
 
         # Run the command
         os.chdir(os.path.pardir(project.root_path))
