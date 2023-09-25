@@ -112,6 +112,57 @@ COMMANDS_TO_RUN = {
     },
 }
 
+CREATE_PROJECT = {
+    'definitions': [{
+        'name': 'run_generator',
+        'description': 'Runs the generator tool that creates a new project.',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'type': 'string',
+                    'description': 'The name of the project generator',
+                },
+                'reason': {
+                    'type': 'string',
+                    'description': 'Summary of why a software development team would use this generator and options '
+                                   'to create this project.',
+                },
+                'options': {
+                    'type': 'array',
+                    'description': 'List of options that need to be passed to the generator tool.',
+                    'items': {
+                        'type': 'string',
+                    }
+                },
+            },
+            'required': ['name', 'reason'],
+        }
+    }, {
+        'name': 'use_template',
+        'description': 'Uses a GitHub template repository to create a new project.',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'repo': {
+                    'type': 'string',
+                    'description': 'The name of the template repository upon which to base the project.',
+                },
+                'reason': {
+                    'type': 'string',
+                    'description': 'Summary of how this template is a good choice to create this project.',
+                }
+            },
+            'required': ['repo', 'reason'],
+        }
+    }],
+    'functions': {
+        'run_generator': lambda name, reason, options=None: (name, reason, options),
+        'use_template': lambda repo, reason: (repo, reason)
+    }
+}
+
+
 DEV_TASKS_BREAKDOWN = {
     'definitions': [
         {

@@ -14,6 +14,11 @@ from const.common import ROLES, STEPS
 from logger.logger import logger
 
 
+prompts_path = os.path.join(os.path.dirname(__file__), '..', 'prompts')
+file_loader = FileSystemLoader(prompts_path)
+env = Environment(loader=file_loader)
+
+
 def capitalize_first_word_with_underscores(s):
     # Split the string into words based on underscores.
     words = s.split('_')
@@ -61,14 +66,8 @@ def get_prompt_components():
 
 
 def get_sys_message(role):
-    # Create a FileSystemLoader
-    file_loader = FileSystemLoader('prompts/system_messages')
-
-    # Create the Jinja2 environment
-    env = Environment(loader=file_loader)
-
     # Load the template
-    template = env.get_template(f'{role}.prompt')
+    template = env.get_template(f'system_messages/{role}.prompt')
 
     # Render the template with no variables
     content = template.render()

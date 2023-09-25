@@ -6,7 +6,6 @@ from github import Github, Auth, AuthenticatedUser
 from dotenv import load_dotenv
 from utils.llm_connection import create_embedding
 from helpers.embeddings import save_embeddings_to_file, load_embeddings_from_file, closest_items
-from helpers.Project import Project
 
 load_dotenv()
 
@@ -21,7 +20,7 @@ class GitHubTemplates:
         auth = Auth.Token(self.access_token)
         self.g = Github(auth=auth)
 
-    def create_new_project(self, project: Project, template_repo_full_name: str, organization: str = None):
+    def create_new_project(self, project, template_repo_full_name: str, organization: str = None):
         """
             Clones a GitHub template repo into the project workspace.
             Should call recommend_template_repositories() and set template_repo_full_name to the preferred repo.

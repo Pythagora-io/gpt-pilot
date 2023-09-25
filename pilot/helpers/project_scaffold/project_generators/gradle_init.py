@@ -1,6 +1,5 @@
 import os
 import subprocess
-from helpers.Project import Project
 from .project_generator import project_generator
 
 
@@ -16,7 +15,7 @@ class GradleInit:
     def get_documentation_url(self):
         return 'https://docs.gradle.org/current/userguide/build_init_plugin.html'
 
-    def create_new_project(self, project: Project):
+    def create_new_project(self, project):
         """
         `gradle help --task :init`
         """

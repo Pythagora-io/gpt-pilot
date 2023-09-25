@@ -1,7 +1,6 @@
 import os
 import requests
 import subprocess
-from helpers.Project import Project
 from .project_generator import project_generator
 
 
@@ -16,7 +15,7 @@ class SpringInit:
     def get_documentation_url(self):
         return 'https://docs.spring.io/spring-boot/docs/current/reference/html/cli.html'
 
-    def create_new_project(self, project: Project):
+    def create_new_project(self, project):
         cmd = ['spring', 'init',
                '--name', project.name,
                '--artifact-id', project.name,

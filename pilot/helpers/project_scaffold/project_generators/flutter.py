@@ -1,6 +1,5 @@
 import os
 import subprocess
-from helpers.Project import Project
 from .project_generator import project_generator
 
 
@@ -16,7 +15,7 @@ class Flutter:
     def get_documentation_url(self):
         return 'https://docs.flutter.dev/reference/flutter-cli'
 
-    def create_new_project(self, project: Project):
+    def create_new_project(self, project):
         cmd = ['flutter', 'create', project.name]
 
         # if (project.language == 'TypeScript'):

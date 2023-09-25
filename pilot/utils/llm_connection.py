@@ -29,7 +29,8 @@ def get_prompt(prompt_name, data=None):
 
     logger.debug(f"Getting prompt for {prompt_name}")  # logging here
     # Create a file system loader with the directory of the templates
-    file_loader = FileSystemLoader('prompts')
+    prompts_path = os.path.join(os.path.dirname(__file__), '..', 'prompts')
+    file_loader = FileSystemLoader(prompts_path)
 
     # Create the Jinja2 environment
     env = Environment(loader=file_loader)

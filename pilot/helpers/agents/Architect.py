@@ -1,6 +1,6 @@
 from utils.utils import step_already_finished
 from helpers.Agent import Agent
-import json
+from helpers.project_scaffold.project_scaffolder import ProjectScaffolder
 from termcolor import colored
 from const.function_calls import ARCHITECTURE
 
@@ -17,6 +17,7 @@ class Architect(Agent):
     def __init__(self, project):
         super().__init__('architect', project)
         self.convo_architecture = None
+        self.scaffolder = ProjectScaffolder()
 
     def get_architecture(self):
         self.project.current_step = ARCHITECTURE_STEP
@@ -52,3 +53,7 @@ class Architect(Agent):
 
         return architecture
         # ARCHITECTURE END
+
+    def select_project_generator(self, project):
+        description = project.description
+        self.scaffolder.select_project_generator(project, AgentConvo(self))

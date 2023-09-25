@@ -1,6 +1,5 @@
 import os
 import subprocess
-from helpers.Project import Project
 from .project_generator import project_generator
 
 
@@ -13,7 +12,7 @@ class CreateVite:
     Creates a new web app using create-vite.
     """
 
-    def create_new_project(self, project: Project):
+    def create_new_project(self, project):
         cmd = ['npx', 'create vite', project.name]
 
         # TODO: Architect suggest and user confirms from front-end options:

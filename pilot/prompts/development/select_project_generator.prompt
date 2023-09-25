@@ -1,0 +1,11 @@
+I want you to create a project scaffold using one of the project generators or templates suggested below.
+
+The project is described as follows:
+
+{{ description }}
+
+## Project Generators
+{{ generators }}
+
+## Project Templates
+{{ github_templates }}

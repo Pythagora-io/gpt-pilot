@@ -1,6 +1,5 @@
 import os
 import subprocess
-from helpers.Project import Project
 from .project_generator import project_generator
 
 
@@ -15,7 +14,7 @@ class CreateReactApp:
     def get_documentation_url(self):
         return 'https://create-react-app.dev/docs/getting-started'
 
-    def create_new_project(self, project: Project):
+    def create_new_project(self, project):
         cmd = ['npx', 'create-react-app', project.name]
 
         # if (project.language == 'TypeScript'):
