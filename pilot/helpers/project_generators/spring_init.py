@@ -1,4 +1,5 @@
 import os
+import requests
 import subprocess
 from helpers.Project import Project
 from .project_generator import project_generator
@@ -55,3 +56,27 @@ class SpringInit:
         # Run the command
         os.chdir(project.root_path)
         subprocess.run(cmd)
+
+    def get_dependencies(self):
+        url = 'https://start.spring.io/metadata/client'
+        response = requests.get(url)
+
+        if response.status_code != 200:
+            raise Exception(f'Failed to fetch data from {url}. Status code: {response.status_code}')
+
+        data = response.json()
+        dependencies = data.get('dependencies', {}).get('values', [])
+
+        dependency_dict = {}
+        for dep_group in dependencies:
+            # category_name = dep_group.get("name")
+            # category_dict = {}
+            # dependency_dict[category_name] = category_dict
+
+            for dep in dep_group.get('values', []):
+                dep_id = dep.get('id')
+                dep_description = dep.get('description')
+                dependency_dict[dep_id] = dep_description
+                # category_dict[dep_id] = dep_description
+
+        return dependency_dict

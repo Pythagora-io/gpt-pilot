@@ -13,7 +13,7 @@ from .flutter import Flutter
 from .gradle_init import GradleInit
 from .spring_init import SpringInit
 # Maven archetype?
-# TODO: generator for Python projects - best practices or cookiecutter?
+# TODO: generator for Python projects - best practices (venv/conda/pipenv/poetry?) or cookiecutter?
 
 load_dotenv()
 
