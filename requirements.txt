@@ -2,6 +2,7 @@ blessed==1.20.0
 certifi==2023.5.7
 charset-normalizer==3.2.0
 distro==1.8.0
+fabulous==0.4.0
 idna==3.4
 Jinja2==3.1.2
 MarkupSafe==2.1.3
