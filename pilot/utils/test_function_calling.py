@@ -78,7 +78,7 @@ Create a web-based chat app'''
 
 def test_llama_json_prompter():
     # Given
-    prompter = JsonPrompter(is_llama=True)
+    prompter = JsonPrompter(is_instruct=True)
 
     # When
     prompt = prompter.prompt('Create a web-based chat app', ARCHITECTURE['definitions'])  # , 'process_technologies')
@@ -126,7 +126,7 @@ Create a web-based chat app'''
 
 def test_llama_json_prompter_named():
     # Given
-    prompter = JsonPrompter(is_llama=True)
+    prompter = JsonPrompter(is_instruct=True)
 
     # When
     prompt = prompter.prompt('Create a web-based chat app', ARCHITECTURE['definitions'], 'process_technologies')

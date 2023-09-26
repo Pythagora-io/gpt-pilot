@@ -5,7 +5,7 @@ from utils.style import yellow, yellow_bold
 
 from database.database import get_saved_development_step, save_development_step, delete_all_subsequent_steps
 from helpers.exceptions.TokenLimitError import TokenLimitError
-from utils.function_calling import parse_agent_response
+from utils.function_calling import parse_agent_response, FunctionCallSet
 from utils.llm_connection import create_gpt_chat_completion
 from utils.utils import array_of_objects_to_string, get_prompt, get_sys_message, capitalize_first_word_with_underscores
 from logger.logger import logger
@@ -31,7 +31,7 @@ class AgentConvo:
         # add system message
         self.messages.append(get_sys_message(self.agent.role))
 
-    def send_message(self, prompt_path=None, prompt_data=None, function_calls=None):
+    def send_message(self, prompt_path=None, prompt_data=None, function_calls: FunctionCallSet = None):
         """
         Sends a message in the conversation.
 

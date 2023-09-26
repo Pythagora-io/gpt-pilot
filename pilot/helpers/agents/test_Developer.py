@@ -9,12 +9,7 @@ load_dotenv()
 from main import  get_custom_print
 from .Developer import Developer, ENVIRONMENT_SETUP_STEP
 from helpers.Project import Project
-
-
-def mock_terminal_size():
-    mock_size = Mock()
-    mock_size.columns = 80  # or whatever width you want
-    return mock_size
+from test.mock_terminal_size import mock_terminal_size
 
 
 class TestDeveloper:

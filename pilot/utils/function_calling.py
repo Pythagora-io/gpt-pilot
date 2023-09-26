@@ -38,17 +38,11 @@ def add_function_calls_to_request(gpt_data, function_calls: FunctionCallSet | No
         return
 
     model: str = gpt_data['model']
-    is_llama = 'llama' in model or 'anthropic' in model
+    is_instruct = 'llama' in model or 'anthropic' in model
 
-    # if model == 'gpt-4':
-    #     gpt_data['functions'] = function_calls['definitions']
-    #     if len(function_calls['definitions']) > 1:
-    #         gpt_data['function_call'] = 'auto'
-    #     else:
-    #         gpt_data['function_call'] = {'name': function_calls['definitions'][0]['name']}
-    #     return
+    gpt_data['functions'] = function_calls['definitions']
 
-    prompter = JsonPrompter(is_llama)
+    prompter = JsonPrompter(is_instruct)
 
     if len(function_calls['definitions']) > 1:
         function_call = None
@@ -77,7 +71,8 @@ def parse_agent_response(response, function_calls: FunctionCallSet | None):
 
     if function_calls:
         text = re.sub(r'^.*```json\s*', '', response['text'], flags=re.DOTALL)
-        values = list(json.loads(text.strip('` \n')).values())
+        text = text.strip('` \n')
+        values = list(json.loads(text).values())
         if len(values) == 1:
             return values[0]
         else:
@@ -90,8 +85,8 @@ class JsonPrompter:
     """
     Adapted from local_llm_function_calling
     """
-    def __init__(self, is_llama: bool = False):
-        self.is_llama = is_llama
+    def __init__(self, is_instruct: bool = False):
+        self.is_instruct = is_instruct
 
     def function_descriptions(
         self, functions: list[FunctionType], function_to_call: str
@@ -107,7 +102,7 @@ class JsonPrompter:
                 (empty if the function doesn't exist or has no description)
         """
         return [
-            function["description"]
+            f'# {function["name"]}: {function["description"]}'
             for function in functions
             if function["name"] == function_to_call and "description" in function
         ]
@@ -213,7 +208,7 @@ class JsonPrompter:
             else "Here's the function the user should call: "
         )
 
-        if self.is_llama:
+        if self.is_instruct:
             return f"[INST] <<SYS>>\n{system}\n\n{data}\n<</SYS>>\n\n{prompt} [/INST]"
         else:
             return f"{system}\n\n{data}\n\n{prompt}"

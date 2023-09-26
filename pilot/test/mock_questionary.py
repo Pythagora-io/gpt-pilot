@@ -1,9 +1,13 @@
 class MockQuestionary:
-    def __init__(self, answers=None):
+    def __init__(self, answers=None, initial_state='project_description'):
         if answers is None:
             answers = []
         self.answers = iter(answers)
-        self.state = 'project_description'
+        self.state = initial_state
+
+    class Style:
+        def __init__(self, *args, **kwargs):
+            pass
 
     def text(self, question: str, style=None):
         print('AI: ' + question)
@@ -12,6 +16,9 @@ class MockQuestionary:
         elif question.endswith('write "DONE"'):
             self.state = 'DONE'
         return self
+
+    def ask(self):
+        return self.unsafe_ask()
 
     def unsafe_ask(self):
         if self.state == 'user_stories':

@@ -10,15 +10,10 @@ from database.models.files import File
 from database.models.development_steps import DevelopmentSteps
 from helpers.Project import Project, update_file, clear_directory
 from helpers.AgentConvo import AgentConvo
+from test.mock_terminal_size import mock_terminal_size
 
 SEND_TO_LLM = False
 WRITE_TO_FILE = False
-
-
-def mock_terminal_size():
-    mock_size = Mock()
-    mock_size.columns = 80  # or whatever width you want
-    return mock_size
 
 
 class TestCodeMonkey:
