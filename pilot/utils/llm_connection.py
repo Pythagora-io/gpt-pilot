@@ -7,6 +7,7 @@ import json
 import tiktoken
 import questionary
 
+from jsonschema import validate
 from utils.style import red
 from typing import List
 from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS
@@ -14,6 +15,7 @@ from logger.logger import logger
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from utils.utils import fix_json
 from utils.function_calling import add_function_calls_to_request, FunctionCallSet, FunctionType
+
 
 def get_tokens_in_messages(messages: List[str]) -> int:
     tokenizer = tiktoken.get_encoding("cl100k_base")  # GPT-4 tokenizer
@@ -347,16 +349,11 @@ def assert_json_response(response: str, or_fail=True) -> bool:
 
 
 def assert_json_schema(response: str, functions: list[FunctionType]) -> True:
+    for function in functions:
+        schema = function['parameters']
+        parsed = json.loads(response)
+        validate(parsed, schema)
     return True
-    # TODO: validation always fails
-    # for function in functions:
-    #     schema = function['parameters']
-    #     parser = parser_for_schema(schema)
-    #     validated = parser.validate(response)
-    #     if validated.valid and validated.end_index:
-    #         return True
-    #
-    # raise ValueError('LLM responded with invalid JSON')
 
 
 def postprocessing(gpt_response, req_type):

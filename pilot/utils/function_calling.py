@@ -140,7 +140,7 @@ class JsonPrompter:
         return "\n".join(
             self.function_descriptions(functions, function_to_call)
             + [
-                "The response should be a JSON object matching this schema:",
+                "The response MUST be a JSON object matching this schema:",
                 "```json",
                 self.function_parameters(functions, function_to_call),
                 "```",
@@ -195,7 +195,7 @@ class JsonPrompter:
             "Help choose the appropriate function to call to answer the user's question."
             if function_to_call is None
             else f"Define the arguments for {function_to_call} to answer the user's question."
-        ) + "\nThe response should contain only the JSON object, with no additional text or explanation."
+        ) + "\nThe response must contain ONLY the JSON object, with NO additional text or explanation."
 
         data = (
             self.function_data(functions, function_to_call)
