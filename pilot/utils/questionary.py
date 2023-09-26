@@ -1,6 +1,6 @@
 from prompt_toolkit.styles import Style
 import questionary
-from fabulous.color import yellow, bold
+from utils.style import yellow_bold
 
 from database.database import save_user_input, get_saved_user_input
 from const.ipc import MESSAGE_TYPE
@@ -26,8 +26,8 @@ def styled_text(project, question, ignore_user_input_count=False):
         if user_input is not None and user_input.user_input is not None and project.skip_steps:
             # if we do, use it
             project.checkpoints['last_user_input'] = user_input
-            print(yellow(bold(f'Restoring user input id {user_input.id}: ')), end='')
-            print(yellow(bold(f'{user_input.user_input}')))
+            print(yellow_bold(f'Restoring user input id {user_input.id}: '), end='')
+            print(yellow_bold(f'{user_input.user_input}'))
             return user_input.user_input
 
     if project.ipc_client_instance is None or project.ipc_client_instance.client is None:

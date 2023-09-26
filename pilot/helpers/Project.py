@@ -1,6 +1,6 @@
 import json
 
-from fabulous.color import bold, green, yellow, cyan, white
+from utils.style import green_bold, yellow_bold, cyan, white_bold
 from const.common import IGNORE_FOLDERS, STEPS
 from database.database import delete_unconnected_steps_from, delete_all_app_development_data
 from const.ipc import MESSAGE_TYPE
@@ -67,10 +67,10 @@ class Project:
         # if development_plan is not None:
         #     self.development_plan = development_plan
 
-        print(green(bold('\n------------------ STARTING NEW PROJECT ----------------------')))
+        print(green_bold('\n------------------ STARTING NEW PROJECT ----------------------'))
         print(f"If you wish to continue with this project in future run:")
-        print(green(bold(f'python main.py app_id={args["app_id"]}')))
-        print(green(bold('--------------------------------------------------------------\n')))
+        print(green_bold(f'python main.py app_id={args["app_id"]}'))
+        print(green_bold('--------------------------------------------------------------\n'))
 
     def start(self):
         """
@@ -306,10 +306,10 @@ class Project:
             reset_branch_id = convo.save_branch()
 
         while answer != 'continue':
-            print(yellow(bold(message)))
+            print(yellow_bold(message))
             if description is not None:
                 print('\n' + '-'*100 + '\n' +
-                    white(bold(description)) +
+                    white_bold(description) +
                     '\n' + '-'*100 + '\n')
 
             answer = styled_text(

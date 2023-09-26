@@ -1,4 +1,4 @@
-from fabulous.color import bold, green, yellow
+from utils.style import green_bold
 
 from helpers.AgentConvo import AgentConvo
 from helpers.Agent import Agent
@@ -48,7 +48,7 @@ class ProductOwner(Agent):
             self.project,
             generate_messages_from_description(main_prompt, self.project.args['app_type'], self.project.args['name']))
 
-        print(green(bold('Project Summary:\n')))
+        print(green_bold('Project Summary:\n'))
         convo_project_description = AgentConvo(self)
         high_level_summary = convo_project_description.send_message('utils/summary.prompt',
                                                                     {'conversation': '\n'.join(
@@ -80,7 +80,7 @@ class ProductOwner(Agent):
 
         # USER STORIES
         msg = f"User Stories:\n"
-        print(green(bold(msg)))
+        print(green_bold(msg))
         logger.info(msg)
 
         self.project.user_stories = self.convo_user_stories.continuous_conversation('user_stories/specs.prompt', {
@@ -114,7 +114,7 @@ class ProductOwner(Agent):
 
         # USER TASKS
         msg = f"User Tasks:\n"
-        print(green(bold(msg)))
+        print(green_bold(msg))
         logger.info(msg)
 
         self.project.user_tasks = self.convo_user_stories.continuous_conversation('user_stories/user_tasks.prompt',

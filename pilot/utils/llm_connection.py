@@ -7,49 +7,21 @@ import json
 import tiktoken
 import questionary
 
+from utils.style import red
 from typing import List
-from jinja2 import Environment, FileSystemLoader
-
-from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS, MAX_QUESTIONS, END_RESPONSE
+from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS
 from logger.logger import logger
-from fabulous.color import red
 from helpers.exceptions.TokenLimitError import TokenLimitError
-from utils.utils import get_prompt_components, fix_json
-from utils.spinner import spinner_start, spinner_stop
-
-
-def get_prompt(prompt_name, data=None):
-    if data is None:
-        data = {}
-
-    data.update(get_prompt_components())
-
-    logger.debug(f"Getting prompt for {prompt_name}")  # logging here
-    # Create a file system loader with the directory of the templates
-    file_loader = FileSystemLoader('prompts')
-
-    # Create the Jinja2 environment
-    env = Environment(loader=file_loader)
-
-    # Load the template
-    template = env.get_template(prompt_name)
-
-    # Render the template with the provided data
-    output = template.render(data)
-
-    return output
-
+from utils.utils import fix_json
+from utils.function_calling import add_function_calls_to_request, FunctionCallSet, FunctionType
 
 def get_tokens_in_messages(messages: List[str]) -> int:
     tokenizer = tiktoken.get_encoding("cl100k_base")  # GPT-4 tokenizer
     tokenized_messages = [tokenizer.encode(message['content']) for message in messages]
     return sum(len(tokens) for tokens in tokenized_messages)
 
-#get endpoint and model name from .ENV file
-model = os.getenv('MODEL_NAME')
-endpoint = os.getenv('ENDPOINT')
 
-def num_tokens_from_functions(functions, model=model):
+def num_tokens_from_functions(functions):
     """Return the number of tokens used by a list of functions."""
     encoding = tiktoken.get_encoding("cl100k_base")
 
@@ -85,7 +57,7 @@ def num_tokens_from_functions(functions, model=model):
 
 
 def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TOKENS_FOR_GPT_RESPONSE,
-                               function_calls=None):
+                               function_calls: FunctionCallSet = None):
     """
     Called from:
       - AgentConvo.send_message() - these calls often have `function_calls`, usually from `pilot/const/function_calls.py`
@@ -115,19 +87,13 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
     }
 
     # delete some keys if using "OpenRouter" API
-    if os.getenv('ENDPOINT') == "OPENROUTER":
+    if os.getenv('ENDPOINT') == 'OPENROUTER':
         keys_to_delete = ['n', 'max_tokens', 'temperature', 'top_p', 'presence_penalty', 'frequency_penalty']
         for key in keys_to_delete:
             if key in gpt_data:
                 del gpt_data[key]
 
-    if function_calls is not None:
-        # Advise the LLM of the JSON response schema we are expecting
-        gpt_data['functions'] = function_calls['definitions']
-        if len(function_calls['definitions']) > 1:
-            gpt_data['function_call'] = 'auto'
-        else:
-            gpt_data['function_call'] = {'name': function_calls['definitions'][0]['name']}
+    add_function_calls_to_request(gpt_data, function_calls)
 
     try:
         response = stream_gpt_completion(gpt_data, req_type)
@@ -135,7 +101,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
     except TokenLimitError as e:
         raise e
     except Exception as e:
-        print('The request to OpenAI API failed. Here is the error message:')
+        print(f'The request to {os.getenv("ENDPOINT")} API failed. Here is the error message:')
         print(e)
 
 
@@ -150,6 +116,7 @@ def delete_last_n_lines(n):
 def count_lines_based_on_width(content, width):
     lines_required = sum(len(line) // width + 1 for line in content.split('\n'))
     return lines_required
+
 
 def get_tokens_in_messages_from_openai_error(error_message):
     """
@@ -199,6 +166,7 @@ def retry_on_exception(func):
                         ('answer', 'fg:orange')
                     ])).ask()
 
+                # TODO: take user's input into consideration - send to LLM?
                 if user_message != '':
                     return {}
 
@@ -215,9 +183,16 @@ def stream_gpt_completion(data, req_type):
     """
 
     # TODO add type dynamically - this isn't working when connected to the external process
-    terminal_width = 50#os.get_terminal_size().columns
+    terminal_width = 50  # os.get_terminal_size().columns
     lines_printed = 2
-    buffer = ""  # A buffer to accumulate incoming data
+    buffer = ''  # A buffer to accumulate incoming data
+    expecting_json = False
+    received_json = False
+
+    if 'functions' in data:
+        expecting_json = data['functions']
+        # Don't send the `functions` parameter to Open AI, but don't remove it from `data` in case we need to retry
+        data = {key: value for key, value in data.items() if key != "functions"}
 
     def return_result(result_data, lines_printed):
         if buffer:
@@ -229,23 +204,36 @@ def stream_gpt_completion(data, req_type):
 
     # spinner = spinner_start(yellow("Waiting for OpenAI API response..."))
     # print(yellow("Stream response from OpenAI:"))
-    api_key = os.getenv("OPENAI_API_KEY")
 
     logger.info(f'Request data: {data}')
 
-    # Check if the ENDPOINT is AZURE
+    # Configure for the selected ENDPOINT
+    model = os.getenv('MODEL_NAME')
+    endpoint = os.getenv('ENDPOINT')
+
     if endpoint == 'AZURE':
         # If yes, get the AZURE_ENDPOINT from .ENV file
         endpoint_url = os.getenv('AZURE_ENDPOINT') + '/openai/deployments/' + model + '/chat/completions?api-version=2023-05-15'
-        headers = {'Content-Type': 'application/json', 'api-key':  os.getenv('AZURE_API_KEY')}
+        headers = {
+            'Content-Type': 'application/json',
+            'api-key': os.getenv('AZURE_API_KEY')
+        }
     elif endpoint == 'OPENROUTER':
         # If so, send the request to the OpenRouter API endpoint
-        headers = {'Content-Type': 'application/json', 'Authorization':  'Bearer ' + os.getenv("OPENROUTER_API_KEY"), 'HTTP-Referer': 'http://localhost:3000', 'X-Title': 'GPT Pilot (LOCAL)'}
-        endpoint_url = os.getenv("OPENROUTER_ENDPOINT", 'https://openrouter.ai/api/v1/chat/completions')
+        endpoint_url = os.getenv('OPENROUTER_ENDPOINT', 'https://openrouter.ai/api/v1/chat/completions')
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + os.getenv('OPENROUTER_API_KEY'),
+            'HTTP-Referer': 'http://localhost:3000',
+            'X-Title': 'GPT Pilot (LOCAL)'
+        }
     else:
         # If not, send the request to the OpenAI endpoint
-        headers = {'Content-Type': 'application/json', 'Authorization':  'Bearer ' + os.getenv("OPENAI_API_KEY")}
-        endpoint_url = os.getenv("OPENAI_ENDPOINT", 'https://api.openai.com/v1/chat/completions')
+        endpoint_url = os.getenv('OPENAI_ENDPOINT', 'https://api.openai.com/v1/chat/completions')
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + os.getenv('OPENAI_API_KEY')
+        }
 
     response = requests.post(
         endpoint_url,
@@ -262,12 +250,11 @@ def stream_gpt_completion(data, req_type):
         raise Exception(f"API responded with status code: {response.status_code}. Response text: {response.text}")
 
     gpt_response = ''
-    function_calls = {'name': '', 'arguments': ''}
-
+    # function_calls = {'name': '', 'arguments': ''}
 
     for line in response.iter_lines():
         # Ignore keep-alive new lines
-        if line:
+        if line and line != b': OPENROUTER PROCESSING':
             line = line.decode("utf-8")  # decode the bytes to string
 
             if line.startswith('data: '):
@@ -287,25 +274,29 @@ def stream_gpt_completion(data, req_type):
                     logger.error(f'Error in LLM response: {json_line}')
                     raise ValueError(f'Error in LLM response: {json_line["error"]["message"]}')
 
-                if json_line['choices'][0]['finish_reason'] == 'function_call':
-                    function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
-                    return return_result({'function_calls': function_calls}, lines_printed)
+                choice = json_line['choices'][0]
 
-                json_line = json_line['choices'][0]['delta']
+                # if 'finish_reason' in choice and choice['finish_reason'] == 'function_call':
+                #     function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
+                #     return return_result({'function_calls': function_calls}, lines_printed)
+
+                json_line = choice['delta']
+                # TODO: token healing? https://github.com/1rgs/jsonformer-claude
+                #       ...Is this what local_llm_function_calling.constrainer is for?
 
             except json.JSONDecodeError:
                 logger.error(f'Unable to decode line: {line}')
                 continue  # skip to the next line
 
             # handle the streaming response
-            if 'function_call' in json_line:
-                if 'name' in json_line['function_call']:
-                    function_calls['name'] = json_line['function_call']['name']
-                    print(f'Function call: {function_calls["name"]}')
-
-                if 'arguments' in json_line['function_call']:
-                    function_calls['arguments'] += json_line['function_call']['arguments']
-                    print(json_line['function_call']['arguments'], type='stream', end='', flush=True)
+            # if 'function_call' in json_line:
+            #     if 'name' in json_line['function_call']:
+            #         function_calls['name'] = json_line['function_call']['name']
+            #         print(f'Function call: {function_calls["name"]}')
+            #
+            #     if 'arguments' in json_line['function_call']:
+            #         function_calls['arguments'] += json_line['function_call']['arguments']
+            #         print(json_line['function_call']['arguments'], type='stream', end='', flush=True)
 
             if 'content' in json_line:
                 content = json_line.get('content')
@@ -313,7 +304,18 @@ def stream_gpt_completion(data, req_type):
                     buffer += content  # accumulate the data
 
                     # If you detect a natural breakpoint (e.g., line break or end of a response object), print & count:
-                    if buffer.endswith("\n"):  # or some other condition that denotes a breakpoint
+                    if buffer.endswith("\n"):
+                        if expecting_json and not received_json:
+                            received_json = assert_json_response(buffer, lines_printed > 2)
+                            if received_json:
+                                gpt_response = ""
+                            # if not received_json:
+                            #     # Don't append to gpt_response, but increment lines_printed
+                            #     lines_printed += 1
+                            #     buffer = ""
+                            #     continue
+
+                        # or some other condition that denotes a breakpoint
                         lines_printed += count_lines_based_on_width(buffer, terminal_width)
                         buffer = ""  # reset the buffer
 
@@ -321,13 +323,40 @@ def stream_gpt_completion(data, req_type):
                     print(content, type='stream', end='', flush=True)
 
     print('\n', type='stream')
-    if function_calls['arguments'] != '':
-        logger.info(f'Response via function call: {function_calls["arguments"]}')
-        function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
-        return return_result({'function_calls': function_calls}, lines_printed)
+
+    # if function_calls['arguments'] != '':
+    #     logger.info(f'Response via function call: {function_calls["arguments"]}')
+    #     function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
+    #     return return_result({'function_calls': function_calls}, lines_printed)
     logger.info(f'Response message: {gpt_response}')
+
+    if expecting_json:
+        assert_json_schema(gpt_response, expecting_json)
+
     new_code = postprocessing(gpt_response, req_type)  # TODO add type dynamically
     return return_result({'text': new_code}, lines_printed)
+
+
+def assert_json_response(response: str, or_fail=True) -> bool:
+    if re.match(r'.*(```(json)?|{|\[)', response):
+        return True
+    elif or_fail:
+        raise ValueError('LLM did not respond with JSON')
+    else:
+        return False
+
+
+def assert_json_schema(response: str, functions: list[FunctionType]) -> True:
+    return True
+    # TODO: validation always fails
+    # for function in functions:
+    #     schema = function['parameters']
+    #     parser = parser_for_schema(schema)
+    #     validated = parser.validate(response)
+    #     if validated.valid and validated.end_index:
+    #         return True
+    #
+    # raise ValueError('LLM responded with invalid JSON')
 
 
 def postprocessing(gpt_response, req_type):

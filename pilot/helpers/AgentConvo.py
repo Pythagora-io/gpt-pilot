@@ -1,15 +1,13 @@
 import re
 import subprocess
 import uuid
-from fabulous.color import yellow, bold
+from utils.style import yellow, yellow_bold
 
 from database.database import get_saved_development_step, save_development_step, delete_all_subsequent_steps
-from helpers.files import get_files_content
-from const.common import IGNORE_FOLDERS
 from helpers.exceptions.TokenLimitError import TokenLimitError
-from utils.utils import array_of_objects_to_string
-from utils.llm_connection import get_prompt, create_gpt_chat_completion
-from utils.utils import get_sys_message, find_role_from_step, capitalize_first_word_with_underscores
+from utils.function_calling import parse_agent_response, FunctionCallSet
+from utils.llm_connection import create_gpt_chat_completion
+from utils.utils import array_of_objects_to_string, get_prompt, get_sys_message, capitalize_first_word_with_underscores
 from logger.logger import logger
 from prompts.prompts import ask_user
 from const.llm import END_RESPONSE
@@ -23,7 +21,8 @@ class AgentConvo:
         agent: An instance of the agent participating in the conversation.
     """
     def __init__(self, agent):
-        self.messages = []
+        # [{'role': 'system'|'user'|'assistant', 'content': ''}, ...]
+        self.messages: list[dict] = []
         self.branches = {}
         self.log_to_user = True
         self.agent = agent
@@ -32,7 +31,7 @@ class AgentConvo:
         # add system message
         self.messages.append(get_sys_message(self.agent.role))
 
-    def send_message(self, prompt_path=None, prompt_data=None, function_calls=None):
+    def send_message(self, prompt_path=None, prompt_data=None, function_calls: FunctionCallSet = None):
         """
         Sends a message in the conversation.
 
@@ -83,7 +82,7 @@ class AgentConvo:
         if response == {}:
             raise Exception("OpenAI API error happened.")
 
-        response = self.postprocess_response(response, function_calls)
+        response = parse_agent_response(response, function_calls)
 
         # TODO remove this once the database is set up properly
         message_content = response[0] if type(response) == tuple else response
@@ -126,7 +125,7 @@ class AgentConvo:
 
         # Continue conversation until GPT response equals END_RESPONSE
         while response != END_RESPONSE:
-            print(yellow("Do you want to add anything else? If not, ") + yellow(bold('just press ENTER.')))
+            print(yellow("Do you want to add anything else? If not, ") + yellow_bold('just press ENTER.'))
             user_message = ask_user(self.agent.project, response, False)
 
             if user_message == "":
@@ -174,25 +173,6 @@ class AgentConvo:
     def convo_length(self):
         return len([msg for msg in self.messages if msg['role'] != 'system'])
 
-    def postprocess_response(self, response, function_calls):
-        """
-        Post-processes the response from the agent.
-
-        Args:
-            response: The response from the agent.
-            function_calls: Optional function calls associated with the response.
-
-        Returns:
-            The post-processed response.
-        """
-        if 'function_calls' in response and function_calls is not None:
-            if 'send_convo' in function_calls:
-                response['function_calls']['arguments']['convo']  = self
-            response = function_calls['functions'][response['function_calls']['name']](**response['function_calls']['arguments'])
-        elif 'text' in response:
-            response = response['text']
-
-        return response
 
     def log_message(self, content):
         """
@@ -204,7 +184,7 @@ class AgentConvo:
         print_msg = capitalize_first_word_with_underscores(self.high_level_step)
         if self.log_to_user:
             if self.agent.project.checkpoints['last_development_step'] is not None:
-                print(yellow("\nDev step ") + yellow(bold(str(self.agent.project.checkpoints['last_development_step']))) + '\n', end='')
+                print(yellow("\nDev step ") + yellow_bold(str(self.agent.project.checkpoints['last_development_step'])) + '\n', end='')
             print(f"\n{content}\n")
         logger.info(f"{print_msg}: {content}\n")
 

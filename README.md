@@ -51,7 +51,7 @@ https://github.com/Pythagora-io/gpt-pilot/assets/10895136/0495631b-511e-451b-93d
 # 🔌 Requirements
 
 
-- **Python**
+- **Python >= 3.10**
 - **PostgreSQL** (optional, projects default is SQLite)
    - DB is needed for multiple reasons like continuing app development if you had to stop at any point or app crashed, going back to specific step so you can change some later steps in development, easier debugging, for future we will add functionality to update project (change some things in existing project or add new features to the project and so on)...
 
@@ -61,7 +61,7 @@ After you have Python and PostgreSQL installed, follow these steps:
 1. `git clone https://github.com/Pythagora-io/gpt-pilot.git` (clone the repo)
 2. `cd gpt-pilot`
 3. `python -m venv pilot-env` (create a virtual environment)
-4. `source pilot-env/bin/activate` (activate the virtual environment)
+4. `source pilot-env/bin/activate` (or on Windows `pilot-env\Scripts\activate`) (activate the virtual environment)
 5. `pip install -r requirements.txt` (install the dependencies)
 6. `cd pilot`
 7. `mv .env.example .env` (create the .env file)
