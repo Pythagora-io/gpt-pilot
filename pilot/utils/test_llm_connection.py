@@ -98,8 +98,6 @@ class TestLlmConnection:
     def setup_method(self):
         builtins.print, ipc_client_instance = get_custom_print({})
 
-
-
     @pytest.mark.uses_tokens
     @pytest.mark.parametrize("endpoint, model", [
         ("OPENAI", "gpt-4"),                                 # role: system
@@ -107,8 +105,6 @@ class TestLlmConnection:
         ("OPENROUTER", "meta-llama/codellama-34b-instruct"), # rule: user, is_llama
         ("OPENROUTER", "google/palm-2-chat-bison"),          # role: user/system
         ("OPENROUTER", "google/palm-2-codechat-bison"),
-        # TODO: See https://github.com/1rgs/jsonformer-claude/blob/main/jsonformer_claude/main.py
-        #           https://github.com/guidance-ai/guidance - token healing
         ("OPENROUTER", "anthropic/claude-2"),              # role: user, is_llama
     ])
     def test_chat_completion_Architect(self, endpoint, model, monkeypatch):
@@ -164,8 +160,6 @@ solution-oriented decision-making in areas where precise instructions were not p
         ("OPENROUTER", "meta-llama/codellama-34b-instruct"),  # rule: user, is_llama
         ("OPENROUTER", "google/palm-2-chat-bison"),  # role: user/system
         ("OPENROUTER", "google/palm-2-codechat-bison"),
-        # TODO: See https://github.com/1rgs/jsonformer-claude/blob/main/jsonformer_claude/main.py
-        #           https://github.com/guidance-ai/guidance - token healing
         ("OPENROUTER", "anthropic/claude-2"),  # role: user, is_llama
     ])
     def test_chat_completion_TechLead(self, endpoint, model, monkeypatch):
