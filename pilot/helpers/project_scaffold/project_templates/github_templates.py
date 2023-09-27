@@ -1,7 +1,7 @@
 import os
 import time
 from datetime import datetime, timedelta
-from typing import cast
+from typing import cast, Union
 from git import Repo
 from github import Github, Auth, AuthenticatedUser
 from dotenv import load_dotenv
@@ -64,7 +64,7 @@ class GitHubTemplates:
 
         return sorted(closest_items(user_embedding, repo_embeddings, top_n=5), key=lambda x: -x['stars'])
 
-    def get_template_repos(self, page_delay_seconds: float | None = 1):
+    def get_template_repos(self, page_delay_seconds: Union[float, None] = 1):
         one_year_ago = datetime.now() - timedelta(days=365)
         # See https://docs.github.com/en/search-github/searching-on-github/searching-for-repositories
         # No disrespect to cirosantilli or his cause, but his templates are not useful for project generation

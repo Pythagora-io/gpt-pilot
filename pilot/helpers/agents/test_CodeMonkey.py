@@ -1,6 +1,6 @@
 import re
 import os
-from unittest.mock import patch, Mock, MagicMock
+from unittest.mock import patch, MagicMock
 from dotenv import load_dotenv
 load_dotenv()
 
