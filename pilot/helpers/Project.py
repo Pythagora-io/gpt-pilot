@@ -67,11 +67,6 @@ class Project:
         # if development_plan is not None:
         #     self.development_plan = development_plan
 
-        print(green_bold('\n------------------ STARTING NEW PROJECT ----------------------'))
-        print(f"If you wish to continue with this project in future run:")
-        print(green_bold(f'python main.py app_id={args["app_id"]}'))
-        print(green_bold('--------------------------------------------------------------\n'))
-
     def start(self):
         """
         Start the project.
