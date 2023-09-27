@@ -1,6 +1,7 @@
 blessed==1.20.0
 certifi==2023.5.7
 charset-normalizer==3.2.0
+colorama==0.4.6
 distro==1.8.0
 idna==3.4
 jsonschema==4.19.1

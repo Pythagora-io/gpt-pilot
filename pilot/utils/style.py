@@ -1,45 +1,45 @@
 from termcolor import colored
-
+from colorama import Fore, Style
 
 def red(text):
-    return colored(text, 'red')
+    return f'{Fore.RED}{text}{Style.RESET_ALL}'
 
 
 def red_bold(text):
-    return colored(text, 'red', attrs=['bold'])
+    return f'{Fore.RED}{Style.BRIGHT}{text}{Style.RESET_ALL}'
 
 
 def yellow(text):
-    return colored(text, 'yellow')
+    return f'{Fore.YELLOW}{text}{Style.RESET_ALL}'
 
 
 def yellow_bold(text):
-    return colored(text, 'yellow', attrs=['bold'])
+    return f'{Fore.YELLOW}{Style.BRIGHT}{text}{Style.RESET_ALL}'
 
 
 def green(text):
-    return colored(text, 'green')
+    return f'{Fore.GREEN}{text}{Style.RESET_ALL}'
 
 
 def green_bold(text):
-    return colored(text, 'green', attrs=['bold'])
+    return f'{Fore.GREEN}{Style.BRIGHT}{text}{Style.RESET_ALL}'
 
 
 def blue(text):
-    return colored(text, 'blue')
+    return f'{Fore.BLUE}{text}{Style.RESET_ALL}'
 
 
 def blue_bold(text):
-    return colored(text, 'blue', attrs=['bold'])
+    return f'{Fore.BLUE}{Style.BRIGHT}{text}{Style.RESET_ALL}'
 
 
 def cyan(text):
-    return colored(text, 'light_cyan')
+    return f'{Fore.CYAN}{text}{Style.RESET_ALL}'
 
 
 def white(text):
-    return colored(text, 'white')
+    return f'{Fore.WHITE}{text}{Style.RESET_ALL}'
 
 
 def white_bold(text):
-    return colored(text, 'white', attrs=['bold'])
+    return f'{Fore.WHITE}{Style.BRIGHT}{text}{Style.RESET_ALL}'
