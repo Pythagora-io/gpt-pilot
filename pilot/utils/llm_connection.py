@@ -262,7 +262,7 @@ def stream_gpt_completion(data, req_type):
 
     for line in response.iter_lines():
         # Ignore keep-alive new lines
-        if line:
+        if line and line != b': OPENROUTER PROCESSING':
             line = line.decode("utf-8")  # decode the bytes to string
 
             if line.startswith('data: '):
