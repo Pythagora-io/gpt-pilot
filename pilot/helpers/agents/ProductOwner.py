@@ -1,5 +1,5 @@
+import json
 from utils.style import green_bold
-
 from helpers.AgentConvo import AgentConvo
 from helpers.Agent import Agent
 from logger.logger import logger
@@ -43,6 +43,12 @@ class ProductOwner(Agent):
         self.project.app = save_app(self.project.args)
 
         main_prompt = ask_for_main_app_definition(self.project)
+
+        print(json.dumps({'open_project': {
+            #'uri': 'file:///' + self.project.root_path.replace('\\', '/'),
+            'path': self.project.root_path,
+            'name': self.project.args['name'],
+        }}), type='info')
 
         high_level_messages = get_additional_info_from_openai(
             self.project,
