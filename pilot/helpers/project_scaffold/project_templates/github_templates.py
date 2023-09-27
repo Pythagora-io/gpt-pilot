@@ -1,4 +1,5 @@
 import os
+import time
 from datetime import datetime, timedelta
 from typing import cast
 from git import Repo
@@ -63,7 +64,7 @@ class GitHubTemplates:
 
         return sorted(closest_items(user_embedding, repo_embeddings, top_n=5), key=lambda x: -x['stars'])
 
-    def get_template_repos(self):
+    def get_template_repos(self, page_delay_seconds: float | None = 1):
         one_year_ago = datetime.now() - timedelta(days=365)
         # See https://docs.github.com/en/search-github/searching-on-github/searching-for-repositories
         # No disrespect to cirosantilli or his cause, but his templates are not useful for project generation
@@ -71,7 +72,18 @@ class GitHubTemplates:
         query = f'template:true -user:cirosantilli -user:leisurelicht ' \
                 f'stars:>100 pushed:>{one_year_ago.strftime("%Y-%m-%d")}'
 
-        return self.g.search_repositories(query, sort='stars', order='desc')
+        paged_repos = self.g.search_repositories(query, sort='stars', order='desc')
+
+        if page_delay_seconds is None:
+            return paged_repos
+
+        loaded_repos = []
+        for repo in paged_repos:
+            loaded_repos.append(repo)
+            if len(loaded_repos) % 30 == 0:
+                time.sleep(page_delay_seconds)
+
+        return loaded_repos
 
     def get_private_template_repos(self, organization: str = None):
         query = f'template:true is:private'
