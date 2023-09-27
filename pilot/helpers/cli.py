@@ -12,7 +12,7 @@ from database.database import get_saved_command_run, save_command_run
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
 from helpers.exceptions.TokenLimitError import TokenLimitError
-
+from prompts.prompts import ask_user
 from utils.questionary import styled_text
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MIN_COMMAND_RUN_TIME, MAX_COMMAND_RUN_TIME, MAX_COMMAND_OUTPUT_LENGTH
 
@@ -105,11 +105,10 @@ def execute_command(project, command, timeout=None, force=False):
 
     if not force:
         print(yellow_bold(f'\n--------- EXECUTE COMMAND ----------'))
-        print(f'Can i execute the command: `' + yellow_bold(command) + f'` with {timeout}ms timeout?')
-
-        answer = styled_text(
+        answer = ask_user(
             project,
-            'If yes, just press ENTER'
+            f'Can I execute the command: `' + yellow_bold(command) + f'` with {timeout}ms timeout?',
+            hint='If yes, just press ENTER'
         )
 
         # TODO: I think AutoGPT allows other feedback here, like:
@@ -149,6 +148,7 @@ def execute_command(project, command, timeout=None, force=False):
         while True and return_value is None:
             elapsed_time = time.time() - start_time
             if timeout is not None:
+                # TODO: print to IPC using a different message type so VS Code can ignore it or update the previous value
                 print(white_bold(f'\rt: {round(elapsed_time * 1000)}ms : '), end='', flush=True)
 
             # Check if process has finished
