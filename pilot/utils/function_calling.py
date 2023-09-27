@@ -1,8 +1,9 @@
 import json
 import re
-from typing import Literal, Optional, TypedDict, Callable
+from typing import Union, TypeVar, List, Dict, Literal, Optional, TypedDict, Callable
 
-JsonType = str | int | float | bool | None | list["JsonType"] | dict[str, "JsonType"]
+JsonTypeBase = Union[str, int, float, bool, None, List["JsonType"], Dict[str, "JsonType"]]
+JsonType = TypeVar("JsonType", bound=JsonTypeBase)
 
 
 class FunctionParameters(TypedDict):
@@ -33,7 +34,7 @@ class FunctionCallSet(TypedDict):
     functions: dict[str, Callable]
 
 
-def add_function_calls_to_request(gpt_data, function_calls: FunctionCallSet | None):
+def add_function_calls_to_request(gpt_data, function_calls: Union[FunctionCallSet, None]):
     if function_calls is None:
         return
 
@@ -57,7 +58,7 @@ def add_function_calls_to_request(gpt_data, function_calls: FunctionCallSet | No
     })
 
 
-def parse_agent_response(response, function_calls: FunctionCallSet | None):
+def parse_agent_response(response, function_calls: Union[FunctionCallSet, None]):
     """
     Post-processes the response from the agent.
 
@@ -176,7 +177,7 @@ class JsonPrompter:
         self,
         prompt: str,
         functions: list[FunctionType],
-        function_to_call: str | None = None,
+        function_to_call: Union[str, None] = None,
     ) -> str:
         """Generate the llama prompt
 
