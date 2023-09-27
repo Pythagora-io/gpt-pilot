@@ -20,7 +20,8 @@ services:
             context: .
             dockerfile: Dockerfile
         ports:
-        - "7681:7681"
+            - "7681:7681"
+            - "3000:3000"
         depends_on:
             postgres:
                 condition: service_healthy
@@ -34,7 +35,7 @@ services:
         ports:
         - "5432:5432"
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U user"]
+            test: ["CMD-SHELL", "pg_isready -U pilot"]
             interval: 30s
             timeout: 10s
             retries: 3

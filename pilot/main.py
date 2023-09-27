@@ -2,6 +2,7 @@
 from __future__ import print_function, unicode_literals
 
 import sys
+import traceback
 from dotenv import load_dotenv
 load_dotenv()
 from termcolor import colored
@@ -37,7 +38,7 @@ if __name__ == "__main__":
         exit_gpt_pilot()
     except Exception as e:
         print(colored('---------- GPT PILOT EXITING WITH ERROR ----------', 'red'))
-        print(colored(e, 'red'))
+        traceback.print_exc()
         print(colored('--------------------------------------------------', 'red'))
         exit_gpt_pilot()
     finally:
