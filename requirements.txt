@@ -3,7 +3,6 @@ certifi==2023.5.7
 charset-normalizer==3.2.0
 colorama==0.4.6
 distro==1.8.0
-fabulous==0.4.0
 idna==3.4
 jsonschema==4.19.1
 Jinja2==3.1.2
