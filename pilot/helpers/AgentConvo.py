@@ -125,8 +125,9 @@ class AgentConvo:
 
         # Continue conversation until GPT response equals END_RESPONSE
         while response != END_RESPONSE:
-            print(yellow("Do you want to add anything else? If not, ") + yellow_bold('just press ENTER.'))
-            user_message = ask_user(self.agent.project, response, False)
+            user_message = ask_user(self.agent.project, response,
+                                    hint=yellow("Do you want to add anything else? If not, ") + yellow_bold('just press ENTER.'),
+                                    require_some_input=False)
 
             if user_message == "":
                 accepted_messages.append(response)

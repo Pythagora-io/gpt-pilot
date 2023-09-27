@@ -49,8 +49,10 @@ def ask_for_main_app_definition(project):
     return description
 
 
-def ask_user(project, question, require_some_input=True):
+def ask_user(project, question: str, require_some_input=True, hint: str = None):
     while True:
+        if hint is not None:
+            print(hint, type='hint')
         answer = styled_text(project, question)
 
         if answer is None:
@@ -72,7 +74,7 @@ def get_additional_info_from_openai(project, messages):
 
         if response is not None:
             if response['text'].strip() == END_RESPONSE:
-                print(response['text'] + '\n')
+                # print(response['text'] + '\n')
                 return messages
 
             # Ask the question to the user
@@ -100,7 +102,7 @@ def get_additional_info_from_user(project,  messages, role):
             if isinstance(message, dict) and 'text' in message:
                 message = message['text']
             print(yellow(f"Please check this message and say what needs to be changed. If everything is ok just press ENTER",))
-            answer = ask_user(project, message, False)
+            answer = ask_user(project, message, require_some_input=False)
             if answer.lower() == '':
                 break
             response = create_gpt_chat_completion(
