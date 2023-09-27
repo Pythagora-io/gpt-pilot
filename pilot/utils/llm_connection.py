@@ -7,13 +7,15 @@ import json
 import tiktoken
 import questionary
 
+from jsonschema import validate
 from utils.style import red
 from typing import List
 from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS
 from logger.logger import logger
 from helpers.exceptions.TokenLimitError import TokenLimitError
-from utils.utils import fix_json
+from utils.utils import fix_json, get_prompt
 from utils.function_calling import add_function_calls_to_request, FunctionCallSet, FunctionType
+
 
 def get_tokens_in_messages(messages: List[str]) -> int:
     tokenizer = tiktoken.get_encoding("cl100k_base")  # GPT-4 tokenizer
@@ -146,6 +148,11 @@ def retry_on_exception(func):
                 err_str = str(e)
 
                 # If the specific error "context_length_exceeded" is present, simply return without retry
+                if isinstance(e, json.JSONDecodeError):
+                    # codellama-34b-instruct seems to send incomplete JSON responses
+                    if e.msg == 'Expecting value':
+                        args[0]['function_buffer'] = e.doc
+                        continue
                 if "context_length_exceeded" in err_str:
                     raise TokenLimitError(get_tokens_in_messages_from_openai_error(err_str), MAX_GPT_MODEL_TOKENS)
                 if "rate_limit_exceeded" in err_str:
@@ -185,14 +192,20 @@ def stream_gpt_completion(data, req_type):
     # TODO add type dynamically - this isn't working when connected to the external process
     terminal_width = 50  # os.get_terminal_size().columns
     lines_printed = 2
+    gpt_response = ''
     buffer = ''  # A buffer to accumulate incoming data
-    expecting_json = False
+    expecting_json = None
     received_json = False
 
     if 'functions' in data:
         expecting_json = data['functions']
+        if 'function_buffer' in data:
+            incomplete_json = get_prompt('utils/incomplete_json.prompt', {'received_json': data['function_buffer']})
+            data['messages'].append({'role': 'user', 'content': incomplete_json})
+            gpt_response = data['function_buffer']
+            received_json = True
         # Don't send the `functions` parameter to Open AI, but don't remove it from `data` in case we need to retry
-        data = {key: value for key, value in data.items() if key != "functions"}
+        data = {key: value for key, value in data.items() if not key.startswith('function')}
 
     def return_result(result_data, lines_printed):
         if buffer:
@@ -249,7 +262,6 @@ def stream_gpt_completion(data, req_type):
         logger.debug(f'problem with request: {response.text}')
         raise Exception(f"API responded with status code: {response.status_code}. Response text: {response.text}")
 
-    gpt_response = ''
     # function_calls = {'name': '', 'arguments': ''}
 
     for line in response.iter_lines():
@@ -281,11 +293,9 @@ def stream_gpt_completion(data, req_type):
                 #     return return_result({'function_calls': function_calls}, lines_printed)
 
                 json_line = choice['delta']
-                # TODO: token healing? https://github.com/1rgs/jsonformer-claude
-                #       ...Is this what local_llm_function_calling.constrainer is for?
 
-            except json.JSONDecodeError:
-                logger.error(f'Unable to decode line: {line}')
+            except json.JSONDecodeError as e:
+                logger.error(f'Unable to decode line: {line} {e.msg}')
                 continue  # skip to the next line
 
             # handle the streaming response
@@ -304,16 +314,9 @@ def stream_gpt_completion(data, req_type):
                     buffer += content  # accumulate the data
 
                     # If you detect a natural breakpoint (e.g., line break or end of a response object), print & count:
-                    if buffer.endswith("\n"):
+                    if buffer.endswith('\n'):
                         if expecting_json and not received_json:
                             received_json = assert_json_response(buffer, lines_printed > 2)
-                            if received_json:
-                                gpt_response = ""
-                            # if not received_json:
-                            #     # Don't append to gpt_response, but increment lines_printed
-                            #     lines_printed += 1
-                            #     buffer = ""
-                            #     continue
 
                         # or some other condition that denotes a breakpoint
                         lines_printed += count_lines_based_on_width(buffer, terminal_width)
@@ -331,6 +334,7 @@ def stream_gpt_completion(data, req_type):
     logger.info(f'Response message: {gpt_response}')
 
     if expecting_json:
+        gpt_response = clean_json_response(gpt_response)
         assert_json_schema(gpt_response, expecting_json)
 
     new_code = postprocessing(gpt_response, req_type)  # TODO add type dynamically
@@ -346,17 +350,17 @@ def assert_json_response(response: str, or_fail=True) -> bool:
         return False
 
 
+def clean_json_response(response: str) -> str:
+    response = re.sub(r'^.*```json\s*', '', response, flags=re.DOTALL)
+    return response.strip('` \n')
+
+
 def assert_json_schema(response: str, functions: list[FunctionType]) -> True:
-    return True
-    # TODO: validation always fails
-    # for function in functions:
-    #     schema = function['parameters']
-    #     parser = parser_for_schema(schema)
-    #     validated = parser.validate(response)
-    #     if validated.valid and validated.end_index:
-    #         return True
-    #
-    # raise ValueError('LLM responded with invalid JSON')
+    for function in functions:
+        schema = function['parameters']
+        parsed = json.loads(response)
+        validate(parsed, schema)
+        return True
 
 
 def postprocessing(gpt_response, req_type):

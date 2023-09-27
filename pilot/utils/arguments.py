@@ -52,6 +52,7 @@ def get_arguments():
             # Handle the error as needed, possibly exiting the script
     else:
         arguments['app_id'] = str(uuid.uuid4())
+        # TODO: This intro is also presented by Project.py. This version is not presented in the VS Code extension
         print(colored('\n------------------ STARTING NEW PROJECT ----------------------', 'green', attrs=['bold']))
         print("If you wish to continue with this project in future run:")
         print(colored(f'python {sys.argv[0]} app_id={arguments["app_id"]}', 'green', attrs=['bold']))

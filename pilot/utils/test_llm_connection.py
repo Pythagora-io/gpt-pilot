@@ -1,6 +1,10 @@
 import builtins
+from json import JSONDecodeError
+
 import pytest
+from unittest.mock import patch, Mock
 from dotenv import load_dotenv
+from jsonschema import ValidationError
 
 from const.function_calls import ARCHITECTURE, DEVELOPMENT_PLAN
 from helpers.AgentConvo import AgentConvo
@@ -9,7 +13,8 @@ from helpers.agents.Architect import Architect
 from helpers.agents.TechLead import TechLead
 from utils.function_calling import parse_agent_response, FunctionType
 from test.test_utils import assert_non_empty_string
-from .llm_connection import create_gpt_chat_completion, assert_json_response, assert_json_schema
+from test.mock_questionary import MockQuestionary
+from utils.llm_connection import create_gpt_chat_completion, stream_gpt_completion, assert_json_response, assert_json_schema
 from main import get_custom_print
 
 load_dotenv()
@@ -45,13 +50,13 @@ class TestSchemaValidation:
     def test_assert_json_schema_invalid(self):
         # When assert_json_schema is called with invalid JSON
         # Then error is raised
-        with pytest.raises(ValueError, match='LLM responded with invalid JSON'):
+        with pytest.raises(ValidationError, match="1 is not of type 'string'"):
             assert_json_schema('{"foo": 1}', [self.function])
 
     def test_assert_json_schema_incomplete(self):
         # When assert_json_schema is called with incomplete JSON
         # Then error is raised
-        with pytest.raises(ValueError, match='LLM responded with invalid JSON'):
+        with pytest.raises(JSONDecodeError):
             assert_json_schema('{"foo": "b', [self.function])
 
     def test_assert_json_schema_required(self):
@@ -60,25 +65,78 @@ class TestSchemaValidation:
         self.function['parameters']['properties']['other'] = {'type': 'string'}
         self.function['parameters']['required'] = ['foo', 'other']
 
-        with pytest.raises(ValueError, match='LLM responded with invalid JSON'):
+        with pytest.raises(ValidationError, match="'other' is a required property"):
             assert_json_schema('{"foo": "bar"}', [self.function])
+
+    def test_DEVELOPMENT_PLAN(self):
+        assert(assert_json_schema('''
+{
+  "plan": [
+    {
+      "description": "Set up project structure including creation of necessary directories and files. Initialize Node.js and install necessary libraries such as express and socket.io.",
+      "programmatic_goal": "Project structure should be set up and Node.js initialized. Express and socket.io libraries should be installed and reflected in the package.json file.",
+      "user_review_goal": "Developer should be able to start an empty express server by running `npm start` command without any errors."
+    },
+    {
+      "description": "Create a simple front-end HTML page with CSS and JavaScript that includes input for typing messages and area for displaying messages.",
+      "programmatic_goal": "There should be an HTML file containing an input box for typing messages and an area for displaying the messages. This HTML page should be served when user navigates to the root URL.",
+      "user_review_goal": "Navigating to the root URL (http://localhost:3000) should display the chat front-end with an input box and a message area."
+    },
+    {
+      "description": "Set up socket.io on the back-end to handle websocket connections and broadcasting messages to the clients.",
+      "programmatic_goal": "Server should be able to handle websocket connections using socket.io and broadcast messages to all connected clients.",
+      "user_review_goal": "By using two different browsers or browser tabs, when one user sends a message from one tab, it should appear in the other user's browser tab in real-time."
+    },
+    {
+      "description": "Integrate front-end with socket.io client to send messages from the input field to the server and display incoming messages in the message area.",
+      "programmatic_goal": "Front-end should be able to send messages to server and display incoming messages in the message area using socket.io client.",
+      "user_review_goal": "Typing a message in the chat input and sending it should then display the message in the chat area."
+    }
+  ]
+}
+'''.strip(), DEVELOPMENT_PLAN['definitions']))
 
 class TestLlmConnection:
     def setup_method(self):
         builtins.print, ipc_client_instance = get_custom_print({})
 
+    @patch('utils.llm_connection.requests.post')
+    def test_stream_gpt_completion(self, mock_post, monkeypatch):
+        # Given streaming JSON response
+        monkeypatch.setenv('OPENAI_API_KEY', 'secret')
+        deltas = ['{', '\\n',
+                  '  \\"foo\\": \\"bar\\",', '\\n',
+                  '  \\"prompt\\": \\"Hello\\",', '\\n',
+                  '  \\"choices\\": []', '\\n',
+                  '}']
+        lines_to_yield = [
+            ('{"id": "gen-123", "choices": [{"index": 0, "delta": {"role": "assistant", "content": "' + delta + '"}}]}')
+            .encode('utf-8')
+            for delta in deltas
+        ]
+        lines_to_yield.insert(1, b': OPENROUTER PROCESSING')  # Simulate OpenRoute keep-alive pings
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.iter_lines.return_value = lines_to_yield
+
+        mock_post.return_value = mock_response
+
+        # When
+        with patch('utils.llm_connection.requests.post', return_value=mock_response):
+            response = stream_gpt_completion({}, '')
+
+            # Then
+            assert response == {'text': '{\n  "foo": "bar",\n  "prompt": "Hello",\n  "choices": []\n}'}
 
 
     @pytest.mark.uses_tokens
-    @pytest.mark.parametrize("endpoint, model", [
-        ("OPENAI", "gpt-4"),                                 # role: system
-        ("OPENROUTER", "openai/gpt-3.5-turbo"),              # role: user
-        ("OPENROUTER", "meta-llama/codellama-34b-instruct"), # rule: user, is_llama
-        ("OPENROUTER", "google/palm-2-chat-bison"),          # role: user/system
-        ("OPENROUTER", "google/palm-2-codechat-bison"),
-        # TODO: See https://github.com/1rgs/jsonformer-claude/blob/main/jsonformer_claude/main.py
-        #           https://github.com/guidance-ai/guidance - token healing
-        ("OPENROUTER", "anthropic/claude-2"),              # role: user, is_llama
+    @pytest.mark.parametrize('endpoint, model', [
+        ('OPENAI', 'gpt-4'),                                 # role: system
+        ('OPENROUTER', 'openai/gpt-3.5-turbo'),              # role: user
+        ('OPENROUTER', 'meta-llama/codellama-34b-instruct'), # rule: user, is_llama
+        ('OPENROUTER', 'google/palm-2-chat-bison'),          # role: user/system
+        ('OPENROUTER', 'google/palm-2-codechat-bison'),
+        ('OPENROUTER', 'anthropic/claude-2'),              # role: user, is_llama
     ])
     def test_chat_completion_Architect(self, endpoint, model, monkeypatch):
         # Given
@@ -127,15 +185,13 @@ solution-oriented decision-making in areas where precise instructions were not p
         assert 'Node.js' in response
 
     @pytest.mark.uses_tokens
-    @pytest.mark.parametrize("endpoint, model", [
-        ("OPENAI", "gpt-4"),  # role: system
-        ("OPENROUTER", "openai/gpt-3.5-turbo"),  # role: user
-        ("OPENROUTER", "meta-llama/codellama-34b-instruct"),  # rule: user, is_llama
-        ("OPENROUTER", "google/palm-2-chat-bison"),  # role: user/system
-        ("OPENROUTER", "google/palm-2-codechat-bison"),
-        # TODO: See https://github.com/1rgs/jsonformer-claude/blob/main/jsonformer_claude/main.py
-        #           https://github.com/guidance-ai/guidance - token healing
-        ("OPENROUTER", "anthropic/claude-2"),  # role: user, is_llama
+    @pytest.mark.parametrize('endpoint, model', [
+        ('OPENAI', 'gpt-4'),
+        ('OPENROUTER', 'openai/gpt-3.5-turbo'),
+        ('OPENROUTER', 'meta-llama/codellama-34b-instruct'),
+        ('OPENROUTER', 'google/palm-2-chat-bison'),
+        ('OPENROUTER', 'google/palm-2-codechat-bison'),
+        ('OPENROUTER', 'anthropic/claude-2'),
     ])
     def test_chat_completion_TechLead(self, endpoint, model, monkeypatch):
         # Given
@@ -166,18 +222,22 @@ The development process will include the creation of user stories and tasks, bas
                                                     })
         function_calls = DEVELOPMENT_PLAN
 
+        # Retry on bad LLM responses
+        mock_questionary = MockQuestionary(['', '', 'no'])
+
         # When
-        response = create_gpt_chat_completion(convo.messages, '', function_calls=function_calls)
+        with patch('utils.llm_connection.questionary', mock_questionary):
+            response = create_gpt_chat_completion(convo.messages, '', function_calls=function_calls)
 
-        # Then
-        assert convo.messages[0]['content'].startswith('You are a tech lead in a software development agency')
-        assert convo.messages[1]['content'].startswith('You are working in a software development agency and a project manager and software architect approach you')
+            # Then
+            assert convo.messages[0]['content'].startswith('You are a tech lead in a software development agency')
+            assert convo.messages[1]['content'].startswith('You are working in a software development agency and a project manager and software architect approach you')
 
-        assert response is not None
-        response = parse_agent_response(response, function_calls)
-        assert_non_empty_string(response[0]['description'])
-        assert_non_empty_string(response[0]['programmatic_goal'])
-        assert_non_empty_string(response[0]['user_review_goal'])
+            assert response is not None
+            response = parse_agent_response(response, function_calls)
+            assert_non_empty_string(response[0]['description'])
+            assert_non_empty_string(response[0]['programmatic_goal'])
+            assert_non_empty_string(response[0]['user_review_goal'])
 
 
     # def test_break_down_development_task(self):

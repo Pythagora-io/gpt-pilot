@@ -1,6 +1,7 @@
 import builtins
 import os
-from unittest.mock import patch, Mock
+import pytest
+from unittest.mock import patch
 
 from helpers.AgentConvo import AgentConvo
 from dotenv import load_dotenv
@@ -9,7 +10,6 @@ load_dotenv()
 from main import  get_custom_print
 from .Developer import Developer, ENVIRONMENT_SETUP_STEP
 from helpers.Project import Project
-from test.mock_terminal_size import mock_terminal_size
 
 
 class TestDeveloper:
@@ -33,7 +33,7 @@ class TestDeveloper:
         self.project.current_step = ENVIRONMENT_SETUP_STEP
         self.developer = Developer(self.project)
 
-    # @pytest.mark.uses_tokens
+    @pytest.mark.uses_tokens
     @patch('helpers.AgentConvo.get_saved_development_step')
     @patch('helpers.AgentConvo.save_development_step')
     @patch('helpers.AgentConvo.create_gpt_chat_completion',

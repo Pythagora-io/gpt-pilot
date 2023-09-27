@@ -71,8 +71,7 @@ def parse_agent_response(response, function_calls: Union[FunctionCallSet, None])
     """
 
     if function_calls:
-        text = re.sub(r'^.*```json\s*', '', response['text'], flags=re.DOTALL)
-        text = text.strip('` \n')
+        text = response['text']
         values = list(json.loads(text).values())
         if len(values) == 1:
             return values[0]
@@ -141,7 +140,7 @@ class JsonPrompter:
         return "\n".join(
             self.function_descriptions(functions, function_to_call)
             + [
-                "The response should be a JSON object matching this schema:",
+                "Here is the schema for the expected JSON object:",
                 "```json",
                 self.function_parameters(functions, function_to_call),
                 "```",
@@ -195,18 +194,13 @@ class JsonPrompter:
         system = (
             "Help choose the appropriate function to call to answer the user's question."
             if function_to_call is None
-            else f"Define the arguments for {function_to_call} to answer the user's question."
-        ) + "\nThe response should contain only the JSON object, with no additional text or explanation."
+            else f"Please provide a JSON object that defines the arguments for the `{function_to_call}` function to answer the user's question."
+        ) + "\nThe response must contain ONLY the JSON object, with NO additional text or explanation."
 
         data = (
             self.function_data(functions, function_to_call)
             if function_to_call
             else self.functions_summary(functions)
-        )
-        response_start = (
-            f"Here are the arguments for the `{function_to_call}` function: ```json\n"
-            if function_to_call
-            else "Here's the function the user should call: "
         )
 
         if self.is_instruct:
