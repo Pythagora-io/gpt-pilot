@@ -8,9 +8,8 @@ load_dotenv()
 from main import  get_custom_print
 from helpers.agents.TechLead import TechLead, DEVELOPMENT_PLANNING_STEP
 from helpers.Project import Project
-from test.test_utils import assert_non_empty_string, mock_terminal_size
+from test.test_utils import assert_non_empty_string
 from test.mock_questionary import MockQuestionary
-from utils.function_calling import parse_agent_response
 
 
 class TestTechLead:
@@ -51,10 +50,8 @@ The development process will include the creation of user stories and tasks, bas
         self.project.current_step = DEVELOPMENT_PLANNING_STEP
 
     @pytest.mark.uses_tokens
-    # @patch('database.database.get_progress_steps', return_value=None)
     @patch('helpers.AgentConvo.get_saved_development_step', return_value=None)
     @patch('helpers.agents.TechLead.save_progress', return_value=None)
-    # @patch('os.get_terminal_size', mock_terminal_size)
     @patch('helpers.agents.TechLead.get_progress_steps', return_value=None)
     def test_create_development_plan(self, mock_get_saved_step, mock_save_progress, mock_get_progress_steps):
         self.techLead = TechLead(self.project)

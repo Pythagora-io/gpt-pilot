@@ -40,4 +40,4 @@ Each task needs to be related only to the development of this app and nothing el
 
 For each task, there must be a way for human developer to check if the task is done or not. Write how should the developer check if the task is done.
 
-Now, based on the app's description, user stories and user tasks, and the technologies that you need to use, think task by task and write up the entire plan for the development. Start from the project setup and specify each task until the moment when the entire app should be fully working. For each task, write a description and a user-review goal.
+Now, based on the app's description, user stories and user tasks, and the technologies that you need to use, think task by task and create the entire development plan. Start from the project setup and specify each task until the moment when the entire app should be fully working. For each task, write a description and a user-review goal.

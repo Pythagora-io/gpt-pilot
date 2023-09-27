@@ -2,6 +2,7 @@ import builtins
 from json import JSONDecodeError
 
 import pytest
+from unittest.mock import patch, Mock
 from dotenv import load_dotenv
 from jsonschema import ValidationError
 
@@ -12,7 +13,8 @@ from helpers.agents.Architect import Architect
 from helpers.agents.TechLead import TechLead
 from utils.function_calling import parse_agent_response, FunctionType
 from test.test_utils import assert_non_empty_string
-from .llm_connection import create_gpt_chat_completion, assert_json_response, assert_json_schema
+from test.mock_questionary import MockQuestionary
+from utils.llm_connection import create_gpt_chat_completion, stream_gpt_completion, assert_json_response, assert_json_schema
 from main import get_custom_print
 
 load_dotenv()
@@ -98,14 +100,42 @@ class TestLlmConnection:
     def setup_method(self):
         builtins.print, ipc_client_instance = get_custom_print({})
 
+    @patch('utils.llm_connection.requests.post')
+    def test_stream_gpt_completion(self, mock_post):
+        # Given streaming JSON response
+        deltas = ['{', '\\n',
+                  '  \\"foo\\": \\"bar\\",', '\\n',
+                  '  \\"prompt\\": \\"Hello\\",', '\\n',
+                  '  \\"choices\\": []', '\\n',
+                  '}']
+        lines_to_yield = [
+            ('{"id": "gen-123", "choices": [{"index": 0, "delta": {"role": "assistant", "content": "' + delta + '"}}]}')
+            .encode('utf-8')
+            for delta in deltas
+        ]
+        lines_to_yield.insert(1, b': OPENROUTER PROCESSING')  # Simulate OpenRoute keep-alive pings
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.iter_lines.return_value = lines_to_yield
+
+        mock_post.return_value = mock_response
+
+        # When
+        with patch('utils.llm_connection.requests.post', return_value=mock_response):
+            response = stream_gpt_completion({}, '')
+
+            # Then
+            assert response == {'text': '{\n  "foo": "bar",\n  "prompt": "Hello",\n  "choices": []\n}'}
+
+
     @pytest.mark.uses_tokens
-    @pytest.mark.parametrize("endpoint, model", [
-        ("OPENAI", "gpt-4"),                                 # role: system
-        ("OPENROUTER", "openai/gpt-3.5-turbo"),              # role: user
-        ("OPENROUTER", "meta-llama/codellama-34b-instruct"), # rule: user, is_llama
-        ("OPENROUTER", "google/palm-2-chat-bison"),          # role: user/system
-        ("OPENROUTER", "google/palm-2-codechat-bison"),
-        ("OPENROUTER", "anthropic/claude-2"),              # role: user, is_llama
+    @pytest.mark.parametrize('endpoint, model', [
+        ('OPENAI', 'gpt-4'),                                 # role: system
+        ('OPENROUTER', 'openai/gpt-3.5-turbo'),              # role: user
+        ('OPENROUTER', 'meta-llama/codellama-34b-instruct'), # rule: user, is_llama
+        ('OPENROUTER', 'google/palm-2-chat-bison'),          # role: user/system
+        ('OPENROUTER', 'google/palm-2-codechat-bison'),
+        ('OPENROUTER', 'anthropic/claude-2'),              # role: user, is_llama
     ])
     def test_chat_completion_Architect(self, endpoint, model, monkeypatch):
         # Given
@@ -154,13 +184,13 @@ solution-oriented decision-making in areas where precise instructions were not p
         assert 'Node.js' in response
 
     @pytest.mark.uses_tokens
-    @pytest.mark.parametrize("endpoint, model", [
-        ("OPENAI", "gpt-4"),  # role: system
-        ("OPENROUTER", "openai/gpt-3.5-turbo"),  # role: user
-        ("OPENROUTER", "meta-llama/codellama-34b-instruct"),  # rule: user, is_llama
-        ("OPENROUTER", "google/palm-2-chat-bison"),  # role: user/system
-        ("OPENROUTER", "google/palm-2-codechat-bison"),
-        ("OPENROUTER", "anthropic/claude-2"),  # role: user, is_llama
+    @pytest.mark.parametrize('endpoint, model', [
+        ('OPENAI', 'gpt-4'),
+        ('OPENROUTER', 'openai/gpt-3.5-turbo'),
+        ('OPENROUTER', 'meta-llama/codellama-34b-instruct'),
+        ('OPENROUTER', 'google/palm-2-chat-bison'),
+        ('OPENROUTER', 'google/palm-2-codechat-bison'),
+        ('OPENROUTER', 'anthropic/claude-2'),
     ])
     def test_chat_completion_TechLead(self, endpoint, model, monkeypatch):
         # Given
@@ -191,18 +221,22 @@ The development process will include the creation of user stories and tasks, bas
                                                     })
         function_calls = DEVELOPMENT_PLAN
 
+        # Retry on bad LLM responses
+        mock_questionary = MockQuestionary(['', '', 'no'])
+
         # When
-        response = create_gpt_chat_completion(convo.messages, '', function_calls=function_calls)
+        with patch('utils.llm_connection.questionary', mock_questionary):
+            response = create_gpt_chat_completion(convo.messages, '', function_calls=function_calls)
 
-        # Then
-        assert convo.messages[0]['content'].startswith('You are a tech lead in a software development agency')
-        assert convo.messages[1]['content'].startswith('You are working in a software development agency and a project manager and software architect approach you')
+            # Then
+            assert convo.messages[0]['content'].startswith('You are a tech lead in a software development agency')
+            assert convo.messages[1]['content'].startswith('You are working in a software development agency and a project manager and software architect approach you')
 
-        assert response is not None
-        response = parse_agent_response(response, function_calls)
-        assert_non_empty_string(response[0]['description'])
-        assert_non_empty_string(response[0]['programmatic_goal'])
-        assert_non_empty_string(response[0]['user_review_goal'])
+            assert response is not None
+            response = parse_agent_response(response, function_calls)
+            assert_non_empty_string(response[0]['description'])
+            assert_non_empty_string(response[0]['programmatic_goal'])
+            assert_non_empty_string(response[0]['user_review_goal'])
 
 
     # def test_break_down_development_task(self):

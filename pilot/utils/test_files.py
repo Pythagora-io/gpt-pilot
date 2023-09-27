@@ -1,4 +1,3 @@
-import pytest
 from .files import setup_workspace
 
 
