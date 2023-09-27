@@ -101,8 +101,9 @@ class TestLlmConnection:
         builtins.print, ipc_client_instance = get_custom_print({})
 
     @patch('utils.llm_connection.requests.post')
-    def test_stream_gpt_completion(self, mock_post):
+    def test_stream_gpt_completion(self, mock_post, monkeypatch):
         # Given streaming JSON response
+        monkeypatch.setenv('OPENAI_API_KEY', 'secret')
         deltas = ['{', '\\n',
                   '  \\"foo\\": \\"bar\\",', '\\n',
                   '  \\"prompt\\": \\"Hello\\",', '\\n',
