@@ -249,10 +249,14 @@ class Project:
         if file_path != '':
             paths.insert(0, file_path)
 
-        if not re.match(r'^/|~|\w+:/', file_path):
-            paths.insert(0, self.root_path)
+        if file_path == '/':
+            absolute_path = file_path + file_name
+        else:
+            if not re.match(r'^/|~|\w+:', file_path):
+                paths.insert(0, self.root_path)
+            absolute_path = '/'.join(paths)
 
-        return file_path, '/'.join(paths)
+        return file_path, absolute_path
 
     def save_files_snapshot(self, development_step_id):
         files = get_files_content(self.root_path, ignore=IGNORE_FOLDERS)
