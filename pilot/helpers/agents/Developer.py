@@ -382,26 +382,23 @@ class Developer(Agent):
         return llm_response
 
     def test_code_changes(self, code_monkey, convo):
-        (test_type, command, automated_test_description, manual_test_description) = convo.send_message(
-            'development/task/step_check.prompt',
-            {},
-            GET_TEST_TYPE)
+        test_type, description = convo.send_message('development/task/step_check.prompt', {}, GET_TEST_TYPE)
 
         if test_type == 'command_test':
-            return run_command_until_success(command['command'], command['timeout'], convo)
+            return run_command_until_success(description['command'], description['timeout'], convo)
         elif test_type == 'automated_test':
             # TODO get code monkey to implement the automated test
             pass
         elif test_type == 'manual_test':
             # TODO make the message better
             response = self.project.ask_for_human_intervention(
-                'Message from Pilot: I need your help. Can you please test if this was successful?',
-                manual_test_description
+                'I need your help. Can you please test if this was successful?',
+                description,
             )
 
             user_feedback = response['user_input']
             if user_feedback is not None and user_feedback != 'continue':
-                return_value = self.debugger.debug(convo, user_input=user_feedback, issue_description=manual_test_description)
+                return_value = self.debugger.debug(convo, user_input=user_feedback, issue_description=description)
                 return_value['user_input'] = user_feedback
                 return return_value
             else:
