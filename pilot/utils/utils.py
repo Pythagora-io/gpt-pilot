@@ -85,6 +85,10 @@ def get_prompt_components():
 
 
 def get_sys_message(role):
+    """
+    :param role: 'product_owner', 'architect', 'dev_ops', 'tech_lead', 'full_stack_developer', 'code_monkey'
+    :return: { "role": "system", "content": "You are a {role}... You do..." }
+    """
     content = get_prompt(f'system_messages/{role}.prompt')
 
     return {
@@ -137,7 +141,7 @@ def should_execute_step(arg_step, current_step):
 def step_already_finished(args, step):
     args.update(step['app_data'])
 
-    message = f"{capitalize_first_word_with_underscores(step['step'])} already done for this app_id: {args['app_id']}. Moving to next step..."
+    message = f"✅  {capitalize_first_word_with_underscores(step['step'])}"
     print(green(message))
     logger.info(message)
 

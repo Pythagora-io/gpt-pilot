@@ -18,6 +18,7 @@ from utils.utils import get_os_info
 
 ENVIRONMENT_SETUP_STEP = 'environment_setup'
 
+
 class Developer(Agent):
     def __init__(self, project):
         super().__init__('full_stack_developer', project)
@@ -31,7 +32,7 @@ class Developer(Agent):
             self.project.skip_steps = False if ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0') else True
 
         # DEVELOPMENT
-        print(green_bold(f"Ok, great, now, let's start with the actual development...\n"))
+        print(green_bold(f"🚀 Now for the actual development...\n"))
         logger.info(f"Starting to create the actual code...")
 
         for i, dev_task in enumerate(self.project.development_plan):
@@ -337,7 +338,7 @@ class Developer(Agent):
                     for cmd in installation_commands:
                         run_command_until_success(cmd['command'], cmd['timeout'], self.convo_os_specific_tech)
 
-        logger.info('The entire tech stack needed is installed and ready to be used.')
+        logger.info('The entire tech stack is installed and ready to be used.')
 
         save_progress(self.project.args['app_id'], self.project.current_step, {
             "os_specific_technologies": os_specific_technologies,
@@ -421,5 +422,5 @@ class Developer(Agent):
                 run_command_until_success(cmd['command'], cmd['timeout'], convo)
         # elif type == 'CODE_CHANGE':
         #     code_changes_details = get_step_code_changes()
-            # TODO: give to code monkey for implementation
+        #     # TODO: give to code monkey for implementation
         pass

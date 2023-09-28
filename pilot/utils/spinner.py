@@ -9,4 +9,5 @@ def spinner_start(text="Processing..."):
 
 
 def spinner_stop(spinner):
-    spinner.stop()
+    if spinner is not None:
+        spinner.stop()

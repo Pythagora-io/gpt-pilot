@@ -95,6 +95,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
             if key in gpt_data:
                 del gpt_data[key]
 
+    # Advise the LLM of the JSON response schema we are expecting
     add_function_calls_to_request(gpt_data, function_calls)
 
     try:
@@ -140,8 +141,11 @@ def get_tokens_in_messages_from_openai_error(error_message):
 
 def retry_on_exception(func):
     def wrapper(*args, **kwargs):
+        # spinner = None
+
         while True:
             try:
+                # spinner_stop(spinner)
                 return func(*args, **kwargs)
             except Exception as e:
                 # Convert exception to string
@@ -154,16 +158,19 @@ def retry_on_exception(func):
                         args[0]['function_buffer'] = e.doc
                         continue
                 if "context_length_exceeded" in err_str:
+                    # spinner_stop(spinner)
                     raise TokenLimitError(get_tokens_in_messages_from_openai_error(err_str), MAX_GPT_MODEL_TOKENS)
                 if "rate_limit_exceeded" in err_str:
                     # Extracting the duration from the error string
                     match = re.search(r"Please try again in (\d+)ms.", err_str)
                     if match:
+                        # spinner = spinner_start(colored("Rate limited. Waiting...", 'yellow'))
                         wait_duration = int(match.group(1)) / 1000
                         time.sleep(wait_duration)
                     continue
 
                 print(red(f'There was a problem with request to openai API:'))
+                # spinner_stop(spinner)
                 print(err_str)
 
                 user_message = questionary.text(
@@ -363,7 +370,7 @@ def assert_json_schema(response: str, functions: list[FunctionType]) -> True:
         return True
 
 
-def postprocessing(gpt_response, req_type):
+def postprocessing(gpt_response: str, req_type) -> str:
     return gpt_response
 
 

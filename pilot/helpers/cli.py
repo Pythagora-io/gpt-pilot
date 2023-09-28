@@ -247,6 +247,7 @@ def build_directory_tree(path, prefix="", ignore=None, is_last=False, files=None
 
     return output
 
+
 def execute_command_and_check_cli_response(command, timeout, convo):
     """
     Execute a command and check its CLI response.
