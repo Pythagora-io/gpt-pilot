@@ -4,6 +4,7 @@ from utils.style import green_bold, yellow_bold, cyan, white_bold
 from const.common import IGNORE_FOLDERS, STEPS
 from database.database import delete_unconnected_steps_from, delete_all_app_development_data
 from const.ipc import MESSAGE_TYPE
+from prompts.prompts import ask_user
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from utils.questionary import styled_text
 from helpers.files import get_files_content, clear_directory, update_file
@@ -302,16 +303,14 @@ class Project:
             reset_branch_id = convo.save_branch()
 
         while answer != 'continue':
-            print(yellow_bold(message))
             if description is not None:
                 print('\n' + '-'*100 + '\n' +
                     white_bold(description) +
                     '\n' + '-'*100 + '\n')
 
-            answer = styled_text(
-                self,
-                'If something is wrong, tell me or type "continue" to continue.',
-            )
+            answer = ask_user(self, yellow_bold(message),
+                              require_some_input=False,
+                              hint='If something is wrong, tell me or type "continue" to continue.')
 
             try:
                 if answer in cbs:
