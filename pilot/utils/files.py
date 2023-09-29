@@ -20,7 +20,7 @@ def setup_workspace(args):
 
         return args['workspace']
 
-    root = get_parent_folder('pilot')
+    root = args['root'] or get_parent_folder('pilot')
     create_directory(root, 'workspace')
     project_path = create_directory(os.path.join(root, 'workspace'), args['name'])
     create_directory(project_path, 'tests')
