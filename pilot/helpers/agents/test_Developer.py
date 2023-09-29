@@ -7,9 +7,10 @@ from helpers.AgentConvo import AgentConvo
 from dotenv import load_dotenv
 load_dotenv()
 
-from main import  get_custom_print
+from main import get_custom_print
 from .Developer import Developer, ENVIRONMENT_SETUP_STEP
 from helpers.Project import Project
+from test.mock_questionary import MockQuestionary
 
 
 class TestDeveloper:
@@ -83,7 +84,7 @@ class TestDeveloper:
     @patch('helpers.AgentConvo.create_gpt_chat_completion',
            return_value={'text': '{"type": "manual_test", "manual_test_description": "Does it look good?"}'})
     @patch('helpers.Project.ask_user', return_value='continue')
-    def test_code_changes_manual_test(self, mock_get_saved_step, mock_save, mock_chat_completion, mock_ask_user):
+    def test_code_changes_manual_test_continue(self, mock_get_saved_step, mock_save, mock_chat_completion, mock_ask_user):
         # Given
         monkey = None
         convo = AgentConvo(self.developer)
@@ -94,3 +95,31 @@ class TestDeveloper:
 
         # Then
         assert result == {'success': True, 'user_input': 'continue'}
+
+    @patch('helpers.AgentConvo.get_saved_development_step')
+    @patch('helpers.AgentConvo.save_development_step')
+    @patch('helpers.AgentConvo.create_gpt_chat_completion')
+    @patch('utils.questionary.get_saved_user_input')
+    # https://github.com/Pythagora-io/gpt-pilot/issues/35
+    def test_code_changes_manual_test_no(self, mock_get_saved_user_input, mock_chat_completion, mock_save, mock_get_saved_step):
+        # Given
+        monkey = None
+        convo = AgentConvo(self.developer)
+        convo.save_branch = lambda branch_name=None: branch_name
+        convo.load_branch = lambda function_uuid=None: function_uuid
+        self.project.developer = self.developer
+
+        mock_chat_completion.side_effect = [
+            {'text': '{"type": "manual_test", "manual_test_description": "Does it look good?"}'},
+            {'text': '{"steps": [{"type": "command", "command": {"command": "something scary", "timeout": 3000}, "check_if_fixed": true}]}'},
+            {'text': 'do something else scary'},
+        ]
+
+        mock_questionary = MockQuestionary(['no', 'no'])
+
+        with patch('utils.questionary.questionary', mock_questionary):
+            # When
+            result = self.developer.test_code_changes(monkey, convo)
+
+            # Then
+            assert result == {'success': True, 'user_input': 'continue'}
