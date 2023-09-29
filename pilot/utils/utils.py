@@ -39,7 +39,7 @@ def get_prompt(prompt_name, data=None):
 
     data.update(get_prompt_components())
 
-    logger.debug(f"Getting prompt for {prompt_name}")  # logging here
+    logger.info(f"Getting prompt for {prompt_name}")
 
     # Load the template
     template = env.get_template(prompt_name)
