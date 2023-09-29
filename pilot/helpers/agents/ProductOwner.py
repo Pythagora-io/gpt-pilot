@@ -1,5 +1,5 @@
-from termcolor import colored
-
+import json
+from utils.style import green_bold
 from helpers.AgentConvo import AgentConvo
 from helpers.Agent import Agent
 from logger.logger import logger
@@ -44,11 +44,17 @@ class ProductOwner(Agent):
 
         main_prompt = ask_for_main_app_definition(self.project)
 
+        print(json.dumps({'open_project': {
+            #'uri': 'file:///' + self.project.root_path.replace('\\', '/'),
+            'path': self.project.root_path,
+            'name': self.project.args['name'],
+        }}), type='info')
+
         high_level_messages = get_additional_info_from_openai(
             self.project,
             generate_messages_from_description(main_prompt, self.project.args['app_type'], self.project.args['name']))
 
-        print(colored('Project Summary:\n', 'green', attrs=['bold']))
+        print(green_bold('Project Summary:\n'))
         convo_project_description = AgentConvo(self)
         high_level_summary = convo_project_description.send_message('utils/summary.prompt',
                                                                     {'conversation': '\n'.join(
@@ -80,7 +86,7 @@ class ProductOwner(Agent):
 
         # USER STORIES
         msg = f"User Stories:\n"
-        print(colored(msg, "green", attrs=['bold']))
+        print(green_bold(msg))
         logger.info(msg)
 
         self.project.user_stories = self.convo_user_stories.continuous_conversation('user_stories/specs.prompt', {
@@ -114,7 +120,7 @@ class ProductOwner(Agent):
 
         # USER TASKS
         msg = f"User Tasks:\n"
-        print(colored(msg, "green", attrs=['bold']))
+        print(green_bold(msg))
         logger.info(msg)
 
         self.project.user_tasks = self.convo_user_stories.continuous_conversation('user_stories/user_tasks.prompt',

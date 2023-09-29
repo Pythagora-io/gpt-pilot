@@ -1,11 +1,12 @@
 from playhouse.shortcuts import model_to_dict
 from peewee import *
-from termcolor import colored
+from utils.style import yellow, red
 from functools import reduce
 import operator
 import psycopg2
 from psycopg2.extensions import quote_ident
 
+import os
 from const.common import PROMPT_DATA_TO_IGNORE
 from logger.logger import logger
 from utils.utils import hash_data
@@ -27,6 +28,28 @@ from database.models.user_apps import UserApps
 from database.models.user_inputs import UserInputs
 from database.models.files import File
 
+DB_NAME = os.getenv("DB_NAME")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+
+def get_created_apps():
+    return [model_to_dict(app) for app in App.select()]
+
+def get_created_apps_with_steps():
+    apps = get_created_apps()
+    for app in apps:
+        app['id'] = str(app['id'])
+        app['steps'] = get_progress_steps(app['id'])
+        app['development_steps'] = get_all_app_development_steps(app['id'])
+        # TODO this is a quick way to remove the unnecessary fields from the response
+        app['steps'] = {outer_k: {k: v for k, v in inner_d.items() if k in {'created_at', 'completeted_at', 'completed'}} if inner_d is not None else None for outer_k, inner_d in app['steps'].items()}
+        app['development_steps'] = [{k: v for k, v in dev_step.items() if k in {'id', 'created_at'}} for dev_step in app['development_steps']]
+    return apps
+
+def get_all_app_development_steps(app_id):
+    return [model_to_dict(dev_step) for dev_step in DevelopmentSteps.select().where(DevelopmentSteps.app == app_id)]
 
 def save_user(user_id, email, password):
     try:
@@ -176,59 +199,55 @@ def get_progress_steps(app_id, step=None):
         return steps
 
 
-def get_db_model_from_hash_id(model, app_id, previous_step):
+def get_db_model_from_hash_id(model, app_id, previous_step, high_level_step):
     try:
-        db_row = model.get((model.app == app_id) & (model.previous_step == previous_step))
+        db_row = model.get((model.app == app_id) & (model.previous_step == previous_step) & (model.high_level_step == high_level_step))
     except DoesNotExist:
         return None
     return db_row
 
 
-def hash_and_save_step(Model, app_id, hash_data_args, data_fields, message):
+def hash_and_save_step(Model, app_id, unique_data_fields, data_fields, message):
     app = get_app(app_id)
-    hash_id = hash_data(hash_data_args)
 
-    data_to_insert = {
-        'app': app,
-        'hash_id': hash_id
-    }
-
-    fields_to_preserve = [getattr(Model, field) for field in list(data_to_insert.keys())]
+    fields_to_preserve = [getattr(Model, field) for field in list(unique_data_fields.keys())]
 
     for field, value in data_fields.items():
-        data_to_insert[field] = value
+        unique_data_fields[field] = value
 
     try:
+        existing_record = Model.get_or_none((Model.app == app) & (Model.previous_step == unique_data_fields['previous_step']) & (Model.high_level_step == unique_data_fields['high_level_step']))
         inserted_id = (Model
-                       .insert(**data_to_insert)
-                       .on_conflict(conflict_target=[Model.app, Model.hash_id],
-                                    preserve=fields_to_preserve,
-                                    update=data_fields)
+                       .insert(**unique_data_fields)
                        .execute())
 
         record = Model.get_by_id(inserted_id)
-        logger.debug(colored(f"{message} with id {record.id}", "yellow"))
-    except IntegrityError:
-        print(f"A record with hash_id {hash_id} already exists for {Model.__name__}.")
+        logger.debug(yellow(f"{message} with id {record.id}"))
+    except IntegrityError as e:
+        print(f"A record with data {unique_data_fields} already exists for {Model.__name__}.")
         return None
     return record
 
 
-def save_development_step(project, prompt_path, prompt_data, messages, llm_response):
-    hash_data_args = {
-        'prompt_path': prompt_path,
-        'prompt_data': {} if prompt_data is None else {k: v for k, v in prompt_data.items() if
-                                                       k not in PROMPT_DATA_TO_IGNORE},
-        'llm_req_num': project.llm_req_num
-    }
+def save_development_step(project, prompt_path, prompt_data, messages, llm_response, exception=None):
 
     data_fields = {
         'messages': messages,
         'llm_response': llm_response,
-        'previous_step': project.checkpoints['last_development_step'],
+        'prompt_path': prompt_path,
+        'prompt_data': {} if prompt_data is None else {k: v for k, v in prompt_data.items() if
+            k not in PROMPT_DATA_TO_IGNORE and not callable(v)},
+        'llm_req_num': project.llm_req_num,
+        'token_limit_exception_raised': exception
     }
 
-    development_step = hash_and_save_step(DevelopmentSteps, project.args['app_id'], hash_data_args, data_fields, "Saved Development Step")
+    unique_data = {
+        'app': project.args['app_id'],
+        'previous_step': project.checkpoints['last_development_step'],
+        'high_level_step': project.current_step,
+    }
+
+    development_step = hash_and_save_step(DevelopmentSteps, project.args['app_id'], unique_data, data_fields, "Saved Development Step")
     project.checkpoints['last_development_step'] = development_step
 
     project.save_files_snapshot(development_step.id)
@@ -236,82 +255,82 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
     return development_step
 
 
-def get_development_step_from_hash_id(project, prompt_path, prompt_data, llm_req_num):
-    data_to_hash = {
-        'prompt_path': prompt_path,
-        'prompt_data': {} if prompt_data is None else {k: v for k, v in prompt_data.items() if
-                                                       k not in PROMPT_DATA_TO_IGNORE},
-        'llm_req_num': llm_req_num
-    }
+def get_saved_development_step(project):
     development_step = get_db_model_from_hash_id(DevelopmentSteps, project.args['app_id'],
-                                                 project.checkpoints['last_development_step'])
+        project.checkpoints['last_development_step'], project.current_step)
     return development_step
 
 
 def save_command_run(project, command, cli_response):
-    hash_data_args = {
-        'command': command,
-        'command_runs_count': project.command_runs_count,
+    if project.current_step != 'coding':
+        return
+
+    unique_data = {
+        'app': project.args['app_id'],
+        'previous_step': project.checkpoints['last_command_run'],
+        'high_level_step': project.current_step,
     }
+
     data_fields = {
         'command': command,
         'cli_response': cli_response,
-        'previous_step': project.checkpoints['last_command_run'],
     }
-    command_run = hash_and_save_step(CommandRuns, project.args['app_id'], hash_data_args, data_fields,
-                                     "Saved Command Run")
+
+    command_run = hash_and_save_step(CommandRuns, project.args['app_id'], unique_data, data_fields, "Saved Command Run")
     project.checkpoints['last_command_run'] = command_run
     return command_run
 
 
-def get_command_run_from_hash_id(project, command):
+def get_saved_command_run(project, command):
     data_to_hash = {
         'command': command,
         'command_runs_count': project.command_runs_count
     }
     command_run = get_db_model_from_hash_id(CommandRuns, project.args['app_id'],
-                                            project.checkpoints['last_command_run'])
+                                            project.checkpoints['last_command_run'], project.current_step)
     return command_run
 
 
 def save_user_input(project, query, user_input):
-    hash_data_args = {
-        'query': query,
-        'user_inputs_count': project.user_inputs_count,
+    if project.current_step != 'coding':
+        return
+
+    unique_data = {
+        'app': project.args['app_id'],
+        'previous_step': project.checkpoints['last_user_input'],
+        'high_level_step': project.current_step,
     }
     data_fields = {
         'query': query,
         'user_input': user_input,
-        'previous_step': project.checkpoints['last_user_input'],
     }
-    user_input = hash_and_save_step(UserInputs, project.args['app_id'], hash_data_args, data_fields, "Saved User Input")
+    user_input = hash_and_save_step(UserInputs, project.args['app_id'], unique_data, data_fields, "Saved User Input")
     project.checkpoints['last_user_input'] = user_input
     return user_input
 
 
-def get_user_input_from_hash_id(project, query):
+def get_saved_user_input(project, query):
     data_to_hash = {
         'query': query,
         'user_inputs_count': project.user_inputs_count
     }
-    user_input = get_db_model_from_hash_id(UserInputs, project.args['app_id'], project.checkpoints['last_user_input'])
+    user_input = get_db_model_from_hash_id(UserInputs, project.args['app_id'], project.checkpoints['last_user_input'], project.current_step)
     return user_input
 
 
 def delete_all_subsequent_steps(project):
-    delete_subsequent_steps(DevelopmentSteps, project.checkpoints['last_development_step'])
-    delete_subsequent_steps(CommandRuns, project.checkpoints['last_command_run'])
-    delete_subsequent_steps(UserInputs, project.checkpoints['last_user_input'])
+    app = get_app(project.args['app_id'])
+    delete_subsequent_steps(DevelopmentSteps, app, project.checkpoints['last_development_step'])
+    delete_subsequent_steps(CommandRuns, app, project.checkpoints['last_command_run'])
+    delete_subsequent_steps(UserInputs, app, project.checkpoints['last_user_input'])
 
 
-def delete_subsequent_steps(model, step):
-    if step is None:
-        return
-    logger.info(colored(f"Deleting subsequent {model.__name__} steps after {step.id}", "red"))
-    subsequent_steps = model.select().where(model.previous_step == step.id)
+def delete_subsequent_steps(Model, app, step):
+    logger.info(red(f"Deleting subsequent {Model.__name__} steps after {step.id if step is not None else None}"))
+    subsequent_steps = Model.select().where((Model.app == app) & (Model.previous_step == (step.id if step is not None else None)))
     for subsequent_step in subsequent_steps:
         if subsequent_step:
-            delete_subsequent_steps(model, subsequent_step)
+            delete_subsequent_steps(Model, app, subsequent_step)
             subsequent_step.delete_instance()
 
 
@@ -343,7 +362,7 @@ def delete_unconnected_steps_from(step, previous_step_field_name):
     ).order_by(DevelopmentSteps.id.desc())
 
     for unconnected_step in unconnected_steps:
-        print(colored(f"Deleting unconnected {step.__class__.__name__} step {unconnected_step.id}", "red"))
+        print(red(f"Deleting unconnected {step.__class__.__name__} step {unconnected_step.id}"))
         unconnected_step.delete_instance()
 
 

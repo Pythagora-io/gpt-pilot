@@ -1,9 +1,13 @@
+import json
 import os
-
-from termcolor import colored
+import re
+from typing import Tuple
+from utils.style import green_bold, yellow_bold, cyan, white_bold
 from const.common import IGNORE_FOLDERS, STEPS
-from database.models.app import App
-from database.database import get_app, delete_unconnected_steps_from, delete_all_app_development_data
+from database.database import delete_unconnected_steps_from, delete_all_app_development_data
+from const.ipc import MESSAGE_TYPE
+from prompts.prompts import ask_user
+from helpers.exceptions.TokenLimitError import TokenLimitError
 from utils.questionary import styled_text
 from helpers.files import get_files_content, clear_directory, update_file
 from helpers.cli import build_directory_tree
@@ -15,12 +19,12 @@ from helpers.agents.ProductOwner import ProductOwner
 from database.models.development_steps import DevelopmentSteps
 from database.models.file_snapshot import FileSnapshot
 from database.models.files import File
-from utils.files import get_parent_folder
+from logger.logger import logger
 
 
 class Project:
     def __init__(self, args, name=None, description=None, user_stories=None, user_tasks=None, architecture=None,
-                 development_plan=None, current_step=None):
+                 development_plan=None, current_step=None, ipc_client_instance=None):
         """
         Initialize a project.
 
@@ -47,6 +51,9 @@ class Project:
         self.root_path = ''
         self.skip_until_dev_step = None
         self.skip_steps = None
+
+        self.ipc_client_instance = ipc_client_instance
+
         # self.restore_files({dev_step_id_to_start_from})
 
         if current_step is not None:
@@ -64,20 +71,33 @@ class Project:
         # if development_plan is not None:
         #     self.development_plan = development_plan
 
+
     def start(self):
         """
         Start the project.
         """
         self.project_manager = ProductOwner(self)
+        print(json.dumps({
+            "project_stage": "project_description"
+        }), type='info')
         self.project_manager.get_project_description()
+        print(json.dumps({
+            "project_stage": "user_stories"
+        }), type='info')
         self.user_stories = self.project_manager.get_user_stories()
         # self.user_tasks = self.project_manager.get_user_tasks()
 
+        print(json.dumps({
+            "project_stage": "architecture"
+        }), type='info')
         self.architect = Architect(self)
         self.architecture = self.architect.get_architecture()
 
-        # self.tech_lead = TechLead(self)
-        # self.development_plan = self.tech_lead.create_development_plan()
+        self.developer = Developer(self)
+        self.developer.set_up_environment();
+
+        self.tech_lead = TechLead(self)
+        self.development_plan = self.tech_lead.create_development_plan()
 
         # TODO move to constructor eventually
         if self.args['step'] is not None and STEPS.index(self.args['step']) < STEPS.index('coding'):
@@ -91,14 +111,33 @@ class Project:
                 clear_directory(self.root_path)
                 delete_all_app_development_data(self.args['app_id'])
                 self.skip_steps = False
-            elif 'update_files_before_start' in self.args and self.skip_until_dev_step is not None:
-                FileSnapshot.delete().where(FileSnapshot.app == self.app and FileSnapshot.development_step == self.skip_until_dev_step).execute()
-                self.save_files_snapshot(self.skip_until_dev_step)
+            elif self.skip_until_dev_step is not None:
+                should_overwrite_files = ''
+                while should_overwrite_files != 'y' or should_overwrite_files != 'n':
+                    should_overwrite_files = styled_text(
+                        self,
+                        f'Do you want to overwrite the dev step {self.args["skip_until_dev_step"]} code with system changes? Type y/n',
+                        ignore_user_input_count=True
+                    )
+
+                    logger.info('should_overwrite_files: %s', should_overwrite_files)
+                    if should_overwrite_files == 'n':
+                        break
+                    elif should_overwrite_files == 'y':
+                        FileSnapshot.delete().where(FileSnapshot.app == self.app and FileSnapshot.development_step == self.skip_until_dev_step).execute()
+                        self.save_files_snapshot(self.skip_until_dev_step)
+                        break
         # TODO END
 
         self.developer = Developer(self)
+        print(json.dumps({
+            "project_stage": "environment_setup"
+        }), type='info')
         self.developer.set_up_environment()
 
+        print(json.dumps({
+            "project_stage": "coding"
+        }), type='info')
         self.developer.start_coding()
 
     def get_directory_tree(self, with_descriptions=False):
@@ -135,7 +174,17 @@ class Project:
             list: A list of coded files.
         """
         files = File.select().where(File.app_id == self.args['app_id'])
+
+        # TODO temoprary fix to eliminate files that are not in the project
+        files = [file for file in files if len(FileSnapshot.select().where(FileSnapshot.file_id == file.id)) > 0]
+        # TODO END
+
         files = self.get_files([file.path + '/' + file.name for file in files])
+
+        # TODO temoprary fix to eliminate files that are not in the project
+        files = [file for file in files if file['content'] != '']
+        # TODO END
+
         return files
 
     def get_files(self, files):
@@ -171,8 +220,17 @@ class Project:
             data: { name: 'hello.py', path: 'path/to/hello.py', content: 'print("Hello!")' }
         """
         # TODO fix this in prompts
-        if ' ' in data['name'] or '.' not in data['name']:
-            data['name'] = data['path'].rsplit('/', 1)[1]
+        if 'path' not in data:
+            data['path'] = data['name']
+
+        if 'name' not in data or data['name'] == '':
+            data['name'] = os.path.basename(data['path'])
+        elif not data['path'].endswith(data['name']):
+            if data['path'] == '':
+                data['path'] = data['name']
+            else:
+                data['path'] = data['path'] + '/' + data['name']
+        # TODO END
 
         data['path'], data['full_path'] = self.get_full_file_path(data['path'], data['name'])
         update_file(data['full_path'], data['content'])
@@ -184,30 +242,31 @@ class Project:
                 update={ 'name': data['name'], 'path': data['path'], 'full_path': data['full_path'] })
             .execute())
 
-    def get_full_file_path(self, file_path, file_name):
+    def get_full_file_path(self, file_path: str, file_name: str) -> Tuple[str, str]:
         file_path = file_path.replace('./', '', 1)
-        file_path = file_path.rsplit(file_name, 1)[0]
+        file_path = os.path.dirname(file_path)
+        file_name = os.path.basename(file_name)
 
-        if file_path.endswith('/'):
-            file_path = file_path.rstrip('/')
+        paths = [file_name]
 
-        if file_name.startswith('/'):
-            file_name = file_name[1:]
+        if file_path != '':
+            paths.insert(0, file_path)
 
-        if not file_path.startswith('/') and file_path != '':
-            file_path = '/' + file_path
+        if file_path == '/':
+            absolute_path = file_path + file_name
+        else:
+            if not re.match(r'^/|~|\w+:', file_path):
+                paths.insert(0, self.root_path)
+            absolute_path = '/'.join(paths)
 
-        if file_name != '':
-            file_name = '/' + file_name
-
-        return (file_path, self.root_path + file_path + file_name)
+        return file_path, absolute_path
 
     def save_files_snapshot(self, development_step_id):
         files = get_files_content(self.root_path, ignore=IGNORE_FOLDERS)
         development_step, created = DevelopmentSteps.get_or_create(id=development_step_id)
 
         for file in files:
-            print(colored(f'Saving file {file["path"] + "/" + file["name"]}', 'light_cyan'))
+            print(cyan(f'Saving file {(file["path"])}/{file["name"]}'))
             # TODO this can be optimized so we don't go to the db each time
             file_in_db, created = File.get_or_create(
                 app=self.app,
@@ -238,18 +297,40 @@ class Project:
         delete_unconnected_steps_from(self.checkpoints['last_command_run'], 'previous_step')
         delete_unconnected_steps_from(self.checkpoints['last_user_input'], 'previous_step')
 
-    def ask_for_human_intervention(self, message, description=None, cbs={}):
-        print(colored(message, "yellow", attrs=['bold']))
-        if description is not None:
-            print(description)
+    def ask_for_human_intervention(self, message, description=None, cbs={}, convo=None, is_root_task=False):
         answer = ''
-        while answer != 'continue':
-            answer = styled_text(
-                self,
-                'If something is wrong, tell me or type "continue" to continue.',
-            )
+        if convo is not None:
+            reset_branch_id = convo.save_branch()
 
-            if answer in cbs:
-                return cbs[answer]()
-            elif answer != '':
-                return answer
+        while answer != 'continue':
+            if description is not None:
+                print('\n' + '-'*100 + '\n' +
+                    white_bold(description) +
+                    '\n' + '-'*100 + '\n')
+
+            answer = ask_user(self, yellow_bold(message),
+                              require_some_input=False,
+                              hint='If something is wrong, tell me or type "continue" to continue.')
+
+            try:
+                if answer in cbs:
+                    return cbs[answer](convo)
+                elif answer != '':
+                    return { 'user_input': answer }
+            except TokenLimitError as e:
+                if is_root_task and answer not in cbs and answer != '':
+                    convo.load_branch(reset_branch_id)
+                    return { 'user_input': answer }
+                else:
+                    raise e
+
+    def log(self, text, message_type):
+        if self.ipc_client_instance is None or self.ipc_client_instance.client is None:
+            print(text)
+        else:
+            self.ipc_client_instance.send({
+                'type': MESSAGE_TYPE[message_type],
+                'content': str(text),
+            })
+            if message_type == MESSAGE_TYPE['user_input_request']:
+                return self.ipc_client_instance.listen()

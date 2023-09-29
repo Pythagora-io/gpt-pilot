@@ -1,12 +1,9 @@
 # prompts/prompts.py
-
-from termcolor import colored
-import questionary
-
+from utils.style import yellow
 from const import common
 from const.llm import MAX_QUESTIONS, END_RESPONSE
-from utils.llm_connection import create_gpt_chat_completion, get_prompt
-from utils.utils import capitalize_first_word_with_underscores, get_sys_message, find_role_from_step
+from utils.llm_connection import create_gpt_chat_completion
+from utils.utils import capitalize_first_word_with_underscores, get_sys_message, find_role_from_step, get_prompt
 from utils.questionary import styled_select, styled_text
 from logger.logger import logger
 
@@ -52,9 +49,14 @@ def ask_for_main_app_definition(project):
     return description
 
 
-def ask_user(project, question, require_some_input=True):
+def ask_user(project, question: str, require_some_input=True, hint: str = None):
     while True:
+        if hint is not None:
+            print(hint, type='hint')
         answer = styled_text(project, question)
+
+        logger.info('Q: %s', question)
+        logger.info('A: %s', answer)
 
         if answer is None:
             print("Exiting application.")
@@ -88,7 +90,7 @@ def get_additional_info_from_openai(project, messages):
 
         if response is not None:
             if response['text'].strip() == END_RESPONSE:
-                print(response['text'] + '\n')
+                # print(response['text'] + '\n')
                 return messages
 
             # Ask the question to the user
@@ -124,10 +126,8 @@ def get_additional_info_from_user(project, messages, role):
         while True:
             if isinstance(message, dict) and 'text' in message:
                 message = message['text']
-            print(colored(
-                f"Please check this message and say what needs to be changed. If everything is ok just press ENTER",
-                "yellow"))
-            answer = ask_user(project, message, False)
+            print(yellow(f"Please check this message and say what needs to be changed. If everything is ok just press ENTER",))
+            answer = ask_user(project, message, require_some_input=False)
             if answer.lower() == '':
                 break
             response = create_gpt_chat_completion(

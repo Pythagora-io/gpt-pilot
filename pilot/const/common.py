@@ -11,8 +11,8 @@ STEPS = [
     'user_stories',
     'user_tasks',
     'architecture',
-    'development_planning',
     'environment_setup',
+    'development_planning',
     'coding'
 ]
 

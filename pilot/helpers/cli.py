@@ -7,10 +7,12 @@ import time
 import uuid
 import platform
 
-from termcolor import colored
-from database.database import get_command_run_from_hash_id, save_command_run
+from utils.style import yellow, green, white, red, yellow_bold, white_bold
+from database.database import get_saved_command_run, save_command_run
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
-
+from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
+from helpers.exceptions.TokenLimitError import TokenLimitError
+from prompts.prompts import ask_user
 from utils.questionary import styled_text
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MIN_COMMAND_RUN_TIME, MAX_COMMAND_RUN_TIME, MAX_COMMAND_OUTPUT_LENGTH
 
@@ -91,7 +93,10 @@ def execute_command(project, command, timeout=None, force=False):
         force (bool, optional): Whether to execute the command without confirmation. Default is False.
 
     Returns:
-        str: The command output.
+        cli_response (str): The command output
+                            or: '', 'DONE' if user answered 'no' or 'skip'
+        llm_response (str): The response from the agent.
+                            TODO: this seems to be 'DONE' (no or skip) or None
     """
     if timeout is not None:
         if timeout < 1000:
@@ -99,13 +104,20 @@ def execute_command(project, command, timeout=None, force=False):
         timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
 
     if not force:
-        print(colored(f'\n--------- EXECUTE COMMAND ----------', 'yellow', attrs=['bold']))
-        print(colored(f'Can i execute the command: `') + colored(command, 'yellow', attrs=['bold']) + colored(f'` with {timeout}ms timeout?'))
-
-        answer = styled_text(
+        print(yellow_bold(f'\n--------- EXECUTE COMMAND ----------'))
+        answer = ask_user(
             project,
-            'If yes, just press ENTER'
+            f'Can I execute the command: `' + yellow_bold(command) + f'` with {timeout}ms timeout?',
+            hint='If yes, just press ENTER'
         )
+
+        # TODO: I think AutoGPT allows other feedback here, like:
+        #       "That's not going to work, let's do X instead"
+        #       We don't explicitly make "no" or "skip" options to the user
+        if answer == 'no':
+            return '', 'DONE'
+        elif answer == 'skip':
+            return '', 'DONE'
 
 
     # TODO when a shell built-in commands (like cd or source) is executed, the output is not captured properly - this will need to be changed at some point
@@ -114,12 +126,12 @@ def execute_command(project, command, timeout=None, force=False):
 
 
     project.command_runs_count += 1
-    command_run = get_command_run_from_hash_id(project, command)
+    command_run = get_saved_command_run(project, command)
     if command_run is not None and project.skip_steps:
         # if we do, use it
         project.checkpoints['last_command_run'] = command_run
-        print(colored(f'Restoring command run response id {command_run.id}:\n```\n{command_run.cli_response}```', 'yellow'))
-        return command_run.cli_response
+        print(yellow(f'Restoring command run response id {command_run.id}:\n```\n{command_run.cli_response}```'))
+        return command_run.cli_response, None
 
     return_value = None
 
@@ -136,7 +148,8 @@ def execute_command(project, command, timeout=None, force=False):
         while True and return_value is None:
             elapsed_time = time.time() - start_time
             if timeout is not None:
-                print(colored(f'\rt: {round(elapsed_time * 1000)}ms : ', 'white', attrs=['bold']), end='', flush=True)
+                # TODO: print to IPC using a different message type so VS Code can ignore it or update the previous value
+                print(white_bold(f'\rt: {round(elapsed_time * 1000)}ms : '), end='', flush=True)
 
             # Check if process has finished
             if process.poll() is not None:
@@ -145,7 +158,7 @@ def execute_command(project, command, timeout=None, force=False):
                 while not q.empty():
                     output_line = q.get_nowait()
                     if output_line not in output:
-                        print(colored('CLI OUTPUT:', 'green') + output_line, end='')
+                        print(green('CLI OUTPUT:') + output_line, end='')
                         output += output_line
                 break
 
@@ -162,7 +175,7 @@ def execute_command(project, command, timeout=None, force=False):
 
             if line:
                 output += line
-                print(colored('CLI OUTPUT:', 'green') + line, end='')
+                print(green('CLI OUTPUT:') + line, end='')
 
             # Read stderr
             try:
@@ -172,7 +185,7 @@ def execute_command(project, command, timeout=None, force=False):
 
             if stderr_line:
                 stderr_output += stderr_line
-                print(colored('CLI ERROR:', 'red') + stderr_line, end='')  # Print with different color for distinction
+                print(red('CLI ERROR:') + stderr_line, end='')  # Print with different color for distinction
 
     except (KeyboardInterrupt, TimeoutError) as e:
         interrupted = True
@@ -190,12 +203,12 @@ def execute_command(project, command, timeout=None, force=False):
     if return_value is None:
         return_value = ''
         if stderr_output != '':
-            return_value = 'stderr:\n```\n' + stderr_output[-MAX_COMMAND_OUTPUT_LENGTH:] + '\n```\n'
+            return_value = 'stderr:\n```\n' + stderr_output[0:MAX_COMMAND_OUTPUT_LENGTH] + '\n```\n'
         return_value += 'stdout:\n```\n' + output[-MAX_COMMAND_OUTPUT_LENGTH:] + '\n```'
 
     command_run = save_command_run(project, command, return_value)
 
-    return return_value
+    return return_value, None
 
 def build_directory_tree(path, prefix="", ignore=None, is_last=False, files=None, add_descriptions=False):
     """Build the directory tree structure in tree-like format.
@@ -246,13 +259,17 @@ def execute_command_and_check_cli_response(command, timeout, convo):
 
     Returns:
         tuple: A tuple containing the CLI response and the agent's response.
+            - cli_response (str): The command output.
+            - llm_response (str): 'DONE' or 'NEEDS_DEBUGGING'
     """
-    cli_response = execute_command(convo.agent.project, command, timeout)
-    response = convo.send_message('dev_ops/ran_command.prompt',
-        { 'cli_response': cli_response, 'command': command })
-    return cli_response, response
+    # TODO: Prompt mentions `command` could be `INSTALLED` or `NOT_INSTALLED`, where is this handled?
+    cli_response, llm_response = execute_command(convo.agent.project, command, timeout)
+    if llm_response is None:
+        llm_response = convo.send_message('dev_ops/ran_command.prompt',
+            { 'cli_response': cli_response, 'command': command })
+    return cli_response, llm_response
 
-def run_command_until_success(command, timeout, convo, additional_message=None, force=False):
+def run_command_until_success(command, timeout, convo, additional_message=None, force=False, return_cli_response=False, is_root_task=False):
     """
     Run a command until it succeeds or reaches a timeout.
 
@@ -263,64 +280,30 @@ def run_command_until_success(command, timeout, convo, additional_message=None, 
         additional_message (str, optional): Additional message to include in the response.
         force (bool, optional): Whether to execute the command without confirmation. Default is False.
     """
-    cli_response = execute_command(convo.agent.project, command, timeout, force)
-    response = convo.send_message('dev_ops/ran_command.prompt',
-        {'cli_response': cli_response, 'command': command, 'additional_message': additional_message})
+    cli_response, response = execute_command(convo.agent.project, command, timeout, force)
+    if response is None:
+        response = convo.send_message('dev_ops/ran_command.prompt',
+            {'cli_response': cli_response, 'command': command, 'additional_message': additional_message})
 
     if response != 'DONE':
-        print(colored(f'Got incorrect CLI response:', 'red'))
+        print(red(f'Got incorrect CLI response:'))
         print(cli_response)
-        print(colored('-------------------', 'red'))
+        print(red('-------------------'))
 
-        debug(convo, {'command': command, 'timeout': timeout})
-
-
-
-def debug(convo, command=None, user_input=None, issue_description=None):
-    """
-    Debug a conversation.
-
-    Args:
-        convo (AgentConvo): The conversation object.
-        command (dict, optional): The command to debug. Default is None.
-        user_input (str, optional): User input for debugging. Default is None.
-        issue_description (str, optional): Description of the issue to debug. Default is None.
-
-    Returns:
-        bool: True if debugging was successful, False otherwise.
-    """
-    function_uuid = str(uuid.uuid4())
-    convo.save_branch(function_uuid)
-    success = False
-
-    for i in range(MAX_COMMAND_DEBUG_TRIES):
-        if success:
-            break
-
-        convo.load_branch(function_uuid)
-
-        debugging_plan = convo.send_message('dev_ops/debug.prompt',
-            { 'command': command['command'] if command is not None else None, 'user_input': user_input, 'issue_description': issue_description },
-            DEBUG_STEPS_BREAKDOWN)
-
-        # TODO refactor to nicely get the developer agent
-        success = convo.agent.project.developer.execute_task(
-            convo,
-            debugging_plan,
-            command,
-            False,
-            False)
-
-
-    if not success:
-        # TODO explain better how should the user approach debugging
-        # we can copy the entire convo to clipboard so they can paste it in the playground
-        user_input = convo.agent.project.ask_for_human_intervention(
-            'It seems like I cannot debug this problem by myself. Can you please help me and try debugging it yourself?' if user_input is None else f'Can you check this again:\n{issue_description}?',
-            command
-        )
-
-        if user_input == 'continue':
-            success = True
-
-    return success
+        reset_branch_id = convo.save_branch()
+        while True:
+            try:
+                # This catch is necessary to return the correct value (cli_response) to continue development function so
+                # the developer can debug the appropriate issue
+                # this snippet represents the first entry point into debugging recursion because of return_cli_response
+                return convo.agent.debugger.debug(convo, {'command': command, 'timeout': timeout})
+            except TooDeepRecursionError as e:
+                # this is only to put appropriate message in the response after TooDeepRecursionError is raised
+                raise TooDeepRecursionError(cli_response) if return_cli_response else e
+            except TokenLimitError as e:
+                if is_root_task:
+                    convo.load_branch(reset_branch_id)
+                else:
+                    raise e
+    else:
+        return { 'success': True, 'cli_response': cli_response }
