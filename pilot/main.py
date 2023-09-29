@@ -32,7 +32,7 @@ def init():
 
     arguments = get_arguments()
 
-    logger.info(f"Starting with args: {arguments}")
+    logger.info('Starting with args: %s', arguments)
 
     return arguments
 
