@@ -188,7 +188,7 @@ class AgentConvo:
             if self.agent.project.checkpoints['last_development_step'] is not None:
                 print(yellow("\nDev step ") + yellow_bold(str(self.agent.project.checkpoints['last_development_step'])) + '\n', end='')
             print(f"\n{content}\n")
-        logger.info(f"{print_msg}: {content}\n", {'password': 'secret', 'user': 'nick'})
+        logger.info(f"{print_msg}: {content}\n")
 
     def to_playground(self):
         with open('const/convert_to_playground_convo.js', 'r', encoding='utf-8') as file:
