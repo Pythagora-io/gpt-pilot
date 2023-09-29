@@ -1,5 +1,7 @@
 import json
-
+import os
+import re
+from typing import Tuple
 from utils.style import green_bold, yellow_bold, cyan, white_bold
 from const.common import IGNORE_FOLDERS, STEPS
 from database.database import delete_unconnected_steps_from, delete_all_app_development_data
@@ -217,20 +219,15 @@ class Project:
         """
         # TODO fix this in prompts
         if 'path' not in data:
-            data['path'] = ''
+            data['path'] = data['name']
 
-        if 'name' not in data:
-            data['name'] = ''
-
-        if ' ' in data['name'] or '.' not in data['name']:
-            if not data['path'].startswith('./') and not data['path'].startswith('/'):
-                data['path'] = './' + data['path']
-            data['name'] = data['path'].rsplit('/', 1)[1]
-
-        if '/' in data['name']:
+        if 'name' not in data or data['name'] == '':
+            data['name'] = os.path.basename(data['path'])
+        elif not data['path'].endswith(data['name']):
             if data['path'] == '':
-                data['path'] = data['name'].rsplit('/', 1)[0]
-            data['name'] = data['name'].rsplit('/', 1)[1]
+                data['path'] = data['name']
+            else:
+                data['path'] = data['path'] + '/' + data['name']
         # TODO END
 
         data['path'], data['full_path'] = self.get_full_file_path(data['path'], data['name'])
@@ -243,30 +240,31 @@ class Project:
                 update={ 'name': data['name'], 'path': data['path'], 'full_path': data['full_path'] })
             .execute())
 
-    def get_full_file_path(self, file_path, file_name):
+    def get_full_file_path(self, file_path: str, file_name: str) -> Tuple[str, str]:
         file_path = file_path.replace('./', '', 1)
-        file_path = file_path.rsplit(file_name, 1)[0]
+        file_path = os.path.dirname(file_path)
+        file_name = os.path.basename(file_name)
 
-        if file_path.endswith('/'):
-            file_path = file_path.rstrip('/')
+        paths = [file_name]
 
-        if file_name.startswith('/'):
-            file_name = file_name[1:]
+        if file_path != '':
+            paths.insert(0, file_path)
 
-        if not file_path.startswith('/') and file_path != '':
-            file_path = '/' + file_path
+        if file_path == '/':
+            absolute_path = file_path + file_name
+        else:
+            if not re.match(r'^/|~|\w+:', file_path):
+                paths.insert(0, self.root_path)
+            absolute_path = '/'.join(paths)
 
-        if file_name != '':
-            file_name = '/' + file_name
-
-        return (file_path, self.root_path + file_path + file_name)
+        return file_path, absolute_path
 
     def save_files_snapshot(self, development_step_id):
         files = get_files_content(self.root_path, ignore=IGNORE_FOLDERS)
         development_step, created = DevelopmentSteps.get_or_create(id=development_step_id)
 
         for file in files:
-            print(cyan(f'Saving file {file["path"] + "/" + file["name"]}'))
+            print(cyan(f'Saving file {(file["path"])}/{file["name"]}'))
             # TODO this can be optimized so we don't go to the db each time
             file_in_db, created = File.get_or_create(
                 app=self.app,

@@ -284,7 +284,7 @@ DEV_STEPS = {
                 'properties': {
                     'files': {
                         'type': 'array',
-                        'description': f'List of files that need to be analized to implement the reqired changes.',
+                        'description': f'List of files that need to be analyzed to implement the required changes.',
                         'items': {
                             'type': 'string',
                             'description': f'A single file name that needs to be analized to implement the reqired changes. Remember, this is a file name with path relative to the project root. For example, if a file path is `{{project_root}}/models/model.py`, this value needs to be `models/model.py`.',
