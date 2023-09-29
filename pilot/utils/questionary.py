@@ -43,7 +43,6 @@ def styled_text(project, question, ignore_user_input_count=False):
         user_input = save_user_input(project, question, response)
 
     print('\n\n', end='')
-
     return response
 
 

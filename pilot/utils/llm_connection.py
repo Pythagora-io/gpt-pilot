@@ -155,6 +155,7 @@ def retry_on_exception(func):
                 if isinstance(e, json.JSONDecodeError):
                     # codellama-34b-instruct seems to send incomplete JSON responses
                     if e.msg == 'Expecting value':
+                        logger.info('Received incomplete JSON response from LLM. Asking for the rest...')
                         args[0]['function_buffer'] = e.doc
                         continue
                 if "context_length_exceeded" in err_str:
@@ -165,6 +166,7 @@ def retry_on_exception(func):
                     match = re.search(r"Please try again in (\d+)ms.", err_str)
                     if match:
                         # spinner = spinner_start(colored("Rate limited. Waiting...", 'yellow'))
+                        logger.debug('Rate limited. Waiting...')
                         wait_duration = int(match.group(1)) / 1000
                         time.sleep(wait_duration)
                     continue
@@ -172,6 +174,7 @@ def retry_on_exception(func):
                 print(red(f'There was a problem with request to openai API:'))
                 # spinner_stop(spinner)
                 print(err_str)
+                logger.error(f'There was a problem with request to openai API: {err_str}')
 
                 user_message = questionary.text(
                     "Do you want to try make the same request again? If yes, just press ENTER. Otherwise, type 'no'.",
@@ -217,7 +220,7 @@ def stream_gpt_completion(data, req_type):
     def return_result(result_data, lines_printed):
         if buffer:
             lines_printed += count_lines_based_on_width(buffer, terminal_width)
-        logger.info(f'lines printed: {lines_printed} - {terminal_width}')
+        logger.debug(f'lines printed: {lines_printed} - {terminal_width}')
 
         delete_last_n_lines(lines_printed)
         return result_data
@@ -225,11 +228,12 @@ def stream_gpt_completion(data, req_type):
     # spinner = spinner_start(yellow("Waiting for OpenAI API response..."))
     # print(yellow("Stream response from OpenAI:"))
 
-    logger.info(f'Request data: {data}')
-
     # Configure for the selected ENDPOINT
     model = os.getenv('MODEL_NAME')
     endpoint = os.getenv('ENDPOINT')
+
+    logger.info(f'> Request model: {model} ({data["model"]}) messages: {data["messages"]}')
+
 
     if endpoint == 'AZURE':
         # If yes, get the AZURE_ENDPOINT from .ENV file
@@ -263,10 +267,10 @@ def stream_gpt_completion(data, req_type):
     )
 
     # Log the response status code and message
-    logger.info(f'Response status code: {response.status_code}')
+    logger.debug(f'Response status code: {response.status_code}')
 
     if response.status_code != 200:
-        logger.debug(f'problem with request: {response.text}')
+        logger.info(f'problem with request: {response.text}')
         raise Exception(f"API responded with status code: {response.status_code}. Response text: {response.text}")
 
     # function_calls = {'name': '', 'arguments': ''}
@@ -338,7 +342,7 @@ def stream_gpt_completion(data, req_type):
     #     logger.info(f'Response via function call: {function_calls["arguments"]}')
     #     function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
     #     return return_result({'function_calls': function_calls}, lines_printed)
-    logger.info(f'Response message: {gpt_response}')
+    logger.info(f'< Response message: {gpt_response}')
 
     if expecting_json:
         gpt_response = clean_json_response(gpt_response)
@@ -352,6 +356,7 @@ def assert_json_response(response: str, or_fail=True) -> bool:
     if re.match(r'.*(```(json)?|{|\[)', response):
         return True
     elif or_fail:
+        logger.error(f'LLM did not respond with JSON: {response}')
         raise ValueError('LLM did not respond with JSON')
     else:
         return False

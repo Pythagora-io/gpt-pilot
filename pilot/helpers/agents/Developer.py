@@ -162,6 +162,7 @@ class Developer(Agent):
                 'Type y/n'
             )
 
+            logger.info(f"Retry step implementation? %s", answer)
             if answer == 'n':
                 return self.dev_help_needed(step)
 
@@ -198,6 +199,7 @@ class Developer(Agent):
                 self.project,
                 'Once you\'re done, type "continue"?'
             )
+            logger.info(f"help needed: %s", answer)
 
         return { "success": True, "user_input": answer }
 

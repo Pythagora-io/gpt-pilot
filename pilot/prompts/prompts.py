@@ -55,6 +55,9 @@ def ask_user(project, question: str, require_some_input=True, hint: str = None):
             print(hint, type='hint')
         answer = styled_text(project, question)
 
+        logger.info('Q: %s', question)
+        logger.info('A: %s', answer)
+
         if answer is None:
             print("Exiting application.")
             exit(0)

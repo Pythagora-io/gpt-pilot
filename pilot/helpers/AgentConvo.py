@@ -80,6 +80,7 @@ class AgentConvo:
 
         # TODO handle errors from OpenAI
         if response == {}:
+            logger.error(f'Aborting with "OpenAI API error happened": {response}')
             raise Exception("OpenAI API error happened.")
 
         response = parse_agent_response(response, function_calls)
@@ -187,7 +188,7 @@ class AgentConvo:
             if self.agent.project.checkpoints['last_development_step'] is not None:
                 print(yellow("\nDev step ") + yellow_bold(str(self.agent.project.checkpoints['last_development_step'])) + '\n', end='')
             print(f"\n{content}\n")
-        logger.info(f"{print_msg}: {content}\n")
+        logger.info(f"{print_msg}: {content}\n", {'password': 'secret', 'user': 'nick'})
 
     def to_playground(self):
         with open('const/convert_to_playground_convo.js', 'r', encoding='utf-8') as file:

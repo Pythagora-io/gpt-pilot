@@ -19,6 +19,7 @@ from helpers.agents.ProductOwner import ProductOwner
 from database.models.development_steps import DevelopmentSteps
 from database.models.file_snapshot import FileSnapshot
 from database.models.files import File
+from logger.logger import logger
 
 
 class Project:
@@ -119,6 +120,7 @@ class Project:
                         ignore_user_input_count=True
                     )
 
+                    logger.info('should_overwrite_files: %s', should_overwrite_files)
                     if should_overwrite_files == 'n':
                         break
                     elif should_overwrite_files == 'y':
