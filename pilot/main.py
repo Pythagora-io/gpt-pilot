@@ -1,17 +1,14 @@
 # main.py
 from __future__ import print_function, unicode_literals
 import builtins
-import json
 import os
 
 import sys
 import traceback
 from dotenv import load_dotenv
 load_dotenv()
-from termcolor import colored
 from helpers.ipc import IPCClient
 from const.ipc import MESSAGE_TYPE
-from utils.utils import json_serial
 from utils.style import red
 
 from helpers.Project import Project

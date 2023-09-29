@@ -4,17 +4,14 @@ import signal
 import threading
 import queue
 import time
-import uuid
 import platform
 
-from utils.style import yellow, green, white, red, yellow_bold, white_bold
+from utils.style import yellow, green, red, yellow_bold, white_bold
 from database.database import get_saved_command_run, save_command_run
-from const.function_calls import DEBUG_STEPS_BREAKDOWN
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from prompts.prompts import ask_user
-from utils.questionary import styled_text
-from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MIN_COMMAND_RUN_TIME, MAX_COMMAND_RUN_TIME, MAX_COMMAND_OUTPUT_LENGTH
+from const.code_execution import MIN_COMMAND_RUN_TIME, MAX_COMMAND_RUN_TIME, MAX_COMMAND_OUTPUT_LENGTH
 
 interrupted = False
 
@@ -108,6 +105,7 @@ def execute_command(project, command, timeout=None, force=False):
         answer = ask_user(
             project,
             f'Can I execute the command: `' + yellow_bold(command) + f'` with {timeout}ms timeout?',
+            False,
             hint='If yes, just press ENTER'
         )
 

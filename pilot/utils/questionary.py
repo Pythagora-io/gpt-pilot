@@ -1,9 +1,8 @@
 from prompt_toolkit.styles import Style
 import questionary
 from utils.style import yellow_bold
-
+import re
 from database.database import save_user_input, get_saved_user_input
-from const.ipc import MESSAGE_TYPE
 
 custom_style = Style.from_dict({
     'question': '#FFFFFF bold',  # the color and style of the question
@@ -12,6 +11,11 @@ custom_style = Style.from_dict({
     'highlighted': '#63CD91 bold',  # the color and style of the highlighted choice
     'instruction': '#FFFF00 bold'  # the color and style of the question mark
 })
+
+
+def remove_ansi_codes(s: str) -> str:
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    return ansi_escape.sub('', s)
 
 
 def styled_select(*args, **kwargs):
@@ -34,6 +38,7 @@ def styled_text(project, question, ignore_user_input_count=False):
         config = {
             'style': custom_style,
         }
+        question = remove_ansi_codes(question) # Colorama and questionary are not compatible and styling doesn't work
         response = questionary.text(question, **config).unsafe_ask()  # .ask() is included here
     else:
         response = print(question, type='user_input_request')

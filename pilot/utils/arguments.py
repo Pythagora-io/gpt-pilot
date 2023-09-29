@@ -4,8 +4,8 @@ import re
 import sys
 import uuid
 from getpass import getuser
-from termcolor import colored
 from database.database import get_app, get_app_by_user_workspace
+from utils.style import green_bold
 
 
 def get_arguments():
@@ -44,18 +44,18 @@ def get_arguments():
             arguments['name'] = app.name
             # Add any other fields from the App model you wish to include
 
-            print(colored('\n------------------ LOADING PROJECT ----------------------', 'green', attrs=['bold']))
-            print(colored(f'{app.name} (app_id={arguments["app_id"]})', 'green', attrs=['bold']))
-            print(colored('--------------------------------------------------------------\n', 'green', attrs=['bold']))
+            print(green_bold('\n------------------ LOADING PROJECT ----------------------'))
+            print(green_bold(f'{app.name} (app_id={arguments["app_id"]})'))
+            print(green_bold('--------------------------------------------------------------\n'))
         except ValueError as e:
             print(e)
             # Handle the error as needed, possibly exiting the script
     else:
         arguments['app_id'] = str(uuid.uuid4())
-        print(colored('\n------------------ STARTING NEW PROJECT ----------------------', 'green', attrs=['bold']))
+        print(green_bold('\n------------------ STARTING NEW PROJECT ----------------------'))
         print("If you wish to continue with this project in future run:")
-        print(colored(f'python {sys.argv[0]} app_id={arguments["app_id"]}', 'green', attrs=['bold']))
-        print(colored('--------------------------------------------------------------\n', 'green', attrs=['bold']))
+        print(green_bold(f'python {sys.argv[0]} app_id={arguments["app_id"]}'))
+        print(green_bold('--------------------------------------------------------------\n'))
 
     if 'email' not in arguments:
         arguments['email'] = get_email()

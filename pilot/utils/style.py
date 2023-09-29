@@ -1,4 +1,3 @@
-from termcolor import colored
 from colorama import Fore, Style
 
 def red(text):
