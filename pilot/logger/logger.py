@@ -31,14 +31,19 @@ sensitive_fields = ['--api-key', 'password']
 
 
 def filter_sensitive_fields(record):
-    if len(record.args):
+    if isinstance(record.args, dict):  # check if args is a dictionary
         args = record.args.copy()
-
         for field in sensitive_fields:
             if field in args:
                 args[field] = '*****'
-
         record.args = args
+
+    elif isinstance(record.args, tuple):  # check if args is a tuple
+        args_list = list(record.args)
+        # Convert the tuple to a list and replace sensitive fields
+        args_list = ['*****' if arg in sensitive_fields else arg for arg in args_list]
+        record.args = tuple(args_list)
+
     return record.levelno <= logging.INFO
 
 

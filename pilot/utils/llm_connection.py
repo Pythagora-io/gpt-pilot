@@ -200,7 +200,10 @@ def stream_gpt_completion(data, req_type):
     """
 
     # TODO add type dynamically - this isn't working when connected to the external process
-    terminal_width = 50  # os.get_terminal_size().columns
+    try:
+        terminal_width = os.get_terminal_size().columns
+    except OSError:
+        terminal_width = 50
     lines_printed = 2
     gpt_response = ''
     buffer = ''  # A buffer to accumulate incoming data

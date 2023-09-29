@@ -42,10 +42,12 @@ def get_path_id():
     return hashlib.sha256(installation_directory.encode()).hexdigest()
 
 
-def exit_gpt_pilot():
+def exit_gpt_pilot(ask_feedback=True):
     path_id = get_path_id()
     send_telemetry(path_id)
 
-    feedback = get_user_feedback()
+    feedback = None
+    if ask_feedback:
+        feedback = get_user_feedback()
     if feedback:  # only send if user provided feedback
         send_feedback(feedback, path_id)

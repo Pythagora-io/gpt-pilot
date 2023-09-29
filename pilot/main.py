@@ -91,6 +91,6 @@ if __name__ == "__main__":
         print(red('---------- GPT PILOT EXITING WITH ERROR ----------'))
         traceback.print_exc()
         print(red('--------------------------------------------------'))
-        exit_gpt_pilot()
+        exit_gpt_pilot(False)
     finally:
         sys.exit(0)
