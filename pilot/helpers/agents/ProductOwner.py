@@ -20,7 +20,7 @@ class ProductOwner(Agent):
         super().__init__('product_owner', project)
 
     def get_project_description(self):
-        self.project.app = save_app(self.project.args)
+        self.project.app = save_app(self.project)
         self.project.current_step = PROJECT_DESCRIPTION_STEP
 
         # If this app_id already did this step, just get all data from DB and don't ask user again
@@ -40,7 +40,7 @@ class ProductOwner(Agent):
 
         self.project.root_path = setup_workspace(self.project.args)
 
-        self.project.app = save_app(self.project.args)
+        self.project.app = save_app(self.project)
 
         main_prompt = ask_for_main_app_definition(self.project)
 

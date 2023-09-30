@@ -12,9 +12,11 @@ def get_parent_folder(folder_name):
 
 
 def setup_workspace(args):
-    if args['workspace'] is not None:
+    workspace = args.get('workspace')
+    if workspace:
         try:
-            save_user_app(args['user_id'], args['app_id'], args['workspace'])
+            save_user_app(args['user_id'], args['app_id'], workspace)
+            return workspace
         except Exception as e:
             print(str(e))
 
@@ -22,7 +24,7 @@ def setup_workspace(args):
 
     root = args.get('root') or get_parent_folder('pilot')
     create_directory(root, 'workspace')
-    project_path = create_directory(os.path.join(root, 'workspace'), args['name'])
+    project_path = create_directory(os.path.join(root, 'workspace'), args.get('name', 'default_project_name'))
     create_directory(project_path, 'tests')
     return project_path
 

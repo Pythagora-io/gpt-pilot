@@ -43,6 +43,7 @@ def get_custom_print(args):
 
         if 'type' not in kwargs:
             kwargs['type'] = 'verbose'
+            return
         elif kwargs['type'] == MESSAGE_TYPE['local']:
             local_print(*args, **kwargs)
             return

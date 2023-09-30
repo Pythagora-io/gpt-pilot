@@ -1,5 +1,5 @@
 import uuid
-from utils.style import yellow, green, red, blue, white, green_bold, yellow_bold, red_bold, blue_bold, white_bold
+from utils.style import green, red, green_bold, yellow_bold, red_bold, blue_bold, white_bold
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
@@ -308,7 +308,7 @@ class Developer(Agent):
 
         user_input = ''
         while user_input.lower() != 'done':
-            user_input = styled_text(self.project, 'Please set up your local environment so that the technologies above can be utilized. When you\'re done, write "DONE"')
+            user_input = styled_text(self.project, 'Please set up your local environment so that the technologies listed can be utilized. When you\'re done, write "DONE"')
         save_progress(self.project.args['app_id'], self.project.current_step, {
             "os_specific_technologies": [], "newly_installed_technologies": [], "app_data": generate_app_data(self.project.args)
         })

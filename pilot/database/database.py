@@ -7,9 +7,8 @@ import psycopg2
 from psycopg2.extensions import quote_ident
 
 import os
-from const.common import PROMPT_DATA_TO_IGNORE
+from const.common import PROMPT_DATA_TO_IGNORE, STEPS
 from logger.logger import logger
-from utils.utils import hash_data
 from database.config import DB_NAME, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DATABASE_TYPE
 from database.models.components.base_models import database
 from database.models.user import User
@@ -34,22 +33,26 @@ DB_PORT = os.getenv("DB_PORT")
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 
+
 def get_created_apps():
     return [model_to_dict(app) for app in App.select()]
+
 
 def get_created_apps_with_steps():
     apps = get_created_apps()
     for app in apps:
         app['id'] = str(app['id'])
-        app['steps'] = get_progress_steps(app['id'])
+        app['steps'] = [step for step in STEPS[:STEPS.index(app['status']) + 1]]
         app['development_steps'] = get_all_app_development_steps(app['id'])
         # TODO this is a quick way to remove the unnecessary fields from the response
-        app['steps'] = {outer_k: {k: v for k, v in inner_d.items() if k in {'created_at', 'completeted_at', 'completed'}} if inner_d is not None else None for outer_k, inner_d in app['steps'].items()}
-        app['development_steps'] = [{k: v for k, v in dev_step.items() if k in {'id', 'created_at'}} for dev_step in app['development_steps']]
+        app['development_steps'] = [{k: v for k, v in dev_step.items() if k in {'id', 'created_at'}} for dev_step in
+                                    app['development_steps']]
     return apps
+
 
 def get_all_app_development_steps(app_id):
     return [model_to_dict(dev_step) for dev_step in DevelopmentSteps.select().where(DevelopmentSteps.app == app_id)]
+
 
 def save_user(user_id, email, password):
     try:
@@ -61,6 +64,16 @@ def save_user(user_id, email, password):
             return existing_user
         except DoesNotExist:
             return User.create(id=user_id, email=email, password=password)
+
+
+def update_app_status(app_id, new_status):
+    try:
+        app = App.get(App.id == app_id)
+        app.status = new_status
+        app.save()
+        return True
+    except DoesNotExist:
+        return False
 
 
 def get_user(user_id=None, email=None):
@@ -80,14 +93,17 @@ def get_user(user_id=None, email=None):
         raise ValueError("No user found with provided id or email")
 
 
-def save_app(args):
+def save_app(project):
     try:
+        args = project.args
         app = App.get(App.id == args['app_id'])
         for key, value in args.items():
             if key != 'app_id' and value is not None:
                 setattr(app, key, value)
+        app.status = project.current_step
         app.save()
     except DoesNotExist:
+        args = project.args
         if args.get('user_id') is not None:
             try:
                 user = get_user(user_id=args['user_id'])
@@ -102,7 +118,8 @@ def save_app(args):
             id=args['app_id'],
             user=user,
             app_type=args.get('app_type'),
-            name=args.get('name')
+            name=args.get('name'),
+            status=project.current_step
         )
 
     return app
@@ -117,6 +134,7 @@ def save_user_app(user_id, app_id, workspace):
         user_app = UserApps.create(user=user_id, app=app_id, workspace=workspace)
 
     return user_app
+
 
 def save_progress(app_id, step, data):
     progress_table_map = {
@@ -147,6 +165,7 @@ def save_progress(app_id, step, data):
             setattr(progress, key, value)
         progress.save()
 
+    update_app_status(app_id, step)
     return progress
 
 
@@ -201,7 +220,8 @@ def get_progress_steps(app_id, step=None):
 
 def get_db_model_from_hash_id(model, app_id, previous_step, high_level_step):
     try:
-        db_row = model.get((model.app == app_id) & (model.previous_step == previous_step) & (model.high_level_step == high_level_step))
+        db_row = model.get(
+            (model.app == app_id) & (model.previous_step == previous_step) & (model.high_level_step == high_level_step))
     except DoesNotExist:
         return None
     return db_row
@@ -216,7 +236,9 @@ def hash_and_save_step(Model, app_id, unique_data_fields, data_fields, message):
         unique_data_fields[field] = value
 
     try:
-        existing_record = Model.get_or_none((Model.app == app) & (Model.previous_step == unique_data_fields['previous_step']) & (Model.high_level_step == unique_data_fields['high_level_step']))
+        existing_record = Model.get_or_none(
+            (Model.app == app) & (Model.previous_step == unique_data_fields['previous_step']) & (
+                        Model.high_level_step == unique_data_fields['high_level_step']))
         inserted_id = (Model
                        .insert(**unique_data_fields)
                        .execute())
@@ -230,13 +252,12 @@ def hash_and_save_step(Model, app_id, unique_data_fields, data_fields, message):
 
 
 def save_development_step(project, prompt_path, prompt_data, messages, llm_response, exception=None):
-
     data_fields = {
         'messages': messages,
         'llm_response': llm_response,
         'prompt_path': prompt_path,
         'prompt_data': {} if prompt_data is None else {k: v for k, v in prompt_data.items() if
-            k not in PROMPT_DATA_TO_IGNORE and not callable(v)},
+                                                       k not in PROMPT_DATA_TO_IGNORE and not callable(v)},
         'llm_req_num': project.llm_req_num,
         'token_limit_exception_raised': exception
     }
@@ -247,7 +268,8 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
         'high_level_step': project.current_step,
     }
 
-    development_step = hash_and_save_step(DevelopmentSteps, project.args['app_id'], unique_data, data_fields, "Saved Development Step")
+    development_step = hash_and_save_step(DevelopmentSteps, project.args['app_id'], unique_data, data_fields,
+                                          "Saved Development Step")
     project.checkpoints['last_development_step'] = development_step
 
     project.save_files_snapshot(development_step.id)
@@ -257,7 +279,7 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
 
 def get_saved_development_step(project):
     development_step = get_db_model_from_hash_id(DevelopmentSteps, project.args['app_id'],
-        project.checkpoints['last_development_step'], project.current_step)
+                                                 project.checkpoints['last_development_step'], project.current_step)
     return development_step
 
 
@@ -314,7 +336,8 @@ def get_saved_user_input(project, query):
         'query': query,
         'user_inputs_count': project.user_inputs_count
     }
-    user_input = get_db_model_from_hash_id(UserInputs, project.args['app_id'], project.checkpoints['last_user_input'], project.current_step)
+    user_input = get_db_model_from_hash_id(UserInputs, project.args['app_id'], project.checkpoints['last_user_input'],
+                                           project.current_step)
     return user_input
 
 
@@ -327,7 +350,8 @@ def delete_all_subsequent_steps(project):
 
 def delete_subsequent_steps(Model, app, step):
     logger.info(red(f"Deleting subsequent {Model.__name__} steps after {step.id if step is not None else None}"))
-    subsequent_steps = Model.select().where((Model.app == app) & (Model.previous_step == (step.id if step is not None else None)))
+    subsequent_steps = Model.select().where(
+        (Model.app == app) & (Model.previous_step == (step.id if step is not None else None)))
     for subsequent_step in subsequent_steps:
         if subsequent_step:
             delete_subsequent_steps(Model, app, subsequent_step)
