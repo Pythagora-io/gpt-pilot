@@ -51,7 +51,7 @@ TABLES = [
         ]
 
 def get_created_apps():
-    return [model_to_dict(app) for app in App.select()]
+    return [model_to_dict(app) for app in App.select().where((App.name.is_null(False)) & (App.status.is_null(False)))]
 
 
 def get_created_apps_with_steps():
