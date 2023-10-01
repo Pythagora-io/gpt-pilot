@@ -58,7 +58,7 @@ def get_created_apps_with_steps():
     apps = get_created_apps()
     for app in apps:
         app['id'] = str(app['id'])
-        app['steps'] = [step for step in STEPS[:STEPS.index(app['status']) + 1]]
+        app['steps'] = [step for step in STEPS[:STEPS.index(app['status']) + 1]] if app['status'] is not None else []
         app['development_steps'] = get_all_app_development_steps(app['id'])
         # TODO this is a quick way to remove the unnecessary fields from the response
         app['development_steps'] = [{k: v for k, v in dev_step.items() if k in {'id', 'created_at'}} for dev_step in
