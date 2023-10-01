@@ -94,7 +94,7 @@ class Project:
         self.architecture = self.architect.get_architecture()
 
         self.developer = Developer(self)
-        self.developer.set_up_environment();
+        self.developer.set_up_environment()
 
         self.tech_lead = TechLead(self)
         self.development_plan = self.tech_lead.create_development_plan()
@@ -128,12 +128,6 @@ class Project:
                         self.save_files_snapshot(self.skip_until_dev_step)
                         break
         # TODO END
-
-        self.developer = Developer(self)
-        print(json.dumps({
-            "project_stage": "environment_setup"
-        }), type='info')
-        self.developer.set_up_environment()
 
         print(json.dumps({
             "project_stage": "coding"

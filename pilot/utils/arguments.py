@@ -42,6 +42,7 @@ def get_arguments():
 
             arguments['app_type'] = app.app_type
             arguments['name'] = app.name
+            arguments['step'] = app.status
             # Add any other fields from the App model you wish to include
 
             print(green_bold('\n------------------ LOADING PROJECT ----------------------'))

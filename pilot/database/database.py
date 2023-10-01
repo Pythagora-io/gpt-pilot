@@ -32,7 +32,23 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
-
+TABLES = [
+            User,
+            App,
+            ProjectDescription,
+            UserStories,
+            UserTasks,
+            Architecture,
+            DevelopmentPlanning,
+            DevelopmentSteps,
+            EnvironmentSetup,
+            Development,
+            FileSnapshot,
+            CommandRuns,
+            UserApps,
+            UserInputs,
+            File,
+        ]
 
 def get_created_apps():
     return [model_to_dict(app) for app in App.select()]
@@ -94,16 +110,18 @@ def get_user(user_id=None, email=None):
 
 
 def save_app(project):
+    args = project.args
+    app_status = getattr(project, "current_step", None)
+
     try:
-        args = project.args
         app = App.get(App.id == args['app_id'])
         for key, value in args.items():
             if key != 'app_id' and value is not None:
                 setattr(app, key, value)
-        app.status = project.current_step
+
+        app.status = app_status
         app.save()
     except DoesNotExist:
-        args = project.args
         if args.get('user_id') is not None:
             try:
                 user = get_user(user_id=args['user_id'])
@@ -119,7 +137,7 @@ def save_app(project):
             user=user,
             app_type=args.get('app_type'),
             name=args.get('name'),
-            status=project.current_step
+            status=app_status
         )
 
     return app
@@ -401,44 +419,12 @@ def save_file_description(project, path, name, description):
 
 def create_tables():
     with database:
-        database.create_tables([
-            User,
-            App,
-            ProjectDescription,
-            UserStories,
-            UserTasks,
-            Architecture,
-            DevelopmentPlanning,
-            DevelopmentSteps,
-            EnvironmentSetup,
-            Development,
-            FileSnapshot,
-            CommandRuns,
-            UserApps,
-            UserInputs,
-            File,
-        ])
+        database.create_tables(TABLES)
 
 
 def drop_tables():
     with database.atomic():
-        for table in [
-            User,
-            App,
-            ProjectDescription,
-            UserStories,
-            UserTasks,
-            Architecture,
-            DevelopmentPlanning,
-            DevelopmentSteps,
-            EnvironmentSetup,
-            Development,
-            FileSnapshot,
-            CommandRuns,
-            UserApps,
-            UserInputs,
-            File,
-        ]:
+        for table in TABLES:
             if DATABASE_TYPE == "postgres":
                 sql = f'DROP TABLE IF EXISTS "{table._meta.table_name}" CASCADE'
             elif DATABASE_TYPE == "sqlite":
@@ -484,11 +470,8 @@ def create_database():
 
 
 def tables_exist():
-    tables = [User, App, ProjectDescription, UserStories, UserTasks, Architecture, DevelopmentPlanning,
-              DevelopmentSteps, EnvironmentSetup, Development, FileSnapshot, CommandRuns, UserApps, UserInputs, File]
-
     if DATABASE_TYPE == "postgres":
-        for table in tables:
+        for table in TABLES:
             try:
                 database.get_tables().index(table._meta.table_name)
             except ValueError:

@@ -13,7 +13,7 @@ from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
 from helpers.cli import run_command_until_success, execute_command_and_check_cli_response
 from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK
-from database.database import save_progress, get_progress_steps
+from database.database import save_progress, get_progress_steps, update_app_status
 from utils.utils import get_os_info
 
 ENVIRONMENT_SETUP_STEP = 'environment_setup'
@@ -27,6 +27,7 @@ class Developer(Agent):
 
     def start_coding(self):
         self.project.current_step = 'coding'
+        update_app_status(self.project.args['app_id'], self.project.current_step)
 
         if self.project.skip_steps is None:
             self.project.skip_steps = False if ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0') else True
