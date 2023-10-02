@@ -70,14 +70,20 @@ def get_custom_print(args):
     else:
         return local_print, ipc_client_instance
 
+
 if __name__ == "__main__":
     try:
+        # sys.argv.append('--ux-test=' + 'run_command_until_success')
         args = init()
+
         builtins.print, ipc_client_instance = get_custom_print(args)
         if '--api-key' in args:
-          os.environ["OPENAI_API_KEY"] = args['--api-key']
+            os.environ["OPENAI_API_KEY"] = args['--api-key']
         if '--get-created-apps-with-steps' in args:
             print({ 'db_data': get_created_apps_with_steps() }, type='info')
+        elif '--ux-test' in args:
+            from test.ux_tests import run_test
+            run_test(args['--ux-test'])
         else:
             # TODO get checkpoint from database and fill the project with it
             project = Project(args, ipc_client_instance=ipc_client_instance)
