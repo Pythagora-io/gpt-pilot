@@ -70,7 +70,7 @@ class AgentConvo:
         else:
             # if we don't, get the response from LLM
             try:
-                response = create_gpt_chat_completion(self.messages, self.high_level_step, function_calls=function_calls)
+                response = create_gpt_chat_completion(self.messages, self.high_level_step, self.agent.project, function_calls=function_calls)
             except TokenLimitError as e:
                 save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, '', str(e))
                 raise e

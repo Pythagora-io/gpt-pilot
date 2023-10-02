@@ -5,7 +5,7 @@ import sys
 import time
 import json
 import tiktoken
-import questionary
+from prompt_toolkit.styles import Style
 
 from jsonschema import validate, ValidationError
 from utils.style import red
@@ -15,6 +15,7 @@ from logger.logger import logger
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from utils.utils import fix_json, get_prompt
 from utils.function_calling import add_function_calls_to_request, FunctionCallSet, FunctionType
+from utils.questionary import styled_text
 
 
 def get_tokens_in_messages(messages: List[str]) -> int:
@@ -58,7 +59,7 @@ def num_tokens_from_functions(functions):
     return num_tokens
 
 
-def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TOKENS_FOR_GPT_RESPONSE,
+def create_gpt_chat_completion(messages: List[dict], req_type, project,
                                function_calls: FunctionCallSet = None):
     """
     Called from:
@@ -69,7 +70,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
             "Please check this message and say what needs to be changed... {message}"
     :param messages: [{ "role": "system"|"assistant"|"user", "content": string }, ... ]
     :param req_type: 'project_description' etc. See common.STEPS
-    :param min_tokens: defaults to 600
+    :param project: project
     :param function_calls: (optional) {'definitions': [{ 'name': str }, ...]}
         see `IMPLEMENT_CHANGES` etc. in `pilot/const/function_calls.py`
     :return: {'text': new_code}
@@ -99,7 +100,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
     add_function_calls_to_request(gpt_data, function_calls)
 
     try:
-        response = stream_gpt_completion(gpt_data, req_type)
+        response = stream_gpt_completion(gpt_data, req_type, project)
         return response
     except TokenLimitError as e:
         raise e
@@ -186,12 +187,15 @@ def retry_on_exception(func):
                 print(err_str)
                 logger.error(f'There was a problem with request to openai API: {err_str}')
 
-                user_message = questionary.text(
+                project = args[2]
+                user_message = styled_text(
+                    project,
                     "Do you want to try make the same request again? If yes, just press ENTER. Otherwise, type 'no'.",
-                    style=questionary.Style([
-                        ('question', 'fg:red'),
-                        ('answer', 'fg:orange')
-                    ])).ask()
+                    style=Style.from_dict({
+                        'question': '#FF0000 bold',
+                        'answer': '#FF910A bold'
+                    })
+                )
 
                 # TODO: take user's input into consideration - send to LLM?
                 # https://github.com/Pythagora-io/gpt-pilot/issues/122
@@ -202,11 +206,12 @@ def retry_on_exception(func):
 
 
 @retry_on_exception
-def stream_gpt_completion(data, req_type):
+def stream_gpt_completion(data, req_type, project):
     """
     Called from create_gpt_chat_completion()
     :param data:
     :param req_type: 'project_description' etc. See common.STEPS
+    :param project: NEEDED FOR WRAPPER FUNCTION retry_on_exception
     :return: {'text': str} or {'function_calls': {'name': str, arguments: '{...}'}}
     """
 

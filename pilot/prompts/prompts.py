@@ -86,10 +86,10 @@ def get_additional_info_from_openai(project, messages):
     while not is_complete:
         # Obtain clarifications using the OpenAI API
         # { 'text': new_code }
-        response = create_gpt_chat_completion(messages, 'additional_info')
+        response = create_gpt_chat_completion(messages, 'additional_info', project)
 
         if response is not None:
-            if response['text'].strip() == END_RESPONSE:
+            if response['text'] and response['text'].strip() == END_RESPONSE:
                 # print(response['text'] + '\n')
                 return messages
 
@@ -132,7 +132,9 @@ def get_additional_info_from_user(project, messages, role):
                 break
             response = create_gpt_chat_completion(
                 generate_messages_from_custom_conversation(role, [get_prompt('utils/update.prompt'), message, answer], 'user'),
-                'additional_info')
+                'additional_info',
+                project
+            )
 
             message = response
 

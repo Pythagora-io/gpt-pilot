@@ -23,7 +23,7 @@ def styled_select(*args, **kwargs):
     return questionary.select(*args, **kwargs).unsafe_ask()  # .ask() is included here
 
 
-def styled_text(project, question, ignore_user_input_count=False):
+def styled_text(project, question, ignore_user_input_count=False, style=None):
     if not ignore_user_input_count:
         project.user_inputs_count += 1
         user_input = get_saved_user_input(project, question)
@@ -36,7 +36,7 @@ def styled_text(project, question, ignore_user_input_count=False):
 
     if project.ipc_client_instance is None or project.ipc_client_instance.client is None:
         config = {
-            'style': custom_style,
+            'style': style if style is not None else custom_style,
         }
         question = remove_ansi_codes(question) # Colorama and questionary are not compatible and styling doesn't work
         response = questionary.text(question, **config).unsafe_ask()  # .ask() is included here
