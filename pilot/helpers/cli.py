@@ -112,6 +112,7 @@ def execute_command(project, command, timeout=None, force=False):
         # TODO: I think AutoGPT allows other feedback here, like:
         #       "That's not going to work, let's do X instead"
         #       We don't explicitly make "no" or "skip" options to the user
+        #       see https://github.com/Pythagora-io/gpt-pilot/issues/122
         if answer == 'no':
             return '', 'DONE'
         elif answer == 'skip':
@@ -119,6 +120,7 @@ def execute_command(project, command, timeout=None, force=False):
 
 
     # TODO when a shell built-in commands (like cd or source) is executed, the output is not captured properly - this will need to be changed at some point
+    # TODO: Windows support
     if "cd " in command or "source " in command:
         command = "bash -c '" + command + "'"
 
@@ -267,7 +269,9 @@ def execute_command_and_check_cli_response(command, timeout, convo):
             { 'cli_response': cli_response, 'command': command })
     return cli_response, llm_response
 
-def run_command_until_success(command, timeout, convo, additional_message=None, force=False, return_cli_response=False, is_root_task=False):
+
+def run_command_until_success(command, timeout, convo, additional_message=None, force=False,
+                              return_cli_response=False, is_root_task=False):
     """
     Run a command until it succeeds or reaches a timeout.
 

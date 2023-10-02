@@ -50,6 +50,7 @@ TABLES = [
             File,
         ]
 
+
 def get_created_apps():
     return [model_to_dict(app) for app in App.select().where((App.name.is_null(False)) & (App.status.is_null(False)))]
 
@@ -264,7 +265,7 @@ def hash_and_save_step(Model, app_id, unique_data_fields, data_fields, message):
         record = Model.get_by_id(inserted_id)
         logger.debug(yellow(f"{message} with id {record.id}"))
     except IntegrityError as e:
-        print(f"A record with data {unique_data_fields} already exists for {Model.__name__}.")
+        logger.warn(f"A record with data {unique_data_fields} already exists for {Model.__name__}.")
         return None
     return record
 
@@ -288,9 +289,10 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
 
     development_step = hash_and_save_step(DevelopmentSteps, project.args['app_id'], unique_data, data_fields,
                                           "Saved Development Step")
-    project.checkpoints['last_development_step'] = development_step
+    if development_step is not None:
+        project.checkpoints['last_development_step'] = development_step
 
-    project.save_files_snapshot(development_step.id)
+        project.save_files_snapshot(development_step.id)
 
     return development_step
 

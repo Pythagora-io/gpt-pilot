@@ -1,3 +1,4 @@
+import platform
 import uuid
 
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_RECUSION_LAYER
@@ -6,7 +7,7 @@ from helpers.exceptions.TokenLimitError import TokenLimitError
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
 
 
-class Debugger():
+class Debugger:
     def __init__(self, agent):
         self.agent = agent
         self.recursion_layer = 0
@@ -41,7 +42,12 @@ class Debugger():
             convo.load_branch(function_uuid)
 
             debugging_plan = convo.send_message('dev_ops/debug.prompt',
-                { 'command': command['command'] if command is not None else None, 'user_input': user_input, 'issue_description': issue_description },
+                {
+                    'command': command['command'] if command is not None else None,
+                    'user_input': user_input,
+                    'issue_description': issue_description,
+                    'os': platform.system()
+                },
                 DEBUG_STEPS_BREAKDOWN)
 
             try:

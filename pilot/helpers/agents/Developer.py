@@ -96,9 +96,16 @@ class Developer(Agent):
         additional_message = 'Let\'s start with the step #0:\n\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i)) } are finished so let\'s do step #{i + 1} now.\n\n'
         return run_command_until_success(data['command'], data['timeout'], convo, additional_message=additional_message)
 
-    def step_human_intervention(self, convo, step):
+    def step_human_intervention(self, convo, step: dict):
+        """
+        :param convo:
+        :param step: {'human_intervention_description': 'some description'}
+        :return:
+        """
         while True:
-            human_intervention_description = step['human_intervention_description'] + yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`') if self.run_command is not None else step['human_intervention_description']
+            human_intervention_description = step['human_intervention_description'] + \
+                                             yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`') \
+                                             if self.run_command is not None else step['human_intervention_description']
             response = self.project.ask_for_human_intervention('I need human intervention:',
                 human_intervention_description,
                 cbs={ 'r': lambda conv: run_command_until_success(self.run_command, None, conv, force=True, return_cli_response=True) },
@@ -260,8 +267,11 @@ class Developer(Agent):
     def continue_development(self, iteration_convo, last_branch_name, continue_description=''):
         while True:
             iteration_convo.load_branch(last_branch_name)
-            user_description = ('Here is a description of what should be working: \n\n' + blue_bold(continue_description) + '\n') if continue_description != '' else ''
-            user_description = 'Can you check if the app works please? ' + user_description + '\nIf you want to run the app, ' + yellow_bold('just type "r" and press ENTER and that will run `' + self.run_command + '`')
+            user_description = ('Here is a description of what should be working: \n\n' + blue_bold(continue_description) + '\n') \
+                                if continue_description != '' else ''
+            user_description = 'Can you check if the app works please? ' + user_description + \
+                               '\nIf you want to run the app, ' + \
+                               yellow_bold('just type "r" and press ENTER and that will run `' + self.run_command + '`')
             # continue_description = ''
             response = self.project.ask_for_human_intervention(
                 user_description,

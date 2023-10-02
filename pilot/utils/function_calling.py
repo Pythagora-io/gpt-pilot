@@ -66,10 +66,8 @@ def parse_agent_response(response, function_calls: Union[FunctionCallSet, None])
         response: The response from the agent.
         function_calls: Optional function calls associated with the response.
 
-    Returns:
-        The post-processed response.
+    Returns: The post-processed response.
     """
-
     if function_calls:
         text = response['text']
         values = list(json.loads(text).values())

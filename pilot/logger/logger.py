@@ -31,6 +31,7 @@ sensitive_fields = ['--api-key', 'password']
 
 
 def filter_sensitive_fields(record):
+    # TODO: also remove escape sequences for colors, bold etc
     if isinstance(record.args, dict):  # check if args is a dictionary
         args = record.args.copy()
         for field in sensitive_fields:

@@ -7,7 +7,7 @@ import json
 import tiktoken
 import questionary
 
-from jsonschema import validate
+from jsonschema import validate, ValidationError
 from utils.style import red
 from typing import List
 from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS
@@ -139,6 +139,7 @@ def get_tokens_in_messages_from_openai_error(error_message):
     else:
         return None
 
+
 def retry_on_exception(func):
     def wrapper(*args, **kwargs):
         # spinner = None
@@ -158,6 +159,14 @@ def retry_on_exception(func):
                         logger.info('Received incomplete JSON response from LLM. Asking for the rest...')
                         args[0]['function_buffer'] = e.doc
                         continue
+                elif isinstance(e, ValidationError):
+                    logger.warn('Received invalid JSON response from LLM. Asking to retry...')
+                    logger.info(f'  at {e.json_path} {e.message}')
+                    # eg:
+                    # json_path: '$.type'
+                    # message:   "'command' is not one of ['automated_test', 'command_test', 'manual_test', 'no_test']"
+                    args[0]['function_error'] = f'at {e.json_path} - {e.message}'
+                    continue
                 if "context_length_exceeded" in err_str:
                     # spinner_stop(spinner)
                     raise TokenLimitError(get_tokens_in_messages_from_openai_error(err_str), MAX_GPT_MODEL_TOKENS)
@@ -217,6 +226,11 @@ def stream_gpt_completion(data, req_type):
             data['messages'].append({'role': 'user', 'content': incomplete_json})
             gpt_response = data['function_buffer']
             received_json = True
+        elif 'function_error' in data:
+            invalid_json = get_prompt('utils/invalid_json.prompt', {'invalid_reason': data['function_error']})
+            data['messages'].append({'role': 'user', 'content': invalid_json})
+            received_json = True
+
         # Don't send the `functions` parameter to Open AI, but don't remove it from `data` in case we need to retry
         data = {key: value for key, value in data.items() if not key.startswith('function')}
 
