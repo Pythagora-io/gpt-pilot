@@ -125,7 +125,7 @@ class TestDeveloper:
             result = self.developer.test_code_changes(monkey, convo)
 
             # Then
-            assert result == {'success': True, 'user_input': 'continue'}
+            assert result == {'success': True, 'user_input': 'no'}
 
     @patch('helpers.cli.execute_command', return_value=('stdout:\n```\n\n```', 'DONE'))
     @patch('helpers.AgentConvo.get_saved_development_step')
