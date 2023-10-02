@@ -1,4 +1,5 @@
 import os
+import re
 import logging
 
 
@@ -31,6 +32,7 @@ sensitive_fields = ['--api-key', 'password']
 
 
 def filter_sensitive_fields(record):
+    # TODO: also remove escape sequences for colors, bold etc
     if isinstance(record.args, dict):  # check if args is a dictionary
         args = record.args.copy()
         for field in sensitive_fields:
@@ -44,6 +46,8 @@ def filter_sensitive_fields(record):
         args_list = ['*****' if arg in sensitive_fields else arg for arg in args_list]
         record.args = tuple(args_list)
 
+    # Remove ANSI escape sequences - colours & bold
+    record.msg = re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', '', record.msg)
     return record.levelno <= logging.INFO
 
 

@@ -20,6 +20,8 @@ class ProductOwner(Agent):
         super().__init__('product_owner', project)
 
     def get_project_description(self):
+        # TODO: why save the project before user has even committed to a name & description?
+        # The UI saves a record as soon as the click "Create Project" button
         self.project.app = save_app(self.project)
         self.project.current_step = PROJECT_DESCRIPTION_STEP
 
