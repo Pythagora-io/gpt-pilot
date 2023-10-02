@@ -1,4 +1,5 @@
 import os
+import re
 import logging
 
 
@@ -45,6 +46,8 @@ def filter_sensitive_fields(record):
         args_list = ['*****' if arg in sensitive_fields else arg for arg in args_list]
         record.args = tuple(args_list)
 
+    # Remove ANSI escape sequences - colours & bold
+    record.msg = re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', '', record.msg)
     return record.levelno <= logging.INFO
 
 

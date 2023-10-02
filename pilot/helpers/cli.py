@@ -6,6 +6,7 @@ import queue
 import time
 import platform
 
+from logger.logger import logger
 from utils.style import yellow, green, red, yellow_bold, white_bold
 from database.database import get_saved_command_run, save_command_run
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
@@ -15,12 +16,14 @@ from const.code_execution import MIN_COMMAND_RUN_TIME, MAX_COMMAND_RUN_TIME, MAX
 
 interrupted = False
 
+
 def enqueue_output(out, q):
     for line in iter(out.readline, ''):
         if interrupted:  # Check if the flag is set
             break
         q.put(line)
     out.close()
+
 
 def run_command(command, root_path, q_stdout, q_stderr, pid_container):
     """
@@ -36,6 +39,7 @@ def run_command(command, root_path, q_stdout, q_stderr, pid_container):
     Returns:
         subprocess.Popen: The subprocess object.
     """
+    logger.info(f'Running `{command}`')
     if platform.system() == 'Windows':  # Check the operating system
         process = subprocess.Popen(
             command,
@@ -65,19 +69,19 @@ def run_command(command, root_path, q_stdout, q_stderr, pid_container):
     t_stderr.start()
     return process
 
+
 def terminate_process(pid):
     if platform.system() == "Windows":
         try:
             subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)])
-        except subprocess.CalledProcessError:
-            # Handle any potential errors here
-            pass
+        except subprocess.CalledProcessError as e:
+            logger.error(f'Error while terminating process: {e}')
     else:  # Unix-like systems
         try:
             os.killpg(pid, signal.SIGKILL)
-        except OSError:
-            # Handle any potential errors here
-            pass
+        except OSError as e:
+            logger.error(f'Error while terminating process: {e}')
+
 
 def execute_command(project, command, timeout=None, force=False):
     """
@@ -159,6 +163,7 @@ def execute_command(project, command, timeout=None, force=False):
                     output_line = q.get_nowait()
                     if output_line not in output:
                         print(green('CLI OUTPUT:') + output_line, end='')
+                        logger.info('CLI OUTPUT: ' + output_line)
                         output += output_line
                 break
 
@@ -176,6 +181,7 @@ def execute_command(project, command, timeout=None, force=False):
             if line:
                 output += line
                 print(green('CLI OUTPUT:') + line, end='')
+                logger.info('CLI OUTPUT: ' + line)
 
             # Read stderr
             try:
@@ -186,13 +192,16 @@ def execute_command(project, command, timeout=None, force=False):
             if stderr_line:
                 stderr_output += stderr_line
                 print(red('CLI ERROR:') + stderr_line, end='')  # Print with different color for distinction
+                logger.error('CLI ERROR: ' + stderr_line)
 
     except (KeyboardInterrupt, TimeoutError) as e:
         interrupted = True
         if isinstance(e, KeyboardInterrupt):
-            print("\nCTRL+C detected. Stopping command execution...")
+            print('\nCTRL+C detected. Stopping command execution...')
+            logger.info('CTRL+C detected. Stopping command execution...')
         else:
-            print("\nTimeout detected. Stopping command execution...")
+            print('\nTimeout detected. Stopping command execution...')
+            logger.warn('Timeout detected. Stopping command execution...')
 
         terminate_process(pid_container[0])
 

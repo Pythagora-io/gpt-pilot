@@ -104,6 +104,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, min_tokens=MIN_TO
     except TokenLimitError as e:
         raise e
     except Exception as e:
+        logger.error(f'The request to {os.getenv("ENDPOINT")} API failed: %s', e)
         print(f'The request to {os.getenv("ENDPOINT")} API failed. Here is the error message:')
         print(e)
 
@@ -193,6 +194,7 @@ def retry_on_exception(func):
                     ])).ask()
 
                 # TODO: take user's input into consideration - send to LLM?
+                # https://github.com/Pythagora-io/gpt-pilot/issues/122
                 if user_message != '':
                     return {}
 
