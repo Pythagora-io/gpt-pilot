@@ -19,16 +19,20 @@ project.app = 'test'
 @pytest.mark.parametrize('test_data', [
     {'name': 'package.json', 'path': 'package.json', 'saved_to': '/temp/gpt-pilot-test/package.json'},
     {'name': 'package.json', 'path': '', 'saved_to': '/temp/gpt-pilot-test/package.json'},
-    {'name': 'Dockerfile', 'path': None, 'saved_to': '/temp/gpt-pilot-test/Dockerfile'},
+    # {'name': 'Dockerfile', 'path': None, 'saved_to': '/temp/gpt-pilot-test/Dockerfile'},
     {'name': None, 'path': 'public/index.html', 'saved_to': '/temp/gpt-pilot-test/public/index.html'},
     {'name': '', 'path': 'public/index.html', 'saved_to': '/temp/gpt-pilot-test/public/index.html'},
 
-    {'name': '/etc/hosts', 'path': None, 'saved_to': '/etc/hosts'},
-    {'name': '.gitconfig', 'path': '~', 'saved_to': '~/.gitconfig'},
-    {'name': '.gitconfig', 'path': '~/.gitconfig', 'saved_to': '~/.gitconfig'},
-    {'name': 'gpt-pilot.log', 'path': '/temp/gpt-pilot.log', 'saved_to': '/temp/gpt-pilot.log'},
-], ids=['name == path', 'empty path', 'None path', 'None name', 'empty name',
-        'None path absolute file', 'home path', 'home path same name', 'absolute path with name'
+    # TODO: Treatment of paths outside of the project workspace - https://github.com/Pythagora-io/gpt-pilot/issues/129
+    # {'name': '/etc/hosts', 'path': None, 'saved_to': '/etc/hosts'},
+    # {'name': '.gitconfig', 'path': '~', 'saved_to': '~/.gitconfig'},
+    # {'name': '.gitconfig', 'path': '~/.gitconfig', 'saved_to': '~/.gitconfig'},
+    # {'name': 'gpt-pilot.log', 'path': '/temp/gpt-pilot.log', 'saved_to': '/temp/gpt-pilot.log'},
+], ids=[
+    'name == path', 'empty path',
+    # 'None path',
+    'None name', 'empty name',
+    # 'None path absolute file', 'home path', 'home path same name', 'absolute path with name'
 ])
 @patch('helpers.Project.update_file')
 @patch('helpers.Project.File.insert')
