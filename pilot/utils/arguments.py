@@ -6,6 +6,7 @@ import uuid
 from getpass import getuser
 from database.database import get_app, get_app_by_user_workspace
 from utils.style import green_bold
+from utils.utils import should_execute_step
 
 
 def get_arguments():
@@ -42,9 +43,10 @@ def get_arguments():
 
             arguments['app_type'] = app.app_type
             arguments['name'] = app.name
-            arguments['step'] = app.status
+            if 'step' not in arguments or ('step' in arguments and not should_execute_step(arguments['step'], app.status)):
+                arguments['step'] = app.status
+            
             # Add any other fields from the App model you wish to include
-
             print(green_bold('\n------------------ LOADING PROJECT ----------------------'))
             print(green_bold(f'{app.name} (app_id={arguments["app_id"]})'))
             print(green_bold('--------------------------------------------------------------\n'))
