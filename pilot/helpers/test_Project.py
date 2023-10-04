@@ -4,17 +4,19 @@ from helpers.Project import Project
 from database.models.files import File
 
 
-project = Project({
+def create_project():
+    project = Project({
         'app_id': 'test-project',
         'name': 'TestProject',
         'app_type': ''
     },
-    name='TestProject',
-    architecture=[],
-    user_stories=[]
-)
-project.root_path = "/temp/gpt-pilot-test"
-project.app = 'test'
+        name='TestProject',
+        architecture=[],
+        user_stories=[]
+    )
+    project.root_path = "/temp/gpt-pilot-test"
+    project.app = 'test'
+    return project
 
 
 @pytest.mark.parametrize('test_data', [
@@ -54,6 +56,7 @@ def test_save_file(
     mock_update_file = mocker.patch('helpers.Project.update_file', return_value=None)
     mocker.patch('helpers.Project.File')
 
+    project = create_project()
 
     # When
     project.save_file(data)
@@ -79,6 +82,10 @@ def test_save_file(
     ('./path/to/file.txt', 'file.txt', '/temp/gpt-pilot-test/./path/to/file.txt'),  # ideally result would not have `./`
 ])
 def test_get_full_path(file_path, file_name, expected):
+    # Given
+    project = create_project()
+
+    # When
     relative_path, absolute_path = project.get_full_file_path(file_path, file_name)
 
     # Then
@@ -93,6 +100,10 @@ def test_get_full_path(file_path, file_name, expected):
     ('~/path/to/file.txt', 'file.txt', '~/path/to/file.txt'),
 ])
 def test_get_full_path_absolute(file_path, file_name, expected):
+    # Given
+    project = create_project()
+
+    # When
     relative_path, absolute_path = project.get_full_file_path(file_path, file_name)
 
     # Then
