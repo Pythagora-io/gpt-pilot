@@ -135,7 +135,8 @@ class TestDeveloper:
                                             mock_requests_post,
                                             mock_save,
                                             mock_get_saved_step,
-                                            mock_execute):
+                                            mock_execute,
+                                            monkeypatch):
         # Given
         monkey = None
         convo = AgentConvo(self.developer)
@@ -167,6 +168,7 @@ class TestDeveloper:
             return response
 
         mock_requests_post.side_effect = generate_response
+        monkeypatch.setenv('OPENAI_API_KEY', 'secret')
 
         mock_questionary = MockQuestionary([''])
 
