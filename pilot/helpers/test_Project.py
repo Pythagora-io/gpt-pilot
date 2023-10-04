@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from helpers.Project import Project
 
 
@@ -35,7 +35,7 @@ project.app = 'test'
     # 'None path absolute file', 'home path', 'home path same name', 'absolute path with name'
 ])
 @patch('helpers.Project.update_file')
-@patch('helpers.Project.File.insert')
+@patch('helpers.Project.File.insert', new_callable=MagicMock)
 def test_save_file(mock_file_insert, mock_update_file, test_data):
     # Given
     data = {'content': 'Hello World!'}
