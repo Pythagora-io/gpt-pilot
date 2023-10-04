@@ -53,8 +53,8 @@ def test_save_file(
     if test_data['path'] is not None:
         data['path'] = test_data['path']
 
-    mock_update_file = mocker.patch('helpers.Project.update_file', return_value=None)
-    mocker.patch('helpers.Project.File')
+    # mock_update_file = mocker.patch('helpers.Project.update_file', return_value=None)
+    # mocker.patch('helpers.Project.File')
 
     project = create_project()
 
