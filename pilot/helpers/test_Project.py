@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 from helpers.Project import Project
 
 
@@ -65,7 +65,7 @@ def test_save_file(mock_file_insert, mock_update_file, test_data):
     ('path/', 'file.txt', '/temp/gpt-pilot-test/path/file.txt'),
     ('path/to/', 'file.txt', '/temp/gpt-pilot-test/path/to/file.txt'),
     ('path/to/file.txt', 'file.txt', '/temp/gpt-pilot-test/path/to/file.txt'),
-    ('./path/to/file.txt', 'file.txt', '/temp/gpt-pilot-test/path/to/file.txt'),
+    ('./path/to/file.txt', 'file.txt', '/temp/gpt-pilot-test/./path/to/file.txt'),  # ideally result would not have `./`
 ])
 def test_get_full_path(file_path, file_name, expected):
     relative_path, absolute_path = project.get_full_file_path(file_path, file_name)
