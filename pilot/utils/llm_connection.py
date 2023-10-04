@@ -154,6 +154,7 @@ def retry_on_exception(func):
             except Exception as e:
                 # Convert exception to string
                 err_str = str(e)
+                logger.info(f'##### 6, err_str: {err_str}')
 
                 # If the specific error "context_length_exceeded" is present, simply return without retry
                 if isinstance(e, json.JSONDecodeError):
@@ -298,7 +299,7 @@ def stream_gpt_completion(data, req_type, project):
     )
 
     # Log the response status code and message
-    logger.debug(f'Response status code: {response.status_code}')
+    logger.info(f'Response status code: {response.status_code}')
 
     if response.status_code != 200:
         logger.info(f'problem with request: {response.text}')
@@ -307,6 +308,7 @@ def stream_gpt_completion(data, req_type, project):
     # function_calls = {'name': '', 'arguments': ''}
 
     for line in response.iter_lines():
+        logger.info(f'##### 0, line: {line}')
         # Ignore keep-alive new lines
         if line and line != b': OPENROUTER PROCESSING':
             line = line.decode("utf-8")  # decode the bytes to string
