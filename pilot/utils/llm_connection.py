@@ -162,7 +162,7 @@ def retry_on_exception(func):
                         args[0]['function_buffer'] = e.doc
                         continue
                 elif isinstance(e, ValidationError):
-                    logger.warn('Received invalid JSON response from LLM. Asking to retry...')
+                    logger.warning('Received invalid JSON response from LLM. Asking to retry...')
                     logger.info(f'  at {e.json_path} {e.message}')
                     # eg:
                     # json_path: '$.type'
