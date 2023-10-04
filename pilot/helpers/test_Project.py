@@ -35,7 +35,7 @@ project.app = 'test'
     'None name', 'empty name',
     # 'None path absolute file', 'home path', 'home path same name', 'absolute path with name'
 ])
-@patch('helpers.Project.update_file')
+@patch('helpers.files.update_file')
 @patch('database.models.files.File.insert')
 def test_save_file(mock_file_insert, mock_update_file, test_data):
     # Given
