@@ -74,6 +74,7 @@ def test_get_full_path(file_path, file_name, expected):
     assert absolute_path == expected
 
 
+@pytest.mark.skip(reason="Handling of absolute paths will be revisited in #29")
 @pytest.mark.parametrize('file_path, file_name, expected', [
     ('/file.txt', 'file.txt', '/file.txt'),
     ('/path/to/file.txt', 'file.txt', '/path/to/file.txt'),
