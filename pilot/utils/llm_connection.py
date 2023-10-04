@@ -310,6 +310,7 @@ def stream_gpt_completion(data, req_type, project):
         # Ignore keep-alive new lines
         if line and line != b': OPENROUTER PROCESSING':
             line = line.decode("utf-8")  # decode the bytes to string
+            logger.info(f'##### 1, line: {line}')
 
             if line.startswith('data: '):
                 line = line[6:]  # remove the 'data: ' prefix
@@ -353,6 +354,8 @@ def stream_gpt_completion(data, req_type, project):
             if 'content' in json_line:
                 content = json_line.get('content')
                 if content:
+                    logger.info(f'##### 2, content: {content}')
+                    logger.info(f'##### 3, buffer: {buffer}')
                     buffer += content  # accumulate the data
 
                     # If you detect a natural breakpoint (e.g., line break or end of a response object), print & count:
@@ -364,6 +367,7 @@ def stream_gpt_completion(data, req_type, project):
                         lines_printed += count_lines_based_on_width(buffer, terminal_width)
                         buffer = ""  # reset the buffer
 
+                    logger.info(f'##### 4, gpt_response: {gpt_response}')
                     gpt_response += content
                     print(content, type='stream', end='', flush=True)
 
@@ -375,6 +379,7 @@ def stream_gpt_completion(data, req_type, project):
     #     return return_result({'function_calls': function_calls}, lines_printed)
     logger.info(f'< Response message: {gpt_response}')
 
+    logger.info(f'##### 5, expecting_json: {expecting_json}')
     if expecting_json:
         gpt_response = clean_json_response(gpt_response)
         assert_json_schema(gpt_response, expecting_json)
