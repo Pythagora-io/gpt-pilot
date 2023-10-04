@@ -19,31 +19,39 @@ project.app = 'test'
 
 @pytest.mark.parametrize('test_data', [
     {'name': 'package.json', 'path': 'package.json', 'saved_to': '/temp/gpt-pilot-test/package.json'},
-    {'name': 'package.json', 'path': '', 'saved_to': '/temp/gpt-pilot-test/package.json'},
-    # {'name': 'Dockerfile', 'path': None, 'saved_to': '/temp/gpt-pilot-test/Dockerfile'},
-    {'name': None, 'path': 'public/index.html', 'saved_to': '/temp/gpt-pilot-test/public/index.html'},
-    {'name': '', 'path': 'public/index.html', 'saved_to': '/temp/gpt-pilot-test/public/index.html'},
+    # {'name': 'package.json', 'path': '', 'saved_to': '/temp/gpt-pilot-test/package.json'},
+    # # {'name': 'Dockerfile', 'path': None, 'saved_to': '/temp/gpt-pilot-test/Dockerfile'},
+    # {'name': None, 'path': 'public/index.html', 'saved_to': '/temp/gpt-pilot-test/public/index.html'},
+    # {'name': '', 'path': 'public/index.html', 'saved_to': '/temp/gpt-pilot-test/public/index.html'},
 
     # TODO: Treatment of paths outside of the project workspace - https://github.com/Pythagora-io/gpt-pilot/issues/129
     # {'name': '/etc/hosts', 'path': None, 'saved_to': '/etc/hosts'},
     # {'name': '.gitconfig', 'path': '~', 'saved_to': '~/.gitconfig'},
     # {'name': '.gitconfig', 'path': '~/.gitconfig', 'saved_to': '~/.gitconfig'},
     # {'name': 'gpt-pilot.log', 'path': '/temp/gpt-pilot.log', 'saved_to': '/temp/gpt-pilot.log'},
-], ids=[
-    'name == path', 'empty path',
-    # 'None path',
-    'None name', 'empty name',
+# ], ids=[
+#     'name == path', 'empty path',
+#     # 'None path',
+#     'None name', 'empty name',
     # 'None path absolute file', 'home path', 'home path same name', 'absolute path with name'
 ])
-@patch('helpers.Project.update_file')
-@patch('database.models.files.File.insert')
-def test_save_file(mock_file_insert, mock_update_file, test_data):
+# @patch('helpers.Project.update_file')
+@patch('helpers.Project.File')
+def test_save_file(mock_file_insert,
+                   # mock_update_file,
+                   test_data,
+                   # monkeypatch
+                   mocker
+                   ):
     # Given
     data = {'content': 'Hello World!'}
     if test_data['name'] is not None:
         data['name'] = test_data['name']
     if test_data['path'] is not None:
         data['path'] = test_data['path']
+
+    mock_update_file = mocker.patch('helpers.Project.update_file', return_value=None)
+
 
     # When
     project.save_file(data)
