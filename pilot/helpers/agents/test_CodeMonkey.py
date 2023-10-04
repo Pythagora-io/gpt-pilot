@@ -1,6 +1,6 @@
 import re
 import os
-from unittest.mock import patch, Mock, MagicMock
+from unittest.mock import patch, MagicMock
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -40,80 +40,80 @@ class TestCodeMonkey:
         self.developer = Developer(self.project)
         self.codeMonkey = CodeMonkey(self.project, developer=self.developer)
 
-    # @patch('helpers.AgentConvo.get_saved_development_step', return_value=None)
-    # @patch('helpers.AgentConvo.save_development_step', new_callable=MagicMock)
-    # @patch('os.get_terminal_size', mock_terminal_size)
-    # @patch.object(File, 'insert')
-    # def test_implement_code_changes(self, mock_get_dev, mock_save_dev, mock_file_insert):
-    #     # Given
-    #     code_changes_description = "Write the word 'Washington' to a .txt file"
-    #
-    #     if SEND_TO_LLM:
-    #         convo = AgentConvo(self.codeMonkey)
-    #     else:
-    #         convo = MagicMock()
-    #         mock_responses = [
-    #             # [],
-    #             [{
-    #                 'content': 'Washington',
-    #                 'description': "A new .txt file with the word 'Washington' in it.",
-    #                 'name': 'washington.txt',
-    #                 'path': 'washington.txt'
-    #             }]
-    #         ]
-    #         convo.send_message.side_effect = mock_responses
-    #
-    #     if WRITE_TO_FILE:
-    #         self.codeMonkey.implement_code_changes(convo, code_changes_description)
-    #     else:
-    #         # don't write the file, just
-    #         with patch.object(Project, 'save_file') as mock_save_file:
-    #             # When
-    #             self.codeMonkey.implement_code_changes(convo, code_changes_description)
-    #
-    #             # Then
-    #             mock_save_file.assert_called_once()
-    #             called_data = mock_save_file.call_args[0][0]
-    #             assert re.match(r'\w+\.txt$', called_data['name'])
-    #             assert (called_data['path'] == '/' or called_data['path'] == called_data['name'])
-    #             assert called_data['content'] == 'Washington'
-    #
-    # @patch('helpers.AgentConvo.get_saved_development_step', return_value=None)
-    # @patch('helpers.AgentConvo.save_development_step', new_callable=MagicMock)
-    # @patch('os.get_terminal_size', mock_terminal_size)
-    # @patch.object(File, 'insert')
-    # def test_implement_code_changes_with_read(self, mock_get_dev, mock_save_dev, mock_file_insert):
-    #     # Given
-    #     code_changes_description = "Read the file called file_to_read.txt and write its content to a file called output.txt"
-    #     workspace = self.project.root_path
-    #     update_file(os.path.join(workspace, 'file_to_read.txt'), 'Hello World!\n')
-    #
-    #     if SEND_TO_LLM:
-    #         convo = AgentConvo(self.codeMonkey)
-    #     else:
-    #         convo = MagicMock()
-    #         mock_responses = [
-    #             # ['file_to_read.txt', 'output.txt'],
-    #             [{
-    #                 'content': 'Hello World!\n',
-    #                 'description': 'This file is the output file. The content of file_to_read.txt is copied into this file.',
-    #                 'name': 'output.txt',
-    #                 'path': 'output.txt'
-    #             }]
-    #         ]
-    #         convo.send_message.side_effect = mock_responses
-    #
-    #     if WRITE_TO_FILE:
-    #         self.codeMonkey.implement_code_changes(convo, code_changes_description)
-    #     else:
-    #         with patch.object(Project, 'save_file') as mock_save_file:
-    #             # When
-    #             self.codeMonkey.implement_code_changes(convo, code_changes_description)
-    #
-    #             # Then
-    #             clear_directory(workspace)
-    #             mock_save_file.assert_called_once()
-    #             called_data = mock_save_file.call_args[0][0]
-    #             assert called_data['name'] == 'output.txt'
-    #             assert (called_data['path'] == '/' or called_data['path'] == called_data['name'])
-    #             assert called_data['content'] == 'Hello World!\n'
+    @patch('helpers.AgentConvo.get_saved_development_step', return_value=None)
+    @patch('helpers.AgentConvo.save_development_step', new_callable=MagicMock)
+    @patch('os.get_terminal_size', mock_terminal_size)
+    @patch.object(File, 'insert')
+    def test_implement_code_changes(self, mock_get_dev, mock_save_dev, mock_file_insert):
+        # Given
+        code_changes_description = "Write the word 'Washington' to a .txt file"
+
+        if SEND_TO_LLM:
+            convo = AgentConvo(self.codeMonkey)
+        else:
+            convo = MagicMock()
+            mock_responses = [
+                # [],
+                [{
+                    'content': 'Washington',
+                    'description': "A new .txt file with the word 'Washington' in it.",
+                    'name': 'washington.txt',
+                    'path': 'washington.txt'
+                }]
+            ]
+            convo.send_message.side_effect = mock_responses
+
+        if WRITE_TO_FILE:
+            self.codeMonkey.implement_code_changes(convo, code_changes_description)
+        else:
+            # don't write the file, just
+            with patch.object(Project, 'save_file') as mock_save_file:
+                # When
+                self.codeMonkey.implement_code_changes(convo, code_changes_description)
+
+                # Then
+                mock_save_file.assert_called_once()
+                called_data = mock_save_file.call_args[0][0]
+                assert re.match(r'\w+\.txt$', called_data['name'])
+                assert (called_data['path'] == '/' or called_data['path'] == called_data['name'])
+                assert called_data['content'] == 'Washington'
+
+    @patch('helpers.AgentConvo.get_saved_development_step', return_value=None)
+    @patch('helpers.AgentConvo.save_development_step', new_callable=MagicMock)
+    @patch('os.get_terminal_size', mock_terminal_size)
+    @patch.object(File, 'insert')
+    def test_implement_code_changes_with_read(self, mock_get_dev, mock_save_dev, mock_file_insert):
+        # Given
+        code_changes_description = "Read the file called file_to_read.txt and write its content to a file called output.txt"
+        workspace = self.project.root_path
+        update_file(os.path.join(workspace, 'file_to_read.txt'), 'Hello World!\n')
+
+        if SEND_TO_LLM:
+            convo = AgentConvo(self.codeMonkey)
+        else:
+            convo = MagicMock()
+            mock_responses = [
+                # ['file_to_read.txt', 'output.txt'],
+                [{
+                    'content': 'Hello World!\n',
+                    'description': 'This file is the output file. The content of file_to_read.txt is copied into this file.',
+                    'name': 'output.txt',
+                    'path': 'output.txt'
+                }]
+            ]
+            convo.send_message.side_effect = mock_responses
+
+        if WRITE_TO_FILE:
+            self.codeMonkey.implement_code_changes(convo, code_changes_description)
+        else:
+            with patch.object(Project, 'save_file') as mock_save_file:
+                # When
+                self.codeMonkey.implement_code_changes(convo, code_changes_description)
+
+                # Then
+                clear_directory(workspace)
+                mock_save_file.assert_called_once()
+                called_data = mock_save_file.call_args[0][0]
+                assert called_data['name'] == 'output.txt'
+                assert (called_data['path'] == '/' or called_data['path'] == called_data['name'])
+                assert called_data['content'] == 'Hello World!\n'

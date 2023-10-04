@@ -16,8 +16,7 @@ jobs:
       matrix:
         # 3.10 - 04 Oct 2021
         # 3.11 - 24 Oct 2022
-        python-version: ['3.9']
-#        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12']
 
     steps:
     - uses: actions/checkout@v4
