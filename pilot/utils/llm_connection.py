@@ -105,7 +105,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
     except TokenLimitError as e:
         raise e
     except Exception as e:
-        logger.error(f'The request to {os.getenv("ENDPOINT")} API failed: %s', e)
+        # logger.error(f'The request to {os.getenv("ENDPOINT")} API failed: %s', e)
         print(f'The request to {os.getenv("ENDPOINT")} API failed. Here is the error message:')
         print(e)
         return {}   # https://github.com/Pythagora-io/gpt-pilot/issues/130 - may need to revisit how we handle this
