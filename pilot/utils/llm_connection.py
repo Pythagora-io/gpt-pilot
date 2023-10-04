@@ -105,7 +105,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
     except TokenLimitError as e:
         raise e
     except Exception as e:
-        # logger.error(f'The request to {os.getenv("ENDPOINT")} API failed: %s', e)
+        logger.error(f'The request to {os.getenv("ENDPOINT")} API failed: %s', e)
         print(f'The request to {os.getenv("ENDPOINT")} API failed. Here is the error message:')
         print(e)
         return {}   # https://github.com/Pythagora-io/gpt-pilot/issues/130 - may need to revisit how we handle this
@@ -154,7 +154,6 @@ def retry_on_exception(func):
             except Exception as e:
                 # Convert exception to string
                 err_str = str(e)
-                logger.info(f'##### 6, err_str: {err_str}')
 
                 # If the specific error "context_length_exceeded" is present, simply return without retry
                 if isinstance(e, json.JSONDecodeError):
@@ -290,8 +289,6 @@ def stream_gpt_completion(data, req_type, project):
             'Authorization': 'Bearer ' + get_api_key_or_throw('OPENAI_API_KEY')
         }
 
-    logger.info(f'##### 0.1, endpoint_url: {endpoint_url}, headers: {headers}')
-
     response = requests.post(
         endpoint_url,
         headers=headers,
@@ -300,7 +297,7 @@ def stream_gpt_completion(data, req_type, project):
     )
 
     # Log the response status code and message
-    logger.info(f'Response status code: {response.status_code}')
+    logger.debug(f'Response status code: {response.status_code}')
 
     if response.status_code != 200:
         logger.info(f'problem with request: {response.text}')
@@ -309,11 +306,9 @@ def stream_gpt_completion(data, req_type, project):
     # function_calls = {'name': '', 'arguments': ''}
 
     for line in response.iter_lines():
-        logger.info(f'##### 0, line: {line}')
         # Ignore keep-alive new lines
         if line and line != b': OPENROUTER PROCESSING':
             line = line.decode("utf-8")  # decode the bytes to string
-            logger.info(f'##### 1, line: {line}')
 
             if line.startswith('data: '):
                 line = line[6:]  # remove the 'data: ' prefix
@@ -357,8 +352,6 @@ def stream_gpt_completion(data, req_type, project):
             if 'content' in json_line:
                 content = json_line.get('content')
                 if content:
-                    logger.info(f'##### 2, content: {content}')
-                    logger.info(f'##### 3, buffer: {buffer}')
                     buffer += content  # accumulate the data
 
                     # If you detect a natural breakpoint (e.g., line break or end of a response object), print & count:
@@ -370,7 +363,6 @@ def stream_gpt_completion(data, req_type, project):
                         lines_printed += count_lines_based_on_width(buffer, terminal_width)
                         buffer = ""  # reset the buffer
 
-                    logger.info(f'##### 4, gpt_response: {gpt_response}')
                     gpt_response += content
                     print(content, type='stream', end='', flush=True)
 
@@ -382,7 +374,6 @@ def stream_gpt_completion(data, req_type, project):
     #     return return_result({'function_calls': function_calls}, lines_printed)
     logger.info(f'< Response message: {gpt_response}')
 
-    logger.info(f'##### 5, expecting_json: {expecting_json}')
     if expecting_json:
         gpt_response = clean_json_response(gpt_response)
         assert_json_schema(gpt_response, expecting_json)
