@@ -129,7 +129,7 @@ class TestDeveloper:
 
     @patch('helpers.cli.execute_command', return_value=('stdout:\n```\n\n```', 'DONE'))
     @patch('helpers.AgentConvo.get_saved_development_step')
-    @patch('helpers.AgentConvo.save_development_step', new_callable=MagicMock)
+    @patch('helpers.AgentConvo.save_development_step')
     @patch('utils.llm_connection.requests.post')
     @patch('utils.questionary.get_saved_user_input')
     def test_test_code_changes_invalid_json(self, mock_get_saved_user_input,
