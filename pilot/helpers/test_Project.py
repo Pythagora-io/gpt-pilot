@@ -36,8 +36,9 @@ project.app = 'test'
     # 'None path absolute file', 'home path', 'home path same name', 'absolute path with name'
 ])
 # @patch('helpers.Project.update_file')
-@patch('helpers.Project.File')
-def test_save_file(mock_file_insert,
+# @patch('helpers.Project.File')
+def test_save_file(
+                   # mock_file_insert,
                    # mock_update_file,
                    test_data,
                    # monkeypatch
@@ -51,6 +52,7 @@ def test_save_file(mock_file_insert,
         data['path'] = test_data['path']
 
     mock_update_file = mocker.patch('helpers.Project.update_file', return_value=None)
+    mocker.patch('helpers.Project.File')
 
 
     # When
