@@ -261,12 +261,12 @@ def stream_gpt_completion(data, req_type, project):
     # print(yellow("Stream response from OpenAI:"))
 
     # Configure for the selected ENDPOINT
-    model = os.getenv('MODEL_NAME')
+    model = os.getenv('MODEL_NAME', 'gpt-4')
     endpoint = os.getenv('ENDPOINT')
 
     logger.info(f'> Request model: {model} ({data["model"]}) messages: {data["messages"]}')
 
-    logger.info(f'##### build endpoint...')
+    logger.info(f'##### build endpoint for {endpoint}')
 
     if endpoint == 'AZURE':
         # If yes, get the AZURE_ENDPOINT from .ENV file
@@ -292,7 +292,7 @@ def stream_gpt_completion(data, req_type, project):
             'Authorization': 'Bearer ' + os.getenv('OPENAI_API_KEY')
         }
 
-    logger.info(f'##### 0.1, endpoint: {endpoint}, headers: {headers}')
+    logger.info(f'##### 0.1, endpoint_url: {endpoint_url}, headers: {headers}')
 
     response = requests.post(
         endpoint_url,
