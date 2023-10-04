@@ -31,7 +31,7 @@ I've broken down the idea behind GPT Pilot and how it works in the following blo
 
 **[[Part 1/3] High-level concepts + GPT Pilot workflow until the coding part](https://blog.pythagora.ai/2023/08/23/430/)**
 
-**_[Part 2/3] GPT Pilot coding workflow (COMING UP)_**
+**_[[Part 2/3] GPT Pilot coding workflow](https://blog.pythagora.ai/2023/09/04/gpt-pilot-coding-workflow-part-2-3/)_**
 
 **_[Part 3/3] Other important concepts and future plans (COMING UP)_**
 

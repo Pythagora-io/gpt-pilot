@@ -70,7 +70,6 @@ class Project:
         # if development_plan is not None:
         #     self.development_plan = development_plan
 
-
     def start(self):
         """
         Start the project.
@@ -123,7 +122,8 @@ class Project:
                     if should_overwrite_files == 'n':
                         break
                     elif should_overwrite_files == 'y':
-                        FileSnapshot.delete().where(FileSnapshot.app == self.app and FileSnapshot.development_step == self.skip_until_dev_step).execute()
+                        FileSnapshot.delete().where(
+                            FileSnapshot.app == self.app and FileSnapshot.development_step == self.skip_until_dev_step).execute()
                         self.save_files_snapshot(self.skip_until_dev_step)
                         break
         # TODO END
@@ -235,11 +235,11 @@ class Project:
         # update_file(data['full_path'], data['content'])
         #
         # (File.insert(app=self.app, path=data['path'], name=data['name'], full_path=data['full_path'])
-        #     .on_conflict(
-        #         conflict_target=[File.app, File.name, File.path],
-        #         preserve=[],
-        #         update={ 'name': data['name'], 'path': data['path'], 'full_path': data['full_path'] })
-        #     .execute())
+        #  .on_conflict(
+        #     conflict_target=[File.app, File.name, File.path],
+        #     preserve=[],
+        #     update={'name': data['name'], 'path': data['path'], 'full_path': data['full_path']})
+        #  .execute())
 
     def get_full_file_path(self, file_path: str, file_name: str) -> Tuple[str, str]:
 
@@ -339,16 +339,16 @@ class Project:
 
     def ask_for_human_intervention(self, message, description=None, cbs={}, convo=None, is_root_task=False):
         answer = ''
+        question = yellow_bold(message)
+
+        if description is not None:
+            question += '\n' + '-' * 100 + '\n' + white_bold(description) + '\n' + '-' * 100 + '\n'
+
         if convo is not None:
             reset_branch_id = convo.save_branch()
 
         while answer != 'continue':
-            if description is not None:
-                print('\n' + '-'*100 + '\n' +
-                    white_bold(description) +
-                    '\n' + '-'*100 + '\n')
-
-            answer = ask_user(self, yellow_bold(message),
+            answer = ask_user(self, question,
                               require_some_input=False,
                               hint='If something is wrong, tell me or type "continue" to continue.')
 
@@ -356,11 +356,11 @@ class Project:
                 if answer in cbs:
                     return cbs[answer](convo)
                 elif answer != '':
-                    return { 'user_input': answer }
+                    return {'user_input': answer}
             except TokenLimitError as e:
                 if is_root_task and answer not in cbs and answer != '':
                     convo.load_branch(reset_branch_id)
-                    return { 'user_input': answer }
+                    return {'user_input': answer}
                 else:
                     raise e
 
