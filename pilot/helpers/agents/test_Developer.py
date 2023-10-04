@@ -80,24 +80,24 @@ class TestDeveloper:
         # Then
         assert result == {'success': True, 'cli_response': 'stdout:\n```\n\n```'}
 
-    # @patch('helpers.AgentConvo.get_saved_development_step')
-    # @patch('helpers.AgentConvo.save_development_step')
-    # # GET_TEST_TYPE has optional properties, so we need to be able to handle missing args.
-    # @patch('helpers.AgentConvo.create_gpt_chat_completion',
-    #        return_value={'text': '{"type": "manual_test", "manual_test_description": "Does it look good?"}'})
-    # @patch('helpers.Project.ask_user', return_value='continue')
-    # def test_code_changes_manual_test_continue(self, mock_get_saved_step, mock_save, mock_chat_completion, mock_ask_user):
-    #     # Given
-    #     monkey = None
-    #     convo = AgentConvo(self.developer)
-    #     convo.save_branch = lambda branch_name=None: branch_name
-    #
-    #     # When
-    #     result = self.developer.test_code_changes(monkey, convo)
-    #
-    #     # Then
-    #     assert result == {'success': True, 'user_input': 'continue'}
-    #
+    @patch('helpers.AgentConvo.get_saved_development_step')
+    @patch('helpers.AgentConvo.save_development_step')
+    # GET_TEST_TYPE has optional properties, so we need to be able to handle missing args.
+    @patch('helpers.AgentConvo.create_gpt_chat_completion',
+           return_value={'text': '{"type": "manual_test", "manual_test_description": "Does it look good?"}'})
+    @patch('helpers.Project.ask_user', return_value='continue')
+    def test_code_changes_manual_test_continue(self, mock_get_saved_step, mock_save, mock_chat_completion, mock_ask_user):
+        # Given
+        monkey = None
+        convo = AgentConvo(self.developer)
+        convo.save_branch = lambda branch_name=None: branch_name
+
+        # When
+        result = self.developer.test_code_changes(monkey, convo)
+
+        # Then
+        assert result == {'success': True, 'user_input': 'continue'}
+
     # @patch('helpers.AgentConvo.get_saved_development_step')
     # @patch('helpers.AgentConvo.save_development_step')
     # @patch('helpers.AgentConvo.create_gpt_chat_completion')
