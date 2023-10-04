@@ -169,12 +169,12 @@ class TestDeveloper:
 
         mock_questionary = MockQuestionary([''])
 
-        with patch('utils.questionary.questionary', mock_questionary):
-            # When
-            result = self.developer.test_code_changes(monkey, convo)
+        # with patch('utils.questionary.questionary', mock_questionary):
+        # When
+        result = self.developer.test_code_changes(monkey, convo)
 
-            # Then
-            assert result == {'success': True, 'cli_response': 'stdout:\n```\n\n```'}
-            assert mock_requests_post.call_count == 2
-            assert "The JSON is invalid at $.type - 'command' is not one of ['automated_test', 'command_test', 'manual_test', 'no_test']" in json_received[1]['messages'][3]['content']
-            assert mock_execute.call_count == 1
+        # Then
+        assert result == {'success': True, 'cli_response': 'stdout:\n```\n\n```'}
+        assert mock_requests_post.call_count == 2
+        assert "The JSON is invalid at $.type - 'command' is not one of ['automated_test', 'command_test', 'manual_test', 'no_test']" in json_received[1]['messages'][3]['content']
+        assert mock_execute.call_count == 1
