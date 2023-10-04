@@ -12,7 +12,7 @@ from utils.style import red
 from typing import List
 from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS
 from logger.logger import logger
-from helpers.exceptions.TokenLimitError import TokenLimitError
+from helpers.exceptions import TokenLimitError, ApiKeyNotDefinedError
 from utils.utils import fix_json, get_prompt
 from utils.function_calling import add_function_calls_to_request, FunctionCallSet, FunctionType
 from utils.questionary import styled_text
@@ -266,21 +266,19 @@ def stream_gpt_completion(data, req_type, project):
 
     logger.info(f'> Request model: {model} ({data["model"]}) messages: {data["messages"]}')
 
-    logger.info(f'##### build endpoint for {endpoint}')
-
     if endpoint == 'AZURE':
         # If yes, get the AZURE_ENDPOINT from .ENV file
         endpoint_url = os.getenv('AZURE_ENDPOINT') + '/openai/deployments/' + model + '/chat/completions?api-version=2023-05-15'
         headers = {
             'Content-Type': 'application/json',
-            'api-key': os.getenv('AZURE_API_KEY')
+            'api-key': get_api_key_or_throw('AZURE_API_KEY')
         }
     elif endpoint == 'OPENROUTER':
         # If so, send the request to the OpenRouter API endpoint
         endpoint_url = os.getenv('OPENROUTER_ENDPOINT', 'https://openrouter.ai/api/v1/chat/completions')
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + os.getenv('OPENROUTER_API_KEY'),
+            'Authorization': 'Bearer ' + get_api_key_or_throw('OPENROUTER_API_KEY'),
             'HTTP-Referer': 'http://localhost:3000',
             'X-Title': 'GPT Pilot (LOCAL)'
         }
@@ -289,7 +287,7 @@ def stream_gpt_completion(data, req_type, project):
         endpoint_url = os.getenv('OPENAI_ENDPOINT', 'https://api.openai.com/v1/chat/completions')
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + os.getenv('OPENAI_API_KEY')
+            'Authorization': 'Bearer ' + get_api_key_or_throw('OPENAI_API_KEY')
         }
 
     logger.info(f'##### 0.1, endpoint_url: {endpoint_url}, headers: {headers}')
@@ -391,6 +389,13 @@ def stream_gpt_completion(data, req_type, project):
 
     new_code = postprocessing(gpt_response, req_type)  # TODO add type dynamically
     return return_result({'text': new_code}, lines_printed)
+
+
+def get_api_key_or_throw(env_key: str):
+    api_key = os.getenv(env_key)
+    if api_key is None:
+        raise ApiKeyNotDefinedError(env_key)
+    return api_key
 
 
 def assert_json_response(response: str, or_fail=True) -> bool:
