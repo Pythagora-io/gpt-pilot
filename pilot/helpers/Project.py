@@ -230,6 +230,7 @@ class Project:
         logger.info(f'-------------update_file: {update_file}')
         print('--------------------------------------')
         print(update_file)
+        return str(update_file)
 
 
         # update_file(data['full_path'], data['content'])
