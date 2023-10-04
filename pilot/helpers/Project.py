@@ -227,14 +227,8 @@ class Project:
 
         data['path'], data['full_path'] = self.get_full_file_path(data['path'], data['name'])
 
-        logger.info(f'-------------update_file: {update_file}')
-        print('--------------------------------------')
-        print(update_file)
-        return str(update_file)
+        update_file(data['full_path'], data['content'])
 
-
-        # update_file(data['full_path'], data['content'])
-        #
         # (File.insert(app=self.app, path=data['path'], name=data['name'], full_path=data['full_path'])
         #  .on_conflict(
         #     conflict_target=[File.app, File.name, File.path],

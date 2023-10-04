@@ -53,20 +53,18 @@ def test_save_file(
     if test_data['path'] is not None:
         data['path'] = test_data['path']
 
-    # mock_update_file = mocker.patch('helpers.Project.update_file', return_value=None)
-    # mocker.patch('helpers.Project.File')
-    print('bump CI !!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    mock_update_file = mocker.patch('helpers.Project.update_file', return_value=None)
+    mocker.patch('helpers.Project.File')
 
     project = create_project()
 
     # When
-    result = project.save_file(data)
+    project.save_file(data)
 
-    assert result == ''
 
     # Then assert that update_file with the correct path
     expected_saved_to = test_data['saved_to']
-    # mock_update_file.assert_called_once_with(expected_saved_to, 'Hello World!')
+    mock_update_file.assert_called_once_with(expected_saved_to, 'Hello World!')
 
 
     # Also assert that File.insert was called with the expected arguments
