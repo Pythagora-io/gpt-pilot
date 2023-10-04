@@ -229,12 +229,12 @@ class Project:
 
         update_file(data['full_path'], data['content'])
 
-        # (File.insert(app=self.app, path=data['path'], name=data['name'], full_path=data['full_path'])
-        #  .on_conflict(
-        #     conflict_target=[File.app, File.name, File.path],
-        #     preserve=[],
-        #     update={'name': data['name'], 'path': data['path'], 'full_path': data['full_path']})
-        #  .execute())
+        (File.insert(app=self.app, path=data['path'], name=data['name'], full_path=data['full_path'])
+         .on_conflict(
+            conflict_target=[File.app, File.name, File.path],
+            preserve=[],
+            update={'name': data['name'], 'path': data['path'], 'full_path': data['full_path']})
+         .execute())
 
     def get_full_file_path(self, file_path: str, file_name: str) -> Tuple[str, str]:
 

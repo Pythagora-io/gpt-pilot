@@ -37,14 +37,14 @@ def create_project():
 #     'None name', 'empty name',
     # 'None path absolute file', 'home path', 'home path same name', 'absolute path with name'
 ])
-# @patch('helpers.Project.update_file')
-# @patch('helpers.Project.File')
+@patch('helpers.Project.update_file')
+@patch('helpers.Project.File')
 def test_save_file(
-                   # mock_file_insert,
-                   # mock_update_file,
+                   mock_file_insert,
+                   mock_update_file,
                    test_data,
                    # monkeypatch
-                   mocker
+                   # mocker
                    ):
     # Given
     data = {'content': 'Hello World!'}
@@ -53,14 +53,13 @@ def test_save_file(
     if test_data['path'] is not None:
         data['path'] = test_data['path']
 
-    mock_update_file = mocker.patch('helpers.Project.update_file', return_value=None)
-    mocker.patch('helpers.Project.File')
+    # mock_update_file = mocker.patch('helpers.Project.update_file', return_value=None)
+    # mocker.patch('helpers.Project.File')
 
     project = create_project()
 
     # When
     project.save_file(data)
-
 
     # Then assert that update_file with the correct path
     expected_saved_to = test_data['saved_to']
