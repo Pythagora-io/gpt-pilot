@@ -163,13 +163,19 @@ def retry_on_exception(func):
                         args[0]['function_buffer'] = e.doc
                         continue
                 elif isinstance(e, ValidationError):
+                    function_error_count = 1 if 'function_error' not in args[0] else args[0]['function_error_count'] + 1
+                    args[0]['function_error_count'] = function_error_count
+
                     logger.warning('Received invalid JSON response from LLM. Asking to retry...')
                     logger.info(f'  at {e.json_path} {e.message}')
                     # eg:
                     # json_path: '$.type'
                     # message:   "'command' is not one of ['automated_test', 'command_test', 'manual_test', 'no_test']"
                     args[0]['function_error'] = f'at {e.json_path} - {e.message}'
-                    continue
+
+                    # Attempt retry if the JSON schema is invalid, but avoid getting stuck in a loop
+                    if function_error_count < 3:
+                        continue
                 if "context_length_exceeded" in err_str:
                     # spinner_stop(spinner)
                     raise TokenLimitError(get_tokens_in_messages_from_openai_error(err_str), MAX_GPT_MODEL_TOKENS)
