@@ -1,8 +1,7 @@
 import json
 import os
-import re
 from typing import Tuple
-from utils.style import green_bold, yellow_bold, cyan, white_bold
+from utils.style import  yellow_bold, cyan, white_bold
 from const.common import IGNORE_FOLDERS, STEPS
 from database.database import delete_unconnected_steps_from, delete_all_app_development_data
 from const.ipc import MESSAGE_TYPE
