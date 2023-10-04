@@ -2,7 +2,7 @@ import builtins
 import json
 import os
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import requests
 
@@ -59,7 +59,6 @@ class TestDeveloper:
     @patch('helpers.AgentConvo.save_development_step')
     # GET_TEST_TYPE has optional properties, so we need to be able to handle missing args.
     @patch('helpers.AgentConvo.create_gpt_chat_completion',
-           new_callable = MagicMock,
            return_value={'text': '{"type": "command_test", "command": {"command": "npm run test", "timeout": 3000}}'})
     # 2nd arg of return_value: `None` to debug, 'DONE' if successful
     @patch('helpers.cli.execute_command', return_value=('stdout:\n```\n\n```', 'DONE'))
@@ -86,7 +85,7 @@ class TestDeveloper:
     # GET_TEST_TYPE has optional properties, so we need to be able to handle missing args.
     @patch('helpers.AgentConvo.create_gpt_chat_completion',
            return_value={'text': '{"type": "manual_test", "manual_test_description": "Does it look good?"}'})
-    @patch('helpers.Project.ask_user', return_value='continue', new_callable=MagicMock)
+    @patch('helpers.Project.ask_user', return_value='continue')
     def test_code_changes_manual_test_continue(self, mock_get_saved_step, mock_save, mock_chat_completion, mock_ask_user):
         # Given
         monkey = None
@@ -101,7 +100,7 @@ class TestDeveloper:
 
     @patch('helpers.AgentConvo.get_saved_development_step')
     @patch('helpers.AgentConvo.save_development_step')
-    @patch('helpers.AgentConvo.create_gpt_chat_completion', new_callable=MagicMock)
+    @patch('helpers.AgentConvo.create_gpt_chat_completion')
     @patch('utils.questionary.get_saved_user_input')
     # https://github.com/Pythagora-io/gpt-pilot/issues/35
     def test_code_changes_manual_test_no(self, mock_get_saved_user_input, mock_chat_completion, mock_save, mock_get_saved_step):
