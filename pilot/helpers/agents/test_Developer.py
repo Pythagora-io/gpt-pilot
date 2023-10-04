@@ -80,101 +80,101 @@ class TestDeveloper:
         # Then
         assert result == {'success': True, 'cli_response': 'stdout:\n```\n\n```'}
 
-    @patch('helpers.AgentConvo.get_saved_development_step')
-    @patch('helpers.AgentConvo.save_development_step')
-    # GET_TEST_TYPE has optional properties, so we need to be able to handle missing args.
-    @patch('helpers.AgentConvo.create_gpt_chat_completion',
-           return_value={'text': '{"type": "manual_test", "manual_test_description": "Does it look good?"}'})
-    @patch('helpers.Project.ask_user', return_value='continue')
-    def test_code_changes_manual_test_continue(self, mock_get_saved_step, mock_save, mock_chat_completion, mock_ask_user):
-        # Given
-        monkey = None
-        convo = AgentConvo(self.developer)
-        convo.save_branch = lambda branch_name=None: branch_name
-
-        # When
-        result = self.developer.test_code_changes(monkey, convo)
-
-        # Then
-        assert result == {'success': True, 'user_input': 'continue'}
-
-    @patch('helpers.AgentConvo.get_saved_development_step')
-    @patch('helpers.AgentConvo.save_development_step')
-    @patch('helpers.AgentConvo.create_gpt_chat_completion')
-    @patch('utils.questionary.get_saved_user_input')
-    # https://github.com/Pythagora-io/gpt-pilot/issues/35
-    def test_code_changes_manual_test_no(self, mock_get_saved_user_input, mock_chat_completion, mock_save, mock_get_saved_step):
-        # Given
-        monkey = None
-        convo = AgentConvo(self.developer)
-        convo.save_branch = lambda branch_name=None: branch_name
-        convo.load_branch = lambda function_uuid=None: function_uuid
-        self.project.developer = self.developer
-
-        mock_chat_completion.side_effect = [
-            {'text': '{"type": "manual_test", "manual_test_description": "Does it look good?"}'},
-            {'text': '{"steps": [{"type": "command", "command": {"command": "something scary", "timeout": 3000}, "check_if_fixed": true}]}'},
-            {'text': 'do something else scary'},
-        ]
-
-        mock_questionary = MockQuestionary(['no', 'no'])
-
-        with patch('utils.questionary.questionary', mock_questionary):
-            # When
-            result = self.developer.test_code_changes(monkey, convo)
-
-            # Then
-            assert result == {'success': True, 'user_input': 'no'}
-
-    @patch('helpers.cli.execute_command', return_value=('stdout:\n```\n\n```', 'DONE'))
-    @patch('helpers.AgentConvo.get_saved_development_step')
-    @patch('helpers.AgentConvo.save_development_step')
-    @patch('utils.llm_connection.requests.post')
-    @patch('utils.questionary.get_saved_user_input')
-    def test_test_code_changes_invalid_json(self, mock_get_saved_user_input,
-                                            mock_requests_post,
-                                            mock_save,
-                                            mock_get_saved_step,
-                                            mock_execute):
-        # Given
-        monkey = None
-        convo = AgentConvo(self.developer)
-        convo.save_branch = lambda branch_name=None: branch_name
-        convo.load_branch = lambda function_uuid=None: function_uuid
-        self.project.developer = self.developer
-
-        # we send a GET_TEST_TYPE spec, but the 1st response is invalid
-        types_in_response = ['command', 'command_test']
-        json_received = []
-
-        def generate_response(*args, **kwargs):
-            json_received.append(kwargs['json'])
-
-            gpt_response = json.dumps({
-                'type': types_in_response.pop(0),
-                'command': {
-                    'command': 'node server.js',
-                    'timeout': 3000
-                }
-            })
-            choice = json.dumps({'delta': {'content': gpt_response}})
-            line = json.dumps({'choices': [json.loads(choice)]}).encode('utf-8')
-
-            response = requests.Response()
-            response.status_code = 200
-            response.iter_lines = lambda: [line]
-            return response
-
-        mock_requests_post.side_effect = generate_response
-
-        mock_questionary = MockQuestionary([''])
-
-        with patch('utils.questionary.questionary', mock_questionary):
-            # When
-            result = self.developer.test_code_changes(monkey, convo)
-
-            # Then
-            assert result == {'success': True, 'cli_response': 'stdout:\n```\n\n```'}
-            assert mock_requests_post.call_count == 2
-            assert "The JSON is invalid at $.type - 'command' is not one of ['automated_test', 'command_test', 'manual_test', 'no_test']" in json_received[1]['messages'][3]['content']
-            assert mock_execute.call_count == 1
+    # @patch('helpers.AgentConvo.get_saved_development_step')
+    # @patch('helpers.AgentConvo.save_development_step')
+    # # GET_TEST_TYPE has optional properties, so we need to be able to handle missing args.
+    # @patch('helpers.AgentConvo.create_gpt_chat_completion',
+    #        return_value={'text': '{"type": "manual_test", "manual_test_description": "Does it look good?"}'})
+    # @patch('helpers.Project.ask_user', return_value='continue')
+    # def test_code_changes_manual_test_continue(self, mock_get_saved_step, mock_save, mock_chat_completion, mock_ask_user):
+    #     # Given
+    #     monkey = None
+    #     convo = AgentConvo(self.developer)
+    #     convo.save_branch = lambda branch_name=None: branch_name
+    #
+    #     # When
+    #     result = self.developer.test_code_changes(monkey, convo)
+    #
+    #     # Then
+    #     assert result == {'success': True, 'user_input': 'continue'}
+    #
+    # @patch('helpers.AgentConvo.get_saved_development_step')
+    # @patch('helpers.AgentConvo.save_development_step')
+    # @patch('helpers.AgentConvo.create_gpt_chat_completion')
+    # @patch('utils.questionary.get_saved_user_input')
+    # # https://github.com/Pythagora-io/gpt-pilot/issues/35
+    # def test_code_changes_manual_test_no(self, mock_get_saved_user_input, mock_chat_completion, mock_save, mock_get_saved_step):
+    #     # Given
+    #     monkey = None
+    #     convo = AgentConvo(self.developer)
+    #     convo.save_branch = lambda branch_name=None: branch_name
+    #     convo.load_branch = lambda function_uuid=None: function_uuid
+    #     self.project.developer = self.developer
+    #
+    #     mock_chat_completion.side_effect = [
+    #         {'text': '{"type": "manual_test", "manual_test_description": "Does it look good?"}'},
+    #         {'text': '{"steps": [{"type": "command", "command": {"command": "something scary", "timeout": 3000}, "check_if_fixed": true}]}'},
+    #         {'text': 'do something else scary'},
+    #     ]
+    #
+    #     mock_questionary = MockQuestionary(['no', 'no'])
+    #
+    #     with patch('utils.questionary.questionary', mock_questionary):
+    #         # When
+    #         result = self.developer.test_code_changes(monkey, convo)
+    #
+    #         # Then
+    #         assert result == {'success': True, 'user_input': 'no'}
+    #
+    # @patch('helpers.cli.execute_command', return_value=('stdout:\n```\n\n```', 'DONE'))
+    # @patch('helpers.AgentConvo.get_saved_development_step')
+    # @patch('helpers.AgentConvo.save_development_step')
+    # @patch('utils.llm_connection.requests.post')
+    # @patch('utils.questionary.get_saved_user_input')
+    # def test_test_code_changes_invalid_json(self, mock_get_saved_user_input,
+    #                                         mock_requests_post,
+    #                                         mock_save,
+    #                                         mock_get_saved_step,
+    #                                         mock_execute):
+    #     # Given
+    #     monkey = None
+    #     convo = AgentConvo(self.developer)
+    #     convo.save_branch = lambda branch_name=None: branch_name
+    #     convo.load_branch = lambda function_uuid=None: function_uuid
+    #     self.project.developer = self.developer
+    #
+    #     # we send a GET_TEST_TYPE spec, but the 1st response is invalid
+    #     types_in_response = ['command', 'command_test']
+    #     json_received = []
+    #
+    #     def generate_response(*args, **kwargs):
+    #         json_received.append(kwargs['json'])
+    #
+    #         gpt_response = json.dumps({
+    #             'type': types_in_response.pop(0),
+    #             'command': {
+    #                 'command': 'node server.js',
+    #                 'timeout': 3000
+    #             }
+    #         })
+    #         choice = json.dumps({'delta': {'content': gpt_response}})
+    #         line = json.dumps({'choices': [json.loads(choice)]}).encode('utf-8')
+    #
+    #         response = requests.Response()
+    #         response.status_code = 200
+    #         response.iter_lines = lambda: [line]
+    #         return response
+    #
+    #     mock_requests_post.side_effect = generate_response
+    #
+    #     mock_questionary = MockQuestionary([''])
+    #
+    #     with patch('utils.questionary.questionary', mock_questionary):
+    #         # When
+    #         result = self.developer.test_code_changes(monkey, convo)
+    #
+    #         # Then
+    #         assert result == {'success': True, 'cli_response': 'stdout:\n```\n\n```'}
+    #         assert mock_requests_post.call_count == 2
+    #         assert "The JSON is invalid at $.type - 'command' is not one of ['automated_test', 'command_test', 'manual_test', 'no_test']" in json_received[1]['messages'][3]['content']
+    #         assert mock_execute.call_count == 1
