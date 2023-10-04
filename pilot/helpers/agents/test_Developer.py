@@ -163,6 +163,7 @@ class TestDeveloper:
             response = requests.Response()
             response.status_code = 200
             response.iter_lines = lambda: [line]
+            print(f'##### mock response: {response}')
             return response
 
         mock_requests_post.side_effect = generate_response

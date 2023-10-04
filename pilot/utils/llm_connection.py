@@ -266,6 +266,7 @@ def stream_gpt_completion(data, req_type, project):
 
     logger.info(f'> Request model: {model} ({data["model"]}) messages: {data["messages"]}')
 
+    logger.info(f'##### build endpoint...')
 
     if endpoint == 'AZURE':
         # If yes, get the AZURE_ENDPOINT from .ENV file
@@ -290,6 +291,8 @@ def stream_gpt_completion(data, req_type, project):
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + os.getenv('OPENAI_API_KEY')
         }
+
+    logger.info(f'##### 0.1, endpoint: {endpoint}, headers: {headers}')
 
     response = requests.post(
         endpoint_url,
