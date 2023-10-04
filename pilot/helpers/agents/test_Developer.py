@@ -42,9 +42,8 @@ class TestDeveloper:
     @patch('helpers.AgentConvo.save_development_step')
     @patch('helpers.AgentConvo.create_gpt_chat_completion',
            return_value={'text': '{"command": "python --version", "timeout": 10}'})
-    @patch('helpers.cli.styled_text', return_value='no')
     @patch('helpers.cli.execute_command', return_value=('', 'DONE'))
-    def test_install_technology(self, mock_execute_command, mock_styled_text,
+    def test_install_technology(self, mock_execute_command,
                                 mock_completion, mock_save, mock_get_saved_step):
         # Given
         self.developer.convo_os_specific_tech = AgentConvo(self.developer)
@@ -136,7 +135,8 @@ class TestDeveloper:
                                             mock_requests_post,
                                             mock_save,
                                             mock_get_saved_step,
-                                            mock_execute):
+                                            mock_execute,
+                                            monkeypatch):
         # Given
         monkey = None
         convo = AgentConvo(self.developer)
@@ -145,7 +145,7 @@ class TestDeveloper:
         self.project.developer = self.developer
 
         # we send a GET_TEST_TYPE spec, but the 1st response is invalid
-        types_in_response = ['command', 'command_test']
+        types_in_response = ['command', 'wrong_again', 'command_test']
         json_received = []
 
         def generate_response(*args, **kwargs):
@@ -164,18 +164,20 @@ class TestDeveloper:
             response = requests.Response()
             response.status_code = 200
             response.iter_lines = lambda: [line]
+            print(f'##### mock response: {response}')
             return response
 
         mock_requests_post.side_effect = generate_response
+        monkeypatch.setenv('OPENAI_API_KEY', 'secret')
 
         mock_questionary = MockQuestionary([''])
 
-        with patch('utils.questionary.questionary', mock_questionary):
-            # When
-            result = self.developer.test_code_changes(monkey, convo)
+        # with patch('utils.questionary.questionary', mock_questionary):
+        # When
+        result = self.developer.test_code_changes(monkey, convo)
 
-            # Then
-            assert result == {'success': True, 'cli_response': 'stdout:\n```\n\n```'}
-            assert mock_requests_post.call_count == 2
-            assert "The JSON is invalid at $.type - 'command' is not one of ['automated_test', 'command_test', 'manual_test', 'no_test']" in json_received[1]['messages'][3]['content']
-            assert mock_execute.call_count == 1
+        # Then
+        assert result == {'success': True, 'cli_response': 'stdout:\n```\n\n```'}
+        assert mock_requests_post.call_count == 3
+        assert "The JSON is invalid at $.type - 'command' is not one of ['automated_test', 'command_test', 'manual_test', 'no_test']" in json_received[1]['messages'][3]['content']
+        assert mock_execute.call_count == 1

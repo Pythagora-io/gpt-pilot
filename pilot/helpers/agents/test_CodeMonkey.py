@@ -1,6 +1,6 @@
 import re
 import os
-from unittest.mock import patch, Mock, MagicMock
+from unittest.mock import patch, MagicMock
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -41,7 +41,7 @@ class TestCodeMonkey:
         self.codeMonkey = CodeMonkey(self.project, developer=self.developer)
 
     @patch('helpers.AgentConvo.get_saved_development_step', return_value=None)
-    @patch('helpers.AgentConvo.save_development_step', return_value=None)
+    @patch('helpers.AgentConvo.save_development_step')
     @patch('os.get_terminal_size', mock_terminal_size)
     @patch.object(File, 'insert')
     def test_implement_code_changes(self, mock_get_dev, mock_save_dev, mock_file_insert):
@@ -78,8 +78,8 @@ class TestCodeMonkey:
                 assert (called_data['path'] == '/' or called_data['path'] == called_data['name'])
                 assert called_data['content'] == 'Washington'
 
-    @patch('helpers.AgentConvo.get_saved_development_step', return_value=None)
-    @patch('helpers.AgentConvo.save_development_step', return_value=None)
+    @patch('helpers.AgentConvo.get_saved_development_step')
+    @patch('helpers.AgentConvo.save_development_step')
     @patch('os.get_terminal_size', mock_terminal_size)
     @patch.object(File, 'insert')
     def test_implement_code_changes_with_read(self, mock_get_dev, mock_save_dev, mock_file_insert):
