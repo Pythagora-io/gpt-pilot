@@ -5,7 +5,6 @@ import pytest
 from unittest.mock import patch, Mock
 from dotenv import load_dotenv
 from jsonschema import ValidationError
-
 from const.function_calls import ARCHITECTURE, DEVELOPMENT_PLAN
 from helpers.AgentConvo import AgentConvo
 from helpers.Project import Project
@@ -14,12 +13,67 @@ from helpers.agents.TechLead import TechLead
 from utils.function_calling import parse_agent_response, FunctionType
 from test.test_utils import assert_non_empty_string
 from test.mock_questionary import MockQuestionary
-from utils.llm_connection import create_gpt_chat_completion, stream_gpt_completion, assert_json_response, assert_json_schema
+from utils.llm_connection import create_gpt_chat_completion, stream_gpt_completion, \
+    assert_json_response, assert_json_schema, clean_json_response
 from main import get_custom_print
 
 load_dotenv()
 
 project = Project({'app_id': 'test-app'}, current_step='test')
+
+
+def test_clean_json_response_True_False():
+    # Given a JSON response with Title Case True and False
+    response = '''
+```json
+{
+    "steps": [
+        {
+            "type": "command",
+            "command": {
+                "command": "git init",
+                "daemon": False,
+                "timeout": 3000,
+                "boolean": False
+            },
+            "another_True": True,
+            "check_if_fixed": True
+        }
+    ]
+}
+```
+'''
+
+    # When
+    response = clean_json_response(response)
+
+    # Then the markdown is removed
+    assert response.startswith('{')
+    assert response.endswith('}')
+    # And the booleans are converted to lowercase
+    assert '"daemon":false,' in response
+    assert '"boolean":false' in response
+    assert '"another_True":true,' in response
+    assert '"check_if_fixed":true' in response
+
+
+def test_clean_json_response_boolean_in_python():
+    # Given a JSON response with Python booleans in a content string
+    response = '''
+{
+    "type": "code_change",
+    "code_change": {
+        "name": "main.py",
+        "path": "./main.py",
+        "content": "json = {'is_true': True,\\n 'is_false': False}"
+    }
+}'''
+
+    # When
+    response = clean_json_response(response)
+
+    # Then the content string is left untouched
+    assert '"content": "json = {\'is_true\': True,\\n \'is_false\': False}"' in response
 
 
 class TestSchemaValidation:
