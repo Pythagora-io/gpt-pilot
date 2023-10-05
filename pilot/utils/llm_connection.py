@@ -147,6 +147,11 @@ def retry_on_exception(func):
     def wrapper(*args, **kwargs):
         # spinner = None
 
+        def update_error_count(args):
+            function_error_count = 1 if 'function_error' not in args[0] else args[0]['function_error_count'] + 1
+            args[0]['function_error_count'] = function_error_count
+            return function_error_count
+
         while True:
             try:
                 # spinner_stop(spinner)
@@ -155,16 +160,22 @@ def retry_on_exception(func):
                 # Convert exception to string
                 err_str = str(e)
 
-                # If the specific error "context_length_exceeded" is present, simply return without retry
                 if isinstance(e, json.JSONDecodeError):
-                    # codellama-34b-instruct seems to send incomplete JSON responses
-                    logger.info('Received incomplete JSON response from LLM. Asking for the rest...')
-                    args[0]['function_buffer'] = e.doc
-                    continue
+                    if 'Invalid' in e.msg:
+                        # 'Invalid control character at', 'Invalid \\escape'
+                        function_error_count = update_error_count(args)
+                        logger.warning('Received invalid character in JSON response from LLM. Asking to retry...')
+                        args[0]['function_error'] = err_str
+                        if function_error_count < 3:
+                            continue
+                    else:
+                        # 'Expecting value', 'Unterminated string starting at',
+                        # codellama-34b-instruct seems to send incomplete JSON responses
+                        logger.info('Received incomplete JSON response from LLM. Asking for the rest...')
+                        args[0]['function_buffer'] = e.doc
+                        continue
                 elif isinstance(e, ValidationError):
-                    function_error_count = 1 if 'function_error' not in args[0] else args[0]['function_error_count'] + 1
-                    args[0]['function_error_count'] = function_error_count
-
+                    function_error_count = update_error_count(args)
                     logger.warning('Received invalid JSON response from LLM. Asking to retry...')
                     logger.info(f'  at {e.json_path} {e.message}')
                     # eg:
@@ -176,6 +187,7 @@ def retry_on_exception(func):
                     if function_error_count < 3:
                         continue
                 if "context_length_exceeded" in err_str:
+                    # If the specific error "context_length_exceeded" is present, simply return without retry
                     # spinner_stop(spinner)
                     raise TokenLimitError(get_tokens_in_messages_from_openai_error(err_str), MAX_GPT_MODEL_TOKENS)
                 if "rate_limit_exceeded" in err_str:
