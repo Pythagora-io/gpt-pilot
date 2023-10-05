@@ -5,7 +5,7 @@ import threading
 import queue
 import time
 import platform
-from typing import Dict
+from typing import Dict, Union
 
 from logger.logger import logger
 from utils.style import yellow, green, red, yellow_bold, white_bold
@@ -322,7 +322,7 @@ def execute_command_and_check_cli_response(command, timeout, convo):
 
 
 def run_command_until_success(convo, command,
-                              timeout: int | None,
+                              timeout: Union[int, None],
                               process_name: str | None = None,
                               additional_message=None,
                               force=False,

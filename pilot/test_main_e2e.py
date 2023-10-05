@@ -26,9 +26,9 @@ def test_init():
 @pytest.mark.uses_tokens
 @pytest.mark.skip(reason="Uses lots of tokens")
 @pytest.mark.parametrize("endpoint, model", [
-    # ("OPENAI", "gpt-4"),
-    # ("OPENROUTER", "openai/gpt-3.5-turbo"),
-    # ("OPENROUTER", "meta-llama/codellama-34b-instruct"),
+    ("OPENAI", "gpt-4"),
+    ("OPENROUTER", "openai/gpt-3.5-turbo"),
+    ("OPENROUTER", "meta-llama/codellama-34b-instruct"),
     ("OPENROUTER", "google/palm-2-chat-bison"),
     ("OPENROUTER", "google/palm-2-codechat-bison"),
     # TODO: See https://github.com/1rgs/jsonformer-claude/blob/main/jsonformer_claude/main.py
