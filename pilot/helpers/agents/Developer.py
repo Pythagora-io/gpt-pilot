@@ -94,7 +94,7 @@ class Developer(Agent):
             data = step['command']
         # TODO END
         additional_message = 'Let\'s start with the step #0:\n\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i)) } are finished so let\'s do step #{i + 1} now.\n\n'
-        return run_command_until_success(data['command'], data['timeout'], convo, additional_message=additional_message)
+        return run_command_until_success(convo, data['command'], timeout=data['timeout'], additional_message=additional_message)
 
     def step_human_intervention(self, convo, step: dict):
         """
@@ -108,7 +108,14 @@ class Developer(Agent):
                                              if self.run_command is not None else step['human_intervention_description']
             response = self.project.ask_for_human_intervention('I need human intervention:',
                 human_intervention_description,
-                cbs={ 'r': lambda conv: run_command_until_success(self.run_command, None, conv, force=True, return_cli_response=True) },
+                cbs={
+                    'r': lambda conv: run_command_until_success(conv,
+                                                                self.run_command,
+                                                                process_name='app',
+                                                                timeout=None,
+                                                                force=True,
+                                                                return_cli_response=True)
+                },
                 convo=convo)
 
             if 'user_input' not in response:
@@ -136,6 +143,9 @@ class Developer(Agent):
             return { "success": llm_response == 'DONE', "cli_response": cli_response, "llm_response": llm_response }
 
     def task_postprocessing(self, convo, development_task, continue_development, task_result, last_branch_name):
+        # TODO: why does `run_command` belong to the Developer class, rather than just being passed?
+        #       ...It's set by execute_task() -> task_postprocessing(), but that is called by various sources.
+        #       What is it at step_human_intervention()?
         self.run_command = convo.send_message('development/get_run_command.prompt', {})
         if self.run_command.startswith('`'):
             self.run_command = self.run_command[1:]
@@ -273,9 +283,14 @@ class Developer(Agent):
                                '\nIf you want to run the app, ' + \
                                yellow_bold('just type "r" and press ENTER and that will run `' + self.run_command + '`')
             # continue_description = ''
+            # TODO: Wait for a specific string in the output or timeout?
             response = self.project.ask_for_human_intervention(
                 user_description,
-                cbs={ 'r': lambda convo: run_command_until_success(self.run_command, None, convo, force=True, return_cli_response=True, is_root_task=True) },
+                cbs={'r': lambda convo: run_command_until_success(convo, self.run_command,
+                                                                  process_name='app',
+                                                                  timeout=None,
+                                                                  force=True,
+                                                                  return_cli_response=True, is_root_task=True)},
                 convo=iteration_convo,
                 is_root_task=True)
 
@@ -349,7 +364,7 @@ class Developer(Agent):
 
                 if installation_commands is not None:
                     for cmd in installation_commands:
-                        run_command_until_success(cmd['command'], cmd['timeout'], self.convo_os_specific_tech)
+                        run_command_until_success(self.convo_os_specific_tech, cmd['command'], timeout=cmd['timeout'])
 
         logger.info('The entire tech stack is installed and ready to be used.')
 
@@ -398,7 +413,7 @@ class Developer(Agent):
         test_type, description = convo.send_message('development/task/step_check.prompt', {}, GET_TEST_TYPE)
 
         if test_type == 'command_test':
-            return run_command_until_success(description['command'], description['timeout'], convo)
+            return run_command_until_success(convo, description['command'], timeout=description['timeout'])
         elif test_type == 'automated_test':
             # TODO get code monkey to implement the automated test
             pass
@@ -429,7 +444,7 @@ class Developer(Agent):
         }, EXECUTE_COMMANDS)
         if type == 'COMMAND':
             for cmd in step_details:
-                run_command_until_success(cmd['command'], cmd['timeout'], convo)
+                run_command_until_success(convo, cmd['command'], timeout=cmd['timeout'])
         # elif type == 'CODE_CHANGE':
         #     code_changes_details = get_step_code_changes()
         #     # TODO: give to code monkey for implementation

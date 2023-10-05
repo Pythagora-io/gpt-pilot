@@ -262,7 +262,8 @@ def stream_gpt_completion(data, req_type, project):
     model = os.getenv('MODEL_NAME', 'gpt-4')
     endpoint = os.getenv('ENDPOINT')
 
-    logger.info(f'> Request model: {model} ({data["model"]}) messages: {data["messages"]}')
+    logger.info(f'> Request model: {model} ({data["model"]})\n'
+                + '\n'.join([f"{message['role']}: {message['content']}" for message in data['messages']]))
 
     if endpoint == 'AZURE':
         # If yes, get the AZURE_ENDPOINT from .ENV file

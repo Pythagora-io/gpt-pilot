@@ -3,6 +3,7 @@ import os
 import hashlib
 import requests
 
+from helpers.cli import terminate_running_processes
 from utils.questionary import get_user_feedback
 
 
@@ -43,6 +44,7 @@ def get_path_id():
 
 
 def exit_gpt_pilot(ask_feedback=True):
+    terminate_running_processes()
     path_id = get_path_id()
     send_telemetry(path_id)
 

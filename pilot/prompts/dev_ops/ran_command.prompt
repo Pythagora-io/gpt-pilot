@@ -1,4 +1,6 @@
-{{ additional_info }}I ran the command `{{ command }}` and for this response from CLI:
+{{ additional_info }}I ran the command `{{ command }}`
+{%- if exit_code %}, the exit code was {{ exit_code }} {% endif -%}
+and the output was:
 ```
 {{ cli_response }}
 ```
