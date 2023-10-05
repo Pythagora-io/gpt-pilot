@@ -58,7 +58,7 @@ The development process will include the creation of user stories and tasks, bas
 
         mock_questionary = MockQuestionary(['', '', 'no'])
 
-        with patch('utils.llm_connection.questionary', mock_questionary):
+        with patch('utils.questionary.questionary', mock_questionary):
             # When
             development_plan = self.techLead.create_development_plan()
 
