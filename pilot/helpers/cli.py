@@ -323,7 +323,7 @@ def execute_command_and_check_cli_response(command, timeout, convo):
 
 def run_command_until_success(convo, command,
                               timeout: Union[int, None],
-                              process_name: str | None = None,
+                              process_name: Union[str, None] = None,
                               additional_message=None,
                               force=False,
                               return_cli_response=False,
