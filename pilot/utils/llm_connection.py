@@ -144,14 +144,19 @@ def get_tokens_in_messages_from_openai_error(error_message):
 
 
 def retry_on_exception(func):
+    def update_error_count(args):
+        function_error_count = 1 if 'function_error' not in args[0] else args[0]['function_error_count'] + 1
+        args[0]['function_error_count'] = function_error_count
+        return function_error_count
+
+    def set_function_error(args, err_str: str):
+        logger.info(err_str)
+
+        args[0]['function_error'] = err_str
+        if 'function_buffer' in args[0]:
+            del args[0]['function_buffer']
+
     def wrapper(*args, **kwargs):
-        # spinner = None
-
-        def update_error_count(args):
-            function_error_count = 1 if 'function_error' not in args[0] else args[0]['function_error_count'] + 1
-            args[0]['function_error_count'] = function_error_count
-            return function_error_count
-
         while True:
             try:
                 # spinner_stop(spinner)
@@ -161,28 +166,41 @@ def retry_on_exception(func):
                 err_str = str(e)
 
                 if isinstance(e, json.JSONDecodeError):
-                    if 'Invalid' in e.msg:
-                        # 'Invalid control character at', 'Invalid \\escape'
-                        function_error_count = update_error_count(args)
-                        logger.warning('Received invalid character in JSON response from LLM. Asking to retry...')
-                        args[0]['function_error'] = err_str
-                        if function_error_count < 3:
+                    # codellama-34b-instruct seems to send incomplete JSON responses.
+                    # We ask for the rest of the JSON object for the following errors:
+                    # - 'Expecting value' (error if `e.pos` not at the end of the doc: True instead of true)
+                    # - "Expecting ':' delimiter"
+                    # - 'Expecting property name enclosed in double quotes'
+                    # - 'Unterminated string starting at'
+                    if e.msg.startswith('Expecting') or e.msg == 'Unterminated string starting at':
+                        if e.msg == 'Expecting value' and len(e.doc) > e.pos:
+                            # TODO: attempt to heal True/False boolean values
+                            # if e.doc[e.pos] == '{':
+                            err_str = re.split(r'[},\\n]', e.doc[e.pos:])[0]
+                            err_str = f'Invalid value: `{err_str}`'
+                        else:
+                            # if e.msg == 'Unterminated string starting at' or len(e.doc) == e.pos:
+                            logger.info('Received incomplete JSON response from LLM. Asking for the rest...')
+                            args[0]['function_buffer'] = e.doc
+                            if 'function_error' in args[0]:
+                                del args[0]['function_error']
                             continue
-                    else:
-                        # 'Expecting value', 'Unterminated string starting at',
-                        # codellama-34b-instruct seems to send incomplete JSON responses
-                        logger.info('Received incomplete JSON response from LLM. Asking for the rest...')
-                        args[0]['function_buffer'] = e.doc
+
+                    # TODO: (if it ever comes up) e.msg == 'Extra data' -> trim the response
+                    # 'Invalid control character at', 'Invalid \\escape', 'Invalid control character',
+                    # or `Expecting value` with `pos` before the end of `e.doc`
+                    function_error_count = update_error_count(args)
+                    logger.warning('Received invalid character in JSON response from LLM. Asking to retry...')
+                    set_function_error(args, err_str)
+                    if function_error_count < 3:
                         continue
                 elif isinstance(e, ValidationError):
                     function_error_count = update_error_count(args)
                     logger.warning('Received invalid JSON response from LLM. Asking to retry...')
-                    logger.info(f'  at {e.json_path} {e.message}')
                     # eg:
                     # json_path: '$.type'
                     # message:   "'command' is not one of ['automated_test', 'command_test', 'manual_test', 'no_test']"
-                    args[0]['function_error'] = f'at {e.json_path} - {e.message}'
-
+                    set_function_error(args, f'at {e.json_path} - {e.message}')
                     # Attempt retry if the JSON schema is invalid, but avoid getting stuck in a loop
                     if function_error_count < 3:
                         continue

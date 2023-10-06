@@ -14,7 +14,7 @@ from utils.function_calling import parse_agent_response, FunctionType
 from test.test_utils import assert_non_empty_string
 from test.mock_questionary import MockQuestionary
 from utils.llm_connection import create_gpt_chat_completion, stream_gpt_completion, \
-    assert_json_response, assert_json_schema, clean_json_response
+    assert_json_response, assert_json_schema, clean_json_response, retry_on_exception
 from main import get_custom_print
 
 load_dotenv()
@@ -76,6 +76,215 @@ def test_clean_json_response_boolean_in_python():
     assert '"content": "json = {\'is_true\': True,\\n \'is_false\': False}"' in response
 
 
+@patch('utils.llm_connection.styled_text', return_value='')
+class TestRetryOnException:
+    def setup_method(self):
+        self.function: FunctionType = {
+            'name': 'test',
+            'description': 'test schema',
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'foo': {'type': 'string'},
+                    'boolean': {'type': 'boolean'},
+                    'items': {'type': 'array'}
+                },
+                'required': ['foo']
+            }
+        }
+
+    def _create_wrapped_function(self, json_responses: list[str]):
+        args = {}, 'test', project
+
+        def retryable_assert_json_schema(data, _req_type, _project):
+            json_string = json_responses.pop(0)
+            if 'function_buffer' in data:
+                json_string = data['function_buffer'] + json_string
+            assert_json_schema(json_string, [self.function])
+            return json_string
+
+        return retry_on_exception(retryable_assert_json_schema), args
+
+    def test_incomplete_value_string(self, mock_styled_text):
+        # Given incomplete JSON
+        wrapper, args = self._create_wrapped_function(['{"foo": "bar', '"}'])
+
+        # When
+        response = wrapper(*args)
+
+        # Then should tell the LLM the JSON response is incomplete and to continue
+        # 'Unterminated string starting at'
+        assert response == '{"foo": "bar"}'
+        assert 'function_error' not in args[0]
+        # And the user should not need to be notified
+        assert mock_styled_text.call_count == 0
+
+    def test_incomplete_key(self, mock_styled_text):
+        # Given invalid JSON boolean
+        wrapper, args = self._create_wrapped_function([
+            '{"foo',
+            '": "bar"}'
+        ])
+
+        # When
+        response = wrapper(*args)
+
+        # Then should tell the LLM the JSON response is incomplete and to continue
+        # 'Unterminated string starting at: line 1 column 2 (char 1)'
+        assert response == '{"foo": "bar"}'
+        assert 'function_error' not in args[0]
+        # And the user should not need to be notified
+        assert mock_styled_text.call_count == 0
+
+    def test_incomplete_value_missing(self, mock_styled_text):
+        # Given invalid JSON boolean
+        wrapper, args = self._create_wrapped_function([
+            '{"foo":',
+            ' "bar"}'
+        ])
+
+        # When
+        response = wrapper(*args)
+
+        # Then should tell the LLM the JSON response is incomplete and to continue
+        # 'Expecting value: line 1 column 8 (char 7)'
+        assert response == '{"foo": "bar"}'
+        assert 'function_error' not in args[0]
+        # And the user should not need to be notified
+        assert mock_styled_text.call_count == 0
+
+    def test_invalid_boolean(self, mock_styled_text):
+        # Given invalid JSON boolean
+        wrapper, args = self._create_wrapped_function([
+            '{"foo": "bar", "boolean": True}',
+            '{"foo": "bar", "boolean": True}',
+            '{"foo": "bar", "boolean": True}',
+            '{"foo": "bar", "boolean": true}',
+        ])
+
+        # When
+        response = wrapper(*args)
+
+        # Then should tell the LLM there is an error in the JSON response
+        # 'Expecting value: line 1 column 13 (char 12)'
+        assert response == '{"foo": "bar", "boolean": true}'
+        assert args[0]['function_error'] == 'Invalid value: `True`'
+        assert 'function_buffer' not in args[0]
+        # And the user should not need to be notified
+        assert mock_styled_text.call_count == 1
+
+    def test_invalid_escape(self, mock_styled_text):
+        # Given invalid JSON boolean
+        wrapper, args = self._create_wrapped_function([
+            '{"foo": "\\!"}',
+            '{"foo": "\\xBADU"}',
+            '{"foo": "\\xd800"}',
+            '{"foo": "bar"}',
+        ])
+
+        # When
+        response = wrapper(*args)
+
+        # Then should tell the LLM there is an error in the JSON response
+        # 'Invalid \\escape: line 1 column 10 (char 9)'
+        assert response == '{"foo": "bar"}'
+        assert len(args[0]['function_error']) > 0
+        assert 'function_buffer' not in args[0]
+        # And the user should not need to be notified
+        assert mock_styled_text.call_count == 1
+
+    def test_incomplete_json_item(self, mock_styled_text):
+        # Given incomplete JSON
+        wrapper, args = self._create_wrapped_function([
+            '{"foo": "bar",',
+            ' "boolean"',
+            ': true}'])
+
+        # When
+        response = wrapper(*args)
+
+        # Then should tell the LLM the JSON response is incomplete and to continue
+        # 'Expecting property name enclosed in double quotes: line 1 column 15 (char 14)'
+        # "Expecting ':' delimiter: line 1 column 25 (char 24)"
+        assert response == '{"foo": "bar", "boolean": true}'
+        assert 'function_error' not in args[0]
+        # And the user should not need to be notified
+        assert mock_styled_text.call_count == 0
+
+    def test_incomplete_json_array(self, mock_styled_text):
+        # Given incomplete JSON
+        wrapper, args = self._create_wrapped_function([
+            '{"foo": "bar", "items": [1, 2, 3, "4"',
+            ', 5]}'])
+
+        # When
+        response = wrapper(*args)
+
+        # Then should tell the LLM the JSON response is incomplete and to continue
+        # "Expecting ',' delimiter: line 1 column 24 (char 23)"
+        assert response == '{"foo": "bar", "items": [1, 2, 3, "4", 5]}'
+        assert 'function_error' not in args[0]
+        # And the user should not need to be notified
+        assert mock_styled_text.call_count == 0
+
+    def test_incomplete_then_invalid_by_schema(self, mock_styled_text):
+        # Given incomplete JSON
+        wrapper, args = self._create_wrapped_function([
+            '{"items": [1, 2, 3, "4"',
+            ', 5]}',
+            # Please try again with a valid JSON object, referring to the previous JSON schema I provided above
+            '{"foo": "bar",',
+            ' "items": [1, 2, 3, "4"',
+            ', 5]}'
+        ])
+
+        # When
+        response = wrapper(*args)
+
+        # Then should tell the LLM the JSON response is incomplete and to continue
+        # "Expecting ',' delimiter: line 1 column 24 (char 23)"
+        # "'foo' is a required property"
+        assert response == '{"foo": "bar", "items": [1, 2, 3, "4", 5]}'
+        assert 'function_error' not in args[0]
+        # And the user should not need to be notified
+        assert mock_styled_text.call_count == 0
+
+    def test_invalid_boolean_max_retries(self, mock_styled_text):
+        # Given invalid JSON boolean
+        wrapper, args = self._create_wrapped_function([
+            '{"boolean": True, "foo": "bar"}',
+            '{"boolean": True,\n "foo": "bar"}',
+            '{"boolean": True}',
+            '{"boolean": true, "foo": "bar"}',
+        ])
+
+        # When
+        response = wrapper(*args)
+
+        # Then should tell the LLM there is an error in the JSON response
+        assert response == '{"boolean": true, "foo": "bar"}'
+        assert args[0]['function_error'] == 'Invalid value: `True`'
+        assert mock_styled_text.call_count == 1
+
+    def test_extra_data(self, mock_styled_text):
+        # Given invalid JSON boolean
+        wrapper, args = self._create_wrapped_function([
+            '{"boolean": true, "foo": "bar"}\n I hope that helps',
+            '{"boolean": true, "foo": "bar"}\n I hope that helps',
+            '{"boolean": true, "foo": "bar"}\n I hope that helps',
+            '{"boolean": true, "foo": "bar"}',
+        ])
+
+        # When
+        response = wrapper(*args)
+
+        # Then should tell the LLM there is an error in the JSON response
+        assert response == '{"boolean": true, "foo": "bar"}'
+        # assert len(args[0]['function_error']) > 0
+        assert args[0]['function_error'] == 'Extra data: line 2 column 2 (char 33)'
+        assert mock_styled_text.call_count == 1
+
+
 class TestSchemaValidation:
     def setup_method(self):
         self.function: FunctionType = {
@@ -101,17 +310,17 @@ class TestSchemaValidation:
         # Then no errors
         assert(assert_json_schema('{"foo": "bar"}', [self.function]))
 
-    def test_assert_json_schema_invalid(self):
-        # When assert_json_schema is called with invalid JSON
-        # Then error is raised
-        with pytest.raises(ValidationError, match="1 is not of type 'string'"):
-            assert_json_schema('{"foo": 1}', [self.function])
-
     def test_assert_json_schema_incomplete(self):
         # When assert_json_schema is called with incomplete JSON
         # Then error is raised
         with pytest.raises(JSONDecodeError):
             assert_json_schema('{"foo": "b', [self.function])
+
+    def test_assert_json_schema_invalid(self):
+        # When assert_json_schema is called with invalid JSON
+        # Then error is raised
+        with pytest.raises(ValidationError, match="1 is not of type 'string'"):
+            assert_json_schema('{"foo": 1}', [self.function])
 
     def test_assert_json_schema_required(self):
         # When assert_json_schema is called with missing required property
