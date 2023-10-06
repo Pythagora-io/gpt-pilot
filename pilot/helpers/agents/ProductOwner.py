@@ -21,7 +21,6 @@ class ProductOwner(Agent):
 
     def get_project_description(self):
         # TODO: why save the project before user has even committed to a name & description?
-        # The UI saves a record as soon as the click "Create Project" button
 
         # If this app_id already did this step, just get all data from DB and don't ask user again
         step = get_progress_steps(self.project.args['app_id'], PROJECT_DESCRIPTION_STEP)
@@ -32,6 +31,7 @@ class ProductOwner(Agent):
             self.project.project_description_messages = step['messages']
             return
 
+        # The UI saves a record as soon as the click "Create Project" button
         self.project.app = save_app(self.project)
         self.project.current_step = PROJECT_DESCRIPTION_STEP
 
