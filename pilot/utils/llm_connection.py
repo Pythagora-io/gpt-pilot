@@ -11,7 +11,7 @@ from jsonschema import validate, ValidationError
 from utils.style import red
 from typing import List
 from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS
-from logger.logger import logger
+from logger.logger import logger, logging
 from helpers.exceptions import TokenLimitError, ApiKeyNotDefinedError
 from utils.utils import fix_json, get_prompt
 from utils.function_calling import add_function_calls_to_request, FunctionCallSet, FunctionType
@@ -144,9 +144,19 @@ def get_tokens_in_messages_from_openai_error(error_message):
 
 
 def retry_on_exception(func):
-    def wrapper(*args, **kwargs):
-        # spinner = None
+    def update_error_count(args):
+        function_error_count = 1 if 'function_error' not in args[0] else args[0]['function_error_count'] + 1
+        args[0]['function_error_count'] = function_error_count
+        return function_error_count
 
+    def set_function_error(args, err_str: str):
+        logger.info(err_str)
+
+        args[0]['function_error'] = err_str
+        if 'function_buffer' in args[0]:
+            del args[0]['function_buffer']
+
+    def wrapper(*args, **kwargs):
         while True:
             try:
                 # spinner_stop(spinner)
@@ -155,28 +165,46 @@ def retry_on_exception(func):
                 # Convert exception to string
                 err_str = str(e)
 
-                # If the specific error "context_length_exceeded" is present, simply return without retry
                 if isinstance(e, json.JSONDecodeError):
-                    # codellama-34b-instruct seems to send incomplete JSON responses
-                    if e.msg == 'Expecting value':
-                        logger.info('Received incomplete JSON response from LLM. Asking for the rest...')
-                        args[0]['function_buffer'] = e.doc
+                    # codellama-34b-instruct seems to send incomplete JSON responses.
+                    # We ask for the rest of the JSON object for the following errors:
+                    # - 'Expecting value' (error if `e.pos` not at the end of the doc: True instead of true)
+                    # - "Expecting ':' delimiter"
+                    # - 'Expecting property name enclosed in double quotes'
+                    # - 'Unterminated string starting at'
+                    if e.msg.startswith('Expecting') or e.msg == 'Unterminated string starting at':
+                        if e.msg == 'Expecting value' and len(e.doc) > e.pos:
+                            # Note: clean_json_response() should heal True/False boolean values
+                            err_str = re.split(r'[},\\n]', e.doc[e.pos:])[0]
+                            err_str = f'Invalid value: `{err_str}`'
+                        else:
+                            # if e.msg == 'Unterminated string starting at' or len(e.doc) == e.pos:
+                            logger.info('Received incomplete JSON response from LLM. Asking for the rest...')
+                            args[0]['function_buffer'] = e.doc
+                            if 'function_error' in args[0]:
+                                del args[0]['function_error']
+                            continue
+
+                    # TODO: (if it ever comes up) e.msg == 'Extra data' -> trim the response
+                    # 'Invalid control character at', 'Invalid \\escape', 'Invalid control character',
+                    # or `Expecting value` with `pos` before the end of `e.doc`
+                    function_error_count = update_error_count(args)
+                    logger.warning('Received invalid character in JSON response from LLM. Asking to retry...')
+                    set_function_error(args, err_str)
+                    if function_error_count < 3:
                         continue
                 elif isinstance(e, ValidationError):
-                    function_error_count = 1 if 'function_error' not in args[0] else args[0]['function_error_count'] + 1
-                    args[0]['function_error_count'] = function_error_count
-
+                    function_error_count = update_error_count(args)
                     logger.warning('Received invalid JSON response from LLM. Asking to retry...')
-                    logger.info(f'  at {e.json_path} {e.message}')
                     # eg:
                     # json_path: '$.type'
                     # message:   "'command' is not one of ['automated_test', 'command_test', 'manual_test', 'no_test']"
-                    args[0]['function_error'] = f'at {e.json_path} - {e.message}'
-
+                    set_function_error(args, f'at {e.json_path} - {e.message}')
                     # Attempt retry if the JSON schema is invalid, but avoid getting stuck in a loop
                     if function_error_count < 3:
                         continue
                 if "context_length_exceeded" in err_str:
+                    # If the specific error "context_length_exceeded" is present, simply return without retry
                     # spinner_stop(spinner)
                     raise TokenLimitError(get_tokens_in_messages_from_openai_error(err_str), MAX_GPT_MODEL_TOKENS)
                 if "rate_limit_exceeded" in err_str:
@@ -263,7 +291,9 @@ def stream_gpt_completion(data, req_type, project):
     model = os.getenv('MODEL_NAME', 'gpt-4')
     endpoint = os.getenv('ENDPOINT')
 
-    logger.info(f'> Request model: {model} ({data["model"]}) messages: {data["messages"]}')
+    logger.info(f'> Request model: {model} ({data["model"]} in data)')
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug('\n'.join([f"{message['role']}: {message['content']}" for message in data['messages']]))
 
     if endpoint == 'AZURE':
         # If yes, get the AZURE_ENDPOINT from .ENV file
@@ -372,7 +402,7 @@ def stream_gpt_completion(data, req_type, project):
     #     logger.info(f'Response via function call: {function_calls["arguments"]}')
     #     function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
     #     return return_result({'function_calls': function_calls}, lines_printed)
-    logger.info(f'< Response message: {gpt_response}')
+    logger.info('<<<<<<<<<< LLM Response <<<<<<<<<<\n%s\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<', gpt_response)
 
     if expecting_json:
         gpt_response = clean_json_response(gpt_response)
@@ -401,6 +431,8 @@ def assert_json_response(response: str, or_fail=True) -> bool:
 
 def clean_json_response(response: str) -> str:
     response = re.sub(r'^.*```json\s*', '', response, flags=re.DOTALL)
+    response = re.sub(r': ?True(,)?$', r':true\1', response, flags=re.MULTILINE)
+    response = re.sub(r': ?False(,)?$', r':false\1', response, flags=re.MULTILINE)
     return response.strip('` \n')
 
 

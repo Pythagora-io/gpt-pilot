@@ -42,7 +42,7 @@ class TestDeveloper:
     @patch('helpers.AgentConvo.save_development_step')
     @patch('helpers.AgentConvo.create_gpt_chat_completion',
            return_value={'text': '{"command": "python --version", "timeout": 10}'})
-    @patch('helpers.cli.execute_command', return_value=('', 'DONE'))
+    @patch('helpers.cli.execute_command', return_value=('', 'DONE', None))
     def test_install_technology(self, mock_execute_command,
                                 mock_completion, mock_save, mock_get_saved_step):
         # Given
@@ -61,7 +61,7 @@ class TestDeveloper:
     @patch('helpers.AgentConvo.create_gpt_chat_completion',
            return_value={'text': '{"type": "command_test", "command": {"command": "npm run test", "timeout": 3000}}'})
     # 2nd arg of return_value: `None` to debug, 'DONE' if successful
-    @patch('helpers.cli.execute_command', return_value=('stdout:\n```\n\n```', 'DONE'))
+    @patch('helpers.cli.execute_command', return_value=('stdout:\n```\n\n```', 'DONE', None))
     # @patch('helpers.cli.ask_user', return_value='yes')
     # @patch('helpers.cli.get_saved_command_run')
     def test_code_changes_command_test(self, mock_get_saved_step, mock_save, mock_chat_completion,
@@ -126,7 +126,7 @@ class TestDeveloper:
             # Then
             assert result == {'success': True, 'user_input': 'no'}
 
-    @patch('helpers.cli.execute_command', return_value=('stdout:\n```\n\n```', 'DONE'))
+    @patch('helpers.cli.execute_command', return_value=('stdout:\n```\n\n```', 'DONE', None))
     @patch('helpers.AgentConvo.get_saved_development_step')
     @patch('helpers.AgentConvo.save_development_step')
     @patch('utils.llm_connection.requests.post')

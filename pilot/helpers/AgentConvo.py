@@ -29,7 +29,10 @@ class AgentConvo:
         self.high_level_step = self.agent.project.current_step
 
         # add system message
-        self.messages.append(get_sys_message(self.agent.role))
+        system_message = get_sys_message(self.agent.role)
+        logger.info('\n>>>>>>>>>> System Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',
+                    system_message['content'])
+        self.messages.append(system_message)
 
     def send_message(self, prompt_path=None, prompt_data=None, function_calls: FunctionCallSet = None):
         """
@@ -80,7 +83,7 @@ class AgentConvo:
 
         # TODO handle errors from OpenAI
         if response == {}:
-            logger.error(f'Aborting with "OpenAI API error happened": {response}')
+            logger.error(f'Aborting with "OpenAI API error happened"')
             raise Exception("OpenAI API error happened.")
 
         response = parse_agent_response(response, function_calls)
@@ -103,6 +106,7 @@ class AgentConvo:
 
         # TODO we need to specify the response when there is a function called
         # TODO maybe we can have a specific function that creates the GPT response from the function call
+        logger.info('\n>>>>>>>>>> Assistant Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', message_content)
         self.messages.append({"role": "assistant", "content": message_content})
         self.log_message(message_content)
 
@@ -133,6 +137,7 @@ class AgentConvo:
             if user_message == "":
                 accepted_messages.append(response)
 
+            logger.info('\n>>>>>>>>>> User Message >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', user_message)
             self.messages.append({"role": "user", "content": user_message})
             response = self.send_message(None, None, function_calls)
 
@@ -202,4 +207,5 @@ class AgentConvo:
     def construct_and_add_message_from_prompt(self, prompt_path, prompt_data):
         if prompt_path is not None and prompt_data is not None:
             prompt = get_prompt(prompt_path, prompt_data)
+            logger.info('\n>>>>>>>>>> User Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', prompt)
             self.messages.append({"role": "user", "content": prompt})

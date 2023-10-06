@@ -5,6 +5,7 @@ import threading
 import queue
 import time
 import platform
+from typing import Dict, Union
 
 from logger.logger import logger
 from utils.style import yellow, green, red, yellow_bold, white_bold
@@ -16,6 +17,9 @@ from const.code_execution import MIN_COMMAND_RUN_TIME, MAX_COMMAND_RUN_TIME, MAX
 
 interrupted = False
 
+running_processes: Dict[str, int] = {}
+"""Holds a list of process IDs, mapped to the `process_name` provided in the call to `execute_command()`."""
+
 
 def enqueue_output(out, q):
     for line in iter(out.readline, ''):
@@ -25,7 +29,7 @@ def enqueue_output(out, q):
     out.close()
 
 
-def run_command(command, root_path, q_stdout, q_stderr, pid_container):
+def run_command(command, root_path, q_stdout, q_stderr) -> subprocess.Popen:
     """
     Execute a command in a subprocess.
 
@@ -34,12 +38,11 @@ def run_command(command, root_path, q_stdout, q_stderr, pid_container):
         root_path (str): The directory in which to run the command.
         q_stdout (Queue): A queue to capture stdout.
         q_stderr (Queue): A queue to capture stderr.
-        pid_container (list): A list to store the process ID.
 
     Returns:
         subprocess.Popen: The subprocess object.
     """
-    logger.info(f'Running `{command}`')
+    logger.info(f'Running `{command}` on {platform.system()}')
     if platform.system() == 'Windows':  # Check the operating system
         process = subprocess.Popen(
             command,
@@ -60,7 +63,6 @@ def run_command(command, root_path, q_stdout, q_stderr, pid_container):
             cwd=root_path
         )
 
-    pid_container[0] = process.pid
     t_stdout = threading.Thread(target=enqueue_output, args=(process.stdout, q_stdout))
     t_stderr = threading.Thread(target=enqueue_output, args=(process.stderr, q_stderr))
     t_stdout.daemon = True
@@ -70,7 +72,22 @@ def run_command(command, root_path, q_stdout, q_stderr, pid_container):
     return process
 
 
-def terminate_process(pid):
+def terminate_named_process(process_name: str) -> None:
+    if process_name in running_processes:
+        terminate_process(running_processes[process_name], process_name)
+
+
+def terminate_running_processes():
+    for process_name in list(running_processes.keys()):
+        terminate_process(running_processes[process_name], process_name)
+
+
+def terminate_process(pid: int, name=None) -> None:
+    if name is None:
+        logger.info('Terminating process %s', pid)
+    else:
+        logger.info('Terminating process "%s" (pid: %s)', name, pid)
+
     if platform.system() == "Windows":
         try:
             subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)])
@@ -82,8 +99,12 @@ def terminate_process(pid):
         except OSError as e:
             logger.error(f'Error while terminating process: {e}')
 
+    for process_name in list(running_processes.keys()):
+        if running_processes[process_name] == pid:
+            del running_processes[process_name]
 
-def execute_command(project, command, timeout=None, force=False):
+
+def execute_command(project, command, timeout=None, process_name: str = None, force=False):
     """
     Execute a command and capture its output.
 
@@ -91,6 +112,8 @@ def execute_command(project, command, timeout=None, force=False):
         project: The project associated with the command.
         command (str): The command to run.
         timeout (int, optional): The maximum execution time in milliseconds. Default is None.
+        process_name (str, optional): A name for the process.
+                            If `timeout` is not provided, can be used to terminate the process.
         force (bool, optional): Whether to execute the command without confirmation. Default is False.
 
     Returns:
@@ -98,36 +121,41 @@ def execute_command(project, command, timeout=None, force=False):
                             or: '', 'DONE' if user answered 'no' or 'skip'
         llm_response (str): The response from the agent.
                             TODO: this seems to be 'DONE' (no or skip) or None
+        exit_code (int): The exit code of the process.
     """
     if timeout is not None:
-        if timeout < 1000:
-            timeout *= 1000
-        timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
+        if timeout < 0:
+            timeout = None
+        else:
+            if timeout < 1000:
+                timeout *= 1000
+
+            timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
 
     if not force:
         print(yellow_bold(f'\n--------- EXECUTE COMMAND ----------'))
-        answer = ask_user(
-            project,
-            f'Can I execute the command: `' + yellow_bold(command) + f'` with {timeout}ms timeout?',
-            False,
-            hint='If yes, just press ENTER'
-        )
+        question = f'Can I execute the command: `{yellow_bold(command)}`'
+        if timeout is not None:
+            question += f' with {timeout}ms timeout?'
+        else:
+            question += '?'
+
+        answer = ask_user(project, question, False, hint='If yes, just press ENTER')
 
         # TODO: I think AutoGPT allows other feedback here, like:
         #       "That's not going to work, let's do X instead"
         #       We don't explicitly make "no" or "skip" options to the user
         #       see https://github.com/Pythagora-io/gpt-pilot/issues/122
+        print('answer: ' + answer)
         if answer == 'no':
-            return '', 'DONE'
+            return '', 'DONE', None
         elif answer == 'skip':
-            return '', 'DONE'
-
+            return '', 'DONE', None
 
     # TODO when a shell built-in commands (like cd or source) is executed, the output is not captured properly - this will need to be changed at some point
     # TODO: Windows support
     if "cd " in command or "source " in command:
         command = "bash -c '" + command + "'"
-
 
     project.command_runs_count += 1
     command_run = get_saved_command_run(project, command)
@@ -135,21 +163,31 @@ def execute_command(project, command, timeout=None, force=False):
         # if we do, use it
         project.checkpoints['last_command_run'] = command_run
         print(yellow(f'Restoring command run response id {command_run.id}:\n```\n{command_run.cli_response}```'))
-        return command_run.cli_response, None
+        return command_run.cli_response, None, None
 
     return_value = None
 
     q_stderr = queue.Queue()
     q = queue.Queue()
     pid_container = [None]
-    process = run_command(command, project.root_path, q, q_stderr, pid_container)
+    process = run_command(command, project.root_path, q, q_stderr)
+
+    if process_name is not None:
+        terminate_named_process(process_name)
+        running_processes[process_name] = process.pid
+
     output = ''
     stderr_output = ''
     start_time = time.time()
     interrupted = False
 
+    # Note: If we don't need to log the output in real-time, we can remove q, q_stderr, the threads and this while loop.
+    # if timeout is not None:
+    #     timeout /= 1000
+    # output, stderr_output = process.communicate(timeout=timeout)
+
     try:
-        while True and return_value is None:
+        while True:
             elapsed_time = time.time() - start_time
             if timeout is not None:
                 # TODO: print to IPC using a different message type so VS Code can ignore it or update the previous value
@@ -158,7 +196,7 @@ def execute_command(project, command, timeout=None, force=False):
             # Check if process has finished
             if process.poll() is not None:
                 # Get remaining lines from the queue
-                time.sleep(0.1) # TODO this shouldn't be used
+                time.sleep(0.1)  # TODO this shouldn't be used
                 while not q.empty():
                     output_line = q.get_nowait()
                     if output_line not in output:
@@ -170,7 +208,7 @@ def execute_command(project, command, timeout=None, force=False):
             # If timeout is reached, kill the process
             if timeout is not None and elapsed_time * 1000 > timeout:
                 raise TimeoutError("Command exceeded the specified timeout.")
-                # os.killpg(pid_container[0], signal.SIGKILL)
+                # os.killpg(process.pid, signal.SIGKILL)
                 # break
 
             try:
@@ -193,6 +231,10 @@ def execute_command(project, command, timeout=None, force=False):
                 stderr_output += stderr_line
                 print(red('CLI ERROR:') + stderr_line, end='')  # Print with different color for distinction
                 logger.error('CLI ERROR: ' + stderr_line)
+                
+            if process_name is not None:
+                logger.info(f'Process {process_name} running as pid: {process.pid}')
+                break
 
     except (KeyboardInterrupt, TimeoutError) as e:
         interrupted = True
@@ -203,7 +245,11 @@ def execute_command(project, command, timeout=None, force=False):
             print('\nTimeout detected. Stopping command execution...')
             logger.warn('Timeout detected. Stopping command execution...')
 
-        terminate_process(pid_container[0])
+        terminate_process(process.pid)
+
+    elapsed_time = time.time() - start_time
+    print(f'{command} took {round(elapsed_time * 1000)}ms to execute.')
+    logger.info(f'{command} took {round(elapsed_time * 1000)}ms to execute.')
 
     # stderr_output = ''
     # while not q_stderr.empty():
@@ -215,9 +261,10 @@ def execute_command(project, command, timeout=None, force=False):
             return_value = 'stderr:\n```\n' + stderr_output[0:MAX_COMMAND_OUTPUT_LENGTH] + '\n```\n'
         return_value += 'stdout:\n```\n' + output[-MAX_COMMAND_OUTPUT_LENGTH:] + '\n```'
 
-    command_run = save_command_run(project, command, return_value)
+    save_command_run(project, command, return_value)
 
-    return return_value, None
+    return return_value, None, process.returncode
+
 
 def build_directory_tree(path, prefix="", ignore=None, is_last=False, files=None, add_descriptions=False):
     """Build the directory tree structure in tree-like format.
@@ -272,31 +319,60 @@ def execute_command_and_check_cli_response(command, timeout, convo):
             - llm_response (str): 'DONE' or 'NEEDS_DEBUGGING'
     """
     # TODO: Prompt mentions `command` could be `INSTALLED` or `NOT_INSTALLED`, where is this handled?
-    cli_response, llm_response = execute_command(convo.agent.project, command, timeout)
+    cli_response, llm_response, exit_code = execute_command(convo.agent.project, command, timeout=timeout)
     if llm_response is None:
         llm_response = convo.send_message('dev_ops/ran_command.prompt',
-            { 'cli_response': cli_response, 'command': command })
+            {
+                'cli_response': cli_response,
+                'command': command
+            })
     return cli_response, llm_response
 
 
-def run_command_until_success(command, timeout, convo, additional_message=None, force=False,
-                              return_cli_response=False, is_root_task=False):
+def run_command_until_success(convo, command,
+                              timeout: Union[int, None],
+                              process_name: Union[str, None] = None,
+                              additional_message=None,
+                              force=False,
+                              return_cli_response=False,
+                              is_root_task=False):
     """
     Run a command until it succeeds or reaches a timeout.
 
     Args:
+        convo (AgentConvo): The conversation object.
         command (str): The command to run.
         timeout (int): The maximum execution time in milliseconds.
-        convo (AgentConvo): The conversation object.
+        process_name: A name for the process.
+                      If `timeout` is not provided, can be used to terminate the process.
         additional_message (str, optional): Additional message to include in the response.
         force (bool, optional): Whether to execute the command without confirmation. Default is False.
+        return_cli_response (bool, optional): If True, may raise TooDeepRecursionError(cli_response)
+        is_root_task (bool, optional): If True and TokenLimitError is raised, will call `convo.load_branch(reset_branch_id)`
     """
-    cli_response, response = execute_command(convo.agent.project, command, timeout, force)
+    cli_response, response, exit_code = execute_command(convo.agent.project,
+                                                        command,
+                                                        timeout=timeout,
+                                                        process_name=process_name,
+                                                        force=force)
+
     if response is None:
-        response = convo.send_message('dev_ops/ran_command.prompt',
-            {'cli_response': cli_response, 'command': command, 'additional_message': additional_message})
+        logger.info(f'{command} exit code: {exit_code}')
+        if exit_code is None:
+            response = 'DONE'
+        else:
+            # "I ran the command and the output was... respond with 'DONE' or 'NEEDS_DEBUGGING'"
+            response = convo.send_message('dev_ops/ran_command.prompt',
+                {
+                    'cli_response': cli_response,
+                    'command': command,
+                    'additional_message': additional_message,
+                    'exit_code': exit_code
+                })
+            logger.debug(f'LLM response: {response}')
 
     if response != 'DONE':
+        # 'NEEDS_DEBUGGING'
         print(red(f'Got incorrect CLI response:'))
         print(cli_response)
         print(red('-------------------'))
