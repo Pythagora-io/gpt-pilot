@@ -156,7 +156,7 @@ def retry_on_exception(func):
         if 'function_buffer' in args[0]:
             del args[0]['function_buffer']
 
-    def wrapper(*args, **kwargs):
+    def retry_wrapper(*args, **kwargs):
         while True:
             try:
                 # spinner_stop(spinner)
@@ -237,7 +237,7 @@ def retry_on_exception(func):
                 if user_message != '':
                     return {}
 
-    return wrapper
+    return retry_wrapper
 
 
 @retry_on_exception
