@@ -51,7 +51,7 @@ def get_arguments():
         except ValueError as e:
             print(e)
             # Handle the error as needed, possibly exiting the script
-    else:
+    elif '--get-created-apps-with-steps' not in args:
         arguments['app_id'] = str(uuid.uuid4())
         print(green_bold('\n------------------ STARTING NEW PROJECT ----------------------'))
         print("If you wish to continue with this project in future run:")
