@@ -1,6 +1,8 @@
 {{ additional_info }}I ran the command `{{ command }}`
 {%- if exit_code is number %}, the exit code was {{ exit_code }}{% endif %} and the output was:
 
+```
 {{ cli_response }}
+```
 
 If the command was successfully executed, respond with `DONE`. If it wasn't, respond with `NEEDS_DEBUGGING`.
