@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from database.database import save_user_app
 
+
 def get_parent_folder(folder_name):
     current_path = Path(os.path.abspath(__file__))  # get the path of the current script
 
@@ -11,7 +12,14 @@ def get_parent_folder(folder_name):
     return current_path.parent
 
 
-def setup_workspace(args):
+def setup_workspace(args) -> str:
+    """
+    Creates & returns the path to the project workspace.
+    Also creates a 'tests' folder inside the workspace.
+    :param args: may contain 'workspace' or 'root' keys
+    """
+    # `args['workspace']` can be used to work with an existing workspace at the specified path.
+    # `args['root']` is used by VS Code for (nearly) the same purpose, but `args['name']` is appended to it.
     workspace = args.get('workspace')
     if workspace:
         try:
@@ -23,7 +31,6 @@ def setup_workspace(args):
         return args['workspace']
 
     root = args.get('root') or get_parent_folder('pilot')
-    create_directory(root, 'workspace')
     project_path = create_directory(os.path.join(root, 'workspace'), args.get('name', 'default_project_name'))
     create_directory(project_path, 'tests')
     return project_path

@@ -1,4 +1,4 @@
-FROM python:3
+FROM python:3.11
 
 # Download precompiled ttyd binary from GitHub releases
 RUN apt-get update && \

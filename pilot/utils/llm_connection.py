@@ -12,7 +12,7 @@ from utils.style import red
 from typing import List
 from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS
 from logger.logger import logger
-from helpers.exceptions.TokenLimitError import TokenLimitError
+from helpers.exceptions import TokenLimitError, ApiKeyNotDefinedError
 from utils.utils import fix_json, get_prompt
 from utils.function_calling import add_function_calls_to_request, FunctionCallSet, FunctionType
 from utils.questionary import styled_text
@@ -108,6 +108,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
         logger.error(f'The request to {os.getenv("ENDPOINT")} API failed: %s', e)
         print(f'The request to {os.getenv("ENDPOINT")} API failed. Here is the error message:')
         print(e)
+        return {}   # https://github.com/Pythagora-io/gpt-pilot/issues/130 - may need to revisit how we handle this
 
 
 def delete_last_n_lines(n):
@@ -162,13 +163,19 @@ def retry_on_exception(func):
                         args[0]['function_buffer'] = e.doc
                         continue
                 elif isinstance(e, ValidationError):
-                    logger.warn('Received invalid JSON response from LLM. Asking to retry...')
+                    function_error_count = 1 if 'function_error' not in args[0] else args[0]['function_error_count'] + 1
+                    args[0]['function_error_count'] = function_error_count
+
+                    logger.warning('Received invalid JSON response from LLM. Asking to retry...')
                     logger.info(f'  at {e.json_path} {e.message}')
                     # eg:
                     # json_path: '$.type'
                     # message:   "'command' is not one of ['automated_test', 'command_test', 'manual_test', 'no_test']"
                     args[0]['function_error'] = f'at {e.json_path} - {e.message}'
-                    continue
+
+                    # Attempt retry if the JSON schema is invalid, but avoid getting stuck in a loop
+                    if function_error_count < 3:
+                        continue
                 if "context_length_exceeded" in err_str:
                     # spinner_stop(spinner)
                     raise TokenLimitError(get_tokens_in_messages_from_openai_error(err_str), MAX_GPT_MODEL_TOKENS)
@@ -253,25 +260,24 @@ def stream_gpt_completion(data, req_type, project):
     # print(yellow("Stream response from OpenAI:"))
 
     # Configure for the selected ENDPOINT
-    model = os.getenv('MODEL_NAME')
+    model = os.getenv('MODEL_NAME', 'gpt-4')
     endpoint = os.getenv('ENDPOINT')
 
     logger.info(f'> Request model: {model} ({data["model"]}) messages: {data["messages"]}')
-
 
     if endpoint == 'AZURE':
         # If yes, get the AZURE_ENDPOINT from .ENV file
         endpoint_url = os.getenv('AZURE_ENDPOINT') + '/openai/deployments/' + model + '/chat/completions?api-version=2023-05-15'
         headers = {
             'Content-Type': 'application/json',
-            'api-key': os.getenv('AZURE_API_KEY')
+            'api-key': get_api_key_or_throw('AZURE_API_KEY')
         }
     elif endpoint == 'OPENROUTER':
         # If so, send the request to the OpenRouter API endpoint
         endpoint_url = os.getenv('OPENROUTER_ENDPOINT', 'https://openrouter.ai/api/v1/chat/completions')
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + os.getenv('OPENROUTER_API_KEY'),
+            'Authorization': 'Bearer ' + get_api_key_or_throw('OPENROUTER_API_KEY'),
             'HTTP-Referer': 'http://localhost:3000',
             'X-Title': 'GPT Pilot (LOCAL)'
         }
@@ -280,7 +286,7 @@ def stream_gpt_completion(data, req_type, project):
         endpoint_url = os.getenv('OPENAI_ENDPOINT', 'https://api.openai.com/v1/chat/completions')
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + os.getenv('OPENAI_API_KEY')
+            'Authorization': 'Bearer ' + get_api_key_or_throw('OPENAI_API_KEY')
         }
 
     response = requests.post(
@@ -374,6 +380,13 @@ def stream_gpt_completion(data, req_type, project):
 
     new_code = postprocessing(gpt_response, req_type)  # TODO add type dynamically
     return return_result({'text': new_code}, lines_printed)
+
+
+def get_api_key_or_throw(env_key: str):
+    api_key = os.getenv(env_key)
+    if api_key is None:
+        raise ApiKeyNotDefinedError(env_key)
+    return api_key
 
 
 def assert_json_response(response: str, or_fail=True) -> bool:

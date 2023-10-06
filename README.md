@@ -1,3 +1,16 @@
+<br><br><br>
+
+<div align="center">
+
+<a href="https://www.producthunt.com/posts/gpt-pilot?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-gpt&#0045;pilot" target="_blank">
+    <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=410917&theme=light" alt="GPT&#0032;Pilot - Dev&#0032;tool&#0032;that&#0032;increases&#0032;developer’s&#0032;productivity&#0032;20x&#0032;with&#0032;AI | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" />
+</a>
+
+</div>
+
+
+<br><br><br>
+
 # 🧑‍✈️ GPT PILOT
 ### GPT Pilot helps developers build apps 20x faster
 
@@ -31,7 +44,7 @@ I've broken down the idea behind GPT Pilot and how it works in the following blo
 
 **[[Part 1/3] High-level concepts + GPT Pilot workflow until the coding part](https://blog.pythagora.ai/2023/08/23/430/)**
 
-**_[Part 2/3] GPT Pilot coding workflow (COMING UP)_**
+**_[[Part 2/3] GPT Pilot coding workflow](https://blog.pythagora.ai/2023/09/04/gpt-pilot-coding-workflow-part-2-3/)_**
 
 **_[Part 3/3] Other important concepts and future plans (COMING UP)_**
 

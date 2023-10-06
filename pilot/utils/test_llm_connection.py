@@ -96,6 +96,7 @@ class TestSchemaValidation:
 }
 '''.strip(), DEVELOPMENT_PLAN['definitions']))
 
+
 class TestLlmConnection:
     def setup_method(self):
         builtins.print, ipc_client_instance = get_custom_print({})
@@ -121,9 +122,12 @@ class TestLlmConnection:
 
         mock_post.return_value = mock_response
 
-        # When
         with patch('utils.llm_connection.requests.post', return_value=mock_response):
-            response = stream_gpt_completion({}, '')
+            # When
+            response = stream_gpt_completion({
+                'model': 'gpt-4',
+                'messages': [],
+            }, '', project)
 
             # Then
             assert response == {'text': '{\n  "foo": "bar",\n  "prompt": "Hello",\n  "choices": []\n}'}
@@ -174,7 +178,7 @@ solution-oriented decision-making in areas where precise instructions were not p
         function_calls = ARCHITECTURE
 
         # When
-        response = create_gpt_chat_completion(convo.messages, '', function_calls=function_calls)
+        response = create_gpt_chat_completion(convo.messages, '', project, function_calls=function_calls)
 
         # Then
         assert convo.messages[0]['content'].startswith('You are an experienced software architect')
@@ -225,19 +229,19 @@ The development process will include the creation of user stories and tasks, bas
         # Retry on bad LLM responses
         mock_questionary = MockQuestionary(['', '', 'no'])
 
+        # with patch('utils.llm_connection.questionary', mock_questionary):
         # When
-        with patch('utils.llm_connection.questionary', mock_questionary):
-            response = create_gpt_chat_completion(convo.messages, '', function_calls=function_calls)
+        response = create_gpt_chat_completion(convo.messages, '', project, function_calls=function_calls)
 
-            # Then
-            assert convo.messages[0]['content'].startswith('You are a tech lead in a software development agency')
-            assert convo.messages[1]['content'].startswith('You are working in a software development agency and a project manager and software architect approach you')
+        # Then
+        assert convo.messages[0]['content'].startswith('You are a tech lead in a software development agency')
+        assert convo.messages[1]['content'].startswith('You are working in a software development agency and a project manager and software architect approach you')
 
-            assert response is not None
-            response = parse_agent_response(response, function_calls)
-            assert_non_empty_string(response[0]['description'])
-            assert_non_empty_string(response[0]['programmatic_goal'])
-            assert_non_empty_string(response[0]['user_review_goal'])
+        assert response is not None
+        response = parse_agent_response(response, function_calls)
+        assert_non_empty_string(response[0]['description'])
+        assert_non_empty_string(response[0]['programmatic_goal'])
+        assert_non_empty_string(response[0]['user_review_goal'])
 
 
     # def test_break_down_development_task(self):

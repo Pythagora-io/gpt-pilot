@@ -48,7 +48,7 @@ def filter_sensitive_fields(record):
 
     # Remove ANSI escape sequences - colours & bold
     record.msg = re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', '', record.msg)
-    return record.levelno <= logging.INFO
+    return True
 
 
 logger = setup_logger()
