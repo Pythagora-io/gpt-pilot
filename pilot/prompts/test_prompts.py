@@ -19,7 +19,7 @@ stdout:
 success
 ```
 
-If the command was successfully executed, respond with `DONE`. If it wasn't, respond with `NEEDS_DEBUGGING` and single line explanation.
+If the command was successfully executed, respond with `DONE`. If it wasn't, respond with `NEEDS_DEBUGGING`.
 '''.strip()
 
 
@@ -41,5 +41,5 @@ stdout:
 success
 ```
 
-If the command was successfully executed, respond with `DONE`. If it wasn't, respond with `NEEDS_DEBUGGING` and single line explanation.
+If the command was successfully executed, respond with `DONE`. If it wasn't, respond with `NEEDS_DEBUGGING`.
 '''.strip()
