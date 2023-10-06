@@ -87,6 +87,7 @@ class Developer(Agent):
             # TODO end
 
     def step_command_run(self, convo, step, i):
+        logger.info('Running command: %s', step['command'])
         # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
         if isinstance(step['command'], str):
             data = step
@@ -94,7 +95,13 @@ class Developer(Agent):
             data = step['command']
         # TODO END
         additional_message = 'Let\'s start with the step #0:\n\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i)) } are finished so let\'s do step #{i + 1} now.\n\n'
-        return run_command_until_success(convo, data['command'], timeout=data['timeout'], additional_message=additional_message)
+
+        process_name = data['process_name'] if 'process_name' in data else None
+
+        return run_command_until_success(convo, data['command'],
+                                         timeout=data['timeout'],
+                                         process_name=process_name,
+                                         additional_message=additional_message)
 
     def step_human_intervention(self, convo, step: dict):
         """
@@ -102,6 +109,10 @@ class Developer(Agent):
         :param step: {'human_intervention_description': 'some description'}
         :return:
         """
+        logger.info('Human intervention needed%s: %s',
+                    '' if self.run_command is None else f' for command `{self.run_command}`',
+                    step['human_intervention_description'])
+
         while True:
             human_intervention_description = step['human_intervention_description'] + \
                                              yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`') \
@@ -135,6 +146,7 @@ class Developer(Agent):
             return { "success": True }
         elif should_rerun_command == 'YES':
             cli_response, llm_response = execute_command_and_check_cli_response(test_command['command'], test_command['timeout'], convo)
+            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! LLM response: ' + llm_response)
             if llm_response == 'NEEDS_DEBUGGING':
                 print(red(f'Got incorrect CLI response:'))
                 print(cli_response)
@@ -162,6 +174,7 @@ class Developer(Agent):
                 continue_description = detailed_user_review_goal if detailed_user_review_goal is not None else None
                 return self.continue_development(convo, last_branch_name, continue_description)
         except TooDeepRecursionError as e:
+            logger.warning('Too deep recursion error. Call dev_help_needed() for human_intervention: %s', e.message)
             return self.dev_help_needed({"type": "human_intervention", "human_intervention_description": e.message})
 
         return task_result
@@ -276,6 +289,7 @@ class Developer(Agent):
 
     def continue_development(self, iteration_convo, last_branch_name, continue_description=''):
         while True:
+            logger.info('Continue development: %s', last_branch_name)
             iteration_convo.load_branch(last_branch_name)
             user_description = ('Here is a description of what should be working: \n\n' + blue_bold(continue_description) + '\n') \
                                 if continue_description != '' else ''
@@ -353,6 +367,7 @@ class Developer(Agent):
             }, FILTER_OS_TECHNOLOGIES)
 
         for technology in os_specific_technologies:
+            logger.info('Installing %s', technology)
             llm_response = self.install_technology(technology)
 
             # TODO: I don't think llm_response would ever be 'DONE'?
@@ -410,6 +425,7 @@ class Developer(Agent):
         return llm_response
 
     def test_code_changes(self, code_monkey, convo):
+        logger.info('Testing code changes...')
         test_type, description = convo.send_message('development/task/step_check.prompt', {}, GET_TEST_TYPE)
 
         if test_type == 'command_test':
@@ -433,6 +449,7 @@ class Developer(Agent):
                 return { "success": True, "user_input": user_feedback }
 
     def implement_step(self, convo, step_index, type, description):
+        logger.info('Implementing %s step #%d: %s', type, step_index, description)
         # TODO remove hardcoded folder path
         directory_tree = self.project.get_directory_tree(True)
         step_details = convo.send_message('development/task/next_step.prompt', {
@@ -442,6 +459,7 @@ class Developer(Agent):
             'directory_tree': directory_tree,
             'step_index': step_index
         }, EXECUTE_COMMANDS)
+
         if type == 'COMMAND':
             for cmd in step_details:
                 run_command_until_success(convo, cmd['command'], timeout=cmd['timeout'])

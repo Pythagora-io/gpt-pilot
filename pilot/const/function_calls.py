@@ -40,7 +40,13 @@ def return_array_from_prompt(name_plural, name_singular, return_var_name):
     }
 
 
-def command_definition(description_command=f'A single command that needs to be executed.', description_timeout=f'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`'):
+def command_definition(description_command=f'A single command that needs to be executed.',
+                       description_timeout=
+                       'Timeout in milliseconds that represent the approximate time this command takes to finish. '
+                       'If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), '
+                       'set the timeout to 0 and provide a process_name. '
+                       'If you need to create a directory that doesn\'t exist and is not the root project directory, '
+                       'always create it by running a command `mkdir`'):
     return {
         'type': 'object',
         'description': 'Command that needs to be run to complete the current task. This should be used only if the task is of a type "command".',
@@ -52,6 +58,11 @@ def command_definition(description_command=f'A single command that needs to be e
             'timeout': {
                 'type': 'number',
                 'description': description_timeout,
+            },
+            'process_name': {
+                'type': 'string',
+                'description': 'If the process needs to continue running after the command is executed provide '
+                               'a name which you can use to kill the process later.',
             }
         },
         'required': ['command', 'timeout'],
