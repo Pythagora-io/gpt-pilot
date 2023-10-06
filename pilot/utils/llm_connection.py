@@ -174,8 +174,7 @@ def retry_on_exception(func):
                     # - 'Unterminated string starting at'
                     if e.msg.startswith('Expecting') or e.msg == 'Unterminated string starting at':
                         if e.msg == 'Expecting value' and len(e.doc) > e.pos:
-                            # TODO: attempt to heal True/False boolean values
-                            # if e.doc[e.pos] == '{':
+                            # Note: clean_json_response() should heal True/False boolean values
                             err_str = re.split(r'[},\\n]', e.doc[e.pos:])[0]
                             err_str = f'Invalid value: `{err_str}`'
                         else:
