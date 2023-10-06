@@ -44,7 +44,7 @@ def command_definition(description_command=f'A single command that needs to be e
                        description_timeout=
                        'Timeout in milliseconds that represent the approximate time this command takes to finish. '
                        'If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), '
-                       'set the timeout to 0 and provide a process_name. '
+                       'set the timeout to -1 and provide a process_name. '
                        'If you need to create a directory that doesn\'t exist and is not the root project directory, '
                        'always create it by running a command `mkdir`'):
     return {

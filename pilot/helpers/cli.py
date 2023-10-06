@@ -124,7 +124,7 @@ def execute_command(project, command, timeout=None, process_name: str = None, fo
         exit_code (int): The exit code of the process.
     """
     if timeout is not None:
-        if timeout == 0:
+        if timeout < 0:
             timeout = None
         else:
             if timeout < 1000:
