@@ -146,7 +146,7 @@ class Developer(Agent):
             return { "success": True }
         elif should_rerun_command == 'YES':
             cli_response, llm_response = execute_command_and_check_cli_response(test_command['command'], test_command['timeout'], convo)
-            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! LLM response: ' + llm_response)
+            logger.info('After running command llm_response: ' + llm_response)
             if llm_response == 'NEEDS_DEBUGGING':
                 print(red(f'Got incorrect CLI response:'))
                 print(cli_response)
@@ -308,6 +308,7 @@ class Developer(Agent):
                 convo=iteration_convo,
                 is_root_task=True)
 
+            logger.info('response: %s', response)
             user_feedback = response['user_input'] if 'user_input' in response else None
             if user_feedback == 'continue':
                 return { "success": True, "user_input": user_feedback }
