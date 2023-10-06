@@ -11,7 +11,7 @@ from jsonschema import validate, ValidationError
 from utils.style import red
 from typing import List
 from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS
-from logger.logger import logger
+from logger.logger import logger, logging
 from helpers.exceptions import TokenLimitError, ApiKeyNotDefinedError
 from utils.utils import fix_json, get_prompt
 from utils.function_calling import add_function_calls_to_request, FunctionCallSet, FunctionType
@@ -156,7 +156,7 @@ def retry_on_exception(func):
         if 'function_buffer' in args[0]:
             del args[0]['function_buffer']
 
-    def retry_wrapper(*args, **kwargs):
+    def wrapper(*args, **kwargs):
         while True:
             try:
                 # spinner_stop(spinner)
@@ -237,7 +237,7 @@ def retry_on_exception(func):
                 if user_message != '':
                     return {}
 
-    return retry_wrapper
+    return wrapper
 
 
 @retry_on_exception
@@ -291,8 +291,9 @@ def stream_gpt_completion(data, req_type, project):
     model = os.getenv('MODEL_NAME', 'gpt-4')
     endpoint = os.getenv('ENDPOINT')
 
-    logger.info(f'> Request model: {model} ({data["model"]})\n'
-                + '\n'.join([f"{message['role']}: {message['content']}" for message in data['messages']]))
+    logger.info(f'> Request model: {model} ({data["model"]} in data)')
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug('\n'.join([f"{message['role']}: {message['content']}" for message in data['messages']]))
 
     if endpoint == 'AZURE':
         # If yes, get the AZURE_ENDPOINT from .ENV file
@@ -401,7 +402,7 @@ def stream_gpt_completion(data, req_type, project):
     #     logger.info(f'Response via function call: {function_calls["arguments"]}')
     #     function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
     #     return return_result({'function_calls': function_calls}, lines_printed)
-    logger.info(f'< Response message: {gpt_response}')
+    logger.info('<<<<<<<<<< LLM Response <<<<<<<<<<\n%s\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<', gpt_response)
 
     if expecting_json:
         gpt_response = clean_json_response(gpt_response)

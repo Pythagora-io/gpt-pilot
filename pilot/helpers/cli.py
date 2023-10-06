@@ -124,9 +124,13 @@ def execute_command(project, command, timeout=None, process_name: str = None, fo
         exit_code (int): The exit code of the process.
     """
     if timeout is not None:
-        if timeout < 1000:
-            timeout *= 1000
-        timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
+        if timeout == 0:
+            timeout = None
+        else:
+            if timeout < 1000:
+                timeout *= 1000
+
+            timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
 
     if not force:
         print(yellow_bold(f'\n--------- EXECUTE COMMAND ----------'))
@@ -229,6 +233,7 @@ def execute_command(project, command, timeout=None, process_name: str = None, fo
                 logger.error('CLI ERROR: ' + stderr_line)
                 
             if process_name is not None:
+                logger.info(f'Process {process_name} running as pid: {process.pid}')
                 break
 
     except (KeyboardInterrupt, TimeoutError) as e:
@@ -317,7 +322,10 @@ def execute_command_and_check_cli_response(command, timeout, convo):
     cli_response, llm_response, exit_code = execute_command(convo.agent.project, command, timeout=timeout)
     if llm_response is None:
         llm_response = convo.send_message('dev_ops/ran_command.prompt',
-            { 'cli_response': cli_response, 'command': command })
+            {
+                'cli_response': cli_response,
+                'command': command
+            })
     return cli_response, llm_response
 
 
