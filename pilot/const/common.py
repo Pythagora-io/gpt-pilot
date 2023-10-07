@@ -5,6 +5,7 @@ ROLES = {
     'tech_lead': ['development_planning'],
     'full_stack_developer': ['create_scripts', 'coding'],
     'dev_ops': ['environment_setup'],
+    'code_monkey': ['create_scripts', 'coding', 'implement_changes']
 }
 STEPS = [
     'project_description',
@@ -13,6 +14,7 @@ STEPS = [
     'architecture',
     'environment_setup',
     'development_planning',
+    'create_scripts',
     'coding'
 ]
 
