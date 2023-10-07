@@ -104,7 +104,7 @@ This will start two containers, one being a new image built by the `Dockerfile` 
 # 🧑‍💻️ CLI arguments
 
 ## `app_type` and `name`
-If not provided, the ProductOwner will ask for these values
+If not provided, the ProductOwner will ask for these values:
 
 `app_type` is used as a hint to the LLM as to what kind of architecture, language options and conventions would apply. If not provided, `prompts.prompts.ask_for_app_type()` will ask for it.
 
@@ -173,7 +173,7 @@ python main.py app_id=<ID_OF_THE_APP> skip_until_dev_step=<DEV_STEP>
 This is basically the same as `step` but during the actual development process. If you want to play around with gpt-pilot, this is likely the flag you will often use.
 <br>
 
-Erase all development steps previously done and continue working on an existing app from start of development
+Erase all development steps previously done and continue working on an existing app from start of development.
 
 ```bash
 python main.py app_id=<ID_OF_THE_APP> skip_until_dev_step=0
@@ -211,9 +211,9 @@ Here are a couple of example apps GPT Pilot created by itself:
 <br>
 
 # 🏛 Main pillars of GPT Pilot:
-1. For AI to create a fully working app, **a developer needs to be involved** in the process of app creation. They need to be able to change the code at any moment and GPT Pilot needs to continue working with those changes (e.g. add an API key or fix an issue if an AI gets stuck) <br><br>
+1. For AI to create a fully working app, **a developer needs to be involved** in the process of app creation. They need to be able to change the code at any moment and GPT Pilot needs to continue working with those changes (e.g. add an API key or fix an issue if an AI gets stuck). <br><br>
 2. **The app needs to be written step by step as a developer would write it** - Let's say you want to create a simple app, and you know everything you need to code and have the entire architecture in your head. Even then, you won't code it out entirely, then run it for the first time and debug all the issues at once. Rather, you will implement something simple, like add routes, run it, see how it works, and then move on to the next task. This way, you can debug issues as they arise. The same should be in the case when AI codes. It will make mistakes for sure so in order for it to have an easier time debugging issues and for the developer to understand what is happening, the AI shouldn't just spit out the entire codebase at once. Rather, the app should be developed step by step just like a developer would code it - e.g. setup routes, add database connection, etc. <br><br>
-3. **The approach needs to be scalable** so that AI can create a production ready app
+3. **The approach needs to be scalable** so that AI can create a production ready app:
    1. **Context rewinding** - for solving each development task, the context size of the first message to the LLM has to be relatively the same. For example, the context size of the first LLM message while implementing development task #5 has to be more or less the same as the first message while developing task #50. Because of this, the conversation needs to be rewound to the first message upon each task. [See the diagram here](https://blogpythagora.files.wordpress.com/2023/08/pythagora-product-development-frame-3-1.jpg?w=1714).
    2. **Recursive conversations** are LLM conversations that are set up in a way that they can be used “recursively”. For example, if GPT Pilot detects an error, it needs to debug it but let’s say that, during the debugging process, another error happens. Then, GPT Pilot needs to stop debugging the first issue, fix the second one, and then get back to fixing the first issue. This is a very important concept that, I believe, needs to work to make AI build large and scalable apps by itself. It works by rewinding the context and explaining each error in the recursion separately. Once the deepest level error is fixed, we move up in the recursion and continue fixing that error. We do this until the entire recursion is completed. 
    3. **TDD (Test Driven Development)** - for GPT Pilot to be able to scale the codebase, it will need to be able to create new code without breaking previously written code. There is no better way to do this than working with TDD methodology. For each code that GPT Pilot writes, it needs to write tests that check if the code works as intended so that whenever new changes are made, all previous tests can be run.
@@ -227,12 +227,12 @@ Here are the steps GPT Pilot takes to create an app:
 
 ![GPT Pilot workflow](https://github.com/Pythagora-io/gpt-pilot/assets/10895136/d89ba1d4-1208-4b7f-b3d4-76e3ccea584e)
 
-1. You enter the app name and the description
-2. **Product Owner agent** asks a couple of questions to understand the requirements better
-3. **Product Owner agent** writes user stories and asks you if they are all correct (this helps it create code later on)
-4. **Architect agent** writes up technologies that will be used for the app
-5. **DevOps agent** checks if all technologies are installed on the machine and installs them if they are not
-6. **Tech Lead agent** writes up development tasks that Developer will need to implement. This is an important part because, for each step, Tech Lead needs to specify how the user (real world developer) can review if the task is done (e.g. open localhost:3000 and do something)
+1. You enter the app name and the description.
+2. **Product Owner agent** asks a couple of questions to understand the requirements better.
+3. **Product Owner agent** writes user stories and asks you if they are all correct (this helps it create code later on).
+4. **Architect agent** writes up technologies that will be used for the app.
+5. **DevOps agent** checks if all technologies are installed on the machine and installs them if they are not.
+6. **Tech Lead agent** writes up development tasks that Developer will need to implement. This is an important part because, for each step, Tech Lead needs to specify how the user (real world developer) can review if the task is done (e.g. open localhost:3000 and do something).
 7. **Developer agent** takes each task and writes up what needs to be done to implement it. The description is in human-readable form.
 8. Finally, **Code Monkey agent** takes the Developer's description and the existing file and implements the changes into it. We realized this works much better than giving it to Developer right away to implement changes.
 
