@@ -15,7 +15,8 @@ STEPS = [
     'environment_setup',
     'development_planning',
     'create_scripts',
-    'coding'
+    'coding',
+    'implement_changes'
 ]
 
 IGNORE_FOLDERS = [
