@@ -338,8 +338,7 @@ class Project:
         if description is not None:
             question += '\n' + '-' * 100 + '\n' + white_bold(description) + '\n' + '-' * 100 + '\n'
 
-        if convo is not None:
-            reset_branch_id = convo.save_branch()
+        reset_branch_id = None if convo is None else convo.save_branch()
 
         while answer != 'continue':
             answer = ask_user(self, question,
