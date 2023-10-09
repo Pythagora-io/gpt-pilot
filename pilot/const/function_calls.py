@@ -187,6 +187,10 @@ IMPLEMENT_TASK = {
                                     'description': 'Type of the development step that needs to be done to complete the entire task.',
                                 },
                                 'command': command_definition(),
+                                'kill_process': {
+                                    'type': 'string',
+                                    'description': 'To kill a process that was left running by a previous `command` provide the `process_name` in this field.'
+                                },
                                 'code_change': {
                                     'type': 'object',
                                     'description': 'A code change that needs to be implemented. This should be used only if the task is of a type "code_change".',

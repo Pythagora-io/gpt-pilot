@@ -43,3 +43,27 @@ success
 
 If the command was successfully executed, respond with `DONE`. If it wasn't, respond with `NEEDS_DEBUGGING`.
 '''.strip()
+
+
+def test_parse_task_no_processes():
+    # When
+    prompt = get_prompt('development/parse_task.prompt', {
+        'running_processes': {}
+    })
+
+    # Then
+    assert 'the following processes' not in prompt
+
+
+def test_parse_task_with_processes():
+    # When
+    prompt = get_prompt('development/parse_task.prompt', {
+        'running_processes': {
+            'app': ('npm start', 123),
+            'mongo': ('mongod', 456)
+        }
+    })
+
+    # Then
+    assert 'the following processes are already running:' in prompt
+    assert '- "app" (`npm start`)\n- "mongo" (`mongod`)' in prompt

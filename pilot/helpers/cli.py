@@ -17,8 +17,8 @@ from const.code_execution import MIN_COMMAND_RUN_TIME, MAX_COMMAND_RUN_TIME, MAX
 
 interrupted = False
 
-running_processes: Dict[str, int] = {}
-"""Holds a list of process IDs, mapped to the `process_name` provided in the call to `execute_command()`."""
+running_processes: Dict[str, tuple[str, int]] = {}
+"""Holds a list of (command, process ID)s, mapped to the `process_name` provided in the call to `execute_command()`."""
 
 
 def enqueue_output(out, q):
@@ -74,12 +74,12 @@ def run_command(command, root_path, q_stdout, q_stderr) -> subprocess.Popen:
 
 def terminate_named_process(process_name: str) -> None:
     if process_name in running_processes:
-        terminate_process(running_processes[process_name], process_name)
+        terminate_process(running_processes[process_name][1], process_name)
 
 
 def terminate_running_processes():
     for process_name in list(running_processes.keys()):
-        terminate_process(running_processes[process_name], process_name)
+        terminate_process(running_processes[process_name][1], process_name)
 
 
 def terminate_process(pid: int, name=None) -> None:
@@ -100,7 +100,7 @@ def terminate_process(pid: int, name=None) -> None:
             logger.error(f'Error while terminating process: {e}')
 
     for process_name in list(running_processes.keys()):
-        if running_processes[process_name] == pid:
+        if running_processes[process_name][1] == pid:
             del running_processes[process_name]
 
 
@@ -174,7 +174,7 @@ def execute_command(project, command, timeout=None, process_name: str = None, fo
 
     if process_name is not None:
         terminate_named_process(process_name)
-        running_processes[process_name] = process.pid
+        running_processes[process_name] = (command, process.pid)
 
     output = ''
     stderr_output = ''
@@ -233,7 +233,7 @@ def execute_command(project, command, timeout=None, process_name: str = None, fo
                 logger.error('CLI ERROR: ' + stderr_line)
                 
             if process_name is not None:
-                logger.info(f'Process {process_name} running as pid: {process.pid}')
+                logger.info(f'Process "{process_name}" running as pid: {process.pid}')
                 break
 
     except (KeyboardInterrupt, TimeoutError) as e:
@@ -248,8 +248,7 @@ def execute_command(project, command, timeout=None, process_name: str = None, fo
         terminate_process(process.pid)
 
     elapsed_time = time.time() - start_time
-    print(f'{command} took {round(elapsed_time * 1000)}ms to execute.')
-    logger.info(f'{command} took {round(elapsed_time * 1000)}ms to execute.')
+    logger.info(f'`{command}` took {round(elapsed_time * 1000)}ms to execute.')
 
     # stderr_output = ''
     # while not q_stderr.empty():
@@ -357,7 +356,7 @@ def run_command_until_success(convo, command,
                                                         force=force)
 
     if response is None:
-        logger.info(f'{command} exit code: {exit_code}')
+        logger.info(f'`{command}` exit code: {exit_code}')
         if exit_code is None:
             response = 'DONE'
         else:
