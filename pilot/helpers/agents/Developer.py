@@ -1,3 +1,4 @@
+import platform
 import uuid
 from utils.style import green, red, green_bold, yellow_bold, red_bold, blue_bold, white_bold
 from helpers.exceptions.TokenLimitError import TokenLimitError
@@ -166,7 +167,9 @@ class Developer(Agent):
 
         if development_task is not None:
             convo.remove_last_x_messages(2)
-            detailed_user_review_goal = convo.send_message('development/define_user_review_goal.prompt', {})
+            detailed_user_review_goal = convo.send_message('development/define_user_review_goal.prompt', {
+                'os': platform.system()
+            })
             convo.remove_last_x_messages(2)
 
         try:
