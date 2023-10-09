@@ -291,7 +291,7 @@ def stream_gpt_completion(data, req_type, project):
     model = os.getenv('MODEL_NAME', 'gpt-4')
     endpoint = os.getenv('ENDPOINT')
 
-    logger.info(f'> Request model: {model} ({data["model"]} in data)')
+    logger.info(f'> Request model: {model}')
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug('\n'.join([f"{message['role']}: {message['content']}" for message in data['messages']]))
 
@@ -311,6 +311,7 @@ def stream_gpt_completion(data, req_type, project):
             'HTTP-Referer': 'http://localhost:3000',
             'X-Title': 'GPT Pilot (LOCAL)'
         }
+        data['model'] = model
     else:
         # If not, send the request to the OpenAI endpoint
         endpoint_url = os.getenv('OPENAI_ENDPOINT', 'https://api.openai.com/v1/chat/completions')
@@ -318,6 +319,7 @@ def stream_gpt_completion(data, req_type, project):
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + get_api_key_or_throw('OPENAI_API_KEY')
         }
+        data['model'] = model
 
     response = requests.post(
         endpoint_url,
