@@ -115,7 +115,9 @@ def save_app(project):
     app_status = getattr(project, "current_step", None)
 
     try:
-        app = App.get(App.id == args['app_id'])
+        app = project.app
+        if app is None:
+            app = App.get(App.id == args['app_id'])
         for key, value in args.items():
             if key != 'app_id' and value is not None:
                 setattr(app, key, value)
@@ -188,12 +190,14 @@ def save_progress(app_id, step, data):
     return progress
 
 
-def get_app(app_id):
+def get_app(app_id, error_if_not_found=True):
     try:
         app = App.get(App.id == app_id)
         return app
     except DoesNotExist:
-        raise ValueError(f"No app with id: {app_id}")
+        if error_if_not_found:
+            raise ValueError(f"No app with id: {app_id}")
+        return None
 
 
 def get_app_by_user_workspace(user_id, workspace):
