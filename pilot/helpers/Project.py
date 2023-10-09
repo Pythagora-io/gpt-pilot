@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from typing import Tuple
 from utils.style import  yellow_bold, cyan, white_bold
 from const.common import IGNORE_FOLDERS, STEPS
@@ -191,16 +192,17 @@ class Project:
             list: A list of files with content.
         """
         files_with_content = []
-        for file in files:
+        for file_path in files:
             # TODO this is a hack, fix it
             try:
-                relative_path, full_path = self.get_full_file_path('', file)
+                name = os.path.basename(file_path)
+                relative_path, full_path = self.get_full_file_path(file_path, name)
                 file_content = open(full_path, 'r').read()
             except:
                 file_content = ''
 
             files_with_content.append({
-                "path": file,
+                "path": file_path,
                 "content": file_content
             })
         return files_with_content
@@ -212,27 +214,27 @@ class Project:
         Args:
             data: { name: 'hello.py', path: 'path/to/hello.py', content: 'print("Hello!")' }
         """
-        # TODO fix this in prompts
-        if 'path' not in data:
-            data['path'] = data['name']
+        name = data['name'] if 'name' in data else os.path.basename(data['path'])
+        path = data['path'] if 'path' in data else name
 
-        if 'name' not in data or data['name'] == '':
-            data['name'] = os.path.basename(data['path'])
-        elif not data['path'].endswith(data['name']):
+        # TODO fix this in prompts
+        if not path.endswith(name):
+            # if not re.match(r'^/|~|\w+:', path):
+
             if data['path'] == '':
                 data['path'] = data['name']
             else:
                 data['path'] = data['path'] + '/' + data['name']
         # TODO END
 
-        data['path'], data['full_path'] = self.get_full_file_path(data['path'], data['name'])
-        update_file(data['full_path'], data['content'])
+        path, full_path = self.get_full_file_path(path, name)
+        update_file(full_path, data['content'])
 
-        (File.insert(app=self.app, path=data['path'], name=data['name'], full_path=data['full_path'])
+        (File.insert(app=self.app, path=path, name=name, full_path=full_path)
          .on_conflict(
             conflict_target=[File.app, File.name, File.path],
             preserve=[],
-            update={'name': data['name'], 'path': data['path'], 'full_path': data['full_path']})
+            update={'name': name, 'path': path, 'full_path': full_path})
          .execute())
 
     def get_full_file_path(self, file_path: str, file_name: str) -> Tuple[str, str]:
@@ -240,33 +242,24 @@ class Project:
         # WINDOWS
         are_windows_paths = '\\' in file_path or '\\' in file_name or '\\' in self.root_path
         if are_windows_paths:
-            file_name = file_name.replace('\\', '/')
             file_path = file_path.replace('\\', '/')
         # END WINDOWS
 
         # Universal modifications
         file_path = file_path.replace('~', '')
-        file_name = file_name.replace('~', '')
 
         file_path = file_path.replace(self.root_path, '')
-        file_name = file_name.replace(self.root_path, '')
 
         if '.' not in file_path and not file_path.endswith('/'):
             file_path += '/'
-        if '.' not in file_name and not file_name.endswith('/'):
-            file_name += '/'
 
         if '/' in file_path and not file_path.startswith('/'):
             file_path = '/' + file_path
-        if '/' in file_name and not file_name.startswith('/'):
-            file_name = '/' + file_name
         # END Universal modifications
 
         head_path, tail_path = os.path.split(file_path)
-        head_name, tail_name = os.path.split(file_name)
 
         final_file_path = head_path if head_path != '' else head_name
-        final_file_name = tail_name if tail_name != '' else tail_path
 
         if head_path in head_name:
             final_file_path = head_name
@@ -280,18 +273,7 @@ class Project:
         if final_file_path == '':
             final_file_path = '/'
 
-        final_absolute_path = self.root_path + final_file_path + '/' + final_file_name
-
-        if '//' in final_absolute_path:
-            final_absolute_path = final_absolute_path.replace('//', '/')
-        if '//' in final_file_path:
-            final_file_path = final_file_path.replace('//', '/')
-
-        # WINDOWS
-        if are_windows_paths:
-            final_file_path = final_file_path.replace('/', '\\')
-            final_absolute_path = final_absolute_path.replace('/', '\\')
-        # END WINDOWS
+        final_absolute_path = self.root_path + final_file_path + '/' + file_name
 
         return final_file_path, final_absolute_path
 

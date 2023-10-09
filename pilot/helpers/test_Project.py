@@ -22,6 +22,7 @@ def create_project():
 @pytest.mark.parametrize('test_data', [
     {'name': 'package.json', 'path': 'package.json', 'saved_to': '/temp/gpt-pilot-test/package.json'},
     {'name': 'package.json', 'path': '', 'saved_to': '/temp/gpt-pilot-test/package.json'},
+    {'name': 'package.json', 'path': '/', 'saved_to': '/temp/gpt-pilot-test/package.json'},  # observed scenario
     # {'name': 'Dockerfile', 'path': None, 'saved_to': '/temp/gpt-pilot-test/Dockerfile'},
     {'name': None, 'path': 'public/index.html', 'saved_to': '/temp/gpt-pilot-test/public/index.html'},
     {'name': '', 'path': 'public/index.html', 'saved_to': '/temp/gpt-pilot-test/public/index.html'},
@@ -32,7 +33,7 @@ def create_project():
     # {'name': '.gitconfig', 'path': '~/.gitconfig', 'saved_to': '~/.gitconfig'},
     # {'name': 'gpt-pilot.log', 'path': '/temp/gpt-pilot.log', 'saved_to': '/temp/gpt-pilot.log'},
 ], ids=[
-    'name == path', 'empty path',
+    'name == path', 'empty path', 'slash path',
     # 'None path',
     'None name', 'empty name',
     # 'None path absolute file', 'home path', 'home path same name', 'absolute path with name'
