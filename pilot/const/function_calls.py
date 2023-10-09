@@ -44,7 +44,7 @@ def command_definition(description_command=f'A single command that needs to be e
                        description_timeout=
                        'Timeout in milliseconds that represent the approximate time this command takes to finish. '
                        'If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), '
-                       'set the timeout to -1 and provide a process_name. '
+                       'set the timeout to to a value long enough to determine that it has started successfully and provide a process_name. '
                        'If you need to create a directory that doesn\'t exist and is not the root project directory, '
                        'always create it by running a command `mkdir`'):
     return {
@@ -58,6 +58,10 @@ def command_definition(description_command=f'A single command that needs to be e
             'timeout': {
                 'type': 'number',
                 'description': description_timeout,
+            },
+            'success_message': {
+                'type': 'string',
+                'description': 'A message to look for in the output of the command to determine if successful or not.',
             },
             'process_name': {
                 'type': 'string',
@@ -460,7 +464,7 @@ IMPLEMENT_CHANGES = {
                             },
                             'path': {
                                 'type': 'string',
-                                'description': 'Path of the file that needs to be saved on the disk.',
+                                'description': 'Full path of the file with the file name that needs to be saved.',
                             },
                             'content': {
                                 'type': 'string',
