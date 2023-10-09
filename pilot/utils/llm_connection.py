@@ -332,11 +332,8 @@ def stream_gpt_completion(data, req_type, project):
         stream=True
     )
 
-    # Log the response status code and message
-    logger.debug(f'Response status code: {response.status_code}')
-
     if response.status_code != 200:
-        logger.info(f'problem with request: {response.text}')
+        logger.info(f'problem with request (status {response.status_code}): {response.text}')
         raise Exception(f"API responded with status code: {response.status_code}. Response text: {response.text}")
 
     # function_calls = {'name': '', 'arguments': ''}
