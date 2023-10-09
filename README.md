@@ -52,7 +52,7 @@ https://github.com/Pythagora-io/gpt-pilot/assets/10895136/0495631b-511e-451b-93d
 
 - **Python 3**
 - **PostgreSQL** (optional, projects default is SQLite)
-   - DB is needed for multiple reasons like continuing app development if you had to stop at any point or app crashed, going back to specific step so that you can change some later steps in development, easier debugging, for future we will add functionality to update project (change some things in existing project or add new features to the project and so on)...
+   - DB is needed for multiple reasons like continuing app development. If you have to stop at any point or the app crashes, go back to a specific step so that you can change some later steps in development, and easier debugging, in future we will add functionality to update project (change some things in existing project or add new features to the project and so on)...
 
 
 # 🚦How to start using gpt-pilot?
@@ -113,7 +113,7 @@ python main.py workspace=<PATH_TO_PROJECT_WORKSPACE>
 Each user can have their own workspace path for each App.
 
 
-## `user_id`, `email` and `password`
+## `user_id`, `email`, and `password`
 These values will be saved to the User table in the DB.
 
 ```bash
@@ -198,7 +198,7 @@ Here are a couple of example apps GPT Pilot created by itself:
 <br>
 
 # 🏛 Main pillars of GPT Pilot:
-1. For AI to create a fully working app, **a developer must be involved** in the app creation process. They need to be able to change the code at any moment, and GPT Pilot needs to continue working with those changes (e.g., add an API key or fix an issue if an AI gets stuck). <br><br>
+1. For AI to create a fully working app, **a developer needs to be involved** in the app creation process. They need to be able to change the code at any moment, and GPT Pilot needs to continue working with those changes (e.g., add an API key or fix an issue if an AI gets stuck). <br><br>
 2. **The app needs to be written step by step as a developer would write it** - Let's say you want to create a simple app, know everything you need to code, and have the entire architecture in your head. Even then, you won't code it out entirely, then run it for the first time and debug all the issues simultaneously. Instead, you will implement something simple, like add routes, run it, see how it works, and then move on to the next task. This way, you can debug issues as they arise. The same should be the case when AI codes. It will make mistakes for sure, so in order for it to have an easier time debugging issues and for the developer to understand what is happening, the AI shouldn't just spit out the entire codebase at once. Instead, the app should be developed step by step just like a developer would code it - e.g. setup routes, add database connection, etc. <br><br>
 3. **The approach needs to be scalable** so that AI can create a production-ready app:
    1. **Context rewinding** - for solving each development task, the context size of the first message to the LLM has to be relatively the same. For example, the context size of the first LLM message while implementing development task #5 has to be more or less the same as the first message while developing task #50. Because of this, the conversation needs to be rewound to the first message upon each task. [See the diagram here](https://blogpythagora.files.wordpress.com/2023/08/pythagora-product-development-frame-3-1.jpg?w=1714).
@@ -231,6 +231,7 @@ For more details on the roles of agents employed by GPT Pilot, please take a loo
 <br>
 
 # 🕴How's GPT Pilot different from _Smol developer_ and _GPT engineer_?
+
 - **GPT Pilot works with the developer to create a fully working production-ready app** - I don't think AI can (at least in the near future) create apps without a developer being involved. So, **GPT Pilot codes the app step by step** just like a developer would in real life. This way, it can debug issues as they arise throughout the development process. If it gets stuck, you, the developer in charge, can review the code and fix the issue. Other similar tools give you the entire codebase at once - this way, bugs are much harder to fix for AI and for you as a developer.
   <br><br>
 - **Works at scale** - GPT Pilot isn't meant to create simple apps but rather so it can work at any scale. It has mechanisms that filter out the code, so in each LLM conversation, it doesn't need to store the entire codebase in context, but it shows the LLM only the relevant code for the current task it's working on. Once an app is finished, you can continue working on it by writing instructions on what feature you want to add.
