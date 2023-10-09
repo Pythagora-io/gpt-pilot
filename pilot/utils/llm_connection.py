@@ -157,6 +157,8 @@ def retry_on_exception(func):
             del args[0]['function_buffer']
 
     def wrapper(*args, **kwargs):
+        wait_duration_ms = None
+
         while True:
             try:
                 # spinner_stop(spinner)
@@ -212,9 +214,13 @@ def retry_on_exception(func):
                     match = re.search(r"Please try again in (\d+)ms.", err_str)
                     if match:
                         # spinner = spinner_start(colored("Rate limited. Waiting...", 'yellow'))
-                        logger.debug('Rate limited. Waiting...')
-                        wait_duration = int(match.group(1)) / 1000
-                        time.sleep(wait_duration)
+                        if wait_duration_ms is None:
+                            wait_duration_ms = int(match.group(1))
+                        elif wait_duration_ms < 6000:
+                            # waiting 6ms isn't usually long enough - exponential back-off until about 6 seconds
+                            wait_duration_ms *= 2
+                        logger.debug(f'Rate limited. Waiting {wait_duration_ms}ms...')
+                        time.sleep(wait_duration_ms / 1000)
                     continue
 
                 print(red(f'There was a problem with request to openai API:'))
