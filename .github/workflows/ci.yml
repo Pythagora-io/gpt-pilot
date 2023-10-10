@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  Ubuntu:
+  Test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
