@@ -1,7 +1,6 @@
 import questionary
 import re
 import sys
-import termios
 from prompt_toolkit.styles import Style
 from utils.style import yellow_bold
 
@@ -67,8 +66,9 @@ def flush_input():
     """Flush the input buffer, discarding all that's in the buffer."""
     try:
         # For Unix-like systems
+        import termios
         termios.tcflush(sys.stdin, termios.TCIOFLUSH)
-    except (ImportError, termios.error):
+    except (ImportError, OSError):
         # For Windows systems
         try:
             import msvcrt

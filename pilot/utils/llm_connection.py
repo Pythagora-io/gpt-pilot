@@ -192,6 +192,7 @@ def retry_on_exception(func):
                     # or `Expecting value` with `pos` before the end of `e.doc`
                     function_error_count = update_error_count(args)
                     logger.warning('Received invalid character in JSON response from LLM. Asking to retry...')
+                    logger.info(f'  received: {e.doc}')
                     set_function_error(args, err_str)
                     if function_error_count < 3:
                         continue
@@ -255,7 +256,6 @@ def stream_gpt_completion(data, req_type, project):
     :param project: NEEDED FOR WRAPPER FUNCTION retry_on_exception
     :return: {'text': str} or {'function_calls': {'name': str, arguments: '{...}'}}
     """
-
     # TODO add type dynamically - this isn't working when connected to the external process
     try:
         terminal_width = os.get_terminal_size().columns

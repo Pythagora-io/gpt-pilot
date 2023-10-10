@@ -82,6 +82,8 @@ class AgentConvo:
                 development_step = save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, response)
 
         # TODO handle errors from OpenAI
+        # It's complicated because calling functions are expecting different types of responses - string or tuple
+        # https://github.com/Pythagora-io/gpt-pilot/issues/165 & #91
         if response == {}:
             logger.error(f'Aborting with "OpenAI API error happened"')
             raise Exception("OpenAI API error happened.")
