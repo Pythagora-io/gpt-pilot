@@ -1,7 +1,10 @@
-from prompt_toolkit.styles import Style
 import questionary
-from utils.style import yellow_bold
 import re
+import sys
+import termios
+from prompt_toolkit.styles import Style
+from utils.style import yellow_bold
+
 from database.database import save_user_input, get_saved_user_input
 
 custom_style = Style.from_dict({
@@ -38,7 +41,8 @@ def styled_text(project, question, ignore_user_input_count=False, style=None):
         config = {
             'style': style if style is not None else custom_style,
         }
-        question = remove_ansi_codes(question) # Colorama and questionary are not compatible and styling doesn't work
+        question = remove_ansi_codes(question)  # Colorama and questionary are not compatible and styling doesn't work
+        flush_input()
         response = questionary.text(question, **config).unsafe_ask()  # .ask() is included here
     else:
         response = print(question, type='user_input_request')
@@ -56,3 +60,18 @@ def get_user_feedback():
         'style': custom_style,
     }
     return questionary.text("How did GPT Pilot do? Were you able to create any app that works? Please write any feedback you have or just press ENTER to exit: ", **config).unsafe_ask()
+
+
+def flush_input():
+    """Flush the input buffer, discarding all that's in the buffer."""
+    try:
+        # For Unix-like systems
+        termios.tcflush(sys.stdin, termios.TCIOFLUSH)
+    except Exception:
+        # For Windows systems
+        try:
+            import msvcrt
+            while msvcrt.kbhit():
+                msvcrt.getch()
+        except ImportError:
+            pass
