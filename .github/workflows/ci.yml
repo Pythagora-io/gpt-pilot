@@ -9,6 +9,19 @@ on:
       - main
 
 jobs:
+  Docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build the Docker image
+        run: docker compose build
+      - name: Run the Docker image
+        run: docker compose up gpt-pilot -d
+      - name: Wait for the Docker image to start
+        run: docker ps
+      - name: Stop the Docker image
+        run: docker compose down
+  
   Test:
     runs-on: ${{ matrix.os }}
     strategy:
