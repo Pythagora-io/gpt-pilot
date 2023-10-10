@@ -1,3 +1,4 @@
+import platform
 import questionary
 import re
 import sys
@@ -65,14 +66,12 @@ def get_user_feedback():
 def flush_input():
     """Flush the input buffer, discarding all that's in the buffer."""
     try:
-        # For Unix-like systems
-        import termios
-        termios.tcflush(sys.stdin, termios.TCIOFLUSH)
-    except (ImportError, OSError):
-        # For Windows systems
-        try:
+        if platform.system() == 'Windows':
             import msvcrt
             while msvcrt.kbhit():
                 msvcrt.getch()
-        except (ImportError, OSError):
-            pass
+        else:
+            import termios
+            termios.tcflush(sys.stdin, termios.TCIOFLUSH)
+    except (ImportError, OSError):
+        pass
