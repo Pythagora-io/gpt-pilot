@@ -43,11 +43,11 @@ TODO:
 
 **TODO: no prompt**
 
-`debug` functions: `run_command`, `implement_code_changes`
+`debug` functions: `run_command`, `implement_changes`
 
 
 ## Developer (full_stack_developer)
-`create_scripts`, `coding` **(TODO: No entry in `STEPS` for `create_scripts`)**
+`create_scripts`, `coding`
 
 - Implement tasks assigned by tech lead
 - Modular code, TDD
@@ -55,9 +55,9 @@ TODO:
 
 
 ## Code Monkey
-**TODO: not listed in `ROLES`**
+`create_scripts`, `coding`, `implement_changes`
 
-`development/implement_changes` functions: `save_files`
+`implement_changes` functions: `save_files`
 
 - Implement tasks assigned by tech lead
 - Modular code, TDD
