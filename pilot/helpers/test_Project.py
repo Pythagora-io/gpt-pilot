@@ -210,7 +210,7 @@ class TestProject:
         {'name': 'package.json', 'path': 'package.json', 'saved_to': '/temp/gpt-pilot-test/package.json'},
         {'name': 'package.json', 'path': '', 'saved_to': '/temp/gpt-pilot-test/package.json'},
         {'name': 'package.json', 'path': '/', 'saved_to': '/temp/gpt-pilot-test/package.json'},  # observed scenario
-        {'name': 'Dockerfile', 'path': None, 'saved_to': '/temp/gpt-pilot-test/Dockerfile'},
+        {'name': 'package.json', 'path': None, 'saved_to': '/temp/gpt-pilot-test/package.json'},
         {'name': None, 'path': 'public/index.html', 'saved_to': '/temp/gpt-pilot-test/public/index.html'},
         {'name': '', 'path': 'public/index.html', 'saved_to': '/temp/gpt-pilot-test/public/index.html'},
 
@@ -249,6 +249,60 @@ class TestProject:
         # mock_file_insert.assert_called_once_with(app=project.app, **expected_file_data,
         #                                          **{'name': test_data['name'], 'path': test_data['path'],
         #                                             'full_path': expected_saved_to})
+
+    @pytest.mark.parametrize('test_data', [
+        {'name': 'Dockerfile', 'path': 'Dockerfile', 'saved_to': '/temp/gpt-pilot-test/Dockerfile'},
+        {'name': 'Dockerfile', 'path': '', 'saved_to': '/temp/gpt-pilot-test/Dockerfile'},
+        {'name': 'Dockerfile', 'path': '/', 'saved_to': '/temp/gpt-pilot-test/Dockerfile'},
+        {'name': 'Dockerfile', 'path': None, 'saved_to': '/temp/gpt-pilot-test/Dockerfile'},
+        {'name': None, 'path': 'docker/Dockerfile', 'saved_to': '/temp/gpt-pilot-test/docker/Dockerfile'},
+        {'name': '', 'path': 'docker/Dockerfile', 'saved_to': '/temp/gpt-pilot-test/docker/Dockerfile'},
+    ], ids=['name == path', 'empty path', 'slash path', 'None path', 'None name', 'empty name'])
+    @patch('helpers.Project.update_file')
+    @patch('helpers.Project.File')
+    def test_save_file_Dockerfile(self, mock_file_insert, mock_update_file, test_data):
+        # Given
+        data = {'content': 'Hello World!'}
+        if test_data['name'] is not None:
+            data['name'] = test_data['name']
+        if test_data['path'] is not None:
+            data['path'] = test_data['path']
+
+        project = create_project()
+
+        # When
+        project.save_file(data)
+
+        # Then assert that update_file with the correct path
+        expected_saved_to = test_data['saved_to']
+        mock_update_file.assert_called_once_with(expected_saved_to, 'Hello World!')
+
+    @pytest.mark.parametrize('test_data', [
+        {'name': '.env', 'path': '.env', 'saved_to': '/temp/gpt-pilot-test/.env'},
+        {'name': '.env', 'path': '', 'saved_to': '/temp/gpt-pilot-test/.env'},
+        {'name': '.env', 'path': '/', 'saved_to': '/temp/gpt-pilot-test/.env'},
+        {'name': '.env', 'path': None, 'saved_to': '/temp/gpt-pilot-test/.env'},
+        {'name': None, 'path': 'path/.env', 'saved_to': '/temp/gpt-pilot-test/path/.env'},
+        {'name': '', 'path': 'path/.env', 'saved_to': '/temp/gpt-pilot-test/path/.env'},
+    ], ids=['name == path', 'empty path', 'slash path', 'None path', 'None name', 'empty name'])
+    @patch('helpers.Project.update_file')
+    @patch('helpers.Project.File')
+    def test_save_file_dot_env(self, mock_file_insert, mock_update_file, test_data):
+        # Given
+        data = {'content': 'Hello World!'}
+        if test_data['name'] is not None:
+            data['name'] = test_data['name']
+        if test_data['path'] is not None:
+            data['path'] = test_data['path']
+
+        project = create_project()
+
+        # When
+        project.save_file(data)
+
+        # Then assert that update_file with the correct path
+        expected_saved_to = test_data['saved_to']
+        mock_update_file.assert_called_once_with(expected_saved_to, 'Hello World!')
 
     @pytest.mark.parametrize('file_path, file_name, expected', [
         ('file.txt', 'file.txt', '/temp/gpt-pilot-test/file.txt'),
