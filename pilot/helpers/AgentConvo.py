@@ -29,7 +29,7 @@ class AgentConvo:
         self.high_level_step = self.agent.project.current_step
 
         # add system message
-        system_message = get_sys_message(self.agent.role)
+        system_message = get_sys_message(self.agent.role,self.agent.project.args)
         logger.info('\n>>>>>>>>>> System Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',
                     system_message['content'])
         self.messages.append(system_message)
