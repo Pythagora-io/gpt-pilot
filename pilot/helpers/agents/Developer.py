@@ -117,9 +117,14 @@ class Developer(Agent):
                     step['human_intervention_description'])
 
         while True:
-            human_intervention_description = step['human_intervention_description'] + \
-                                             yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`') \
-                                             if self.run_command is not None else step['human_intervention_description']
+            human_intervention_description = step['human_intervention_description']
+
+            if self.run_command is not None:
+                if (self.project.ipc_client_instance is None or self.project.ipc_client_instance.client is None):
+                    human_intervention_description += yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
+                else:
+                    print(self.run_command, type="run_command")
+
             response = self.project.ask_for_human_intervention('I need human intervention:',
                 human_intervention_description,
                 cbs={
@@ -298,9 +303,13 @@ class Developer(Agent):
             iteration_convo.load_branch(last_branch_name)
             user_description = ('Here is a description of what should be working: \n\n' + blue_bold(continue_description) + '\n') \
                                 if continue_description != '' else ''
-            user_description = 'Can you check if the app works please? ' + user_description + \
-                               '\nIf you want to run the app, ' + \
-                               yellow_bold('just type "r" and press ENTER and that will run `' + self.run_command + '`')
+            user_description = 'Can you check if the app works please? ' + user_description
+
+            if self.project.ipc_client_instance is None or self.project.ipc_client_instance.client is None:
+                user_description += yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
+            else:
+                print(self.run_command, type="run_command")
+
             # continue_description = ''
             # TODO: Wait for a specific string in the output or timeout?
             response = self.project.ask_for_human_intervention(
