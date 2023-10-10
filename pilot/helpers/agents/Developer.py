@@ -226,18 +226,21 @@ class Developer(Agent):
                 return s
         # TODO end
 
-        answer = ''
-        while answer != 'continue':
-            print(red_bold(f'\n----------------------------- I need your help ------------------------------'))
-            print(extract_substring(str(help_description)))
-            print(red_bold(f'\n-----------------------------------------------------------------------------'))
-            answer = styled_text(
-                self.project,
-                'Once you\'re done, type "continue"?'
-            )
-            logger.info(f"help needed: %s", answer)
+       answer = ''
 
-        return { "success": True, "user_input": answer }
+while True:
+    print(red_bold('\n----------------------------- I Need Your Help ------------------------------'))
+    print(extract_substring(str(help_description)))
+    print(red_bold('-----------------------------------------------------------------------------'))
+    user_input = input('Type "continue" and press Enter when you\'re done: ').strip()
+    logger.info("Help needed: %s", user_input)
+
+    if user_input.lower() == 'continue':
+
+        return {"success": True, "user_input": user_input}
+    else:
+        
+        print(red('Invalid input. Please type "continue" to proceed.'))
 
     def execute_task(self, convo, task_steps, test_command=None, reset_convo=True,
                      test_after_code_changes=True, continue_development=False,
