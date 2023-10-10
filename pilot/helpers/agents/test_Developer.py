@@ -170,7 +170,7 @@ class TestDeveloper:
         mock_requests_post.side_effect = generate_response
         monkeypatch.setenv('OPENAI_API_KEY', 'secret')
 
-        mock_questionary = MockQuestionary([''])
+        # mock_questionary = MockQuestionary([''])
 
         # with patch('utils.questionary.questionary', mock_questionary):
         # When

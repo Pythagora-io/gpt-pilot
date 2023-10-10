@@ -490,7 +490,7 @@ The development process will include the creation of user stories and tasks, bas
         function_calls = DEVELOPMENT_PLAN
 
         # Retry on bad LLM responses
-        mock_questionary = MockQuestionary(['', '', 'no'])
+        # mock_questionary = MockQuestionary(['', '', 'no'])
 
         # with patch('utils.llm_connection.questionary', mock_questionary):
         # When
@@ -530,5 +530,5 @@ The development process will include the creation of user stories and tasks, bas
     #     # assert len(convo.messages) == 2
     #     assert response == ([{'type': 'command', 'description': 'Run the app'}], 'more_tasks')
 
-    def _create_convo(self, agent):
-        convo = AgentConvo(agent)
+    # def _create_convo(self, agent):
+    #     convo = AgentConvo(agent)

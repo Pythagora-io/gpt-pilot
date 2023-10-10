@@ -33,8 +33,8 @@ class Developer(Agent):
             self.project.skip_steps = False if ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0') else True
 
         # DEVELOPMENT
-        print(green_bold(f"🚀 Now for the actual development...\n"))
-        logger.info(f"Starting to create the actual code...")
+        print(green_bold("🚀 Now for the actual development...\n"))
+        logger.info("Starting to create the actual code...")
 
         for i, dev_task in enumerate(self.project.development_plan):
             self.implement_task(i, dev_task)
@@ -47,7 +47,7 @@ class Developer(Agent):
         print(green_bold(f'Implementing task #{i + 1}: ') + green(f' {development_task["description"]}\n'))
 
         convo_dev_task = AgentConvo(self)
-        task_description = convo_dev_task.send_message('development/task/breakdown.prompt', {
+        convo_dev_task.send_message('development/task/breakdown.prompt', {
             "name": self.project.args['name'],
             "app_type": self.project.args['app_type'],
             "app_summary": self.project.project_description,
@@ -148,7 +148,7 @@ class Developer(Agent):
             cli_response, llm_response = execute_command_and_check_cli_response(test_command['command'], test_command['timeout'], convo)
             logger.info('After running command llm_response: ' + llm_response)
             if llm_response == 'NEEDS_DEBUGGING':
-                print(red(f'Got incorrect CLI response:'))
+                print(red('Got incorrect CLI response:'))
                 print(cli_response)
                 print(red('-------------------'))
 
@@ -183,8 +183,8 @@ class Developer(Agent):
         if step_implementation_try >= MAX_COMMAND_DEBUG_TRIES:
             self.dev_help_needed(step)
 
-        print(red_bold(f'\n--------- LLM Reached Token Limit ----------'))
-        print(red_bold(f'Can I retry implementing the entire development step?'))
+        print(red_bold('\n--------- LLM Reached Token Limit ----------'))
+        print(red_bold('Can I retry implementing the entire development step?'))
 
         answer = ''
         while answer != 'y':
@@ -193,7 +193,7 @@ class Developer(Agent):
                 'Type y/n'
             )
 
-            logger.info(f"Retry step implementation? %s", answer)
+            logger.info("Retry step implementation? %s", answer)
             if answer == 'n':
                 return self.dev_help_needed(step)
 
@@ -202,9 +202,9 @@ class Developer(Agent):
     def dev_help_needed(self, step):
 
         if step['type'] == 'command':
-            help_description = (red_bold(f'I tried running the following command but it doesn\'t seem to work:\n\n') +
+            help_description = (red_bold('I tried running the following command but it doesn\'t seem to work:\n\n') +
                 white_bold(step['command']['command']) +
-                red_bold(f'\n\nCan you please make it work?'))
+                red_bold('\n\nCan you please make it work?'))
         elif step['type'] == 'code_change':
             help_description = step['code_change_description']
         elif step['type'] == 'human_intervention':
@@ -223,14 +223,14 @@ class Developer(Agent):
 
         answer = ''
         while answer != 'continue':
-            print(red_bold(f'\n----------------------------- I need your help ------------------------------'))
+            print(red_bold('\n----------------------------- I need your help ------------------------------'))
             print(extract_substring(str(help_description)))
-            print(red_bold(f'\n-----------------------------------------------------------------------------'))
+            print(red_bold('\n-----------------------------------------------------------------------------'))
             answer = styled_text(
                 self.project,
                 'Once you\'re done, type "continue"?'
             )
-            logger.info(f"help needed: %s", answer)
+            logger.info("help needed: %s", answer)
 
         return { "success": True, "user_input": answer }
 
@@ -355,8 +355,8 @@ class Developer(Agent):
         })
         return
         # ENVIRONMENT SETUP
-        print(green(f"Setting up the environment...\n"))
-        logger.info(f"Setting up the environment...")
+        print(green("Setting up the environment...\n"))
+        logger.info("Setting up the environment...")
 
         os_info = get_os_info()
         os_specific_technologies = self.convo_os_specific_tech.send_message('development/env_setup/specs.prompt',

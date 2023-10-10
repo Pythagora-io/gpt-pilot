@@ -83,7 +83,7 @@ class AgentConvo:
 
         # TODO handle errors from OpenAI
         if response == {}:
-            logger.error(f'Aborting with "OpenAI API error happened"')
+            logger.error('Aborting with "OpenAI API error happened"')
             raise Exception("OpenAI API error happened.")
 
         response = parse_agent_response(response, function_calls)

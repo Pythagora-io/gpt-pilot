@@ -52,7 +52,7 @@ if __name__ == "__main__":
             project.start()
     except KeyboardInterrupt:
         exit_gpt_pilot()
-    except Exception as e:
+    except Exception:
         print(red('---------- GPT PILOT EXITING WITH ERROR ----------'))
         traceback.print_exc()
         print(red('--------------------------------------------------'))

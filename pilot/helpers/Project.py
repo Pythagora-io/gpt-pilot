@@ -196,7 +196,7 @@ class Project:
             try:
                 relative_path, full_path = self.get_full_file_path('', file)
                 file_content = open(full_path, 'r').read()
-            except:
+            except OSError:
                 file_content = ''
 
             files_with_content.append({
@@ -315,7 +315,7 @@ class Project:
                 file=file_in_db,
                 defaults={'content': file.get('content', '')}
             )
-            file_snapshot.content = content = file['content']
+            file_snapshot.content = file['content']
             file_snapshot.save()
 
     def restore_files(self, development_step_id):
@@ -324,7 +324,7 @@ class Project:
 
         clear_directory(self.root_path, IGNORE_FOLDERS)
         for file_snapshot in file_snapshots:
-            update_file(file_snapshot.file.full_path, file_snapshot.content);
+            update_file(file_snapshot.file.full_path, file_snapshot.content)
 
     def delete_all_steps_except_current_branch(self):
         delete_unconnected_steps_from(self.checkpoints['last_development_step'], 'previous_step')

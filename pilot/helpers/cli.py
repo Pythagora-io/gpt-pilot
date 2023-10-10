@@ -133,7 +133,7 @@ def execute_command(project, command, timeout=None, process_name: str = None, fo
             timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
 
     if not force:
-        print(yellow_bold(f'\n--------- EXECUTE COMMAND ----------'))
+        print(yellow_bold('\n--------- EXECUTE COMMAND ----------'))
         question = f'Can I execute the command: `{yellow_bold(command)}`'
         if timeout is not None:
             question += f' with {timeout}ms timeout?'
@@ -169,7 +169,6 @@ def execute_command(project, command, timeout=None, process_name: str = None, fo
 
     q_stderr = queue.Queue()
     q = queue.Queue()
-    pid_container = [None]
     process = run_command(command, project.root_path, q, q_stderr)
 
     if process_name is not None:
@@ -179,7 +178,6 @@ def execute_command(project, command, timeout=None, process_name: str = None, fo
     output = ''
     stderr_output = ''
     start_time = time.time()
-    interrupted = False
 
     # Note: If we don't need to log the output in real-time, we can remove q, q_stderr, the threads and this while loop.
     # if timeout is not None:
@@ -237,7 +235,6 @@ def execute_command(project, command, timeout=None, process_name: str = None, fo
                 break
 
     except (KeyboardInterrupt, TimeoutError) as e:
-        interrupted = True
         if isinstance(e, KeyboardInterrupt):
             print('\nCTRL+C detected. Stopping command execution...')
             logger.info('CTRL+C detected. Stopping command execution...')
@@ -373,7 +370,7 @@ def run_command_until_success(convo, command,
 
     if response != 'DONE':
         # 'NEEDS_DEBUGGING'
-        print(red(f'Got incorrect CLI response:'))
+        print(red('Got incorrect CLI response:'))
         print(cli_response)
         print(red('-------------------'))
 
