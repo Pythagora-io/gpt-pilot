@@ -84,12 +84,12 @@ def get_prompt_components():
     return prompts_components
 
 
-def get_sys_message(role):
+def get_sys_message(role,args=None):
     """
     :param role: 'product_owner', 'architect', 'dev_ops', 'tech_lead', 'full_stack_developer', 'code_monkey'
     :return: { "role": "system", "content": "You are a {role}... You do..." }
     """
-    content = get_prompt(f'system_messages/{role}.prompt')
+    content = get_prompt(f'system_messages/{role}.prompt',args)
 
     return {
         "role": "system",
