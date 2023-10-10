@@ -22,7 +22,7 @@ def remove_ansi_codes(s: str) -> str:
 
 
 def styled_select(*args, **kwargs):
-    kwargs["style"] = custom_style  # Set style here
+    kwargs["style"] = custom_style
     return questionary.select(*args, **kwargs).unsafe_ask()  # .ask() is included here
 
 
@@ -59,7 +59,8 @@ def get_user_feedback():
     config = {
         'style': custom_style,
     }
-    return questionary.text("How did GPT Pilot do? Were you able to create any app that works? Please write any feedback you have or just press ENTER to exit: ", **config).unsafe_ask()
+    return questionary.text('How did GPT Pilot do? Were you able to create any app that works? '
+                            'Please write any feedback you have or just press ENTER to exit: ', **config).unsafe_ask()
 
 
 def flush_input():
@@ -67,11 +68,11 @@ def flush_input():
     try:
         # For Unix-like systems
         termios.tcflush(sys.stdin, termios.TCIOFLUSH)
-    except Exception:
+    except (ImportError, termios.error):
         # For Windows systems
         try:
             import msvcrt
             while msvcrt.kbhit():
                 msvcrt.getch()
-        except ImportError:
+        except (ImportError, OSError):
             pass
