@@ -8,7 +8,7 @@ import traceback
 from dotenv import load_dotenv
 load_dotenv()
 
-from utils.style import red
+from utils.style import color_text, ColorName
 from utils.custom_print import get_custom_print
 from helpers.Project import Project
 from utils.arguments import get_arguments
@@ -53,9 +53,9 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         exit_gpt_pilot()
     except Exception as e:
-        print(red('---------- GPT PILOT EXITING WITH ERROR ----------'))
+        print(color_text('---------- GPT PILOT EXITING WITH ERROR ----------', ColorName.RED))
         traceback.print_exc()
-        print(red('--------------------------------------------------'))
+        print(color_text('--------------------------------------------------', ColorName.RED))
         exit_gpt_pilot(False)
     finally:
         sys.exit(0)

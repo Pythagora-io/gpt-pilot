@@ -1,7 +1,7 @@
 import json
 import os
 from typing import Tuple
-from utils.style import  yellow_bold, cyan, white_bold
+from utils.style import color_text, ColorName
 from const.common import IGNORE_FOLDERS, STEPS
 from database.database import delete_unconnected_steps_from, delete_all_app_development_data
 from const.ipc import MESSAGE_TYPE
@@ -300,7 +300,7 @@ class Project:
         development_step, created = DevelopmentSteps.get_or_create(id=development_step_id)
 
         for file in files:
-            print(cyan(f'Saving file {(file["path"])}/{file["name"]}'))
+            print(color_text(f'Saving file {(file["path"])}/{file["name"]}', ColorName.CYAN))
             # TODO this can be optimized so we don't go to the db each time
             file_in_db, created = File.get_or_create(
                 app=self.app,
@@ -333,10 +333,11 @@ class Project:
 
     def ask_for_human_intervention(self, message, description=None, cbs={}, convo=None, is_root_task=False):
         answer = ''
-        question = yellow_bold(message)
+        question = color_text(message, ColorName.YELLOW, bold=True)
 
         if description is not None:
-            question += '\n' + '-' * 100 + '\n' + white_bold(description) + '\n' + '-' * 100 + '\n'
+            question += ('\n' + '-' * 100 + '\n' + color_text(description, ColorName.WHITE, bold=True)
+                         + '\n' + '-' * 100 + '\n')
 
         reset_branch_id = None if convo is None else convo.save_branch()
 
