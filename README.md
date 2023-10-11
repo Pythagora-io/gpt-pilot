@@ -9,7 +9,7 @@ You specify what kind of app you want to build. Then, GPT Pilot asks clarifying 
 * [🔌 Requirements](#-requirements)
 * [🚦How to start using gpt-pilot?](#how-to-start-using-gpt-pilot)
     * [🐳 How to start gpt-pilot in docker?](#-how-to-start-gpt-pilot-in-docker)
-* [🧑‍💻️ Other arguments](#-other-arguments)
+* [🧑‍💻️ CLI arguments](#%EF%B8%8F-cli-arguments)
 * [🔎 Examples](#-examples)
     * [Real-time chat app](#-real-time-chat-app)
     * [Markdown editor](#-markdown-editor)
