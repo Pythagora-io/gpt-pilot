@@ -183,17 +183,17 @@ IMPLEMENT_TASK = {
                         'description': 'List of smaller development steps that need to be done to complete the entire task.',
                         'items': {
                             'type': 'object',
-                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an  If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
+                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesn\'t finish by itself (eg. a command to run an  If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
                             'properties': {
                                 'type': {
                                     'type': 'string',
-                                    'enum': ['command', 'code_change', 'human_intervention'],
+                                    'enum': ['command', 'kill_process', 'code_change', 'human_intervention'],
                                     'description': 'Type of the development step that needs to be done to complete the entire task.',
                                 },
                                 'command': command_definition(),
                                 'kill_process': {
                                     'type': 'string',
-                                    'description': 'To kill a process that was left running by a previous `command` provide the `process_name` in this field.'
+                                    'description': 'To kill a process that was left running by a previous `command` step provide the `process_name` in this field and set `type` to "kill_process".',
                                 },
                                 'code_change': {
                                     'type': 'object',
