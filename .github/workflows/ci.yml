@@ -7,16 +7,34 @@ on:
   pull_request:
     branches:
       - main
-      - debugging_ipc
 
 jobs:
-  build:
+  Docker:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build the Docker image
+        run: docker compose build
+      - name: Run the Docker image
+        run: docker compose up gpt-pilot -d
+      - name: Wait for the Docker image to start
+        run: docker ps
+      - name: Stop the Docker image
+        run: docker compose down
+  
+  Test:
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         # 3.10 - 04 Oct 2021
         # 3.11 - 24 Oct 2022
         python-version: ['3.9', '3.10', '3.11', '3.12']
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        exclude:
+          # LINK : fatal error LNK1181: cannot open input file 'libpq.lib'
+          # Maybe related: https://github.com/psycopg/psycopg2/issues/1628
+          - os: windows-latest
+            python-version: '3.12'
 
     steps:
     - uses: actions/checkout@v4
@@ -42,7 +60,9 @@ jobs:
         #ruff --format=github --target-version=py37 --ignore=F401,E501 .
 
     - name: Run tests
+      env:
+        PYTHONPATH: .
       run: |
         pip install pytest
         cd pilot
-        PYTHONPATH=. pytest -m "not slow and not uses_tokens and not ux_test"
+        pytest -m "not slow and not uses_tokens and not ux_test"

@@ -44,7 +44,7 @@ def command_definition(description_command=f'A single command that needs to be e
                        description_timeout=
                        'Timeout in milliseconds that represent the approximate time this command takes to finish. '
                        'If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), '
-                       'set the timeout to -1 and provide a process_name. '
+                       'set the timeout to to a value long enough to determine that it has started successfully and provide a process_name. '
                        'If you need to create a directory that doesn\'t exist and is not the root project directory, '
                        'always create it by running a command `mkdir`'):
     return {
@@ -58,6 +58,10 @@ def command_definition(description_command=f'A single command that needs to be e
             'timeout': {
                 'type': 'number',
                 'description': description_timeout,
+            },
+            'success_message': {
+                'type': 'string',
+                'description': 'A message to look for in the output of the command to determine if successful or not.',
             },
             'process_name': {
                 'type': 'string',
@@ -136,7 +140,7 @@ DEV_TASKS_BREAKDOWN = {
                         'description': 'List of smaller development steps that need to be done to complete the entire task.',
                         'items': {
                             'type': 'object',
-                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
+                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
                             'properties': {
                                 'type': {
                                     'type': 'string',
@@ -179,14 +183,18 @@ IMPLEMENT_TASK = {
                         'description': 'List of smaller development steps that need to be done to complete the entire task.',
                         'items': {
                             'type': 'object',
-                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an  If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
+                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesn\'t finish by itself (eg. a command to run an  If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
                             'properties': {
                                 'type': {
                                     'type': 'string',
-                                    'enum': ['command', 'code_change', 'human_intervention'],
+                                    'enum': ['command', 'kill_process', 'code_change', 'human_intervention'],
                                     'description': 'Type of the development step that needs to be done to complete the entire task.',
                                 },
                                 'command': command_definition(),
+                                'kill_process': {
+                                    'type': 'string',
+                                    'description': 'To kill a process that was left running by a previous `command` step provide the `process_name` in this field and set `type` to "kill_process".',
+                                },
                                 'code_change': {
                                     'type': 'object',
                                     'description': 'A code change that needs to be implemented. This should be used only if the task is of a type "code_change".',
@@ -456,7 +464,7 @@ IMPLEMENT_CHANGES = {
                             },
                             'path': {
                                 'type': 'string',
-                                'description': 'Path of the file that needs to be saved on the disk.',
+                                'description': 'Full path of the file with the file name that needs to be saved.',
                             },
                             'content': {
                                 'type': 'string',

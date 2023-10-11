@@ -1,3 +1,4 @@
+import platform
 import uuid
 from utils.style import green, red, green_bold, yellow_bold, red_bold, blue_bold, white_bold
 from helpers.exceptions.TokenLimitError import TokenLimitError
@@ -11,7 +12,7 @@ from logger.logger import logger
 from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
-from helpers.cli import run_command_until_success, execute_command_and_check_cli_response
+from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes
 from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK
 from database.database import save_progress, get_progress_steps, update_app_status
 from utils.utils import get_os_info
@@ -97,10 +98,12 @@ class Developer(Agent):
         additional_message = 'Let\'s start with the step #0:\n\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i)) } are finished so let\'s do step #{i + 1} now.\n\n'
 
         process_name = data['process_name'] if 'process_name' in data else None
+        success_message = data['success_message'] if 'success_message' in data else None
 
         return run_command_until_success(convo, data['command'],
                                          timeout=data['timeout'],
                                          process_name=process_name,
+                                         success_message=success_message,
                                          additional_message=additional_message)
 
     def step_human_intervention(self, convo, step: dict):
@@ -171,7 +174,9 @@ class Developer(Agent):
 
         if development_task is not None:
             convo.remove_last_x_messages(2)
-            detailed_user_review_goal = convo.send_message('development/define_user_review_goal.prompt', {})
+            detailed_user_review_goal = convo.send_message('development/define_user_review_goal.prompt', {
+                'os': platform.system()
+            })
             convo.remove_last_x_messages(2)
 
         try:
@@ -340,7 +345,9 @@ class Developer(Agent):
 
                 # self.debugger.debug(iteration_convo, user_input=user_feedback)
 
-                task_steps = iteration_convo.send_message('development/parse_task.prompt', {}, IMPLEMENT_TASK)
+                task_steps = iteration_convo.send_message('development/parse_task.prompt', {
+                    'running_processes': running_processes
+                }, IMPLEMENT_TASK)
                 iteration_convo.remove_last_x_messages(2)
 
                 return self.execute_task(iteration_convo, task_steps, is_root_task=True)
