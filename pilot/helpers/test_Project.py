@@ -5,6 +5,8 @@ from unittest.mock import patch, MagicMock
 from helpers.Project import Project
 from database.models.files import File
 
+test_root = os.path.join(os.path.dirname(__file__), '../../workspace/gpt-pilot-test').replace('\\', '/')
+
 
 def create_project():
     project = Project({
@@ -16,17 +18,17 @@ def create_project():
         architecture=[],
         user_stories=[]
     )
-    project.set_root_path('/temp/gpt-pilot-test')
+    project.set_root_path(test_root)
     project.app = 'test'
     return project
 
 
 @pytest.mark.parametrize('test_data', [
-    {'name': 'package.json', 'path': 'package.json', 'saved_to': '/temp/gpt-pilot-test/package.json'},
-    {'name': 'package.json', 'path': '', 'saved_to': '/temp/gpt-pilot-test/package.json'},
-    # {'name': 'Dockerfile', 'path': None, 'saved_to': '/temp/gpt-pilot-test/Dockerfile'},
-    {'name': None, 'path': 'public/index.html', 'saved_to': '/temp/gpt-pilot-test/public/index.html'},
-    {'name': '', 'path': 'public/index.html', 'saved_to': '/temp/gpt-pilot-test/public/index.html'},
+    {'name': 'package.json', 'path': 'package.json', 'saved_to': f'{test_root}/package.json'},
+    {'name': 'package.json', 'path': '', 'saved_to': f'{test_root}/package.json'},
+    # {'name': 'Dockerfile', 'path': None, 'saved_to': f'{test_root}/Dockerfile'},
+    {'name': None, 'path': 'public/index.html', 'saved_to': f'{test_root}/public/index.html'},
+    {'name': '', 'path': 'public/index.html', 'saved_to': f'{test_root}/public/index.html'},
 
     # TODO: Treatment of paths outside of the project workspace - https://github.com/Pythagora-io/gpt-pilot/issues/129
     # {'name': '/etc/hosts', 'path': None, 'saved_to': '/etc/hosts'},
@@ -67,12 +69,12 @@ def test_save_file(mock_file_insert, mock_update_file, test_data):
 
 
 @pytest.mark.parametrize('file_path, file_name, expected', [
-    ('file.txt', 'file.txt', '/temp/gpt-pilot-test/file.txt'),
-    ('', 'file.txt', '/temp/gpt-pilot-test/file.txt'),
-    ('path/', 'file.txt', '/temp/gpt-pilot-test/path/file.txt'),
-    ('path/to/', 'file.txt', '/temp/gpt-pilot-test/path/to/file.txt'),
-    ('path/to/file.txt', 'file.txt', '/temp/gpt-pilot-test/path/to/file.txt'),
-    ('./path/to/file.txt', 'file.txt', '/temp/gpt-pilot-test/./path/to/file.txt'),  # ideally result would not have `./`
+    ('file.txt', 'file.txt', f'{test_root}/file.txt'),
+    ('', 'file.txt', f'{test_root}/file.txt'),
+    ('path/', 'file.txt', f'{test_root}/path/file.txt'),
+    ('path/to/', 'file.txt', f'{test_root}/path/to/file.txt'),
+    ('path/to/file.txt', 'file.txt', f'{test_root}/path/to/file.txt'),
+    ('./path/to/file.txt', 'file.txt', f'{test_root}/./path/to/file.txt'),  # ideally result would not have `./`
 ])
 def test_get_full_path(file_path, file_name, expected):
     # Given
@@ -112,7 +114,7 @@ def test_get_full_path_absolute(file_path, file_name, expected):
 #     full_path = project.get_full_file_path(file_path, file_name)
 #
 #     # Then
-#     assert full_path == '/temp/gpt-pilot-test/path/to/file/'
+#     assert full_path == f'{test_root}/path/to/file/'
 
 
 class TestProjectFileLists:
