@@ -135,7 +135,7 @@ def should_execute_step(arg_step, current_step):
     arg_step_index = 0 if arg_step is None else STEPS.index(arg_step) if arg_step in STEPS else None
     current_step_index = STEPS.index(current_step) if current_step in STEPS else None
 
-    return arg_step_index is not None and current_step_index is not None and current_step_index >= arg_step_index
+    return arg_step_index is not None and current_step_index is not None and current_step_index > arg_step_index
 
 
 def step_already_finished(args, step):

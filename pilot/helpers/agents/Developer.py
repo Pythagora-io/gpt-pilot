@@ -43,6 +43,7 @@ class Developer(Agent):
         # DEVELOPMENT END
 
         logger.info('The app is DONE!!! Yay...you can use it now.')
+        print(green_bold("The app is DONE!!! Yay...you can use it now.\n"))
 
     def implement_task(self, i, development_task=None):
         print(green_bold(f'Implementing task #{i + 1}: ') + green(f' {development_task["description"]}\n'))

@@ -16,23 +16,17 @@ def setup_workspace(args) -> str:
     """
     Creates & returns the path to the project workspace.
     Also creates a 'tests' folder inside the workspace.
-    :param args: may contain 'workspace' or 'root' keys
+    :param args: may contain 'root' key
     """
-    # `args['workspace']` can be used to work with an existing workspace at the specified path.
-    # `args['root']` is used by VS Code for (nearly) the same purpose, but `args['name']` is appended to it.
-    workspace = args.get('workspace')
-    if workspace:
-        try:
-            save_user_app(args['user_id'], args['app_id'], workspace)
-            return workspace
-        except Exception as e:
-            print(str(e))
-
-        return args['workspace']
-
     root = args.get('root') or get_parent_folder('pilot')
-    project_path = create_directory(os.path.join(root, 'workspace'), args.get('name', 'default_project_name'))
+    name = args.get('name', 'default_project_name')
+    project_path = create_directory(os.path.join(root, 'workspace'), name)
     create_directory(project_path, 'tests')
+    try:
+        save_user_app(args.get('user_id'), args.get('app_id'), name)
+    except Exception as e:
+        print(str(e))
+
     return project_path
 
 
