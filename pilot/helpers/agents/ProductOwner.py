@@ -27,7 +27,7 @@ class ProductOwner(Agent):
             step = get_progress_steps(self.project.args['app_id'], PROJECT_DESCRIPTION_STEP)
             if step and not should_execute_step(self.project.args['step'], PROJECT_DESCRIPTION_STEP):
                 step_already_finished(self.project.args, step)
-                self.project.root_path = setup_workspace(self.project.args)
+                self.project.set_oot_path(setup_workspace(self.project.args))
                 self.project.project_description = step['summary']
                 self.project.project_description_messages = step['messages']
                 return
@@ -39,7 +39,7 @@ class ProductOwner(Agent):
         if 'name' not in self.project.args:
             self.project.args['name'] = clean_filename(ask_user(self.project, 'What is the project name?'))
 
-        self.project.root_path = setup_workspace(self.project.args)
+        self.project.set_root_path(setup_workspace(self.project.args))
 
         self.project.app = save_app(self.project)
 

@@ -17,7 +17,6 @@ from utils.utils import fix_json, get_prompt
 from utils.function_calling import add_function_calls_to_request, FunctionCallSet, FunctionType
 from utils.questionary import styled_text
 
-
 def get_tokens_in_messages(messages: List[str]) -> int:
     tokenizer = tiktoken.get_encoding("cl100k_base")  # GPT-4 tokenizer
     tokenized_messages = [tokenizer.encode(message['content']) for message in messages]
@@ -332,6 +331,7 @@ def stream_gpt_completion(data, req_type, project):
     logger.debug(f'Response status code: {response.status_code}')
 
     if response.status_code != 200:
+        project.dot_pilot_gpt.log_chat_completion(endpoint, model, req_type, data['messages'], response.text)
         logger.info(f'problem with request: {response.text}')
         raise Exception(f"API responded with status code: {response.status_code}. Response text: {response.text}")
 
@@ -405,6 +405,7 @@ def stream_gpt_completion(data, req_type, project):
     #     function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
     #     return return_result({'function_calls': function_calls}, lines_printed)
     logger.info('<<<<<<<<<< LLM Response <<<<<<<<<<\n%s\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<', gpt_response)
+    project.dot_pilot_gpt.log_chat_completion(endpoint, model, req_type, data['messages'], gpt_response)
 
     if expecting_json:
         gpt_response = clean_json_response(gpt_response)

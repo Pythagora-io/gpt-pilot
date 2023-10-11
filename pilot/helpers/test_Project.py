@@ -1,5 +1,7 @@
+import os
+import json
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from helpers.Project import Project
 from database.models.files import File
 
@@ -14,7 +16,7 @@ def create_project():
         architecture=[],
         user_stories=[]
     )
-    project.root_path = "/temp/gpt-pilot-test"
+    project.set_root_path('/temp/gpt-pilot-test')
     project.app = 'test'
     return project
 
@@ -100,7 +102,6 @@ def test_get_full_path_absolute(file_path, file_name, expected):
     # Then
     assert absolute_path == expected
 
-
 # This is known to fail and should be avoided
 # def test_get_full_file_path_error():
 #     # Given
@@ -112,3 +113,58 @@ def test_get_full_path_absolute(file_path, file_name, expected):
 #
 #     # Then
 #     assert full_path == '/temp/gpt-pilot-test/path/to/file/'
+
+
+class TestProjectFileLists:
+    def setup_method(self):
+        # Given a project
+        project = create_project()
+        self.project = project
+        project.set_root_path(os.path.join(os.path.dirname(__file__), '../../workspace/directory_tree'))
+        project.project_description = 'Test Project'
+        project.development_plan = [{
+            'description': 'Test User Story',
+            'programmatic_goal': 'Test Programmatic Goal',
+            'user_review_goal': 'Test User Review Goal',
+        }]
+
+        # with directories including common.IGNORE_FOLDERS
+        src = os.path.join(project.root_path, 'src')
+        os.makedirs(src, exist_ok=True)
+        for dir in ['.git', '.idea', '.vscode', '__pycache__', 'node_modules', 'venv', 'dist', 'build']:
+            os.makedirs(os.path.join(project.root_path, dir), exist_ok=True)
+
+        # ...and files
+        with open(os.path.join(project.root_path, 'package.json'), 'w') as file:
+            json.dump({'name': 'test app'}, file, indent=2)
+        with open(os.path.join(src, 'main.js'), 'w') as file:
+            file.write('console.log("Hello World!");')
+
+        # and a non-empty .gpt-pilot directory
+        project.dot_pilot_gpt.write_project(project)
+
+    def test_get_directory_tree(self):
+        # When
+        tree = self.project.get_directory_tree()
+
+        # Then we should not be including the .gpt-pilot directory or other ignored directories
+        assert tree == '''
+|-- /
+|   |-- package.json
+|   |-- src/
+|   |   |-- main.js
+'''.lstrip()
+
+    @patch('helpers.Project.DevelopmentSteps.get_or_create', return_value=('test', True))
+    @patch('helpers.Project.File.get_or_create', return_value=('test', True))
+    @patch('helpers.Project.FileSnapshot.get_or_create', return_value=(MagicMock(), True))
+    def test_save_files_snapshot(self, mock_snap, mock_file, mock_step):
+        # Given a snapshot of the files in the project
+
+        # When we save the file snapshot
+        self.project.save_files_snapshot('test')
+
+        # Then the files should be saved to the project, but nothing from `.gpt-pilot/`
+        assert mock_file.call_count == 2
+        assert mock_file.call_args_list[0][1]['name'] == 'package.json'
+        assert mock_file.call_args_list[1][1]['name'] == 'main.js'

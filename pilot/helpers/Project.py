@@ -19,6 +19,7 @@ from database.models.development_steps import DevelopmentSteps
 from database.models.file_snapshot import FileSnapshot
 from database.models.files import File
 from logger.logger import logger
+from utils.dot_gpt_pilot import DotGptPilot
 
 
 class Project:
@@ -69,6 +70,11 @@ class Project:
             self.architecture = architecture
         # if development_plan is not None:
         #     self.development_plan = development_plan
+        self.dot_pilot_gpt = DotGptPilot()
+
+    def set_root_path(self, root_path: str):
+        self.root_path = root_path
+        self.dot_pilot_gpt.with_root_path(root_path)
 
     def start(self):
         """
@@ -128,6 +134,7 @@ class Project:
                         break
         # TODO END
 
+        self.dot_pilot_gpt.write_project(self)
         print(json.dumps({
             "project_stage": "coding"
         }), type='info')
