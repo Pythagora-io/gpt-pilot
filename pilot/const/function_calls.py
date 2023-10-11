@@ -40,7 +40,7 @@ def return_array_from_prompt(name_plural, name_singular, return_var_name):
     }
 
 
-def command_definition(description_command=f'A single command that needs to be executed.',
+def command_definition(description_command='A single command that needs to be executed.',
                        description_timeout=
                        'Timeout in milliseconds that represent the approximate time this command takes to finish. '
                        'If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), '
@@ -147,7 +147,7 @@ DEV_TASKS_BREAKDOWN = {
                                     'enum': ['command', 'code_change', 'human_intervention'],
                                     'description': 'Type of the development step that needs to be done to complete the entire task.',
                                 },
-                                'command': command_definition(f'A single command that needs to be executed.', 'Timeout in milliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. Remember, this is not in seconds but in milliseconds so likely it always needs to be greater than 1000.'),
+                                'command': command_definition('A single command that needs to be executed.', 'Timeout in milliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. Remember, this is not in seconds but in milliseconds so likely it always needs to be greater than 1000.'),
                                 'code_change_description': {
                                     'type': 'string',
                                     'description': 'Description of a the development step that needs to be done. This should be used only if the task is of a type "code_change" and it should thoroughly describe what needs to be done to implement the code change for a single file - it cannot include changes for multiple files.',
@@ -297,16 +297,16 @@ DEV_STEPS = {
         },
         {
             'name': 'get_files',
-            'description': f'Returns development files that are currently implemented so that they can be analized and so that changes can be appropriatelly made.',
+            'description': 'Returns development files that are currently implemented so that they can be analized and so that changes can be appropriatelly made.',
             'parameters': {
                 'type': 'object',
                 'properties': {
                     'files': {
                         'type': 'array',
-                        'description': f'List of files that need to be analyzed to implement the required changes.',
+                        'description': 'List of files that need to be analyzed to implement the required changes.',
                         'items': {
                             'type': 'string',
-                            'description': f'A single file name that needs to be analized to implement the reqired changes. Remember, this is a file name with path relative to the project root. For example, if a file path is `{{project_root}}/models/model.py`, this value needs to be `models/model.py`.',
+                            'description': 'A single file name that needs to be analized to implement the reqired changes. Remember, this is a file name with path relative to the project root. For example, if a file path is `{{project_root}}/models/model.py`, this value needs to be `models/model.py`.',
                         }
                     }
                 },
@@ -403,14 +403,15 @@ DEVELOPMENT_PLAN = {
 EXECUTE_COMMANDS = {
     'definitions': [{
         'name': 'execute_commands',
-        'description': f'Executes a list of commands. ',
+        'description': 'Executes a list of commands. ',
         'parameters': {
             'type': 'object',
             'properties': {
                 'commands': {
                     'type': 'array',
-                    'description': f'List of commands that need to be executed.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
-                    'items': command_definition(f'A single command that needs to be executed.', f'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.')
+                    'description': 'List of commands that need to be executed.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
+                    'items': command_definition('A single command that needs to be executed.',
+                                                'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.')
                 }
             },
             'required': ['commands'],
@@ -424,16 +425,16 @@ EXECUTE_COMMANDS = {
 GET_FILES = {
     'definitions': [{
         'name': 'get_files',
-        'description': f'Returns development files that are currently implemented so that they can be analized and so that changes can be appropriatelly made.',
+        'description': 'Returns development files that are currently implemented so that they can be analized and so that changes can be appropriatelly made.',
         'parameters': {
             'type': 'object',
             'properties': {
                 'files': {
                     'type': 'array',
-                    'description': f'List of files that need to be analized to implement the reqired changes. Any file name in this array MUST be from the directory tree listed in the previous message.',
+                    'description': 'List of files that need to be analized to implement the reqired changes. Any file name in this array MUST be from the directory tree listed in the previous message.',
                     'items': {
                         'type': 'string',
-                        'description': f'A single file name that needs to be analized to implement the reqired changes. Remember, this is a file name with path relative to the project root. For example, if a file path is `{{project_root}}/models/model.py`, this value needs to be `models/model.py`. This file name MUST be listed in the directory from the previous message.',
+                        'description': 'A single file name that needs to be analized to implement the reqired changes. Remember, this is a file name with path relative to the project root. For example, if a file path is `{{project_root}}/models/model.py`, this value needs to be `models/model.py`. This file name MUST be listed in the directory from the previous message.',
                     }
                 }
             },
@@ -493,13 +494,13 @@ IMPLEMENT_CHANGES = {
 GET_TEST_TYPE = {
     'definitions': [{
         'name': 'test_changes',
-        'description': f'Tests the changes based on the test type.',
+        'description': 'Tests the changes based on the test type.',
         'parameters': {
             'type': 'object',
             'properties': {
                 'type': {
                     'type': 'string',
-                    'description': f'Type of a test that needs to be run. If this is just an intermediate step in getting a task done, put `no_test` as the type and we\'ll just go onto the next task without testing.',
+                    'description': 'Type of a test that needs to be run. If this is just an intermediate step in getting a task done, put `no_test` as the type and we\'ll just go onto the next task without testing.',
                     'enum': ['automated_test', 'command_test', 'manual_test', 'no_test']
                 },
                 'command': command_definition('Command that needs to be run to test the changes.', 'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`'),

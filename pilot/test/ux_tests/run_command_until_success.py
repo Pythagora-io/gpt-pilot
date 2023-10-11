@@ -38,4 +38,4 @@ def run_command_until_success():
         'human_intervention_description': 'I want you to test that this process works from the CLI _and_ from the UI.',
     }
 
-    result = developer.step_human_intervention(convo, step)
+    developer.step_human_intervention(convo, step)

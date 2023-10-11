@@ -1,9 +1,10 @@
-from peewee import *
+from peewee import ForeignKeyField, AutoField, TextField, IntegerField, CharField
 from database.config import DATABASE_TYPE
 from database.models.components.base_models import BaseModel
 from database.models.app import App
 from database.models.components.sqlite_middlewares import JSONField
 from playhouse.postgres_ext import BinaryJSONField
+
 
 class DevelopmentSteps(BaseModel):
     id = AutoField()  # This will serve as the primary key

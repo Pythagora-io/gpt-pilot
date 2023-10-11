@@ -1,5 +1,5 @@
 from playhouse.shortcuts import model_to_dict
-from peewee import *
+from peewee import DoesNotExist, IntegrityError
 from utils.style import yellow, red
 from functools import reduce
 import operator
@@ -27,11 +27,11 @@ from database.models.user_apps import UserApps
 from database.models.user_inputs import UserInputs
 from database.models.files import File
 
-DB_NAME = os.getenv("DB_NAME")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
+# DB_NAME = os.getenv("DB_NAME")
+# DB_HOST = os.getenv("DB_HOST")
+# DB_PORT = os.getenv("DB_PORT")
+# DB_USER = os.getenv("DB_USER")
+# DB_PASSWORD = os.getenv("DB_PASSWORD")
 TABLES = [
             User,
             App,
@@ -251,24 +251,24 @@ def get_db_model_from_hash_id(model, app_id, previous_step, high_level_step):
 
 
 def hash_and_save_step(Model, app_id, unique_data_fields, data_fields, message):
-    app = get_app(app_id)
+    # app = get_app(app_id)
 
-    fields_to_preserve = [getattr(Model, field) for field in list(unique_data_fields.keys())]
+    # fields_to_preserve = [getattr(Model, field) for field in list(unique_data_fields.keys())]
 
     for field, value in data_fields.items():
         unique_data_fields[field] = value
 
     try:
-        existing_record = Model.get_or_none(
-            (Model.app == app) & (Model.previous_step == unique_data_fields['previous_step']) & (
-                        Model.high_level_step == unique_data_fields['high_level_step']))
+        # existing_record = Model.get_or_none(
+        #     (Model.app == app) & (Model.previous_step == unique_data_fields['previous_step']) & (
+        #                 Model.high_level_step == unique_data_fields['high_level_step']))
         inserted_id = (Model
                        .insert(**unique_data_fields)
                        .execute())
 
         record = Model.get_by_id(inserted_id)
         logger.debug(yellow(f"{message} with id {record.id}"))
-    except IntegrityError as e:
+    except IntegrityError:
         logger.warn(f"A record with data {unique_data_fields} already exists for {Model.__name__}.")
         return None
     return record
@@ -328,10 +328,10 @@ def save_command_run(project, command, cli_response):
 
 
 def get_saved_command_run(project, command):
-    data_to_hash = {
-        'command': command,
-        'command_runs_count': project.command_runs_count
-    }
+    # data_to_hash = {
+    #     'command': command,
+    #     'command_runs_count': project.command_runs_count
+    # }
     command_run = get_db_model_from_hash_id(CommandRuns, project.args['app_id'],
                                             project.checkpoints['last_command_run'], project.current_step)
     return command_run
@@ -356,10 +356,10 @@ def save_user_input(project, query, user_input):
 
 
 def get_saved_user_input(project, query):
-    data_to_hash = {
-        'query': query,
-        'user_inputs_count': project.user_inputs_count
-    }
+    # data_to_hash = {
+    #     'query': query,
+    #     'user_inputs_count': project.user_inputs_count
+    # }
     user_input = get_db_model_from_hash_id(UserInputs, project.args['app_id'], project.checkpoints['last_user_input'],
                                            project.current_step)
     return user_input

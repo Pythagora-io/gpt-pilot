@@ -1,4 +1,4 @@
-from peewee import *
+from peewee import ForeignKeyField, CharField, BooleanField, DateTimeField
 from database.config import DATABASE_TYPE
 from database.models.components.base_models import BaseModel
 from database.models.app import App

@@ -85,7 +85,7 @@ class AgentConvo:
         # It's complicated because calling functions are expecting different types of responses - string or tuple
         # https://github.com/Pythagora-io/gpt-pilot/issues/165 & #91
         if response == {}:
-            logger.error(f'Aborting with "OpenAI API error happened"')
+            logger.error('Aborting with "OpenAI API error happened"')
             raise Exception("OpenAI API error happened.")
 
         response = parse_agent_response(response, function_calls)

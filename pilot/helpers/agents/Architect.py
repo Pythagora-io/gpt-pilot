@@ -28,8 +28,8 @@ class Architect(Agent):
             return step['architecture']
 
         # ARCHITECTURE
-        print(green_bold(f"Planning project architecture...\n"))
-        logger.info(f"Planning project architecture...")
+        print(green_bold("Planning project architecture...\n"))
+        logger.info("Planning project architecture...")
 
         self.convo_architecture = AgentConvo(self)
         architecture = self.convo_architecture.send_message('architecture/technologies.prompt',

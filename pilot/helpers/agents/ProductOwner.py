@@ -86,7 +86,7 @@ class ProductOwner(Agent):
             return step['user_stories']
 
         # USER STORIES
-        msg = f"User Stories:\n"
+        msg = "User Stories:\n"
         print(green_bold(msg))
         logger.info(msg)
 
@@ -120,7 +120,7 @@ class ProductOwner(Agent):
             return step['user_tasks']
 
         # USER TASKS
-        msg = f"User Tasks:\n"
+        msg = "User Tasks:\n"
         print(green_bold(msg))
         logger.info(msg)
 
