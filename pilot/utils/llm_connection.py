@@ -410,6 +410,8 @@ def stream_gpt_completion(data, req_type, project):
     if expecting_json:
         gpt_response = clean_json_response(gpt_response)
         assert_json_schema(gpt_response, expecting_json)
+        # Note, we log JSON separately from the YAML log above incase the JSON is invalid and an error is raised
+        project.dot_pilot_gpt.log_chat_completion_json(endpoint, model, req_type, expecting_json, gpt_response)
 
     new_code = postprocessing(gpt_response, req_type)  # TODO add type dynamically
     return return_result({'text': new_code}, lines_printed)

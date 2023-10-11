@@ -1,3 +1,4 @@
+import json
 import os
 import yaml
 from datetime import datetime
@@ -30,7 +31,7 @@ class DotGptPilot:
 
     def log_chat_completion(self, endpoint: str, model: str, req_type: str, messages: list[dict], response: str):
         if self.log_chat_completions:
-            time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+            time = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
             with open(os.path.join(self.dot_gpt_pilot_path, 'chat_log', f'{time}-{req_type}.yaml'), 'w') as file:
                 data = {
                     'endpoint': endpoint,
@@ -40,6 +41,19 @@ class DotGptPilot:
                 }
 
                 yaml.safe_dump(data, file, width=120, indent=2, default_flow_style=False, sort_keys=False)
+
+    def log_chat_completion_json(self, endpoint: str, model: str, req_type: str, functions: dict, json_response: str):
+        if self.log_chat_completions:
+            time = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
+            with open(os.path.join(self.dot_gpt_pilot_path, 'chat_log', f'{time}-{req_type}.json'), 'w') as file:
+                data = {
+                    'endpoint': endpoint,
+                    'model': model,
+                    'functions': functions,
+                    'response': json.loads(json_response),
+                }
+
+                json.dump(data, file, indent=2)
 
     def write_project(self, project):
         data = {
