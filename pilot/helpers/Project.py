@@ -24,7 +24,7 @@ from utils.dot_gpt_pilot import DotGptPilot
 
 class Project:
     def __init__(self, args, name=None, description=None, user_stories=None, user_tasks=None, architecture=None,
-                 development_plan=None, current_step=None, ipc_client_instance=None):
+                 development_plan=None, current_step=None, ipc_client_instance=None, enable_dot_pilot_gpt=True):
         """
         Initialize a project.
 
@@ -70,7 +70,7 @@ class Project:
             self.architecture = architecture
         # if development_plan is not None:
         #     self.development_plan = development_plan
-        self.dot_pilot_gpt = DotGptPilot()
+        self.dot_pilot_gpt = DotGptPilot(log_chat_completions=enable_dot_pilot_gpt)
 
     def set_root_path(self, root_path: str):
         self.root_path = root_path
