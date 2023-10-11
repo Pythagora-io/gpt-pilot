@@ -140,7 +140,7 @@ DEV_TASKS_BREAKDOWN = {
                         'description': 'List of smaller development steps that need to be done to complete the entire task.',
                         'items': {
                             'type': 'object',
-                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
+                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
                             'properties': {
                                 'type': {
                                     'type': 'string',
