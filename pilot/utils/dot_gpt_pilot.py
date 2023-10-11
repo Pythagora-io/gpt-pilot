@@ -13,22 +13,31 @@ class DotGptPilot:
     def __init__(self, log_chat_completions: bool = True):
         self.log_chat_completions = log_chat_completions
         self.dot_gpt_pilot_path = self.with_root_path('~', create=False)
+        self.chat_log_path = self.chat_log_folder(None)
 
     def with_root_path(self, root_path: str, create=True):
         dot_gpt_pilot_path = os.path.join(root_path, '.gpt-pilot')
+        self.dot_gpt_pilot_path = dot_gpt_pilot_path
 
         # Create the `.gpt-pilot` directory if required.
         if create and self.log_chat_completions:  # (... or ...):
-            print('creating dirs: ' + os.path.join(dot_gpt_pilot_path, 'chat_log'))
-            os.makedirs(os.path.join(dot_gpt_pilot_path, 'chat_log'), exist_ok=True)
+            self.chat_log_folder(None)
 
-        self.dot_gpt_pilot_path = dot_gpt_pilot_path
         return dot_gpt_pilot_path
+
+    def chat_log_folder(self, task):
+        chat_log_path = os.path.join(self.dot_gpt_pilot_path, 'chat_log')
+        if task is not None:
+            chat_log_path = os.path.join(chat_log_path, 'task_' + task)
+
+        os.makedirs(chat_log_path, exist_ok=True)
+        self.chat_log_path = chat_log_path
+        return chat_log_path
 
     def log_chat_completion(self, endpoint: str, model: str, req_type: str, messages: list[dict], response: str):
         if self.log_chat_completions:
-            time = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
-            with open(os.path.join(self.dot_gpt_pilot_path, 'chat_log', f'{time}-{req_type}.yaml'), 'w') as file:
+            time = datetime.now().strftime('%Y-%m-%d_%H_%M_%S')
+            with open(os.path.join(self.chat_log_path, f'{time}-{req_type}.yaml'), 'w') as file:
                 data = {
                     'endpoint': endpoint,
                     'model': model,
@@ -40,8 +49,9 @@ class DotGptPilot:
 
     def log_chat_completion_json(self, endpoint: str, model: str, req_type: str, functions: dict, json_response: str):
         if self.log_chat_completions:
-            time = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
-            with open(os.path.join(self.dot_gpt_pilot_path, 'chat_log', f'{time}-{req_type}.json'), 'w') as file:
+            time = datetime.now().strftime('%Y-%m-%d_%H_%M_%S')
+
+            with open(os.path.join(self.chat_log_path, f'{time}-{req_type}.json'), 'w') as file:
                 data = {
                     'endpoint': endpoint,
                     'model': model,
