@@ -51,7 +51,7 @@ if __name__ == "__main__":
             # TODO get checkpoint from database and fill the project with it
             project = Project(args, ipc_client_instance=ipc_client_instance)
             project.start()
-            # TODO say that project is finished and ask user for additional features, fixes,...
+            project.finish()
     except Exception:
         print(red('---------- GPT PILOT EXITING WITH ERROR ----------'))
         traceback.print_exc()
