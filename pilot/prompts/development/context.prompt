@@ -1,0 +1,12 @@
+{%- if directory_tree %}
+The project directory tree looks like:
+
+{{ directory_tree }}
+{% endif -%}
+{%- if running_processes %}
+Note that the following processes are already running:
+
+{% for key, data in running_processes.items() -%}
+- "{{ key }}" (`{{ data[0] }}`)
+{% endfor -%}
+{% endif -%}

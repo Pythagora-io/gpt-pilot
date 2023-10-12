@@ -5,6 +5,7 @@ from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_RECUSION_LAYER
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
+from logger.logger import logger
 
 
 class Debugger:
@@ -41,14 +42,19 @@ class Debugger:
 
             convo.load_branch(function_uuid)
 
-            debugging_plan = convo.send_message('dev_ops/debug.prompt',
+            thoughts, reasoning, criticism, debugging_plan = convo.send_message('dev_ops/debug.prompt',
                 {
                     'command': command['command'] if command is not None else None,
                     'user_input': user_input,
                     'issue_description': issue_description,
-                    'os': platform.system()
+                    'os': platform.system(),
+                    'context': convo.to_context_prompt()
                 },
                 DEBUG_STEPS_BREAKDOWN)
+
+            logger.info(f'Thoughts: {thoughts}')
+            logger.info(f'Reasoning: {reasoning}')
+            logger.info(f'Criticism: {criticism}')
 
             try:
                 # TODO refactor to nicely get the developer agent

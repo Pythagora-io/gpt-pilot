@@ -11,6 +11,7 @@ from utils.utils import array_of_objects_to_string, get_prompt, get_sys_message,
 from logger.logger import logger
 from prompts.prompts import ask_user
 from const.llm import END_RESPONSE
+from helpers.cli import running_processes
 
 
 class AgentConvo:
@@ -196,6 +197,18 @@ class AgentConvo:
                 print(yellow("\nDev step ") + yellow_bold(str(self.agent.project.checkpoints['last_development_step'])) + '\n', end='')
             print(f"\n{content}\n", type='local')
         logger.info(f"{print_msg}: {content}\n")
+
+    def to_context_prompt(self):
+        logger.info(f'to_context_prompt({self.agent.project.current_step})')
+
+        # TODO: get dependencies & versions from the project (package.json, requirements.txt, pom.xml, etc.)
+        # Ideally, the LLM could do this, and we update it on load & whenever the file changes
+        # ...or LLM generates a script for `.gpt-pilot/get_dependencies` that we run
+        # https://github.com/Pythagora-io/gpt-pilot/issues/189
+        return get_prompt('development/context.prompt', {
+            'directory_tree': self.agent.project.get_directory_tree(),
+            'running_processes': running_processes,
+        })
 
     def to_playground(self):
         with open('const/convert_to_playground_convo.js', 'r', encoding='utf-8') as file:

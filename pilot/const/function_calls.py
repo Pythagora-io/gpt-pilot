@@ -529,8 +529,19 @@ DEBUG_STEPS_BREAKDOWN = {
             'description': 'Starts the debugging process based on the list of steps that need to be done to debug the problem.',
             'parameters': {
                 'type': 'object',
-                "properties": {
-                    "steps": {
+                'properties': {
+                    'thoughts': {
+                        'type': 'string',
+                        'description': 'Thoughts that you have about the problem that you are trying to debug.'
+                    },
+                    'reasoning': {
+                        'type': 'string',
+                    },
+                    'criticism': {
+                        'type': 'string',
+                        'description': 'Constructive self-criticism',
+                    },
+                    'steps': {
                         'type': 'array',
                         'description': 'List of steps that need to be done to debug the problem.',
                         'items': {
@@ -560,7 +571,7 @@ DEBUG_STEPS_BREAKDOWN = {
                         }
                     }
                 },
-                "required": ['steps'],
+                "required": ['thoughts', 'reasoning', 'criticism', 'steps'],
             },
         },
     ],

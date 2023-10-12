@@ -3,7 +3,9 @@ You wanted me to check this - `{{ issue_description }}` but there was a problem{
 ```
 {{ user_input }}
 ```
-{% endif %}I want you to debug this issue by yourself and I will give you 2 functions that you can use - `run_command` and `implement_code_changes`.
+{% endif -%}
+{{ context }}
+I want you to debug this issue by yourself and I will give you 2 functions that you can use - `run_command` and `implement_code_changes`.
 
 `run_command` function will run a command on the machine and will return the CLI output to you so you can see what to do next. Note that the command will run on a {{ os }} machine.
 

@@ -142,7 +142,9 @@ class Developer(Agent):
                 continue
 
             if response['user_input'] != 'continue':
-                return_value = self.debugger.debug(convo, user_input=response['user_input'], issue_description=step['human_intervention_description'])
+                return_value = self.debugger.debug(convo,
+                                                   user_input=response['user_input'],
+                                                   issue_description=step['human_intervention_description'])
                 return_value['user_input'] = response['user_input']
                 return return_value
             else:
