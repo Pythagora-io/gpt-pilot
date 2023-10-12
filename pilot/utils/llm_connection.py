@@ -156,6 +156,8 @@ def retry_on_exception(func):
             del args[0]['function_buffer']
 
     def wrapper(*args, **kwargs):
+        wait_duration_ms = None
+
         while True:
             try:
                 # spinner_stop(spinner)
@@ -189,6 +191,7 @@ def retry_on_exception(func):
                     # or `Expecting value` with `pos` before the end of `e.doc`
                     function_error_count = update_error_count(args)
                     logger.warning('Received invalid character in JSON response from LLM. Asking to retry...')
+                    logger.info(f'  received: {e.doc}')
                     set_function_error(args, err_str)
                     if function_error_count < 3:
                         continue
@@ -211,12 +214,16 @@ def retry_on_exception(func):
                     match = re.search(r"Please try again in (\d+)ms.", err_str)
                     if match:
                         # spinner = spinner_start(colored("Rate limited. Waiting...", 'yellow'))
-                        logger.debug('Rate limited. Waiting...')
-                        wait_duration = int(match.group(1)) / 1000
-                        time.sleep(wait_duration)
+                        if wait_duration_ms is None:
+                            wait_duration_ms = int(match.group(1))
+                        elif wait_duration_ms < 6000:
+                            # waiting 6ms isn't usually long enough - exponential back-off until about 6 seconds
+                            wait_duration_ms *= 2
+                        logger.debug(f'Rate limited. Waiting {wait_duration_ms}ms...')
+                        time.sleep(wait_duration_ms / 1000)
                     continue
 
-                print(red(f'There was a problem with request to openai API:'))
+                print(red('There was a problem with request to openai API:'))
                 # spinner_stop(spinner)
                 print(err_str)
                 logger.error(f'There was a problem with request to openai API: {err_str}')
@@ -248,7 +255,6 @@ def stream_gpt_completion(data, req_type, project):
     :param project: NEEDED FOR WRAPPER FUNCTION retry_on_exception
     :return: {'text': str} or {'function_calls': {'name': str, arguments: '{...}'}}
     """
-
     # TODO add type dynamically - this isn't working when connected to the external process
     try:
         terminal_width = os.get_terminal_size().columns
@@ -327,12 +333,9 @@ def stream_gpt_completion(data, req_type, project):
         stream=True
     )
 
-    # Log the response status code and message
-    logger.debug(f'Response status code: {response.status_code}')
-
     if response.status_code != 200:
         project.dot_pilot_gpt.log_chat_completion(endpoint, model, req_type, data['messages'], response.text)
-        logger.info(f'problem with request: {response.text}')
+        logger.info(f'problem with request (status {response.status_code}): {response.text}')
         raise Exception(f"API responded with status code: {response.status_code}. Response text: {response.text}")
 
     # function_calls = {'name': '', 'arguments': ''}

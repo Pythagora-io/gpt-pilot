@@ -1,4 +1,4 @@
-from peewee import *
+from peewee import Model, UUIDField, DateTimeField
 from datetime import datetime
 from uuid import uuid4
 

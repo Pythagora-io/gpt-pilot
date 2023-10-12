@@ -1,4 +1,4 @@
-from peewee import *
+from peewee import AutoField, CharField, ForeignKeyField
 
 from database.models.components.base_models import BaseModel
 from database.models.app import App
