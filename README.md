@@ -1,7 +1,8 @@
 # 🧑‍✈️ GPT PILOT
-### GPT Pilot helps developers build apps 20x faster
 
 <a href="https://trendshift.io/repositories/466" target="_blank"><img src="https://trendshift.io/api/badge/repositories/466" alt="Pythagora-io%2Fgpt-pilot | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+
+### GPT Pilot helps developers build apps 20x faster
 
 You specify what kind of app you want to build. Then, GPT Pilot asks clarifying questions, creates the product and technical requirements, sets up the environment, and **starts coding the app step by step, like in real life, while you oversee the development process**. It asks you to review each task it finishes or to help when it gets stuck. This way, GPT Pilot acts as a coder while you are a lead dev who reviews code and helps when needed.
 
