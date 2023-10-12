@@ -1,11 +1,6 @@
+import os
 from unittest.mock import patch
 from utils.files import setup_workspace
-
-
-def test_setup_workspace_with_existing_workspace():
-    args = {'workspace': '/some/directory', 'name': 'sample'}
-    result = setup_workspace(args)
-    assert result == '/some/directory'
 
 
 def mocked_create_directory(path, exist_ok=True):
@@ -14,6 +9,13 @@ def mocked_create_directory(path, exist_ok=True):
 
 def mocked_abspath(file):
     return "/root_path/pilot/helpers"
+
+
+@patch('utils.files.os.makedirs', side_effect=mocked_create_directory)
+def test_setup_workspace_with_existing_workspace(mock_makedirs):
+    args = {'workspace': '/some/directory', 'name': 'sample'}
+    result = setup_workspace(args)
+    assert result == '/some/directory'
 
 
 def test_setup_workspace_with_root_arg(monkeypatch):
