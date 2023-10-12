@@ -39,7 +39,7 @@ class DotGptPilot:
             return
         chat_log_path = os.path.join(self.dot_gpt_pilot_path, 'chat_log')
         if task is not None:
-            chat_log_path = os.path.join(chat_log_path, 'task_' + task)
+            chat_log_path = os.path.join(chat_log_path, 'task_' + str(task))
 
         os.makedirs(chat_log_path, exist_ok=True)
         self.chat_log_path = chat_log_path
