@@ -314,9 +314,10 @@ def stream_gpt_completion(data, req_type, project):
         headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + get_api_key_or_throw('OPENROUTER_API_KEY'),
-            'HTTP-Referer': 'http://localhost:3000',
-            'X-Title': 'GPT Pilot (LOCAL)'
+            'HTTP-Referer': 'https://github.com/Pythagora-io/gpt-pilot',
+            'X-Title': 'GPT Pilot'
         }
+        data['max_tokens'] = MAX_GPT_MODEL_TOKENS
         data['model'] = model
     else:
         # If not, send the request to the OpenAI endpoint
