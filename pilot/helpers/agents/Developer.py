@@ -41,12 +41,13 @@ class Developer(Agent):
             self.implement_task(i, dev_task)
 
         # DEVELOPMENT END
-
+        self.project.dot_pilot_gpt.chat_log_folder(None)
         logger.info('The app is DONE!!! Yay...you can use it now.')
         print(green_bold("The app is DONE!!! Yay...you can use it now.\n"))
 
     def implement_task(self, i, development_task=None):
         print(green_bold(f'Implementing task #{i + 1}: ') + green(f' {development_task["description"]}\n'))
+        self.project.dot_pilot_gpt.chat_log_folder(i + 1)
 
         convo_dev_task = AgentConvo(self)
         convo_dev_task.send_message('development/task/breakdown.prompt', {

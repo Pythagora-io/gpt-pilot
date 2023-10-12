@@ -30,8 +30,8 @@ class TestCodeMonkey:
             current_step='coding',
         )
 
-        self.project.root_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                                              '../../../workspace/TestDeveloper'))
+        self.project.set_root_path(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                              '../../../workspace/TestDeveloper')))
         self.project.technologies = []
         last_step = DevelopmentSteps()
         last_step.id = 1

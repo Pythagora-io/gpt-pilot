@@ -31,8 +31,8 @@ class TestDeveloper:
             user_stories=[]
         )
 
-        self.project.root_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                                              '../../../workspace/TestDeveloper'))
+        self.project.set_root_path(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                              '../../../workspace/TestDeveloper')))
         self.project.technologies = []
         self.project.current_step = ENVIRONMENT_SETUP_STEP
         self.developer = Developer(self.project)

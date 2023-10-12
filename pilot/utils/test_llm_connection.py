@@ -19,7 +19,7 @@ from main import get_custom_print
 
 load_dotenv()
 
-project = Project({'app_id': 'test-app'}, current_step='test')
+project = Project({'app_id': 'test-app'}, current_step='test', enable_dot_pilot_gpt=False)
 
 
 def test_clean_json_response_True_False():

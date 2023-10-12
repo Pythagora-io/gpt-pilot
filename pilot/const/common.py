@@ -21,6 +21,7 @@ STEPS = [
 
 IGNORE_FOLDERS = [
     '.git',
+    '.gpt-pilot',
     '.idea',
     '.vscode',
     '__pycache__',
