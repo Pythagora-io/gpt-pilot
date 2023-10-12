@@ -19,6 +19,7 @@ You specify what kind of app you want to build. Then, GPT Pilot asks clarifying 
 * [🕴How's GPT Pilot different from _Smol developer_ and _GPT engineer_?](#hows-gpt-pilot-different-from-smol-developer-and-gpt-engineer)
 * [🍻 Contributing](#-contributing)
 * [🔗 Connect with us](#-connect-with-us)
+* [🌟 Star history](#-star-history)
 <!-- TOC -->
 
 ---
@@ -249,3 +250,8 @@ Other than the research, GPT Pilot needs to be debugged to work in different sce
 🌟 As an open-source tool, it would mean the world to us if you starred the GPT-pilot repo 🌟
 
 💬 Join [the Discord server](https://discord.gg/HaqXugmxr9) to get in touch.
+
+
+# 🌟 Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Pythagora-io/gpt-pilot&type=Date)](https://star-history.com/#Pythagora-io/gpt-pilot&Date)
