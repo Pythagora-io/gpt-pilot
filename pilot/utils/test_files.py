@@ -1,5 +1,5 @@
 from unittest.mock import patch
-from .files import setup_workspace
+from utils.files import setup_workspace
 
 
 def test_setup_workspace_with_existing_workspace():
@@ -23,7 +23,7 @@ def test_setup_workspace_with_root_arg(monkeypatch):
     monkeypatch.setattr('os.makedirs', mocked_create_directory)
 
     result = setup_workspace(args)
-    assert result.replace('\\', '/') == "/my/root/project_name"
+    assert result.replace('\\', '/') == "/my/root/workspace/project_name"
 
 
 @patch('utils.files.os.path.abspath', return_value='/root_path/pilot/helpers')
