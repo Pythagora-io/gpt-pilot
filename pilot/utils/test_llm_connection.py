@@ -497,9 +497,11 @@ solution-oriented decision-making in areas where precise instructions were not p
         ('OPENAI', 'gpt-4'),
         ('OPENROUTER', 'openai/gpt-3.5-turbo'),
         ('OPENROUTER', 'meta-llama/codellama-34b-instruct'),
+        ('OPENROUTER', 'phind/phind-codellama-34b-v2'),
         ('OPENROUTER', 'google/palm-2-chat-bison'),
         ('OPENROUTER', 'google/palm-2-codechat-bison'),
         ('OPENROUTER', 'anthropic/claude-2'),
+        ('OPENROUTER', 'mistralai/mistral-7b-instruct')
     ])
     def test_chat_completion_TechLead(self, endpoint, model, monkeypatch):
         # Given
