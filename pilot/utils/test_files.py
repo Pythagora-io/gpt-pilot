@@ -3,9 +3,9 @@ from utils.files import setup_workspace
 
 
 def test_setup_workspace_with_existing_workspace():
-    args = {'workspace': 'some_directory', 'name': 'sample'}
+    args = {'workspace': '/some/directory', 'name': 'sample'}
     result = setup_workspace(args)
-    assert result == 'some_directory'
+    assert result == '/some/directory'
 
 
 def mocked_create_directory(path, exist_ok=True):
