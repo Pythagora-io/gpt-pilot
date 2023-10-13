@@ -78,7 +78,7 @@ class AgentConvo:
                 save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, '', str(e))
                 raise e
 
-            if self.agent.__class__.__name__ == 'Developer':
+            if response != {} and self.agent.__class__.__name__ == 'Developer':
                 development_step = save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, response)
 
         # TODO handle errors from OpenAI
