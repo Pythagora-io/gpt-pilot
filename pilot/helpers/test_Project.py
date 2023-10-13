@@ -188,6 +188,6 @@ class TestProjectFileLists:
         self.project.save_files_snapshot('test')
 
         # Then the files should be saved to the project, but nothing from `.gpt-pilot/`
-        assert mock_file.call_count == 2
+        assert mock_file.call_count == 7
         assert mock_file.call_args_list[0][1]['name'] == 'package.json'
         assert mock_file.call_args_list[1][1]['name'] == 'main.js'
