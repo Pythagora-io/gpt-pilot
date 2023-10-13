@@ -103,12 +103,12 @@ class Developer(Agent):
         # TODO END
         additional_message = 'Let\'s start with the step #0:\n\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i)) } are finished so let\'s do step #{i + 1} now.\n\n'
 
-        process_name = data['process_name'] if 'process_name' in data else None
+        command_id = data['command_id'] if 'command_id' in data else None
         success_message = data['success_message'] if 'success_message' in data else None
 
         return run_command_until_success(convo, data['command'],
                                          timeout=data['timeout'],
-                                         process_name=process_name,
+                                         command_id=command_id,
                                          success_message=success_message,
                                          additional_message=additional_message)
 
@@ -136,7 +136,7 @@ class Developer(Agent):
                 cbs={
                     'r': lambda conv: run_command_until_success(conv,
                                                                 self.run_command,
-                                                                process_name='app',
+                                                                command_id='app',
                                                                 timeout=None,
                                                                 force=True,
                                                                 return_cli_response=True)
@@ -328,7 +328,7 @@ class Developer(Agent):
             response = self.project.ask_for_human_intervention(
                 user_description,
                 cbs={'r': lambda convo: run_command_until_success(convo, self.run_command,
-                                                                  process_name='app',
+                                                                  command_id='app',
                                                                   timeout=None,
                                                                   force=True,
                                                                   return_cli_response=True, is_root_task=True)},

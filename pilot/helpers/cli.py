@@ -18,7 +18,7 @@ from const.code_execution import MIN_COMMAND_RUN_TIME, MAX_COMMAND_RUN_TIME, MAX
 interrupted = False
 
 running_processes: Dict[str, tuple[str, int]] = {}
-"""Holds a list of (command, process ID)s, mapped to the `process_name` provided in the call to `execute_command()`."""
+"""Holds a list of (command, process ID)s, mapped to the `command_id` provided in the call to `execute_command()`."""
 
 
 def enqueue_output(out, q):
@@ -72,14 +72,14 @@ def run_command(command, root_path, q_stdout, q_stderr) -> subprocess.Popen:
     return process
 
 
-def terminate_named_process(process_name: str) -> None:
-    if process_name in running_processes:
-        terminate_process(running_processes[process_name][1], process_name)
+def terminate_named_process(command_id: str) -> None:
+    if command_id in running_processes:
+        terminate_process(running_processes[command_id][1], command_id)
 
 
 def terminate_running_processes():
-    for process_name in list(running_processes.keys()):
-        terminate_process(running_processes[process_name][1], process_name)
+    for command_id in list(running_processes.keys()):
+        terminate_process(running_processes[command_id][1], command_id)
 
 
 def terminate_process(pid: int, name=None) -> None:
@@ -99,12 +99,12 @@ def terminate_process(pid: int, name=None) -> None:
         except OSError as e:
             logger.error(f'Error while terminating process: {e}')
 
-    for process_name in list(running_processes.keys()):
-        if running_processes[process_name][1] == pid:
-            del running_processes[process_name]
+    for command_id in list(running_processes.keys()):
+        if running_processes[command_id][1] == pid:
+            del running_processes[command_id]
 
 
-def execute_command(project, command, timeout=None, success_message=None, process_name: str = None, force=False) \
+def execute_command(project, command, timeout=None, success_message=None, command_id: str = None, force=False) \
         -> (str, str, int):
     """
     Execute a command and capture its output.
@@ -114,8 +114,7 @@ def execute_command(project, command, timeout=None, success_message=None, proces
         command (str): The command to run.
         timeout (int, optional): The maximum execution time in milliseconds. Default is None.
         success_message: A message to look for in the output of the command to determine if successful or not.
-        process_name (str, optional): A name for the process.
-                            If `timeout` is not provided, can be used to terminate the process.
+        command_id (str, optional): A unique identifier assigned by the LLM, can be used to terminate the process.
         force (bool, optional): Whether to execute the command without confirmation. Default is False.
 
     Returns:
@@ -178,9 +177,9 @@ def execute_command(project, command, timeout=None, success_message=None, proces
     q = queue.Queue()
     process = run_command(command, project.root_path, q, q_stderr)
 
-    if process_name is not None:
-        terminate_named_process(process_name)
-        running_processes[process_name] = (command, process.pid)
+    if command_id is not None:
+        terminate_named_process(command_id)
+        running_processes[command_id] = (command, process.pid)
 
     output = ''
     stderr_output = ''
@@ -213,8 +212,8 @@ def execute_command(project, command, timeout=None, success_message=None, proces
 
             # If timeout is reached, kill the process
             if timeout is not None and elapsed_time * 1000 > timeout:
-                if process_name is not None:
-                    logger.info(f'Process "{process_name}" running after timeout as pid: {process.pid}')
+                if command_id is not None:
+                    logger.info(f'Process "{command_id}" running after timeout as pid: {process.pid}')
                     break
 
                 raise TimeoutError("Command exceeded the specified timeout.")
@@ -340,7 +339,7 @@ def execute_command_and_check_cli_response(command, timeout, convo):
 
 def run_command_until_success(convo, command,
                               timeout: Union[int, None],
-                              process_name: Union[str, None] = None,
+                              command_id: Union[str, None] = None,
                               success_message=None,
                               additional_message=None,
                               force=False,
@@ -353,7 +352,7 @@ def run_command_until_success(convo, command,
         convo (AgentConvo): The conversation object.
         command (str): The command to run.
         timeout (int): The maximum execution time in milliseconds.
-        process_name: A name for the process.
+        command_id: A name for the process.
                       If `timeout` is not provided, can be used to terminate the process.
         success_message: A message to look for in the output of the command to determine if successful or not.
         additional_message (str, optional): Additional message to include in the response.
@@ -365,7 +364,7 @@ def run_command_until_success(convo, command,
                                                         command,
                                                         timeout=timeout,
                                                         success_message=success_message,
-                                                        process_name=process_name,
+                                                        command_id=command_id,
                                                         force=force)
 
     if response is None:
@@ -398,7 +397,7 @@ def run_command_until_success(convo, command,
                 return convo.agent.debugger.debug(convo, {
                     'command': command,
                     'timeout': timeout,
-                    'process_name': process_name,
+                    'command_id': command_id,
                     'success_message': success_message,
                 })
             except TooDeepRecursionError as e:
