@@ -92,17 +92,25 @@ class AgentConvo:
         response = parse_agent_response(response, function_calls)
 
         # TODO remove this once the database is set up properly
-        message_content = response[0] if type(response) == tuple else response
-        if isinstance(message_content, list):
-            if 'to_message' in function_calls:
-                string_response = function_calls['to_message'](message_content)
-            elif len(message_content) > 0 and isinstance(message_content[0], dict):
-                string_response = [
-                    f'#{i}\n' + array_of_objects_to_string(d)
-                    for i, d in enumerate(message_content)
-                ]
-            else:
-                string_response = ['- ' + r for r in message_content]
+        if isinstance(response, str):
+            message_content = response
+        else:
+            string_response = []
+            for key, value in response.items():
+                string_response.append(f'# {key}')
+
+                if isinstance(value, list):
+                    if 'to_message' in function_calls:
+                        string_response.append(function_calls['to_message'](value))
+                    elif len(value) > 0 and isinstance(value[0], dict):
+                        string_response.extend([
+                            f'##{i}\n' + array_of_objects_to_string(d)
+                            for i, d in enumerate(value)
+                        ])
+                    else:
+                        string_response.extend(['- ' + r for r in value])
+                else:
+                    string_response.append(value)
 
             message_content = '\n'.join(string_response)
         # TODO END

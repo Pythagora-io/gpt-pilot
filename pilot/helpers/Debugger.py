@@ -42,7 +42,7 @@ class Debugger:
 
             convo.load_branch(function_uuid)
 
-            thoughts, reasoning, criticism, debugging_plan = convo.send_message('dev_ops/debug.prompt',
+            llm_response = convo.send_message('dev_ops/debug.prompt',
                 {
                     'command': command['command'] if command is not None else None,
                     'user_input': user_input,
@@ -52,15 +52,15 @@ class Debugger:
                 },
                 DEBUG_STEPS_BREAKDOWN)
 
-            logger.info(f'Thoughts: {thoughts}')
-            logger.info(f'Reasoning: {reasoning}')
-            logger.info(f'Criticism: {criticism}')
+            logger.info('Thoughts: ' + llm_response['thoughts'])
+            logger.info('Reasoning: ' + llm_response['reasoning'])
+            logger.info('Criticism: ' + llm_response['criticism'])
 
             try:
                 # TODO refactor to nicely get the developer agent
                 response = self.agent.project.developer.execute_task(
                     convo,
-                    debugging_plan,
+                    llm_response['steps'],
                     command,
                     test_after_code_changes=True,
                     continue_development=False,
