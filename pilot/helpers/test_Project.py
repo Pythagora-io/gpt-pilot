@@ -150,7 +150,7 @@ class TestProjectFileLists:
         tree = self.project.get_directory_tree()
 
         # Then we should not be including the .gpt-pilot directory or other ignored directories
-        assert tree == '''
+        assert tree.replace('\r', '\n') == '''
 |-- /
 |   |-- package.json
 |   |-- src/
