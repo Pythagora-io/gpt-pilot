@@ -392,7 +392,10 @@ class TestLlmConnection:
                                  error_response, error_response, error_response, error_response, error_response,
                                  error_response, error_response, mock_response]
         wrapper = retry_on_exception(stream_gpt_completion)
-        data = {'model': 'gpt-4'}
+        data = {
+            'model': 'gpt-4',
+            'messages': [{'role': 'user', 'content': 'testing'}]
+        }
 
         # When
         response = wrapper(data, 'test', project)
