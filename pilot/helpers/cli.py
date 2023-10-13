@@ -292,7 +292,7 @@ def build_directory_tree(path, prefix='', is_root=True, ignore=None):
     if os.path.isdir(path):
         dir_name = os.path.basename(path)
         if is_root:
-            output += f'/'
+            output += '/'
         else:
             output += f'{prefix}/{dir_name}'
 
