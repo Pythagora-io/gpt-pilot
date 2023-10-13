@@ -60,7 +60,7 @@ class Debugger:
                 response = self.agent.project.developer.execute_task(
                     convo,
                     llm_response['steps'],
-                    command,
+                    test_command=command,
                     test_after_code_changes=True,
                     continue_development=False,
                     is_root_task=is_root_task)
