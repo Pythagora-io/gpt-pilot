@@ -134,6 +134,8 @@ def execute_command(project, command, timeout=None, success_message=None, proces
 
             timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
 
+    logger.info('execute_command: `%s`, timeout: %d, %success_message: "%s", process_name: "%s"',
+                command, timeout, success_message, process_name)
     if not force:
         print(yellow_bold('\n--------- EXECUTE COMMAND ----------'))
         question = f'Can I execute the command: `{yellow_bold(command)}`'
@@ -200,6 +202,7 @@ def execute_command(project, command, timeout=None, success_message=None, proces
 
             # Check if process has finished
             if process.poll() is not None:
+                logger.info('process exited with return code: %d', process.returncode)
                 # Get remaining lines from the queue
                 time.sleep(0.1)  # TODO this shouldn't be used
                 while not q.empty():

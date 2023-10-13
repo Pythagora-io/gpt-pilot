@@ -65,7 +65,9 @@ class Developer(Agent):
             "files": self.project.get_all_coded_files(),
         })
 
-        response = convo_dev_task.send_message('development/parse_task.prompt', {}, IMPLEMENT_TASK)
+        response = convo_dev_task.send_message('development/parse_task.prompt', {
+            'running_processes': running_processes,
+        }, IMPLEMENT_TASK)
         task_steps = response['tasks']
         convo_dev_task.remove_last_x_messages(2)
         return self.execute_task(convo_dev_task, task_steps, development_task=development_task, continue_development=True, is_root_task=True)
@@ -257,6 +259,7 @@ class Developer(Agent):
         convo.save_branch(function_uuid)
 
         for (i, step) in enumerate(task_steps):
+            logger.info(f'---------- execute_task() step #%d: %s', i, step)
 
             result = None
             step_implementation_try = 0
@@ -275,7 +278,10 @@ class Developer(Agent):
                     elif step['type'] == 'human_intervention':
                         result = self.step_human_intervention(convo, step)
 
+                    logger.info('  result: %s', result)
+
                     if test_command is not None and ('check_if_fixed' not in step or step['check_if_fixed']):
+                        logger.info('check_if_fixed: %s', test_command)
                         is_fixed = self.step_test(convo, test_command)
                         return is_fixed
 
