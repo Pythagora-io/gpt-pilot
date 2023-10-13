@@ -390,7 +390,12 @@ def run_command_until_success(convo, command,
                 # This catch is necessary to return the correct value (cli_response) to continue development function so
                 # the developer can debug the appropriate issue
                 # this snippet represents the first entry point into debugging recursion because of return_cli_response
-                return convo.agent.debugger.debug(convo, {'command': command, 'timeout': timeout})
+                return convo.agent.debugger.debug(convo, {
+                    'command': command,
+                    'timeout': timeout,
+                    'process_name': process_name,
+                    'success_message': success_message,
+                })
             except TooDeepRecursionError as e:
                 # this is only to put appropriate message in the response after TooDeepRecursionError is raised
                 raise TooDeepRecursionError(cli_response) if return_cli_response else e

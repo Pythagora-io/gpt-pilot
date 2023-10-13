@@ -47,7 +47,7 @@ class TestDeveloper:
 
         # Then
         assert llm_response == 'DONE'
-        mock_execute_command.assert_called_once_with(self.project, 'python --version', 10)
+        mock_execute_command.assert_called_once_with(self.project, 'python --version', timeout=10)
 
     @patch('helpers.AgentConvo.get_saved_development_step')
     @patch('helpers.AgentConvo.save_development_step')

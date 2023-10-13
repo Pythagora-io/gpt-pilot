@@ -157,7 +157,9 @@ class Developer(Agent):
         if should_rerun_command == 'NO':
             return { "success": True }
         elif should_rerun_command == 'YES':
-            cli_response, llm_response = execute_command_and_check_cli_response(test_command['command'], test_command['timeout'], convo)
+            cli_response, llm_response = execute_command_and_check_cli_response(test_command['command'],
+                                                                                test_command['timeout'],
+                                                                                convo)
             logger.info('After running command llm_response: ' + llm_response)
             if llm_response == 'NEEDS_DEBUGGING':
                 print(red('Got incorrect CLI response:'))
