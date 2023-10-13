@@ -67,6 +67,7 @@ class Developer(Agent):
 
         response = convo_dev_task.send_message('development/parse_task.prompt', {
             'running_processes': running_processes,
+            'os': platform.system(),
         }, IMPLEMENT_TASK)
         task_steps = response['tasks']
         convo_dev_task.remove_last_x_messages(2)
@@ -358,7 +359,8 @@ class Developer(Agent):
                 # self.debugger.debug(iteration_convo, user_input=user_feedback)
 
                 llm_response = iteration_convo.send_message('development/parse_task.prompt', {
-                    'running_processes': running_processes
+                    'running_processes': running_processes,
+                    'os': platform.system(),
                 }, IMPLEMENT_TASK)
                 iteration_convo.remove_last_x_messages(2)
 
