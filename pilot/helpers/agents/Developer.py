@@ -260,7 +260,7 @@ class Developer(Agent):
         convo.save_branch(function_uuid)
 
         for (i, step) in enumerate(task_steps):
-            logger.info(f'---------- execute_task() step #%d: %s', i, step)
+            logger.info('---------- execute_task() step #%d: %s', i, step)
 
             result = None
             step_implementation_try = 0
