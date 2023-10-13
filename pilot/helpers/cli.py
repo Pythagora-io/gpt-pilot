@@ -148,8 +148,12 @@ def execute_command(project, command, timeout=None, success_message=None, proces
         #       "That's not going to work, let's do X instead"
         #       We don't explicitly make "no" or "skip" options to the user
         #       see https://github.com/Pythagora-io/gpt-pilot/issues/122
+        #       https://github.com/Pythagora-io/gpt-pilot/issues/198
+        #       https://github.com/Pythagora-io/gpt-pilot/issues/43#issuecomment-1756352056
+        #       This may require exiting the list of steps early.
+        # ...or .confirm(question, default='yes').ask()  https://questionary.readthedocs.io/en/stable/pages/types.html#confirmation
         print('answer: ' + answer)
-        if answer == 'no':
+        if answer.lower().startswith('no'):
             return '', 'DONE', None
         elif answer == 'skip':
             return '', 'DONE', None
