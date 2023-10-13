@@ -49,6 +49,7 @@ class AgentConvo:
         # craft message
         self.construct_and_add_message_from_prompt(prompt_path, prompt_data)
 
+        # TODO: move this if block (and the other below) to Developer agent - https://github.com/Pythagora-io/gpt-pilot/issues/91#issuecomment-1751964079
         # check if we already have the LLM response saved
         if self.agent.__class__.__name__ == 'Developer':
             self.agent.project.llm_req_num += 1
@@ -78,6 +79,7 @@ class AgentConvo:
                 save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, '', str(e))
                 raise e
 
+            # TODO: move this code to Developer agent - https://github.com/Pythagora-io/gpt-pilot/issues/91#issuecomment-1751964079
             if response != {} and self.agent.__class__.__name__ == 'Developer':
                 development_step = save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, response)
 
