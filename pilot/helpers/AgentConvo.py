@@ -1,3 +1,4 @@
+import json
 import re
 import subprocess
 import uuid
@@ -59,6 +60,9 @@ class AgentConvo:
             print(yellow(f'Restoring development step with id {development_step.id}'))
             self.agent.project.checkpoints['last_development_step'] = development_step
             self.agent.project.restore_files(development_step.id)
+            print('----------------------------saved llm_response-----------------------------------------')
+            print(development_step.llm_response)
+            print('----------------------------end saved llm_response-----------------------------------------')
             response = development_step.llm_response
             self.messages = development_step.messages
 
@@ -90,30 +94,7 @@ class AgentConvo:
             raise Exception("OpenAI API error happened.")
 
         response = parse_agent_response(response, function_calls)
-
-        # TODO remove this once the database is set up properly
-        if isinstance(response, str):
-            message_content = response
-        else:
-            string_response = []
-            for key, value in response.items():
-                string_response.append(f'# {key}')
-
-                if isinstance(value, list):
-                    if 'to_message' in function_calls:
-                        string_response.append(function_calls['to_message'](value))
-                    elif len(value) > 0 and isinstance(value[0], dict):
-                        string_response.extend([
-                            f'##{i}\n' + array_of_objects_to_string(d)
-                            for i, d in enumerate(value)
-                        ])
-                    else:
-                        string_response.extend(['- ' + r for r in value])
-                else:
-                    string_response.append(value)
-
-            message_content = '\n'.join(string_response)
-        # TODO END
+        message_content = self.format_message_content(response, function_calls)
 
         # TODO we need to specify the response when there is a function called
         # TODO maybe we can have a specific function that creates the GPT response from the function call
@@ -122,6 +103,33 @@ class AgentConvo:
         self.log_message(message_content)
 
         return response
+
+    def format_message_content(self, response, function_calls):
+        # TODO remove this once the database is set up properly
+        if isinstance(response, str):
+            return response
+        else:
+            # string_response = []
+            # for key, value in response.items():
+            #     string_response.append(f'# {key}')
+            #
+            #     if isinstance(value, list):
+            #         if 'to_message' in function_calls:
+            #             string_response.append(function_calls['to_message'](value))
+            #         elif len(value) > 0 and isinstance(value[0], dict):
+            #             string_response.extend([
+            #                 f'##{i}\n' + array_of_objects_to_string(d)
+            #                 for i, d in enumerate(value)
+            #             ])
+            #         else:
+            #             string_response.extend(['- ' + r for r in value])
+            #     else:
+            #         string_response.append(str(value))
+            #
+            # return '\n'.join(string_response)
+            return json.dumps(response)
+        # TODO END
+
 
     def continuous_conversation(self, prompt_path, prompt_data, function_calls=None):
         """
