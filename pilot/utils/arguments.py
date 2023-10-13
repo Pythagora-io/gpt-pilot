@@ -31,9 +31,10 @@ def get_arguments():
 
     app = None
     if 'workspace' in arguments:
-        app = get_app_by_user_workspace(arguments['user_id'], arguments['workspace'])
+        arguments['workspace'] = os.path.abspath(arguments['workspace'])
+        app = get_app_by_user_workspace(arguments['workspace'])
         if app is not None:
-            arguments['app_id'] = app.id
+            arguments['app_id'] = str(app.id)
     else:
         arguments['workspace'] = None
 
