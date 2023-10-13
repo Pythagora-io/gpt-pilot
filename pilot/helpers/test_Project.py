@@ -189,5 +189,6 @@ class TestProjectFileLists:
 
         # Then the files should be saved to the project, but nothing from `.gpt-pilot/`
         assert mock_file.call_count == 7
-        assert mock_file.call_args_list[0][1]['name'] == 'package.json'
-        assert mock_file.call_args_list[1][1]['name'] == 'main.js'
+        files = ['package.json', 'main.js', 'file1.js', 'file2.js', 'bar.js', 'fighters.js', 'other.js']
+        for i in range(7):
+            assert mock_file.call_args_list[i][1]['name'] in files
