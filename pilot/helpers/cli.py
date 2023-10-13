@@ -134,8 +134,6 @@ def execute_command(project, command, timeout=None, success_message=None, proces
 
             timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
 
-    logger.info('execute_command: `%s`, timeout: %d, %success_message: "%s", process_name: "%s"',
-                command, timeout, success_message, process_name)
     if not force:
         print(yellow_bold('\n--------- EXECUTE COMMAND ----------'))
         question = f'Can I execute the command: `{yellow_bold(command)}`'

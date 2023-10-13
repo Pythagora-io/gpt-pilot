@@ -60,9 +60,6 @@ class AgentConvo:
             print(yellow(f'Restoring development step with id {development_step.id}'))
             self.agent.project.checkpoints['last_development_step'] = development_step
             self.agent.project.restore_files(development_step.id)
-            print('----------------------------saved llm_response-----------------------------------------')
-            print(development_step.llm_response)
-            print('----------------------------end saved llm_response-----------------------------------------')
             response = development_step.llm_response
             self.messages = development_step.messages
 

@@ -135,7 +135,7 @@ class TestDeveloper:
 
         mock_chat_completion.side_effect = [
             {'text': '{"type": "manual_test", "manual_test_description": "Does it look good?"}'},
-            {'text': '{"steps": [{"type": "command", "command": {"command": "something scary", "timeout": 3000}, "check_if_fixed": true}]}'},
+            {'text': '{"thoughts": "hmmm...", "reasoning": "testing", "steps": [{"type": "command", "command": {"command": "something scary", "timeout": 3000}, "check_if_fixed": true}]}'},
             {'text': 'do something else scary'},
         ]
 
