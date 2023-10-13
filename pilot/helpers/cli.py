@@ -300,6 +300,8 @@ def build_directory_tree(path, prefix='', is_root=True, ignore=None):
         items = os.listdir(path)
         dirs = [item for item in items if os.path.isdir(os.path.join(path, item)) and item not in ignore]
         files = [item for item in items if os.path.isfile(os.path.join(path, item))]
+        dirs.sort()
+        files.sort()
 
         if dirs:
             output += '\n'
