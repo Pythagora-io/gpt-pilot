@@ -537,10 +537,6 @@ DEBUG_STEPS_BREAKDOWN = {
                     'reasoning': {
                         'type': 'string',
                     },
-                    'criticism': {
-                        'type': 'string',
-                        'description': 'Constructive self-criticism',
-                    },
                     'steps': {
                         'type': 'array',
                         'description': 'List of steps that need to be done to debug the problem.',
@@ -571,7 +567,7 @@ DEBUG_STEPS_BREAKDOWN = {
                         }
                     }
                 },
-                "required": ['thoughts', 'reasoning', 'criticism', 'steps'],
+                "required": ['thoughts', 'reasoning', 'steps'],
             },
         },
     ],

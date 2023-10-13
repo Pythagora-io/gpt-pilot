@@ -54,7 +54,6 @@ class Debugger:
 
             logger.info('Thoughts: ' + llm_response['thoughts'])
             logger.info('Reasoning: ' + llm_response['reasoning'])
-            logger.info('Criticism: ' + llm_response['criticism'])
 
             try:
                 # TODO refactor to nicely get the developer agent
