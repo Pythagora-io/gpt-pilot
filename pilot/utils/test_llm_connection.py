@@ -392,7 +392,10 @@ class TestLlmConnection:
                                  error_response, error_response, error_response, error_response, error_response,
                                  error_response, error_response, mock_response]
         wrapper = retry_on_exception(stream_gpt_completion)
-        data = {'model': 'gpt-4'}
+        data = {
+            'model': 'gpt-4',
+            'messages': [{'role': 'user', 'content': 'testing'}]
+        }
 
         # When
         response = wrapper(data, 'test', project)
@@ -490,7 +493,7 @@ solution-oriented decision-making in areas where precise instructions were not p
 
         assert response is not None
         response = parse_agent_response(response, function_calls)
-        assert 'Node.js' in response
+        assert 'Node.js' in response['technologies']
 
     @pytest.mark.uses_tokens
     @pytest.mark.parametrize('endpoint, model', [
@@ -545,9 +548,9 @@ The development process will include the creation of user stories and tasks, bas
 
         assert response is not None
         response = parse_agent_response(response, function_calls)
-        assert_non_empty_string(response[0]['description'])
-        assert_non_empty_string(response[0]['programmatic_goal'])
-        assert_non_empty_string(response[0]['user_review_goal'])
+        assert_non_empty_string(response['plan'][0]['description'])
+        assert_non_empty_string(response['plan'][0]['programmatic_goal'])
+        assert_non_empty_string(response['plan'][0]['user_review_goal'])
 
 
     # def test_break_down_development_task(self):

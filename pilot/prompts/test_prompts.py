@@ -66,4 +66,4 @@ def test_parse_task_with_processes():
 
     # Then
     assert 'the following processes are already running:' in prompt
-    assert '- "app" (`npm start`)\n- "mongo" (`mongod`)' in prompt
+    assert 'command_id: app\ncommand: npm start\n\ncommand_id: mongo\ncommand: mongod' in prompt
