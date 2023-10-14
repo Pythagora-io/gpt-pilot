@@ -27,8 +27,8 @@ class TestTechLead:
             user_stories=[]
         )
 
-        self.project.root_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                                              '../../../workspace/TestTechLead'))
+        self.project.set_root_path(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                              '../../../workspace/TestTechLead')))
         self.project.technologies = []
         self.project.project_description = '''
 The project entails creating a web-based chat application, tentatively named "chat_app." 

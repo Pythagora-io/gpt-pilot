@@ -17,7 +17,6 @@ from utils.utils import fix_json, get_prompt
 from utils.function_calling import add_function_calls_to_request, FunctionCallSet, FunctionType
 from utils.questionary import styled_text
 
-
 def get_tokens_in_messages(messages: List[str]) -> int:
     tokenizer = tiktoken.get_encoding("cl100k_base")  # GPT-4 tokenizer
     tokenized_messages = [tokenizer.encode(message['content']) for message in messages]
@@ -157,6 +156,8 @@ def retry_on_exception(func):
             del args[0]['function_buffer']
 
     def wrapper(*args, **kwargs):
+        wait_duration_ms = None
+
         while True:
             try:
                 # spinner_stop(spinner)
@@ -190,6 +191,7 @@ def retry_on_exception(func):
                     # or `Expecting value` with `pos` before the end of `e.doc`
                     function_error_count = update_error_count(args)
                     logger.warning('Received invalid character in JSON response from LLM. Asking to retry...')
+                    logger.info(f'  received: {e.doc}')
                     set_function_error(args, err_str)
                     if function_error_count < 3:
                         continue
@@ -212,12 +214,16 @@ def retry_on_exception(func):
                     match = re.search(r"Please try again in (\d+)ms.", err_str)
                     if match:
                         # spinner = spinner_start(colored("Rate limited. Waiting...", 'yellow'))
-                        logger.debug('Rate limited. Waiting...')
-                        wait_duration = int(match.group(1)) / 1000
-                        time.sleep(wait_duration)
+                        if wait_duration_ms is None:
+                            wait_duration_ms = int(match.group(1))
+                        elif wait_duration_ms < 6000:
+                            # waiting 6ms isn't usually long enough - exponential back-off until about 6 seconds
+                            wait_duration_ms *= 2
+                        logger.debug(f'Rate limited. Waiting {wait_duration_ms}ms...')
+                        time.sleep(wait_duration_ms / 1000)
                     continue
 
-                print(color_red(f'There was a problem with request to openai API:'))
+                print(color_red('There was a problem with request to openai API:'))
                 # spinner_stop(spinner)
                 print(err_str)
                 logger.error(f'There was a problem with request to openai API: {err_str}')
@@ -249,7 +255,6 @@ def stream_gpt_completion(data, req_type, project):
     :param project: NEEDED FOR WRAPPER FUNCTION retry_on_exception
     :return: {'text': str} or {'function_calls': {'name': str, arguments: '{...}'}}
     """
-
     # TODO add type dynamically - this isn't working when connected to the external process
     try:
         terminal_width = os.get_terminal_size().columns
@@ -308,9 +313,10 @@ def stream_gpt_completion(data, req_type, project):
         headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + get_api_key_or_throw('OPENROUTER_API_KEY'),
-            'HTTP-Referer': 'http://localhost:3000',
-            'X-Title': 'GPT Pilot (LOCAL)'
+            'HTTP-Referer': 'https://github.com/Pythagora-io/gpt-pilot',
+            'X-Title': 'GPT Pilot'
         }
+        data['max_tokens'] = MAX_GPT_MODEL_TOKENS
         data['model'] = model
     else:
         # If not, send the request to the OpenAI endpoint
@@ -328,11 +334,9 @@ def stream_gpt_completion(data, req_type, project):
         stream=True
     )
 
-    # Log the response status code and message
-    logger.debug(f'Response status code: {response.status_code}')
-
     if response.status_code != 200:
-        logger.info(f'problem with request: {response.text}')
+        project.dot_pilot_gpt.log_chat_completion(endpoint, model, req_type, data['messages'], response.text)
+        logger.info(f'problem with request (status {response.status_code}): {response.text}')
         raise Exception(f"API responded with status code: {response.status_code}. Response text: {response.text}")
 
     # function_calls = {'name': '', 'arguments': ''}
@@ -405,10 +409,13 @@ def stream_gpt_completion(data, req_type, project):
     #     function_calls['arguments'] = load_data_to_json(function_calls['arguments'])
     #     return return_result({'function_calls': function_calls}, lines_printed)
     logger.info('<<<<<<<<<< LLM Response <<<<<<<<<<\n%s\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<', gpt_response)
+    project.dot_pilot_gpt.log_chat_completion(endpoint, model, req_type, data['messages'], gpt_response)
 
     if expecting_json:
         gpt_response = clean_json_response(gpt_response)
         assert_json_schema(gpt_response, expecting_json)
+        # Note, we log JSON separately from the YAML log above incase the JSON is invalid and an error is raised
+        project.dot_pilot_gpt.log_chat_completion_json(endpoint, model, req_type, expecting_json, gpt_response)
 
     new_code = postprocessing(gpt_response, req_type)  # TODO add type dynamically
     return return_result({'text': new_code}, lines_printed)

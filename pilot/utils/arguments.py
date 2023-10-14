@@ -7,6 +7,7 @@ from getpass import getuser
 from database.database import get_app, get_app_by_user_workspace
 from utils.style import color_green_bold, disable_color_output
 from utils.utils import should_execute_step
+from const.common import STEPS
 
 
 def get_arguments():
@@ -47,7 +48,7 @@ def get_arguments():
             arguments['app_type'] = app.app_type
             arguments['name'] = app.name
             if 'step' not in arguments or ('step' in arguments and not should_execute_step(arguments['step'], app.status)):
-                arguments['step'] = app.status
+                arguments['step'] = 'finished' if app.status == 'finished' else STEPS[STEPS.index(app.status) + 1]
 
             print(color_green_bold('\n------------------ LOADING PROJECT ----------------------'))
             print(color_green_bold(f'{app.name} (app_id={arguments["app_id"]})'))

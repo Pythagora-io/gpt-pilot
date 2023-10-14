@@ -34,6 +34,7 @@ def init():
 
 
 if __name__ == "__main__":
+    ask_feedback = True
     try:
         # sys.argv.append('--ux-test=' + 'continue_development')
         args = init()
@@ -50,12 +51,12 @@ if __name__ == "__main__":
             # TODO get checkpoint from database and fill the project with it
             project = Project(args, ipc_client_instance=ipc_client_instance)
             project.start()
-    except KeyboardInterrupt:
-        exit_gpt_pilot()
-    except Exception as e:
+            project.finish()
+    except Exception:
         print(color_red('---------- GPT PILOT EXITING WITH ERROR ----------'))
         traceback.print_exc()
         print(color_red('--------------------------------------------------'))
-        exit_gpt_pilot(False)
+        ask_feedback = False
     finally:
+        exit_gpt_pilot(ask_feedback)
         sys.exit(0)

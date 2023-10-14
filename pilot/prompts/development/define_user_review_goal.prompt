@@ -1,4 +1,4 @@
-How can a human user test if this task was completed successfully? If you specify a command that needs to be run or give example, be very specific. You don't want the user to have to think anything through but rather that they just follow your instructions.
+How can a human user test if this task was completed successfully? If you specify a command that needs to be run or give example, be very specific. You don't want the user to have to think anything through but rather that they just follow your instructions. Note that the command will run on a {{ os }} machine.
 
 !IMPORTANT!
 In case the task can be tested by making an API request, do not suggest how can a request be made with Postman but rather write a full cURL command that the user can just run.

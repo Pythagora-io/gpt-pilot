@@ -32,8 +32,8 @@ class TechLead(Agent):
             return step['development_plan']
         
         # DEVELOPMENT PLANNING
-        print(color_green_bold(f"Starting to create the action plan for development...\n"))
-        logger.info(f"Starting to create the action plan for development...")
+        print(color_green_bold("Starting to create the action plan for development...\n"))
+        logger.info("Starting to create the action plan for development...")
 
         # TODO add clarifications
         self.development_plan = self.convo_development_plan.send_message('development/plan.prompt',

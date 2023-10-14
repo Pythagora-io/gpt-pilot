@@ -1,3 +1,4 @@
+import platform
 import uuid
 from utils.style import color_green, color_red, color_green_bold, color_yellow_bold, color_red_bold, color_blue_bold, color_white_bold
 from helpers.exceptions.TokenLimitError import TokenLimitError
@@ -11,7 +12,7 @@ from logger.logger import logger
 from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
-from helpers.cli import run_command_until_success, execute_command_and_check_cli_response
+from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes
 from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK
 from database.database import save_progress, get_progress_steps, update_app_status
 from utils.utils import get_os_info
@@ -33,21 +34,23 @@ class Developer(Agent):
             self.project.skip_steps = False if ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0') else True
 
         # DEVELOPMENT
-        print(color_green_bold(f"🚀 Now for the actual development...\n"))
-        logger.info(f"Starting to create the actual code...")
+        print(color_green_bold("🚀 Now for the actual development...\n"))
+        logger.info("Starting to create the actual code...")
 
         for i, dev_task in enumerate(self.project.development_plan):
             self.implement_task(i, dev_task)
 
         # DEVELOPMENT END
-
+        self.project.dot_pilot_gpt.chat_log_folder(None)
         logger.info('The app is DONE!!! Yay...you can use it now.')
+        print(green_bold("The app is DONE!!! Yay...you can use it now.\n"))
 
     def implement_task(self, i, development_task=None):
-        print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'))
+        print(color_green_bold('Implementing task #{i + 1}: ') + color_green(' {development_task["description"]}\n'))
+        self.project.dot_pilot_gpt.chat_log_folder(i + 1)
 
         convo_dev_task = AgentConvo(self)
-        task_description = convo_dev_task.send_message('development/task/breakdown.prompt', {
+        convo_dev_task.send_message('development/task/breakdown.prompt', {
             "name": self.project.args['name'],
             "app_type": self.project.args['app_type'],
             "app_summary": self.project.project_description,
@@ -97,10 +100,12 @@ class Developer(Agent):
         additional_message = 'Let\'s start with the step #0:\n\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i)) } are finished so let\'s do step #{i + 1} now.\n\n'
 
         process_name = data['process_name'] if 'process_name' in data else None
+        success_message = data['success_message'] if 'success_message' in data else None
 
         return run_command_until_success(convo, data['command'],
                                          timeout=data['timeout'],
                                          process_name=process_name,
+                                         success_message=success_message,
                                          additional_message=additional_message)
 
     def step_human_intervention(self, convo, step: dict):
@@ -114,9 +119,14 @@ class Developer(Agent):
                     step['human_intervention_description'])
 
         while True:
-            human_intervention_description = step['human_intervention_description'] + \
-                                             color_yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`') \
-                                             if self.run_command is not None else step['human_intervention_description']
+            human_intervention_description = step['human_intervention_description']
+
+            if self.run_command is not None:
+                if (self.project.ipc_client_instance is None or self.project.ipc_client_instance.client is None):
+                    human_intervention_description += color_yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
+                else:
+                    print(self.run_command, type="run_command")
+
             response = self.project.ask_for_human_intervention('I need human intervention:',
                 human_intervention_description,
                 cbs={
@@ -148,7 +158,7 @@ class Developer(Agent):
             cli_response, llm_response = execute_command_and_check_cli_response(test_command['command'], test_command['timeout'], convo)
             logger.info('After running command llm_response: ' + llm_response)
             if llm_response == 'NEEDS_DEBUGGING':
-                print(color_red(f'Got incorrect CLI response:'))
+                print(color_red('Got incorrect CLI response:'))
                 print(cli_response)
                 print(color_red('-------------------'))
 
@@ -166,7 +176,9 @@ class Developer(Agent):
 
         if development_task is not None:
             convo.remove_last_x_messages(2)
-            detailed_user_review_goal = convo.send_message('development/define_user_review_goal.prompt', {})
+            detailed_user_review_goal = convo.send_message('development/define_user_review_goal.prompt', {
+                'os': platform.system()
+            })
             convo.remove_last_x_messages(2)
 
         try:
@@ -183,8 +195,8 @@ class Developer(Agent):
         if step_implementation_try >= MAX_COMMAND_DEBUG_TRIES:
             self.dev_help_needed(step)
 
-        print(color_red_bold(f'\n--------- LLM Reached Token Limit ----------'))
-        print(color_red_bold(f'Can I retry implementing the entire development step?'))
+        print(color_red_bold('\n--------- LLM Reached Token Limit ----------'))
+        print(color_red_bold('Can I retry implementing the entire development step?'))
 
         answer = ''
         while answer != 'y':
@@ -193,7 +205,7 @@ class Developer(Agent):
                 'Type y/n'
             )
 
-            logger.info(f"Retry step implementation? %s", answer)
+            logger.info("Retry step implementation? %s", answer)
             if answer == 'n':
                 return self.dev_help_needed(step)
 
@@ -202,9 +214,9 @@ class Developer(Agent):
     def dev_help_needed(self, step):
 
         if step['type'] == 'command':
-            help_description = (color_red_bold(f'I tried running the following command but it doesn\'t seem to work:\n\n') +
-                color_white_bold(step['command']['command']) +
-                color_red_bold(f'\n\nCan you please make it work?'))
+            help_description = (color_red_bold('I tried running the following command but it doesn\'t seem to work:\n\n') +
+                white_bold(step['command']['command']) +
+                color_red_bold('\n\nCan you please make it work?'))
         elif step['type'] == 'code_change':
             help_description = step['code_change_description']
         elif step['type'] == 'human_intervention':
@@ -223,14 +235,14 @@ class Developer(Agent):
 
         answer = ''
         while answer != 'continue':
-            print(color_red_bold(f'\n----------------------------- I need your help ------------------------------'))
+            print(color_red_bold('\n----------------------------- I need your help ------------------------------'))
             print(extract_substring(str(help_description)))
-            print(color_red_bold(f'\n-----------------------------------------------------------------------------'))
+            print(color_red_bold('\n-----------------------------------------------------------------------------'))
             answer = styled_text(
                 self.project,
                 'Once you\'re done, type "continue"?'
             )
-            logger.info(f"help needed: %s", answer)
+            logger.info("help needed: %s", answer)
 
         return { "success": True, "user_input": answer }
 
@@ -293,9 +305,13 @@ class Developer(Agent):
             iteration_convo.load_branch(last_branch_name)
             user_description = ('Here is a description of what should be working: \n\n' + color_blue_bold(continue_description) + '\n') \
                                 if continue_description != '' else ''
-            user_description = 'Can you check if the app works please? ' + user_description + \
-                               '\nIf you want to run the app, ' + \
-                               color_yellow_bold('just type "r" and press ENTER and that will run `' + self.run_command + '`')
+            user_description = 'Can you check if the app works please? ' + user_description
+
+            if self.project.ipc_client_instance is None or self.project.ipc_client_instance.client is None:
+                user_description += color_yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
+            else:
+                print(self.run_command, type="run_command")
+
             # continue_description = ''
             # TODO: Wait for a specific string in the output or timeout?
             response = self.project.ask_for_human_intervention(
@@ -331,7 +347,9 @@ class Developer(Agent):
 
                 # self.debugger.debug(iteration_convo, user_input=user_feedback)
 
-                task_steps = iteration_convo.send_message('development/parse_task.prompt', {}, IMPLEMENT_TASK)
+                task_steps = iteration_convo.send_message('development/parse_task.prompt', {
+                    'running_processes': running_processes
+                }, IMPLEMENT_TASK)
                 iteration_convo.remove_last_x_messages(2)
 
                 return self.execute_task(iteration_convo, task_steps, is_root_task=True)
@@ -355,8 +373,8 @@ class Developer(Agent):
         })
         return
         # ENVIRONMENT SETUP
-        print(green(f"Setting up the environment...\n"))
-        logger.info(f"Setting up the environment...")
+        print(green("Setting up the environment...\n"))
+        logger.info("Setting up the environment...")
 
         os_info = get_os_info()
         os_specific_technologies = self.convo_os_specific_tech.send_message('development/env_setup/specs.prompt',
