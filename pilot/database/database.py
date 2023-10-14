@@ -200,9 +200,9 @@ def get_app(app_id, error_if_not_found=True):
         return None
 
 
-def get_app_by_user_workspace(workspace):
+def get_app_by_user_workspace(user_id,workspace):
     try:
-        user_app = UserApps.get(UserApps.workspace == workspace)
+        user_app = UserApps.get((UserApps.user == user_id) & (UserApps.workspace == workspace))
         return user_app.app
     except DoesNotExist:
         return None
