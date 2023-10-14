@@ -9,7 +9,8 @@ import json
 import hashlib
 import re
 from jinja2 import Environment, FileSystemLoader
-from .style import color_text, ColorName
+from .style import green
+
 from const.llm import MAX_QUESTIONS, END_RESPONSE
 from const.common import ROLES, STEPS
 from logger.logger import logger
@@ -113,7 +114,7 @@ def get_os_info():
         "Node": platform.node(),
         "Release": platform.release(),
     }
-    # TODO deprecated linux_distribution
+
     if os_info["OS"] == "Linux":
         os_info["Distribution"] = ' '.join(distro.linux_distribution(full_distribution_name=True))
     elif os_info["OS"] == "Windows":
@@ -141,7 +142,7 @@ def step_already_finished(args, step):
     args.update(step['app_data'])
 
     message = f"✅  {capitalize_first_word_with_underscores(step['step'])}"
-    print(color_text(message, ColorName.GREEN))
+    print(green(message))
     logger.info(message)
 
 

@@ -8,7 +8,7 @@ import tiktoken
 from prompt_toolkit.styles import Style
 
 from jsonschema import validate, ValidationError
-from utils.style import color_text, ColorName
+from utils.style import red
 from typing import List
 from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS
 from logger.logger import logger, logging
@@ -217,7 +217,7 @@ def retry_on_exception(func):
                         time.sleep(wait_duration)
                     continue
 
-                print(color_text(f'There was a problem with request to openai API:', ColorName.RED))
+                print(red(f'There was a problem with request to openai API:'))
                 # spinner_stop(spinner)
                 print(err_str)
                 logger.error(f'There was a problem with request to openai API: {err_str}')
@@ -284,8 +284,8 @@ def stream_gpt_completion(data, req_type, project):
         delete_last_n_lines(lines_printed)
         return result_data
 
-    # spinner = spinner_start(color_text("Waiting for OpenAI API response...", ColorName.YELLOW))
-    # print(color_text("Stream response from OpenAI:", ColorName.YELLOW))
+    # spinner = spinner_start(yellow("Waiting for OpenAI API response..."))
+    # print(yellow("Stream response from OpenAI:"))
 
     # Configure for the selected ENDPOINT
     model = os.getenv('MODEL_NAME', 'gpt-4')

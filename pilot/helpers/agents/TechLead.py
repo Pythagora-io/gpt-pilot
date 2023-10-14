@@ -1,7 +1,7 @@
 from utils.utils import step_already_finished
 from helpers.Agent import Agent
 import json
-from utils.style import color_text, ColorName
+from utils.style import green_bold
 from const.function_calls import DEV_STEPS
 from helpers.cli import build_directory_tree
 from helpers.AgentConvo import AgentConvo
@@ -32,7 +32,7 @@ class TechLead(Agent):
             return step['development_plan']
         
         # DEVELOPMENT PLANNING
-        print(color_text(f"Starting to create the action plan for development...\n", ColorName.GREEN, bold=True))
+        print(green_bold(f"Starting to create the action plan for development...\n"))
         logger.info(f"Starting to create the action plan for development...")
 
         # TODO add clarifications

@@ -1,7 +1,7 @@
 import re
 import subprocess
 import uuid
-from utils.style import color_text, ColorName
+from utils.style import yellow, yellow_bold
 
 from database.database import get_saved_development_step, save_development_step, delete_all_subsequent_steps
 from helpers.exceptions.TokenLimitError import TokenLimitError
@@ -55,7 +55,7 @@ class AgentConvo:
         development_step = get_saved_development_step(self.agent.project)
         if development_step is not None and self.agent.project.skip_steps:
             # if we do, use it
-            print(color_text(f'Restoring development step with id {development_step.id}', ColorName.YELLOW))
+            print(yellow(f'Restoring development step with id {development_step.id}'))
             self.agent.project.checkpoints['last_development_step'] = development_step
             self.agent.project.restore_files(development_step.id)
             response = development_step.llm_response
@@ -131,8 +131,7 @@ class AgentConvo:
         # Continue conversation until GPT response equals END_RESPONSE
         while response != END_RESPONSE:
             user_message = ask_user(self.agent.project, response,
-                                    hint=color_text("Do you want to add anything else? If not, ", ColorName.YELLOW)
-                                         + color_text('just press ENTER.', ColorName.YELLOW, bold=True),
+                                    hint=yellow("Do you want to add anything else? If not, ") + yellow_bold('just press ENTER.'),
                                     require_some_input=False)
 
             if user_message == "":
@@ -192,9 +191,7 @@ class AgentConvo:
         print_msg = capitalize_first_word_with_underscores(self.high_level_step)
         if self.log_to_user:
             if self.agent.project.checkpoints['last_development_step'] is not None:
-                print(color_text("\nDev step ")
-                      + color_text(str(self.agent.project.checkpoints['last_development_step']),
-                                   ColorName.YELLOW, bold=True) + '\n', end='')
+                print(yellow("\nDev step ") + yellow_bold(str(self.agent.project.checkpoints['last_development_step'])) + '\n', end='')
             print(f"\n{content}\n", type='local')
         logger.info(f"{print_msg}: {content}\n")
 

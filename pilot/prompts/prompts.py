@@ -1,5 +1,5 @@
 # prompts/prompts.py
-from utils.style import color_text, ColorName
+from utils.style import yellow
 from const import common
 from const.llm import MAX_QUESTIONS, END_RESPONSE
 from utils.llm_connection import create_gpt_chat_completion
@@ -52,7 +52,7 @@ def ask_for_main_app_definition(project):
 def ask_user(project, question: str, require_some_input=True, hint: str = None):
     while True:
         if hint is not None:
-            print(color_text(hint, ColorName.YELLOW), type='hint')
+            print(yellow(hint), type='hint')
         answer = styled_text(project, question)
 
         logger.info('Q: %s', question)
@@ -126,8 +126,7 @@ def get_additional_info_from_user(project, messages, role):
         while True:
             if isinstance(message, dict) and 'text' in message:
                 message = message['text']
-            print(color_text(f"Please check this message and say what needs to be changed. If everything is ok just press ENTER",
-                             ColorName.YELLOW))
+            print(yellow(f"Please check this message and say what needs to be changed. If everything is ok just press ENTER",))
             answer = ask_user(project, message, require_some_input=False)
             if answer.lower() == '':
                 break
