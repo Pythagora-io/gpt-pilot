@@ -4,7 +4,7 @@ from utils.style import color_yellow_bold
 import re
 import sys
 from prompt_toolkit.styles import Style
-from utils.style import yellow_bold
+from utils.style import color_yellow_bold
 
 from database.database import save_user_input, get_saved_user_input
 

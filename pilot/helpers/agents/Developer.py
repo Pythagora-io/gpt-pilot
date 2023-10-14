@@ -1,6 +1,14 @@
 import platform
 import uuid
-from utils.style import color_green, color_red, color_green_bold, color_yellow_bold, color_red_bold, color_blue_bold, color_white_bold
+from utils.style import (
+    color_green,
+    color_green_bold,
+    color_red,
+    color_red_bold,
+    color_yellow_bold,
+    color_blue_bold,
+    color_white_bold
+)
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
@@ -43,7 +51,7 @@ class Developer(Agent):
         # DEVELOPMENT END
         self.project.dot_pilot_gpt.chat_log_folder(None)
         logger.info('The app is DONE!!! Yay...you can use it now.')
-        print(green_bold("The app is DONE!!! Yay...you can use it now.\n"))
+        print(color_green_bold("The app is DONE!!! Yay...you can use it now.\n"))
 
     def implement_task(self, i, development_task=None):
         print(color_green_bold('Implementing task #{i + 1}: ') + color_green(' {development_task["description"]}\n'))
@@ -215,7 +223,7 @@ class Developer(Agent):
 
         if step['type'] == 'command':
             help_description = (color_red_bold('I tried running the following command but it doesn\'t seem to work:\n\n') +
-                white_bold(step['command']['command']) +
+                color_white_bold(step['command']['command']) +
                 color_red_bold('\n\nCan you please make it work?'))
         elif step['type'] == 'code_change':
             help_description = step['code_change_description']
@@ -373,7 +381,7 @@ class Developer(Agent):
         })
         return
         # ENVIRONMENT SETUP
-        print(green("Setting up the environment...\n"))
+        print(color_green_bold("Setting up the environment...\n"))
         logger.info("Setting up the environment...")
 
         os_info = get_os_info()
