@@ -1,4 +1,4 @@
-from utils.style import green
+from utils.style import color_green
 import os
 
 
@@ -11,7 +11,7 @@ def update_file(path, new_content):
     # Write content to the file
     with open(path, 'w') as file:
         file.write(new_content)
-        print(green(f"Updated file {path}"))
+        print(color_green(f"Updated file {path}"))
 
 def get_files_content(directory, ignore=[]):
     return_array = []

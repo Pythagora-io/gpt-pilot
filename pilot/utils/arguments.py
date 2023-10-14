@@ -5,7 +5,7 @@ import sys
 import uuid
 from getpass import getuser
 from database.database import get_app, get_app_by_user_workspace
-from utils.style import green_bold
+from utils.style import color_green_bold, disable_color_output
 from utils.utils import should_execute_step
 
 
@@ -24,6 +24,9 @@ def get_arguments():
             arguments[key] = value
         else:
             arguments[arg] = True
+
+    if 'no-color' in arguments:
+        disable_color_output()
 
     if 'user_id' not in arguments:
         arguments['user_id'] = username_to_uuid(getuser())
@@ -46,18 +49,18 @@ def get_arguments():
             if 'step' not in arguments or ('step' in arguments and not should_execute_step(arguments['step'], app.status)):
                 arguments['step'] = app.status
 
-            print(green_bold('\n------------------ LOADING PROJECT ----------------------'))
-            print(green_bold(f'{app.name} (app_id={arguments["app_id"]})'))
-            print(green_bold('--------------------------------------------------------------\n'))
+            print(color_green_bold('\n------------------ LOADING PROJECT ----------------------'))
+            print(color_green_bold(f'{app.name} (app_id={arguments["app_id"]})'))
+            print(color_green_bold('--------------------------------------------------------------\n'))
         except ValueError as e:
             print(e)
             exit(1)
     else:
         arguments['app_id'] = str(uuid.uuid4())
-        print(green_bold('\n------------------ STARTING NEW PROJECT ----------------------'))
+        print(color_green_bold('\n------------------ STARTING NEW PROJECT ----------------------'))
         print("If you wish to continue with this project in future run:")
-        print(green_bold(f'python {sys.argv[0]} app_id={arguments["app_id"]}'))
-        print(green_bold('--------------------------------------------------------------\n'))
+        print(color_green_bold(f'python {sys.argv[0]} app_id={arguments["app_id"]}'))
+        print(color_green_bold('--------------------------------------------------------------\n'))
 
     if 'email' not in arguments:
         arguments['email'] = get_email()

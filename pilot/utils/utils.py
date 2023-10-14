@@ -9,7 +9,7 @@ import json
 import hashlib
 import re
 from jinja2 import Environment, FileSystemLoader
-from .style import green
+from .style import color_green
 
 from const.llm import MAX_QUESTIONS, END_RESPONSE
 from const.common import ROLES, STEPS
@@ -142,7 +142,7 @@ def step_already_finished(args, step):
     args.update(step['app_data'])
 
     message = f"✅  {capitalize_first_word_with_underscores(step['step'])}"
-    print(green(message))
+    print(color_green(message))
     logger.info(message)
 
 

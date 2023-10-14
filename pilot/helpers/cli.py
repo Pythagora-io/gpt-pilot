@@ -8,7 +8,7 @@ import platform
 from typing import Dict, Union
 
 from logger.logger import logger
-from utils.style import yellow, green, red, yellow_bold, white_bold
+from utils.style import color_yellow, color_green, color_red, color_yellow_bold, color_white_bold
 from database.database import get_saved_command_run, save_command_run
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
 from helpers.exceptions.TokenLimitError import TokenLimitError
@@ -133,8 +133,8 @@ def execute_command(project, command, timeout=None, process_name: str = None, fo
             timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
 
     if not force:
-        print(yellow_bold(f'\n--------- EXECUTE COMMAND ----------'))
-        question = f'Can I execute the command: `{yellow_bold(command)}`'
+        print(color_yellow_bold(f'\n--------- EXECUTE COMMAND ----------'))
+        question = f'Can I execute the command: `{color_yellow_bold(command)}`'
         if timeout is not None:
             question += f' with {timeout}ms timeout?'
         else:
@@ -162,7 +162,7 @@ def execute_command(project, command, timeout=None, process_name: str = None, fo
     if command_run is not None and project.skip_steps:
         # if we do, use it
         project.checkpoints['last_command_run'] = command_run
-        print(yellow(f'Restoring command run response id {command_run.id}:\n```\n{command_run.cli_response}```'))
+        print(color_yellow(f'Restoring command run response id {command_run.id}:\n```\n{command_run.cli_response}```'))
         return command_run.cli_response, None, None
 
     return_value = None
@@ -191,7 +191,7 @@ def execute_command(project, command, timeout=None, process_name: str = None, fo
             elapsed_time = time.time() - start_time
             if timeout is not None:
                 # TODO: print to IPC using a different message type so VS Code can ignore it or update the previous value
-                print(white_bold(f'\rt: {round(elapsed_time * 1000)}ms : '), end='', flush=True)
+                print(color_white_bold(f'\rt: {round(elapsed_time * 1000)}ms : '), end='', flush=True)
 
             # Check if process has finished
             if process.poll() is not None:
@@ -200,7 +200,7 @@ def execute_command(project, command, timeout=None, process_name: str = None, fo
                 while not q.empty():
                     output_line = q.get_nowait()
                     if output_line not in output:
-                        print(green('CLI OUTPUT:') + output_line, end='')
+                        print(color_green('CLI OUTPUT:') + output_line, end='')
                         logger.info('CLI OUTPUT: ' + output_line)
                         output += output_line
                 break
@@ -218,7 +218,7 @@ def execute_command(project, command, timeout=None, process_name: str = None, fo
 
             if line:
                 output += line
-                print(green('CLI OUTPUT:') + line, end='')
+                print(color_green('CLI OUTPUT:') + line, end='')
                 logger.info('CLI OUTPUT: ' + line)
 
             # Read stderr
@@ -229,7 +229,7 @@ def execute_command(project, command, timeout=None, process_name: str = None, fo
 
             if stderr_line:
                 stderr_output += stderr_line
-                print(red('CLI ERROR:') + stderr_line, end='')  # Print with different color for distinction
+                print(color_red('CLI ERROR:') + stderr_line, end='')  # Print with different color for distinction
                 logger.error('CLI ERROR: ' + stderr_line)
                 
             if process_name is not None:
@@ -373,9 +373,9 @@ def run_command_until_success(convo, command,
 
     if response != 'DONE':
         # 'NEEDS_DEBUGGING'
-        print(red(f'Got incorrect CLI response:'))
+        print(color_red(f'Got incorrect CLI response:'))
         print(cli_response)
-        print(red('-------------------'))
+        print(color_red('-------------------'))
 
         reset_branch_id = convo.save_branch()
         while True:

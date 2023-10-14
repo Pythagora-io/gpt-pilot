@@ -166,6 +166,8 @@ Erase all development steps previously done and continue working on an existing 
 python main.py app_id=<ID_OF_THE_APP> skip_until_dev_step=0
 ```
 
+## `no-color`
+Disable color ouput in terminal.
 
 ## `delete_unrelated_steps`
 

@@ -1,7 +1,7 @@
 from utils.utils import step_already_finished
 from helpers.Agent import Agent
 import json
-from utils.style import green_bold
+from utils.style import color_green_bold
 from const.function_calls import ARCHITECTURE
 
 from utils.utils import should_execute_step, find_role_from_step, generate_app_data
@@ -28,7 +28,7 @@ class Architect(Agent):
             return step['architecture']
 
         # ARCHITECTURE
-        print(green_bold(f"Planning project architecture...\n"))
+        print(color_green_bold(f"Planning project architecture...\n"))
         logger.info(f"Planning project architecture...")
 
         self.convo_architecture = AgentConvo(self)
