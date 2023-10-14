@@ -124,7 +124,6 @@ def execute_command(project, command, timeout=None, success_message=None, proces
         process_name (str, optional): A name for the process.
                             If `timeout` is not provided, can be used to terminate the process.
         force (bool, optional): Whether to execute the command without confirmation. Default is False.
-
     Returns:
         cli_response (str): The command output
                             or: '', 'DONE' if user answered 'no' or 'skip'
