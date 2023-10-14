@@ -155,11 +155,12 @@ class Project:
         Returns:
             dict: The directory tree.
         """
-        files = {}
-        if with_descriptions and False:
-            files = File.select().where(File.app_id == self.args['app_id'])
-            files = {snapshot.name: snapshot for snapshot in files}
-        return build_directory_tree(self.root_path + '/', ignore=IGNORE_FOLDERS, files=files, add_descriptions=False)
+        # files = {}
+        # if with_descriptions and False:
+        #     files = File.select().where(File.app_id == self.args['app_id'])
+        #     files = {snapshot.name: snapshot for snapshot in files}
+        # return build_directory_tree_with_descriptions(self.root_path, ignore=IGNORE_FOLDERS, files=files, add_descriptions=False)
+        return build_directory_tree(self.root_path, ignore=IGNORE_FOLDERS)
 
     def get_test_directory_tree(self):
         """

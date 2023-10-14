@@ -274,7 +274,53 @@ def execute_command(project, command, timeout=None, success_message=None, comman
     return return_value, 'DONE' if was_success else None, process.returncode
 
 
-def build_directory_tree(path, prefix="", ignore=None, is_last=False, files=None, add_descriptions=False):
+def build_directory_tree(path, prefix='', is_root=True, ignore=None):
+    """Build the directory tree structure in a simplified format.
+
+    Args:
+    - path: The starting directory path.
+    - prefix: Prefix for the current item, used for recursion.
+    - is_root: Flag to indicate if the current item is the root directory.
+    - ignore: a list of directories to ignore
+
+    Returns:
+    - A string representation of the directory tree.
+    """
+    output = ""
+    indent = '  '
+
+    if os.path.isdir(path):
+        dir_name = os.path.basename(path)
+        if is_root:
+            output += '/'
+        else:
+            output += f'{prefix}/{dir_name}'
+
+        # List items in the directory
+        items = os.listdir(path)
+        dirs = [item for item in items if os.path.isdir(os.path.join(path, item)) and item not in ignore]
+        files = [item for item in items if os.path.isfile(os.path.join(path, item))]
+        dirs.sort()
+        files.sort()
+
+        if dirs:
+            output += '\n'
+            for index, dir_item in enumerate(dirs):
+                item_path = os.path.join(path, dir_item)
+                output += build_directory_tree(item_path, prefix + indent, is_root=False, ignore=ignore)
+
+            if files:
+                output += f"{prefix}  {', '.join(files)}\n"
+
+        elif files:
+            output += f": {', '.join(files)}\n"
+        else:
+            output += '\n'
+
+    return output
+
+
+def build_directory_tree_with_descriptions(path, prefix="", ignore=None, is_last=False, files=None):
     """Build the directory tree structure in tree-like format.
 
     Args:
@@ -297,17 +343,19 @@ def build_directory_tree(path, prefix="", ignore=None, is_last=False, files=None
 
     if os.path.isdir(path):
         # It's a directory, add its name to the output and then recurse into it
-        output += prefix + "|-- " + os.path.basename(path) + ((' - ' + files[os.path.basename(path)].description + ' ' if files and os.path.basename(path) in files and add_descriptions else '')) + "/\n"
+        output += prefix + "|-- " + os.path.basename(path) + \
+                  ((' - ' + files[os.path.basename(path)].description + ' ' if files and os.path.basename(path) in files else '')) + "/\n"
 
         # List items in the directory
         items = os.listdir(path)
         for index, item in enumerate(items):
             item_path = os.path.join(path, item)
-            output += build_directory_tree(item_path, prefix + indent, ignore, index == len(items) - 1, files, add_descriptions)
+            output += build_directory_tree_with_descriptions(item_path, prefix + indent, ignore, index == len(items) - 1, files)
 
     else:
         # It's a file, add its name to the output
-        output += prefix + "|-- " + os.path.basename(path) + ((' - ' + files[os.path.basename(path)].description + ' ' if files and os.path.basename(path) in files and add_descriptions else '')) + "\n"
+        output += prefix + "|-- " + os.path.basename(path) + \
+                  ((' - ' + files[os.path.basename(path)].description + ' ' if files and os.path.basename(path) in files else '')) + "\n"
 
     return output
 
