@@ -65,7 +65,11 @@ class Developer(Agent):
             "files": self.project.get_all_coded_files(),
         })
 
-        task_steps = convo_dev_task.send_message('development/parse_task.prompt', {}, IMPLEMENT_TASK)
+        response = convo_dev_task.send_message('development/parse_task.prompt', {
+            'running_processes': running_processes,
+            'os': platform.system(),
+        }, IMPLEMENT_TASK)
+        task_steps = response['tasks']
         convo_dev_task.remove_last_x_messages(2)
         return self.execute_task(convo_dev_task, task_steps, development_task=development_task, continue_development=True, is_root_task=True)
 
@@ -99,12 +103,12 @@ class Developer(Agent):
         # TODO END
         additional_message = 'Let\'s start with the step #0:\n\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i)) } are finished so let\'s do step #{i + 1} now.\n\n'
 
-        process_name = data['process_name'] if 'process_name' in data else None
+        command_id = data['command_id'] if 'command_id' in data else None
         success_message = data['success_message'] if 'success_message' in data else None
 
         return run_command_until_success(convo, data['command'],
                                          timeout=data['timeout'],
-                                         process_name=process_name,
+                                         command_id=command_id,
                                          success_message=success_message,
                                          additional_message=additional_message)
 
@@ -132,7 +136,7 @@ class Developer(Agent):
                 cbs={
                     'r': lambda conv: run_command_until_success(conv,
                                                                 self.run_command,
-                                                                process_name='app',
+                                                                command_id='app',
                                                                 timeout=None,
                                                                 force=True,
                                                                 return_cli_response=True)
@@ -143,19 +147,22 @@ class Developer(Agent):
                 continue
 
             if response['user_input'] != 'continue':
-                return_value = self.debugger.debug(convo, user_input=response['user_input'], issue_description=step['human_intervention_description'])
+                return_value = self.debugger.debug(convo,
+                                                   user_input=response['user_input'],
+                                                   issue_description=step['human_intervention_description'])
                 return_value['user_input'] = response['user_input']
                 return return_value
             else:
                 return response
 
     def step_test(self, convo, test_command):
-        should_rerun_command = convo.send_message('dev_ops/should_rerun_command.prompt',
-            test_command)
+        should_rerun_command = convo.send_message('dev_ops/should_rerun_command.prompt', test_command)
         if should_rerun_command == 'NO':
             return { "success": True }
         elif should_rerun_command == 'YES':
-            cli_response, llm_response = execute_command_and_check_cli_response(test_command['command'], test_command['timeout'], convo)
+            cli_response, llm_response = execute_command_and_check_cli_response(test_command['command'],
+                                                                                test_command['timeout'],
+                                                                                convo)
             logger.info('After running command llm_response: ' + llm_response)
             if llm_response == 'NEEDS_DEBUGGING':
                 print(red('Got incorrect CLI response:'))
@@ -253,6 +260,7 @@ class Developer(Agent):
         convo.save_branch(function_uuid)
 
         for (i, step) in enumerate(task_steps):
+            logger.info('---------- execute_task() step #%d: %s', i, step)
 
             result = None
             step_implementation_try = 0
@@ -271,7 +279,10 @@ class Developer(Agent):
                     elif step['type'] == 'human_intervention':
                         result = self.step_human_intervention(convo, step)
 
+                    logger.info('  result: %s', result)
+
                     if test_command is not None and ('check_if_fixed' not in step or step['check_if_fixed']):
+                        logger.info('check_if_fixed: %s', test_command)
                         is_fixed = self.step_test(convo, test_command)
                         return is_fixed
 
@@ -317,7 +328,7 @@ class Developer(Agent):
             response = self.project.ask_for_human_intervention(
                 user_description,
                 cbs={'r': lambda convo: run_command_until_success(convo, self.run_command,
-                                                                  process_name='app',
+                                                                  command_id='app',
                                                                   timeout=None,
                                                                   force=True,
                                                                   return_cli_response=True, is_root_task=True)},
@@ -347,11 +358,13 @@ class Developer(Agent):
 
                 # self.debugger.debug(iteration_convo, user_input=user_feedback)
 
-                task_steps = iteration_convo.send_message('development/parse_task.prompt', {
-                    'running_processes': running_processes
+                llm_response = iteration_convo.send_message('development/parse_task.prompt', {
+                    'running_processes': running_processes,
+                    'os': platform.system(),
                 }, IMPLEMENT_TASK)
                 iteration_convo.remove_last_x_messages(2)
 
+                task_steps = llm_response['tasks']
                 return self.execute_task(iteration_convo, task_steps, is_root_task=True)
 
 
@@ -377,7 +390,7 @@ class Developer(Agent):
         logger.info("Setting up the environment...")
 
         os_info = get_os_info()
-        os_specific_technologies = self.convo_os_specific_tech.send_message('development/env_setup/specs.prompt',
+        llm_response = self.convo_os_specific_tech.send_message('development/env_setup/specs.prompt',
             {
                 "name": self.project.args['name'],
                 "app_type": self.project.args['app_type'],
@@ -385,16 +398,18 @@ class Developer(Agent):
                 "technologies": self.project.architecture
             }, FILTER_OS_TECHNOLOGIES)
 
+        os_specific_technologies = llm_response['technologies']
         for technology in os_specific_technologies:
             logger.info('Installing %s', technology)
             llm_response = self.install_technology(technology)
 
             # TODO: I don't think llm_response would ever be 'DONE'?
             if llm_response != 'DONE':
-                installation_commands = self.convo_os_specific_tech.send_message(
+                llm_response = self.convo_os_specific_tech.send_message(
                     'development/env_setup/unsuccessful_installation.prompt',
                     {'technology': technology},
                     EXECUTE_COMMANDS)
+                installation_commands = llm_response['commands']
 
                 if installation_commands is not None:
                     for cmd in installation_commands:
@@ -413,7 +428,7 @@ class Developer(Agent):
     # TODO: This is only called from the unreachable section of set_up_environment()
     def install_technology(self, technology):
         # TODO move the functions definitions to function_calls.py
-        cmd, timeout_val = self.convo_os_specific_tech.send_message(
+        llm_response = self.convo_os_specific_tech.send_message(
             'development/env_setup/install_next_technology.prompt',
             {'technology': technology}, {
                 'definitions': [{
@@ -439,21 +454,26 @@ class Developer(Agent):
                 }
             })
 
+        cmd = llm_response['command']
+        timeout_val = llm_response['timeout']
         cli_response, llm_response = execute_command_and_check_cli_response(cmd, timeout_val, self.convo_os_specific_tech)
 
         return llm_response
 
     def test_code_changes(self, code_monkey, convo):
         logger.info('Testing code changes...')
-        test_type, description = convo.send_message('development/task/step_check.prompt', {}, GET_TEST_TYPE)
+        llm_response = convo.send_message('development/task/step_check.prompt', {}, GET_TEST_TYPE)
+        test_type = llm_response['type']
 
         if test_type == 'command_test':
-            return run_command_until_success(convo, description['command'], timeout=description['timeout'])
+            command = llm_response['command']
+            return run_command_until_success(convo, command['command'], timeout=command['timeout'])
         elif test_type == 'automated_test':
             # TODO get code monkey to implement the automated test
             pass
         elif test_type == 'manual_test':
             # TODO make the message better
+            description = llm_response['manual_test_description']
             response = self.project.ask_for_human_intervention(
                 'I need your help. Can you please test if this was successful?',
                 description,
@@ -471,13 +491,15 @@ class Developer(Agent):
         logger.info('Implementing %s step #%d: %s', type, step_index, description)
         # TODO remove hardcoded folder path
         directory_tree = self.project.get_directory_tree(True)
-        step_details = convo.send_message('development/task/next_step.prompt', {
+        llm_response = convo.send_message('development/task/next_step.prompt', {
             'finished_steps': [],
             'step_description': description,
             'step_type': type,
             'directory_tree': directory_tree,
             'step_index': step_index
         }, EXECUTE_COMMANDS)
+
+        step_details = llm_response['commands']
 
         if type == 'COMMAND':
             for cmd in step_details:
