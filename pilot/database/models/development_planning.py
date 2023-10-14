@@ -1,4 +1,3 @@
-from peewee import *
 from database.config import DATABASE_TYPE
 from database.models.components.progress_step import ProgressStep
 from database.models.components.sqlite_middlewares import JSONField

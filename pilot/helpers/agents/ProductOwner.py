@@ -3,7 +3,7 @@ from utils.style import green_bold
 from helpers.AgentConvo import AgentConvo
 from helpers.Agent import Agent
 from logger.logger import logger
-from database.database import save_progress, save_app, get_progress_steps
+from database.database import get_app, save_progress, save_app, get_progress_steps
 from utils.utils import should_execute_step, generate_app_data, step_already_finished, clean_filename
 from utils.files import setup_workspace
 from prompts.prompts import ask_for_app_type, ask_for_main_app_definition, get_additional_info_from_openai, \
@@ -20,27 +20,26 @@ class ProductOwner(Agent):
         super().__init__('product_owner', project)
 
     def get_project_description(self):
-        # TODO: why save the project before user has even committed to a name & description?
-        # The UI saves a record as soon as the click "Create Project" button
-        self.project.app = save_app(self.project)
-        self.project.current_step = PROJECT_DESCRIPTION_STEP
+        self.project.app = get_app(self.project.args['app_id'], error_if_not_found=False)
 
         # If this app_id already did this step, just get all data from DB and don't ask user again
-        step = get_progress_steps(self.project.args['app_id'], PROJECT_DESCRIPTION_STEP)
-        if step and not should_execute_step(self.project.args['step'], PROJECT_DESCRIPTION_STEP):
-            step_already_finished(self.project.args, step)
-            self.project.root_path = setup_workspace(self.project.args)
-            self.project.project_description = step['summary']
-            self.project.project_description_messages = step['messages']
-            return
+        if self.project.app is not None:
+            step = get_progress_steps(self.project.args['app_id'], PROJECT_DESCRIPTION_STEP)
+            if step and not should_execute_step(self.project.args['step'], PROJECT_DESCRIPTION_STEP):
+                step_already_finished(self.project.args, step)
+                self.project.set_root_path(setup_workspace(self.project.args))
+                self.project.project_description = step['summary']
+                self.project.project_description_messages = step['messages']
+                return
 
         # PROJECT DESCRIPTION
+        self.project.current_step = PROJECT_DESCRIPTION_STEP
         if 'app_type' not in self.project.args:
             self.project.args['app_type'] = ask_for_app_type()
         if 'name' not in self.project.args:
             self.project.args['name'] = clean_filename(ask_user(self.project, 'What is the project name?'))
 
-        self.project.root_path = setup_workspace(self.project.args)
+        self.project.set_root_path(setup_workspace(self.project.args))
 
         self.project.app = save_app(self.project)
 
@@ -87,7 +86,7 @@ class ProductOwner(Agent):
             return step['user_stories']
 
         # USER STORIES
-        msg = f"User Stories:\n"
+        msg = "User Stories:\n"
         print(green_bold(msg))
         logger.info(msg)
 
@@ -121,7 +120,7 @@ class ProductOwner(Agent):
             return step['user_tasks']
 
         # USER TASKS
-        msg = f"User Tasks:\n"
+        msg = "User Tasks:\n"
         print(green_bold(msg))
         logger.info(msg)
 

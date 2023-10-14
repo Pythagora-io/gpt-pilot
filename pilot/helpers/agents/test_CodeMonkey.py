@@ -30,8 +30,8 @@ class TestCodeMonkey:
             current_step='coding',
         )
 
-        self.project.root_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                                              '../../../workspace/TestDeveloper'))
+        self.project.set_root_path(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                              '../../../workspace/TestDeveloper')))
         self.project.technologies = []
         last_step = DevelopmentSteps()
         last_step.id = 1
@@ -54,12 +54,12 @@ class TestCodeMonkey:
             convo = MagicMock()
             mock_responses = [
                 # [],
-                [{
+                {'files': [{
                     'content': 'Washington',
                     'description': "A new .txt file with the word 'Washington' in it.",
                     'name': 'washington.txt',
                     'path': 'washington.txt'
-                }]
+                }]}
             ]
             convo.send_message.side_effect = mock_responses
 
@@ -94,12 +94,12 @@ class TestCodeMonkey:
             convo = MagicMock()
             mock_responses = [
                 # ['file_to_read.txt', 'output.txt'],
-                [{
+                {'files': [{
                     'content': 'Hello World!\n',
                     'description': 'This file is the output file. The content of file_to_read.txt is copied into this file.',
                     'name': 'output.txt',
                     'path': 'output.txt'
-                }]
+                }]}
             ]
             convo.send_message.side_effect = mock_responses
 

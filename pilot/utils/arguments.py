@@ -6,6 +6,8 @@ import uuid
 from getpass import getuser
 from database.database import get_app, get_app_by_user_workspace
 from utils.style import green_bold
+from utils.utils import should_execute_step
+from const.common import STEPS
 
 
 def get_arguments():
@@ -42,8 +44,8 @@ def get_arguments():
 
             arguments['app_type'] = app.app_type
             arguments['name'] = app.name
-            arguments['step'] = app.status
-            # Add any other fields from the App model you wish to include
+            if 'step' not in arguments or ('step' in arguments and not should_execute_step(arguments['step'], app.status)):
+                arguments['step'] = 'finished' if app.status == 'finished' else STEPS[STEPS.index(app.status) + 1]
 
             print(green_bold('\n------------------ LOADING PROJECT ----------------------'))
             print(green_bold(f'{app.name} (app_id={arguments["app_id"]})'))
@@ -51,6 +53,8 @@ def get_arguments():
         except ValueError as e:
             print(e)
             # Handle the error as needed, possibly exiting the script
+            exit(1)
+
     elif '--get-created-apps-with-steps' not in args:
         arguments['app_id'] = str(uuid.uuid4())
         print(green_bold('\n------------------ STARTING NEW PROJECT ----------------------'))

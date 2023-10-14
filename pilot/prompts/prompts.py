@@ -126,7 +126,7 @@ def get_additional_info_from_user(project, messages, role):
         while True:
             if isinstance(message, dict) and 'text' in message:
                 message = message['text']
-            print(yellow(f"Please check this message and say what needs to be changed. If everything is ok just press ENTER",))
+            print(yellow("Please check this message and say what needs to be changed. If everything is ok just press ENTER",))
             answer = ask_user(project, message, require_some_input=False)
             if answer.lower() == '':
                 break

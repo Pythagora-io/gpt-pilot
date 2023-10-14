@@ -1,4 +1,4 @@
-from peewee import *
+from peewee import ForeignKeyField, CharField
 
 from database.models.components.base_models import BaseModel
 from database.models.user import User
