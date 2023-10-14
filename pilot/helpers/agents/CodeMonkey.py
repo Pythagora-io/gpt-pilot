@@ -19,13 +19,15 @@ class CodeMonkey(Agent):
         #     "finished_steps": ', '.join(f"#{j}" for j in range(step_index))
         # }, GET_FILES)
 
-        changes = convo.send_message('development/implement_changes.prompt', {
+        llm_response = convo.send_message('development/implement_changes.prompt', {
             "step_description": code_changes_description,
             "step_index": step_index,
             "directory_tree": self.project.get_directory_tree(True),
             "files": []  # self.project.get_files(files_needed),
         }, IMPLEMENT_CHANGES)
         convo.remove_last_x_messages(1)
+
+        changes = llm_response['files']
 
         if self.project.skip_until_dev_step != str(self.project.checkpoints['last_development_step'].id):
             for file_data in changes:

@@ -1,3 +1,4 @@
+import json
 import re
 import subprocess
 import uuid
@@ -11,6 +12,7 @@ from utils.utils import array_of_objects_to_string, get_prompt, get_sys_message,
 from logger.logger import logger
 from prompts.prompts import ask_user
 from const.llm import END_RESPONSE
+from helpers.cli import running_processes
 
 
 class AgentConvo:
@@ -89,22 +91,7 @@ class AgentConvo:
             raise Exception("OpenAI API error happened.")
 
         response = parse_agent_response(response, function_calls)
-
-        # TODO remove this once the database is set up properly
-        message_content = response[0] if type(response) == tuple else response
-        if isinstance(message_content, list):
-            if 'to_message' in function_calls:
-                string_response = function_calls['to_message'](message_content)
-            elif len(message_content) > 0 and isinstance(message_content[0], dict):
-                string_response = [
-                    f'#{i}\n' + array_of_objects_to_string(d)
-                    for i, d in enumerate(message_content)
-                ]
-            else:
-                string_response = ['- ' + r for r in message_content]
-
-            message_content = '\n'.join(string_response)
-        # TODO END
+        message_content = self.format_message_content(response, function_calls)
 
         # TODO we need to specify the response when there is a function called
         # TODO maybe we can have a specific function that creates the GPT response from the function call
@@ -113,6 +100,33 @@ class AgentConvo:
         self.log_message(message_content)
 
         return response
+
+    def format_message_content(self, response, function_calls):
+        # TODO remove this once the database is set up properly
+        if isinstance(response, str):
+            return response
+        else:
+            # string_response = []
+            # for key, value in response.items():
+            #     string_response.append(f'# {key}')
+            #
+            #     if isinstance(value, list):
+            #         if 'to_message' in function_calls:
+            #             string_response.append(function_calls['to_message'](value))
+            #         elif len(value) > 0 and isinstance(value[0], dict):
+            #             string_response.extend([
+            #                 f'##{i}\n' + array_of_objects_to_string(d)
+            #                 for i, d in enumerate(value)
+            #             ])
+            #         else:
+            #             string_response.extend(['- ' + r for r in value])
+            #     else:
+            #         string_response.append(str(value))
+            #
+            # return '\n'.join(string_response)
+            return json.dumps(response)
+        # TODO END
+
 
     def continuous_conversation(self, prompt_path, prompt_data, function_calls=None):
         """
@@ -196,6 +210,18 @@ class AgentConvo:
                 print(yellow("\nDev step ") + yellow_bold(str(self.agent.project.checkpoints['last_development_step'])) + '\n', end='')
             print(f"\n{content}\n", type='local')
         logger.info(f"{print_msg}: {content}\n")
+
+    def to_context_prompt(self):
+        logger.info(f'to_context_prompt({self.agent.project.current_step})')
+
+        # TODO: get dependencies & versions from the project (package.json, requirements.txt, pom.xml, etc.)
+        # Ideally, the LLM could do this, and we update it on load & whenever the file changes
+        # ...or LLM generates a script for `.gpt-pilot/get_dependencies` that we run
+        # https://github.com/Pythagora-io/gpt-pilot/issues/189
+        return get_prompt('development/context.prompt', {
+            'directory_tree': self.agent.project.get_directory_tree(),
+            'running_processes': running_processes,
+        })
 
     def to_playground(self):
         with open('const/convert_to_playground_convo.js', 'r', encoding='utf-8') as file:

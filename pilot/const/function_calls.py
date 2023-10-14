@@ -44,7 +44,7 @@ def command_definition(description_command='A single command that needs to be ex
                        description_timeout=
                        'Timeout in milliseconds that represent the approximate time this command takes to finish. '
                        'If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), '
-                       'set the timeout to to a value long enough to determine that it has started successfully and provide a process_name. '
+                       'set the timeout to to a value long enough to determine that it has started successfully and provide a command_id. '
                        'If you need to create a directory that doesn\'t exist and is not the root project directory, '
                        'always create it by running a command `mkdir`'):
     return {
@@ -63,10 +63,10 @@ def command_definition(description_command='A single command that needs to be ex
                 'type': 'string',
                 'description': 'A message to look for in the output of the command to determine if successful or not.',
             },
-            'process_name': {
+            'command_id': {
                 'type': 'string',
                 'description': 'If the process needs to continue running after the command is executed provide '
-                               'a name which you can use to kill the process later.',
+                               'a unique command identifier which you can use to kill the process later.',
             }
         },
         'required': ['command', 'timeout'],
@@ -193,7 +193,7 @@ IMPLEMENT_TASK = {
                                 'command': command_definition(),
                                 'kill_process': {
                                     'type': 'string',
-                                    'description': 'To kill a process that was left running by a previous `command` step provide the `process_name` in this field and set `type` to "kill_process".',
+                                    'description': 'To kill a process that was left running by a previous `command` step provide the `command_id` in this field and set `type` to "kill_process".',
                                 },
                                 'code_change': {
                                     'type': 'object',
@@ -529,8 +529,15 @@ DEBUG_STEPS_BREAKDOWN = {
             'description': 'Starts the debugging process based on the list of steps that need to be done to debug the problem.',
             'parameters': {
                 'type': 'object',
-                "properties": {
-                    "steps": {
+                'properties': {
+                    'thoughts': {
+                        'type': 'string',
+                        'description': 'Thoughts that you have about the problem that you are trying to debug.'
+                    },
+                    'reasoning': {
+                        'type': 'string',
+                    },
+                    'steps': {
                         'type': 'array',
                         'description': 'List of steps that need to be done to debug the problem.',
                         'items': {
@@ -560,7 +567,7 @@ DEBUG_STEPS_BREAKDOWN = {
                         }
                     }
                 },
-                "required": ['steps'],
+                "required": ['thoughts', 'reasoning', 'steps'],
             },
         },
     ],

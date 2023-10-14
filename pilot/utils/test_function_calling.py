@@ -23,7 +23,7 @@ class TestFunctionCalling:
         response = parse_agent_response(response, function_calls)
 
         # Then
-        assert response == 'Hello world!'
+        assert response == {'greeting': 'Hello world!'}
 
     def test_parse_agent_response_json_markdown(self):
         # Given
@@ -35,7 +35,7 @@ class TestFunctionCalling:
         response = parse_agent_response(response, function_calls)
 
         # Then
-        assert response == 'Hello world!'
+        assert response == {'greeting': 'Hello world!'}
 
     def test_parse_agent_response_markdown(self):
         # Given
@@ -47,7 +47,7 @@ class TestFunctionCalling:
         response = parse_agent_response(response, function_calls)
 
         # Then
-        assert response == 'Hello world!'
+        assert response == {'greeting': 'Hello world!'}
 
     def test_parse_agent_response_multiple_args(self):
         # Given
@@ -55,11 +55,11 @@ class TestFunctionCalling:
         function_calls = {'definitions': [], 'functions': {}}
 
         # When
-        greeting, name = parse_agent_response(response, function_calls)
+        response = parse_agent_response(response, function_calls)
 
         # Then
-        assert greeting == 'Hello'
-        assert name == 'John'
+        assert response['greeting'] == 'Hello'
+        assert response['name'] == 'John'
 
 
 def test_json_prompter():

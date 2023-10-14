@@ -32,12 +32,13 @@ class Architect(Agent):
         logger.info("Planning project architecture...")
 
         self.convo_architecture = AgentConvo(self)
-        architecture = self.convo_architecture.send_message('architecture/technologies.prompt',
+        llm_response = self.convo_architecture.send_message('architecture/technologies.prompt',
             {'name': self.project.args['name'],
              'prompt': self.project.project_description,
              'user_stories': self.project.user_stories,
             #  'user_tasks': self.project.user_tasks,
              'app_type': self.project.args['app_type']}, ARCHITECTURE)
+        architecture = llm_response['technologies']
 
         # TODO: Project.args should be a defined class so that all of the possible args are more obvious
         if self.project.args.get('advanced', False):

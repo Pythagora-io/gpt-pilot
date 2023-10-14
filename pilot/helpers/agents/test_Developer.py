@@ -2,7 +2,7 @@ import builtins
 import json
 import os
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import requests
 
@@ -12,8 +12,8 @@ load_dotenv()
 
 from main import get_custom_print
 from .Developer import Developer, ENVIRONMENT_SETUP_STEP
-from helpers.Project import Project
 from test.mock_questionary import MockQuestionary
+from helpers.test_Project import create_project
 
 
 class TestDeveloper:
@@ -21,18 +21,12 @@ class TestDeveloper:
         builtins.print, ipc_client_instance = get_custom_print({})
 
         name = 'TestDeveloper'
-        self.project = Project({
-                'app_id': 'test-developer',
-                'name': name,
-                'app_type': ''
-            },
-            name=name,
-            architecture=[],
-            user_stories=[]
-        )
-
+        self.project = create_project()
+        self.project.app_id = 'test-developer'
+        self.project.name = name
         self.project.set_root_path(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                                               '../../../workspace/TestDeveloper')))
+
         self.project.technologies = []
         self.project.current_step = ENVIRONMENT_SETUP_STEP
         self.developer = Developer(self.project)
@@ -53,7 +47,35 @@ class TestDeveloper:
 
         # Then
         assert llm_response == 'DONE'
-        mock_execute_command.assert_called_once_with(self.project, 'python --version', 10)
+        mock_execute_command.assert_called_once_with(self.project, 'python --version', timeout=10)
+
+    @patch('helpers.AgentConvo.get_saved_development_step')
+    @patch('helpers.AgentConvo.save_development_step')
+    @patch('helpers.AgentConvo.create_gpt_chat_completion',
+           return_value={'text': '{"tasks": [{"command": "ls -al"}]}'})
+    def test_implement_task(self, mock_completion, mock_save, mock_get_saved_step):
+        # Given any project
+        project = create_project()
+        project.project_description = 'Test Project'
+        project.development_plan = [{
+            'description': 'Do stuff',
+            'user_review_goal': 'Do stuff',
+        }]
+        project.get_all_coded_files = lambda: []
+        project.current_step = 'test'
+
+        # and a developer who will execute any task
+        developer = Developer(project)
+        developer.execute_task = MagicMock()
+        developer.execute_task.return_value = 'DONE'
+
+        # When
+        llm_response = developer.implement_task(0, {'description': 'Do stuff'})
+
+        # Then we parse the response correctly and send list of steps to execute_task()
+        assert llm_response == 'DONE'
+        assert developer.execute_task.call_count == 1
+        developer.execute_task.call_args[0][1] == [{'command': 'ls -al'}]
 
     @patch('helpers.AgentConvo.get_saved_development_step')
     @patch('helpers.AgentConvo.save_development_step')
@@ -113,7 +135,7 @@ class TestDeveloper:
 
         mock_chat_completion.side_effect = [
             {'text': '{"type": "manual_test", "manual_test_description": "Does it look good?"}'},
-            {'text': '{"steps": [{"type": "command", "command": {"command": "something scary", "timeout": 3000}, "check_if_fixed": true}]}'},
+            {'text': '{"thoughts": "hmmm...", "reasoning": "testing", "steps": [{"type": "command", "command": {"command": "something scary", "timeout": 3000}, "check_if_fixed": true}]}'},
             {'text': 'do something else scary'},
         ]
 
