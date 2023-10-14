@@ -82,26 +82,33 @@ def terminate_running_processes():
         terminate_process(running_processes[process_name][1], process_name)
 
 
+def term_proc_windows(pid: int):
+   try:
+       subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)])
+   except subprocess.CalledProcessError as e:
+       logger.error(f'Error while terminating process: {e}')
+
+
+def term_proc_unix_like(pid: int):
+   try:
+       os.killpg(pid, signal.SIGKILL)
+   except OSError as e:
+       logger.error(f'Error while terminating process: {e}')
+
+
 def terminate_process(pid: int, name=None) -> None:
-    if name is None:
-        logger.info('Terminating process %s', pid)
-    else:
-        logger.info('Terminating process "%s" (pid: %s)', name, pid)
+   if name is None:
+       name = ''
+   logger.info('Terminating process "%s" (pid: %s)', name, pid)
 
-    if platform.system() == "Windows":
-        try:
-            subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)])
-        except subprocess.CalledProcessError as e:
-            logger.error(f'Error while terminating process: {e}')
-    else:  # Unix-like systems
-        try:
-            os.killpg(pid, signal.SIGKILL)
-        except OSError as e:
-            logger.error(f'Error while terminating process: {e}')
+   if platform.system() == "Windows":
+       term_proc_windows(pid)
+   else:  # Unix-like systems
+       term_proc_unix_like(pid)
 
-    for process_name in list(running_processes.keys()):
-        if running_processes[process_name][1] == pid:
-            del running_processes[process_name]
+   for process_name in list(running_processes.keys()):
+       if running_processes[process_name][1] == pid:
+           del running_processes[process_name]
 
 
 def execute_command(project, command, timeout=None, success_message=None, process_name: str = None, force=False) \
@@ -274,42 +281,35 @@ def execute_command(project, command, timeout=None, success_message=None, proces
     return return_value, 'DONE' if was_success else None, process.returncode
 
 
+def res_for_build_directory_tree(path, files=None, add_descriptions=False):
+   return ' - ' + files[os.path.basename(path)].description + ' ' if files and os.path.basename(
+           path) in files and add_descriptions else ''
+
+
 def build_directory_tree(path, prefix="", ignore=None, is_last=False, files=None, add_descriptions=False):
-    """Build the directory tree structure in tree-like format.
-
-    Args:
-    - path: The starting directory path.
-    - prefix: Prefix for the current item, used for recursion.
-    - ignore: List of directory names to ignore.
-    - is_last: Flag to indicate if the current item is the last in its parent directory.
-
-    Returns:
-    - A string representation of the directory tree.
-    """
-    if ignore is None:
-        ignore = []
-
-    if os.path.basename(path) in ignore:
-        return ""
-
-    output = ""
-    indent = '|   ' if not is_last else '    '
-
-    if os.path.isdir(path):
-        # It's a directory, add its name to the output and then recurse into it
-        output += prefix + "|-- " + os.path.basename(path) + ((' - ' + files[os.path.basename(path)].description + ' ' if files and os.path.basename(path) in files and add_descriptions else '')) + "/\n"
-
-        # List items in the directory
-        items = os.listdir(path)
-        for index, item in enumerate(items):
-            item_path = os.path.join(path, item)
-            output += build_directory_tree(item_path, prefix + indent, ignore, index == len(items) - 1, files, add_descriptions)
-
-    else:
-        # It's a file, add its name to the output
-        output += prefix + "|-- " + os.path.basename(path) + ((' - ' + files[os.path.basename(path)].description + ' ' if files and os.path.basename(path) in files and add_descriptions else '')) + "\n"
-
-    return output
+   """Build the directory tree structure in tree-like format.
+   Args:
+   - path: The starting directory path.
+   - prefix: Prefix for the current item, used for recursion.
+   - ignore: List of directory names to ignore.
+   - is_last: Flag to indicate if the current item is the last in its parent directory.
+   Returns:
+   - A string representation of the directory tree.
+   """
+   ignore |= []
+   if os.path.basename(path) in ignore:
+       return ""
+   output = ""
+   indent = '|   ' if not is_last else '    '
+   # It's a directory, add its name to the output and then recurse into it
+   output += prefix + "|-- " + os.path.basename(path) + res_for_build_directory_tree(path, files, add_descriptions) + "/\n"
+   if os.path.isdir(path):
+       # List items in the directory
+       items = os.listdir(path)
+       for index, item in enumerate(items):
+           item_path = os.path.join(path, item)
+           output += build_directory_tree(item_path, prefix + indent, ignore, index == len(items) - 1, files, add_descriptions)
+   return output
 
 
 def execute_command_and_check_cli_response(command, timeout, convo):
