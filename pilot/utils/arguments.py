@@ -5,7 +5,7 @@ import sys
 import uuid
 from getpass import getuser
 from database.database import get_app, get_app_by_user_workspace
-from utils.style import color_green_bold, disable_color_output
+from utils.style import color_green_bold, style_config
 from utils.utils import should_execute_step
 from const.common import STEPS
 
@@ -26,8 +26,8 @@ def get_arguments():
         else:
             arguments[arg] = True
 
-    if 'no-color' in arguments:
-        disable_color_output()
+    theme_mapping = {'light': style_config.theme.LIGHT, 'dark': style_config.theme.DARK}
+    style_config.set_theme(theme=theme_mapping.get(arguments['theme'], style_config.theme.DARK))
 
     if 'user_id' not in arguments:
         arguments['user_id'] = username_to_uuid(getuser())

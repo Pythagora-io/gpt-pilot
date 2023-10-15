@@ -1,41 +1,54 @@
-import pytest
-from pilot.utils.style import Config, ColorName, color_text
-
-# Parameters for parametrized tests
-colors = [ColorName.RED, ColorName.GREEN, ColorName.YELLOW, ColorName.BLUE, ColorName.CYAN, ColorName.WHITE]
-bold_options = [True, False]
-no_color_options = [True, False]
+import unittest
+from pilot.utils.style import style_config, Theme, ColorName, get_color_function
 
 
-@pytest.fixture(params=no_color_options, ids=['no_color', 'color'])
-def manage_no_color(request):
-    original_no_color = Config.no_color
-    Config.no_color = request.param
-    yield  # This is where the test function will run.
-    Config.no_color = original_no_color  # Restore original state after the test.
+class TestColorStyle(unittest.TestCase):
+    def test_initialization(self):
+        print("\n[INFO] Testing Theme Initialization...")
+        style_config.set_theme(Theme.DARK)
+        print(f"[INFO] Set theme to: {Theme.DARK}, Current theme: {style_config.theme}")
+        self.assertEqual(style_config.theme, Theme.DARK)
 
+        style_config.set_theme(Theme.LIGHT)
+        print(f"[INFO] Set theme to: {Theme.LIGHT}, Current theme: {style_config.theme}")
+        self.assertEqual(style_config.theme, Theme.LIGHT)
 
-@pytest.mark.parametrize("color", colors, ids=[c.name for c in colors])
-@pytest.mark.parametrize("bold", bold_options, ids=['bold', 'not_bold'])
-def test_color_text(manage_no_color, color, bold):
-    """
-    Test the function color_text by checking the behavior with various color and bold options,
-    while considering the global no_color flag.
-    """
-    colored_text = color_text("test", color, bold)
+    def test_color_function(self):
+        dark_color_codes = {
+            ColorName.RED: "\x1b[31m",
+            ColorName.GREEN: "\x1b[32m",
+            # ... other colors
+        }
+        light_color_codes = {
+            ColorName.RED: "\x1b[91m",
+            ColorName.GREEN: "\x1b[92m",
+            # ... other colors
+        }
 
-    print(
-        f"Visual Check - expect {'color (' + color.name + ')' if not Config.no_color else 'no color'}: {colored_text}")
+        # Test DARK theme
+        print("\n[INFO] Testing DARK Theme Colors...")
+        style_config.set_theme(Theme.DARK)
+        for color_name, code in dark_color_codes.items():
+            with self.subTest(color=color_name):
+                color_func = get_color_function(color_name, bold=False)
+                print(f"[INFO] Testing color: {color_name}, Expect: {code}Test, Got: {color_func('Test')}")
+                self.assertEqual(color_func("Test"), f"{code}Test")
 
-    # Check: if no_color is True, there should be no ANSI codes in the string.
-    if Config.no_color:
-        assert colored_text == "test"
-    else:
-        # Ensure the ANSI codes for color and (if applicable) bold styling are present in the string.
-        assert color.value in colored_text
-        if bold:
-            # Check for the ANSI code for bold styling.
-            assert "\x1b[1m" in colored_text
-        # Ensure the string ends with the original text.
-        assert colored_text.endswith("test")
+                color_func = get_color_function(color_name, bold=True)
+                print(
+                    f"[INFO] Testing color (bold): {color_name}, Expect: {code}\x1b[1mTest, Got: {color_func('Test')}")
+                self.assertEqual(color_func("Test"), f"{code}\x1b[1mTest")
 
+        # Test LIGHT theme
+        print("\n[INFO] Testing LIGHT Theme Colors...")
+        style_config.set_theme(Theme.LIGHT)
+        for color_name, code in light_color_codes.items():
+            with self.subTest(color=color_name):
+                color_func = get_color_function(color_name, bold=False)
+                print(f"[INFO] Testing color: {color_name}, Expect: {code}Test, Got: {color_func('Test')}")
+                self.assertEqual(color_func("Test"), f"{code}Test")
+
+                color_func = get_color_function(color_name, bold=True)
+                print(
+                    f"[INFO] Testing color (bold): {color_name}, Expect: {code}\x1b[1mTest, Got: {color_func('Test')}")
+                self.assertEqual(color_func("Test"), f"{code}\x1b[1mTest")

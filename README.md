@@ -170,8 +170,18 @@ Erase all development steps previously done and continue working on an existing 
 python main.py app_id=<ID_OF_THE_APP> skip_until_dev_step=0
 ```
 
-## `no-color`
-Disable color ouput in terminal.
+## `theme`
+```bash
+python main.py theme=light
+```
+
+![屏幕截图 2023-10-15 103907](https://github.com/Pythagora-io/gpt-pilot/assets/138990495/c3d08f21-7e3b-4ee4-981f-281d1c97149e)
+```bash
+python main.py theme=dark
+```
+- Dark mode.
+![屏幕截图 2023-10-15 104120](https://github.com/Pythagora-io/gpt-pilot/assets/138990495/942cd1c9-b774-498e-b72a-677b01be1ac3)
+
 
 ## `delete_unrelated_steps`
 

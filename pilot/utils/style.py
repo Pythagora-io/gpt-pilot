@@ -1,64 +1,148 @@
+from colorama import Fore, Style as ColoramaStyle, init
 from enum import Enum
-from colorama import Fore, Style, init
+from questionary import Style
 
-# Initialize colorama
+# Initialize colorama. Ensures that ANSI codes work on Windows systems.
 init(autoreset=True)
 
 
-class Config:
-    no_color: bool = False
-
-
-def disable_color_output():
-    Config.no_color = True
+class Theme(Enum):
+    """
+    Enum representing themes, which can be either DARK or LIGHT.
+    """
+    DARK = 'dark'
+    LIGHT = 'light'
 
 
 class ColorName(Enum):
-    RED = Fore.RED
-    GREEN = Fore.GREEN
-    YELLOW = Fore.YELLOW
-    BLUE = Fore.BLUE
-    CYAN = Fore.CYAN
-    WHITE = Fore.WHITE
-
-
-def color_text(text: str, color_name: ColorName, bold: bool = False) -> str:
     """
-    Returns text with a specified color and optional style.
-
-    Args:
-        text (str): The text to colorize.
-        color_name (ColorName): The color of the text. Should be a member of the ColorName enum.
-        bold (bool, optional): If True, the text will be displayed in bold. Defaults to False.
-
-    Returns:
-        str: The text with applied color and optional style.
+    Enum representing color names and their corresponding ANSI color codes.
+    Each color has a normal and a light version, indicated by the two elements in the tuple.
     """
-    if Config.no_color:
-        return text
+    RED = (Fore.RED, Fore.LIGHTRED_EX)
+    GREEN = (Fore.GREEN, Fore.LIGHTGREEN_EX)
+    YELLOW = (Fore.YELLOW, Fore.LIGHTYELLOW_EX)
+    BLUE = (Fore.BLUE, Fore.LIGHTBLUE_EX)
+    CYAN = (Fore.CYAN, Fore.LIGHTCYAN_EX)
+    WHITE = (Fore.WHITE, Fore.LIGHTWHITE_EX)
 
-    color = color_name.value
-    style = Style.BRIGHT if bold else ""
-    return f'{color}{style}{text}'
+
+class ThemeStyle:
+    """
+    Class that provides style configurations for DARK and LIGHT themes.
+    """
+    # Style configurations for DARK theme
+    DARK_STYLE = Style.from_dict({
+        'question': '#FFFFFF bold',  # the color and style of the question - White
+        'answer': '#FF910A bold',  # the color and style of the answer - Dark Orange / Pumpkin
+        'pointer': '#FF4500 bold',  # the color and style of the pointer - Orange Red
+        'highlighted': '#63CD91 bold',  # the color and style of the highlighted option - Medium Aquamarine
+        'instruction': '#FFFF00 bold'  # the color and style of the instruction - Yellow
+    })
+
+    # Style configurations for LIGHT theme
+    LIGHT_STYLE = Style.from_dict({
+        'question': '#000000 bold',  # the color and style of the question - Black
+        'answer': '#FFB74D bold',  # the color and style of the answer - Light Orange
+        'pointer': '#FF7043 bold',  # the color and style of the pointer - Light Red
+        'highlighted': '#AED581 bold',  # the color and style of the highlighted option - Light Green
+        'instruction': '#757575 bold'  # the color and style of the instruction - Grey
+    })
+
+    def __init__(self, theme):
+        """
+        Initializes a ThemeStyle instance.
+
+        Args:
+            theme (Theme): An enum member indicating the theme to use.
+        """
+        self.theme = theme
+
+    def get_style(self):
+        """
+        Returns the Style configuration for the current theme.
+
+        Returns:
+            questionary.Style: The Style instance for the current theme.
+        """
+        return self.DARK_STYLE if self.theme == Theme.DARK else self.LIGHT_STYLE
+
+
+class StyleConfig:
+    """
+    Class to manage the application's style and color configurations.
+    """
+    def __init__(self, theme: Theme = Theme.DARK):
+        """
+        Initializes a StyleConfig instance.
+
+        Args:
+            theme (Theme, optional): The initial theme to use. Defaults to Theme.DARK.
+        """
+        self.theme_style = ThemeStyle(theme)
+        self.theme = theme
+
+    def get_style(self):
+        """
+        Retrieves the Style configuration from the theme_style instance.
+
+        Returns:
+            questionary.Style: The Style configuration.
+        """
+        return self.theme_style.get_style()
+
+    def get_color(self, color_name: ColorName):
+        """
+        Retrieves the ANSI color code for the provided color_name, taking into account the current theme.
+
+        Args:
+            color_name (ColorName): Enum member indicating the desired color.
+
+        Returns:
+            str: The ANSI color code.
+        """
+        return color_name.value[self.theme == Theme.LIGHT]
+
+    def set_theme(self, theme: Theme):
+        """
+        Updates the theme of both the StyleConfig and its theme_style instance.
+
+        Args:
+            theme (Theme): Enum member indicating the new theme.
+        """
+        self.theme = theme
+        self.theme_style.theme = theme
 
 
 def get_color_function(color_name: ColorName, bold: bool = False):
     """
-    Generate and return a function that colorizes input text with the specified color and style.
+    Returns a function that colorizes text using the provided color_name and optionally makes it bold.
 
-    Parameters:
-        color_name (ColorName): Enum member specifying the text color.
-        bold (bool, optional): If True, generated function will produce bold text. Defaults to False.
+    Args:
+        color_name (ColorName): Enum member indicating the color to use.
+        bold (bool, optional): If True, the returned function will bold text. Defaults to False.
 
     Returns:
-        Callable[[str], str]: A function that takes a string input and returns it colorized.
+        Callable[[str], str]: A function that takes a string and returns it colorized.
     """
     def color_func(text: str) -> str:
-        if Config.no_color:
-            return text
-        return color_text(text, color_name, bold)
+        """
+        Colorizes the input text using the color and boldness provided when `get_color_function` was called.
+
+        Args:
+            text (str): The text to colorize.
+
+        Returns:
+            str: The colorized text.
+        """
+        color = style_config.get_color(color_name)
+        style = ColoramaStyle.BRIGHT if bold else ""
+        return f'{color}{style}{text}'
+
     return color_func
 
+
+style_config = StyleConfig()
 
 # Dynamically generate color functions
 color_red = get_color_function(ColorName.RED)
