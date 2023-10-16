@@ -2,7 +2,7 @@ import builtins
 from json import JSONDecodeError
 
 import pytest
-from unittest.mock import patch, Mock
+from unittest.mock import call, patch, Mock
 from dotenv import load_dotenv
 from jsonschema import ValidationError
 from const.function_calls import ARCHITECTURE, DEVELOPMENT_PLAN
@@ -19,7 +19,7 @@ from main import get_custom_print
 
 load_dotenv()
 
-project = Project({'app_id': 'test-app'}, current_step='test')
+project = Project({'app_id': 'test-app'}, current_step='test', enable_dot_pilot_gpt=False)
 
 
 def test_clean_json_response_True_False():
@@ -365,6 +365,50 @@ class TestLlmConnection:
         builtins.print, ipc_client_instance = get_custom_print({})
 
     @patch('utils.llm_connection.requests.post')
+    @patch('utils.llm_connection.time.sleep')
+    def test_rate_limit_error(self, mock_sleep, mock_post, monkeypatch):
+        monkeypatch.setenv('OPENAI_API_KEY', 'secret')
+
+        error_text = '''{
+                "error": {
+                    "message": "Rate limit reached for 10KTPM-200RPM in organization org-OASFC7k1Ff5IzueeLArhQtnT on tokens per min. Limit: 10000 / min. Please try again in 6ms. Contact us through our help center at help.openai.com if you continue to have issues.",
+                    "type": "tokens",
+                    "param": null,
+                    "code": "rate_limit_exceeded"
+                }
+            }'''
+        content = 'DONE'
+        success_text = '{"id": "gen-123", "choices": [{"index": 0, "delta": {"role": "assistant", "content": "' + content + '"}}]}'
+
+        error_response = Mock()
+        error_response.status_code = 429
+        error_response.text = error_text
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.iter_lines.return_value = [success_text.encode('utf-8')]
+
+        mock_post.side_effect = [error_response, error_response, error_response, error_response, error_response,
+                                 error_response, error_response, error_response, error_response, error_response,
+                                 error_response, error_response, mock_response]
+        wrapper = retry_on_exception(stream_gpt_completion)
+        data = {
+            'model': 'gpt-4',
+            'messages': [{'role': 'user', 'content': 'testing'}]
+        }
+
+        # When
+        response = wrapper(data, 'test', project)
+
+        # Then
+        assert response == {'text': 'DONE'}
+        # assert mock_sleep.call_count == 9
+        assert mock_sleep.call_args_list == [call(0.006), call(0.012), call(0.024), call(0.048), call(0.096),
+                                             call(0.192), call(0.384), call(0.768), call(1.536), call(3.072),
+                                             call(6.144), call(6.144)]
+        # mock_sleep.call
+
+    @patch('utils.llm_connection.requests.post')
     def test_stream_gpt_completion(self, mock_post, monkeypatch):
         # Given streaming JSON response
         monkeypatch.setenv('OPENAI_API_KEY', 'secret')
@@ -449,16 +493,18 @@ solution-oriented decision-making in areas where precise instructions were not p
 
         assert response is not None
         response = parse_agent_response(response, function_calls)
-        assert 'Node.js' in response
+        assert 'Node.js' in response['technologies']
 
     @pytest.mark.uses_tokens
     @pytest.mark.parametrize('endpoint, model', [
         ('OPENAI', 'gpt-4'),
         ('OPENROUTER', 'openai/gpt-3.5-turbo'),
         ('OPENROUTER', 'meta-llama/codellama-34b-instruct'),
+        ('OPENROUTER', 'phind/phind-codellama-34b-v2'),
         ('OPENROUTER', 'google/palm-2-chat-bison'),
         ('OPENROUTER', 'google/palm-2-codechat-bison'),
         ('OPENROUTER', 'anthropic/claude-2'),
+        ('OPENROUTER', 'mistralai/mistral-7b-instruct')
     ])
     def test_chat_completion_TechLead(self, endpoint, model, monkeypatch):
         # Given
@@ -490,7 +536,7 @@ The development process will include the creation of user stories and tasks, bas
         function_calls = DEVELOPMENT_PLAN
 
         # Retry on bad LLM responses
-        mock_questionary = MockQuestionary(['', '', 'no'])
+        # mock_questionary = MockQuestionary(['', '', 'no'])
 
         # with patch('utils.llm_connection.questionary', mock_questionary):
         # When
@@ -502,9 +548,9 @@ The development process will include the creation of user stories and tasks, bas
 
         assert response is not None
         response = parse_agent_response(response, function_calls)
-        assert_non_empty_string(response[0]['description'])
-        assert_non_empty_string(response[0]['programmatic_goal'])
-        assert_non_empty_string(response[0]['user_review_goal'])
+        assert_non_empty_string(response['plan'][0]['description'])
+        assert_non_empty_string(response['plan'][0]['programmatic_goal'])
+        assert_non_empty_string(response['plan'][0]['user_review_goal'])
 
 
     # def test_break_down_development_task(self):
@@ -530,5 +576,5 @@ The development process will include the creation of user stories and tasks, bas
     #     # assert len(convo.messages) == 2
     #     assert response == ([{'type': 'command', 'description': 'Run the app'}], 'more_tasks')
 
-    def _create_convo(self, agent):
-        convo = AgentConvo(agent)
+    # def _create_convo(self, agent):
+    #     convo = AgentConvo(agent)

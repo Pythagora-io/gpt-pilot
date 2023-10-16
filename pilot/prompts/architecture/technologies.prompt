@@ -5,6 +5,7 @@ Here is a high level description of "{{ name }}":
 {{ prompt }}
 ```
 
+{% if clarifications %}
 Here are some additional questions and answers to clarify the apps description:
 ```
 {% for clarification in clarifications %}
@@ -13,20 +14,25 @@ A: {{ clarification.answer }}
 {% endfor %}
 ```
 
+{% endif %}
+{% if user_stories %}
 Here are user stories that specify how users use "{{ name }}":
 ```
 {% for story in user_stories %}
 - {{ story }}
 {% endfor %}
-```{#
+```
 
+{% endif %}
+{% if user_tasks %}
 Here are user tasks that specify what users need to do to interact with "{{ name }}":
 ```
 {% for task in user_tasks %}
 - {{ task }}
 {% endfor %}
-```#}
+```
 
+{% endif %}
 Now, based on the app's description, user stories and user tasks, think step by step and list the names of the technologies that will be used by your development team to create the app "{{ name }}". Do not write any explanations behind your choices but only a list of technologies that will be used.
 
 You do not need to list any technologies related to automated tests like Jest, Cypress, Mocha, Selenium, etc.

@@ -20,6 +20,10 @@ class ProductOwner(Agent):
         super().__init__('product_owner', project)
 
     def get_project_description(self):
+        print(json.dumps({
+            "project_stage": "project_description"
+        }), type='info')
+
         self.project.app = get_app(self.project.args['app_id'], error_if_not_found=False)
 
         # If this app_id already did this step, just get all data from DB and don't ask user again
@@ -27,7 +31,7 @@ class ProductOwner(Agent):
             step = get_progress_steps(self.project.args['app_id'], PROJECT_DESCRIPTION_STEP)
             if step and not should_execute_step(self.project.args['step'], PROJECT_DESCRIPTION_STEP):
                 step_already_finished(self.project.args, step)
-                self.project.root_path = setup_workspace(self.project.args)
+                self.project.set_root_path(setup_workspace(self.project.args))
                 self.project.project_description = step['summary']
                 self.project.project_description_messages = step['messages']
                 return
@@ -39,7 +43,7 @@ class ProductOwner(Agent):
         if 'name' not in self.project.args:
             self.project.args['name'] = clean_filename(ask_user(self.project, 'What is the project name?'))
 
-        self.project.root_path = setup_workspace(self.project.args)
+        self.project.set_root_path(setup_workspace(self.project.args))
 
         self.project.app = save_app(self.project)
 
@@ -75,6 +79,13 @@ class ProductOwner(Agent):
         # PROJECT DESCRIPTION END
 
     def get_user_stories(self):
+        if not self.project.args.get('advanced', False):
+            return
+
+        print(json.dumps({
+            "project_stage": "user_stories"
+        }), type='info')
+
         self.project.current_step = USER_STORIES_STEP
         self.convo_user_stories = AgentConvo(self)
 
@@ -83,10 +94,11 @@ class ProductOwner(Agent):
         if step and not should_execute_step(self.project.args['step'], USER_STORIES_STEP):
             step_already_finished(self.project.args, step)
             self.convo_user_stories.messages = step['messages']
-            return step['user_stories']
+            self.project.user_stories = step['user_stories']
+            return
 
         # USER STORIES
-        msg = f"User Stories:\n"
+        msg = "User Stories:\n"
         print(green_bold(msg))
         logger.info(msg)
 
@@ -106,7 +118,7 @@ class ProductOwner(Agent):
             "app_data": generate_app_data(self.project.args)
         })
 
-        return self.project.user_stories
+        return
         # USER STORIES END
 
     def get_user_tasks(self):
@@ -120,7 +132,7 @@ class ProductOwner(Agent):
             return step['user_tasks']
 
         # USER TASKS
-        msg = f"User Tasks:\n"
+        msg = "User Tasks:\n"
         print(green_bold(msg))
         logger.info(msg)
 

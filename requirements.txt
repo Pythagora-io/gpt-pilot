@@ -13,6 +13,7 @@ psycopg2-binary==2.9.6
 python-dotenv==1.0.0
 python-editor==1.0.4
 pytest==7.4.2
+pyyaml==6.0.1
 questionary==1.10.0
 readchar==4.0.5
 regex==2023.6.3

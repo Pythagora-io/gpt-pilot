@@ -20,8 +20,8 @@ def run_command_until_success():
         user_stories=[]
     )
 
-    project.root_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                                     '../../../workspace/TestDeveloper'))
+    project.set_root_path(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                     '../../../workspace/TestDeveloper')))
     project.technologies = []
     project.current_step = ENVIRONMENT_SETUP_STEP
     project.app = save_app(project)
@@ -38,4 +38,4 @@ def run_command_until_success():
         'human_intervention_description': 'I want you to test that this process works from the CLI _and_ from the UI.',
     }
 
-    result = developer.step_human_intervention(convo, step)
+    developer.step_human_intervention(convo, step)

@@ -4,7 +4,7 @@ import re
 from typing import Tuple
 from utils.style import  yellow_bold, cyan, white_bold
 from const.common import IGNORE_FOLDERS, STEPS
-from database.database import delete_unconnected_steps_from, delete_all_app_development_data
+from database.database import delete_unconnected_steps_from, delete_all_app_development_data, update_app_status
 from const.ipc import MESSAGE_TYPE
 from prompts.prompts import ask_user
 from helpers.exceptions.TokenLimitError import TokenLimitError
@@ -20,11 +20,13 @@ from database.models.development_steps import DevelopmentSteps
 from database.models.file_snapshot import FileSnapshot
 from database.models.files import File
 from logger.logger import logger
+from utils.dot_gpt_pilot import DotGptPilot
 
 
 class Project:
-    def __init__(self, args, name=None, description=None, user_stories=None, user_tasks=None, architecture=None,
-                 development_plan=None, current_step=None, ipc_client_instance=None):
+    def __init__(self, args, name=None, project_description=None, clarifications=None, user_stories=None,
+                 user_tasks=None, architecture=None, development_plan=None, current_step=None, ipc_client_instance=None,
+                 enable_dot_pilot_gpt=True):
         """
         Initialize a project.
 
@@ -56,47 +58,38 @@ class Project:
 
         # self.restore_files({dev_step_id_to_start_from})
 
-        if current_step is not None:
-            self.current_step = current_step
-        if name is not None:
-            self.name = name
-        if description is not None:
-            self.description = description
-        if user_stories is not None:
-            self.user_stories = user_stories
-        if user_tasks is not None:
-            self.user_tasks = user_tasks
-        if architecture is not None:
-            self.architecture = architecture
-        # if development_plan is not None:
-        #     self.development_plan = development_plan
+        self.current_step = current_step
+        self.name = name
+        self.project_description = project_description
+        self.clarifications = clarifications
+        self.user_stories = user_stories
+        self.user_tasks = user_tasks
+        self.architecture = architecture
+        self.development_plan = development_plan
+        self.dot_pilot_gpt = DotGptPilot(log_chat_completions=enable_dot_pilot_gpt)
+
+    def set_root_path(self, root_path: str):
+        self.root_path = root_path
+        self.dot_pilot_gpt.with_root_path(root_path)
 
     def start(self):
         """
         Start the project.
         """
         self.project_manager = ProductOwner(self)
-        print(json.dumps({
-            "project_stage": "project_description"
-        }), type='info')
         self.project_manager.get_project_description()
-        print(json.dumps({
-            "project_stage": "user_stories"
-        }), type='info')
-        self.user_stories = self.project_manager.get_user_stories()
+
+        self.project_manager.get_user_stories()
         # self.user_tasks = self.project_manager.get_user_tasks()
 
-        print(json.dumps({
-            "project_stage": "architecture"
-        }), type='info')
         self.architect = Architect(self)
-        self.architecture = self.architect.get_architecture()
+        self.architect.get_architecture()
 
         self.developer = Developer(self)
         self.developer.set_up_environment()
 
         self.tech_lead = TechLead(self)
-        self.development_plan = self.tech_lead.create_development_plan()
+        self.tech_lead.create_development_plan()
 
         # TODO move to constructor eventually
         if self.args['step'] is not None and STEPS.index(self.args['step']) < STEPS.index('coding'):
@@ -129,10 +122,19 @@ class Project:
                         break
         # TODO END
 
+        self.dot_pilot_gpt.write_project(self)
         print(json.dumps({
             "project_stage": "coding"
         }), type='info')
         self.developer.start_coding()
+
+    def finish(self):
+        """
+        Finish the project.
+        """
+        update_app_status(self.args['app_id'], STEPS[-1])
+        # TODO say that project is finished and ask user for additional features, fixes,...
+        return
 
     def get_directory_tree(self, with_descriptions=False):
         """
@@ -144,11 +146,12 @@ class Project:
         Returns:
             dict: The directory tree.
         """
-        files = {}
-        if with_descriptions and False:
-            files = File.select().where(File.app_id == self.args['app_id'])
-            files = {snapshot.name: snapshot for snapshot in files}
-        return build_directory_tree(self.root_path + '/', ignore=IGNORE_FOLDERS, files=files, add_descriptions=False)
+        # files = {}
+        # if with_descriptions and False:
+        #     files = File.select().where(File.app_id == self.args['app_id'])
+        #     files = {snapshot.name: snapshot for snapshot in files}
+        # return build_directory_tree_with_descriptions(self.root_path, ignore=IGNORE_FOLDERS, files=files, add_descriptions=False)
+        return build_directory_tree(self.root_path, ignore=IGNORE_FOLDERS)
 
     def get_test_directory_tree(self):
         """
@@ -198,7 +201,7 @@ class Project:
                 name = os.path.basename(file_path)
                 relative_path, full_path = self.get_full_file_path(file_path, name)
                 file_content = open(full_path, 'r').read()
-            except:
+            except OSError:
                 file_content = ''
 
             files_with_content.append({
@@ -276,7 +279,7 @@ class Project:
                 file=file_in_db,
                 defaults={'content': file.get('content', '')}
             )
-            file_snapshot.content = content = file['content']
+            file_snapshot.content = file['content']
             file_snapshot.save()
 
     def restore_files(self, development_step_id):
@@ -285,7 +288,7 @@ class Project:
 
         clear_directory(self.root_path, IGNORE_FOLDERS)
         for file_snapshot in file_snapshots:
-            update_file(file_snapshot.file.full_path, file_snapshot.content);
+            update_file(file_snapshot.file.full_path, file_snapshot.content)
 
     def delete_all_steps_except_current_branch(self):
         delete_unconnected_steps_from(self.checkpoints['last_development_step'], 'previous_step')

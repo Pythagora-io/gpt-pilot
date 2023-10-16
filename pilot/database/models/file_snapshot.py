@@ -1,4 +1,4 @@
-from peewee import *
+from peewee import ForeignKeyField, TextField
 
 from database.models.components.base_models import BaseModel
 from database.models.development_steps import DevelopmentSteps
