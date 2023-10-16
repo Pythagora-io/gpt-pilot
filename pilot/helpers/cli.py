@@ -120,8 +120,8 @@ def execute_command(project, command, timeout=None, success_message=None, comman
     Returns:
         cli_response (str): The command output
                             or: '', 'DONE' if user answered 'no' or 'skip'
-        llm_response (str): 'DONE' if 'no', 'skip' or `success_message` matched.
-                            Otherwise `None` - caller should send `cli_response` to LLM
+        done_or_error_response (str): 'DONE' if 'no', 'skip' or `success_message` matched.
+                            Otherwise 'was interrupted by user', 'timed out' or `None` - caller should send `cli_response` to LLM
         exit_code (int): The exit code of the process.
     """
     if timeout is not None:
@@ -171,7 +171,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
         return command_run.cli_response, None, None
 
     return_value = None
-    was_success = None
+    done_or_error_response = None
 
     q_stderr = queue.Queue()
     q = queue.Queue()
@@ -231,7 +231,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
                 logger.info('CLI OUTPUT: ' + line)
                 if success_message is not None and success_message in line:
                     logger.info('Success message found: %s', success_message)
-                    was_success = True
+                    done_or_error_response = 'DONE'
                     break
 
             # Read stderr
@@ -249,11 +249,12 @@ def execute_command(project, command, timeout=None, success_message=None, comman
         if isinstance(e, KeyboardInterrupt):
             print('\nCTRL+C detected. Stopping command execution...')
             logger.info('CTRL+C detected. Stopping command execution...')
+            done_or_error_response = 'was interrupted by user'
         else:
             print('\nTimeout detected. Stopping command execution...')
             logger.warn('Timeout detected. Stopping command execution...')
+            done_or_error_response = 'timed out'
 
-        was_success = False
         terminate_process(process.pid)
         # update the returncode
         process.poll()
@@ -273,7 +274,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
 
     save_command_run(project, command, return_value)
 
-    return return_value, 'DONE' if was_success else None, process.returncode
+    return return_value, done_or_error_response, process.returncode
 
 
 def build_directory_tree(path, prefix='', is_root=True, ignore=None):
@@ -419,16 +420,17 @@ def run_command_until_success(convo, command,
 
     if response is None:
         logger.info(f'`{command}` exit code: {exit_code}')
-        if exit_code is None and command_id is not None:
+        if exit_code is None:
             response = 'DONE'
         else:
             # "I ran the command and the output was... respond with 'DONE' or 'NEEDS_DEBUGGING'"
             response = convo.send_message('dev_ops/ran_command.prompt',
                 {
                     'cli_response': cli_response,
+                    'error_response': response,
                     'command': command,
                     'additional_message': additional_message,
-                    'exit_code': exit_code
+                    'exit_code': exit_code,
                 })
             logger.debug(f'LLM response: {response}')
 
