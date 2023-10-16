@@ -29,7 +29,8 @@ class TechLead(Agent):
         step = get_progress_steps(self.project.args['app_id'], DEVELOPMENT_PLANNING_STEP)
         if step and not should_execute_step(self.project.args['step'], DEVELOPMENT_PLANNING_STEP):
             step_already_finished(self.project.args, step)
-            return step['development_plan']
+            self.project.development_plan = step['development_plan']
+            return
         
         # DEVELOPMENT PLANNING
         print(green_bold("Starting to create the action plan for development...\n"))
@@ -41,17 +42,17 @@ class TechLead(Agent):
                 "name": self.project.args['name'],
                 "app_type": self.project.args['app_type'],
                 "app_summary": self.project.project_description,
-                "clarification": [],
+                "clarifications": self.project.clarifications,
                 "user_stories": self.project.user_stories,
-                # "user_tasks": self.project.user_tasks,
+                "user_tasks": self.project.user_tasks,
                 "technologies": self.project.architecture
             }, DEVELOPMENT_PLAN)
-        self.development_plan = llm_response['plan']
+        self.project.development_plan = llm_response['plan']
 
         logger.info('Plan for development is created.')
 
         save_progress(self.project.args['app_id'], self.project.current_step, {
-            "development_plan": self.development_plan, "app_data": generate_app_data(self.project.args)
+            "development_plan": self.project.development_plan, "app_data": generate_app_data(self.project.args)
         })
 
-        return self.development_plan
+        return

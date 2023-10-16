@@ -31,29 +31,25 @@ def get_arguments():
 
     app = None
     if 'workspace' in arguments:
+        arguments['workspace'] = os.path.abspath(arguments['workspace'])
         app = get_app_by_user_workspace(arguments['user_id'], arguments['workspace'])
         if app is not None:
-            arguments['app_id'] = app.id
+            arguments['app_id'] = str(app.id)
     else:
         arguments['workspace'] = None
 
     if 'app_id' in arguments:
-        try:
-            if app is None:
-                app = get_app(arguments['app_id'])
+        if app is None:
+            app = get_app(arguments['app_id'])
 
-            arguments['app_type'] = app.app_type
-            arguments['name'] = app.name
-            if 'step' not in arguments or ('step' in arguments and not should_execute_step(arguments['step'], app.status)):
-                arguments['step'] = 'finished' if app.status == 'finished' else STEPS[STEPS.index(app.status) + 1]
+        arguments['app_type'] = app.app_type
+        arguments['name'] = app.name
+        if 'step' not in arguments or ('step' in arguments and not should_execute_step(arguments['step'], app.status)):
+            arguments['step'] = 'finished' if app.status == 'finished' else STEPS[STEPS.index(app.status) + 1]
 
-            print(green_bold('\n------------------ LOADING PROJECT ----------------------'))
-            print(green_bold(f'{app.name} (app_id={arguments["app_id"]})'))
-            print(green_bold('--------------------------------------------------------------\n'))
-        except ValueError as e:
-            print(e)
-            # Handle the error as needed, possibly exiting the script
-            exit(1)
+        print(green_bold('\n------------------ LOADING PROJECT ----------------------'))
+        print(green_bold(f'{app.name} (app_id={arguments["app_id"]})'))
+        print(green_bold('--------------------------------------------------------------\n'))
 
     elif '--get-created-apps-with-steps' not in args:
         arguments['app_id'] = str(uuid.uuid4())
