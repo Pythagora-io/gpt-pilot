@@ -32,7 +32,7 @@ def get_arguments():
     app = None
     if 'workspace' in arguments:
         arguments['workspace'] = os.path.abspath(arguments['workspace'])
-        app = get_app_by_user_workspace(arguments['user_id'],arguments['workspace'])
+        app = get_app_by_user_workspace(arguments['user_id'], arguments['workspace'])
         if app is not None:
             arguments['app_id'] = str(app.id)
     else:
