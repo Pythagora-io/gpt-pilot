@@ -5,16 +5,20 @@ Here is a high level description of "{{ name }}":
 {{ app_summary }}
 ```
 
+{% if user_stories %}
 Here are user stories that specify how users use "{{ name }}":
 ```{% for story in user_stories %}
 - {{ story }}{% endfor %}
-```{#
+```
 
+{% endif %}
+{% if user_tasks %}
 Here are user tasks that specify what users need to do to interact with "{{ name }}":
 ```{% for task in user_tasks %}
 - {{ task }}{% endfor %}
-```#}
+```
 
+{% endif %}
 Here are the technologies that you need to use for this project:
 ```{% for tech in technologies %}
 - {{ tech }}{% endfor %}
@@ -33,19 +37,23 @@ So far, this code has been implemented
 
 We've broken the development of this app down to these tasks:
 ```{% for task in development_tasks %}
-- {{ task['description'] }}{% endfor %}
+- {{ loop.index }}. {{ task['description'] }}
+{% endfor %}
 ```
 
-You are currently working on this task with the following description: {{ development_tasks[current_task_index]['description'] }}
+You are currently working on task {{ current_task_index + 1 }} with the following description:
+```
+{{ development_tasks[current_task_index]['description'] }}
+```
 After all the code is finished, a human developer will check it works this way - {{ development_tasks[current_task_index]['user_review_goal'] }}
 
-Now, tell me all the code that needs to be written to implement this app and have it fully working and all commands that need to be run to implement this app.
+Now, tell me all the code that needs to be written to implement ONLY this task and have it fully working and all commands that need to be run to implement this task.
 
 {{no_microservices}}
 
 **IMPORTANT**
-Remember, I'm currently in an empty folder where I will start writing files that you tell me.
-Tell me how can I test the app to see if it's working or not.
+Remember, I created an empty folder where I will start writing files that you tell me and that are needed for this app.
+Tell me how can I test this task to see if it's working or not.
 You do not need to make any automated tests work.
 DO NOT specify commands to create any folders or files, they will be created automatically - just specify the relative path to each file that needs to be written.
 Never use the port 5000 to run the app, it's reserved.
