@@ -200,6 +200,8 @@ def execute_command(project, command, timeout=None, success_message=None, comman
             # Check if process has finished
             if process.poll() is not None:
                 logger.info('process exited with return code: %d', process.returncode)
+                if command_id is not None:
+                    del running_processes[command_id]
                 # Get remaining lines from the queue
                 time.sleep(0.1)  # TODO this shouldn't be used
                 while not q.empty():
