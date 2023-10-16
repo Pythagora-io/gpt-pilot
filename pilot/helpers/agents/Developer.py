@@ -70,8 +70,8 @@ class Developer(Agent):
             'os': platform.system(),
         }, IMPLEMENT_TASK)
         task_steps = response['tasks']
-        convo_dev_task.remove_last_x_messages(2)
-        return self.execute_task(convo_dev_task,
+        convo_dev_task.remove_last_x_messages(3)
+        self.execute_task(convo_dev_task,
                                  task_steps,
                                  development_task=development_task,
                                  continue_development=True,
@@ -120,7 +120,7 @@ class Developer(Agent):
         """
         :param convo:
         :param step: {'human_intervention_description': 'some description'}
-        :return:
+        :return: { 'user_input': string_from_human }
         """
         logger.info('Human intervention needed%s: %s',
                     '' if self.run_command is None else f' for command `{self.run_command}`',
@@ -151,11 +151,10 @@ class Developer(Agent):
                 continue
 
             if response['user_input'] != 'continue':
-                return_value = self.debugger.debug(convo,
+                debug_success = self.debugger.debug(convo,
                                                    user_input=response['user_input'],
                                                    issue_description=step['human_intervention_description'])
-                return_value['user_input'] = response['user_input']
-                return return_value
+                return response
             else:
                 return response
 

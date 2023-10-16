@@ -379,21 +379,28 @@ def execute_command_and_check_cli_response(convo, command: dict):
     Returns:
         tuple: A tuple containing the CLI response and the agent's response.
             - cli_response (str): The command output.
-            - llm_response (str): 'DONE' or 'NEEDS_DEBUGGING'
+            - response (str): 'DONE' or 'NEEDS_DEBUGGING'
     """
     # TODO: Prompt mentions `command` could be `INSTALLED` or `NOT_INSTALLED`, where is this handled?
     command_id = command['command_id'] if 'command_id' in command else None
-    cli_response, llm_response, exit_code = execute_command(convo.agent.project,
+    cli_response, response, exit_code = execute_command(convo.agent.project,
                                                             command['command'],
                                                             timeout=command['timeout'],
                                                             command_id=command_id)
-    if llm_response is None:
-        llm_response = convo.send_message('dev_ops/ran_command.prompt',
-            {
-                'cli_response': cli_response,
-                'command': command['command']
-            })
-    return cli_response, llm_response
+    if cli_response is not None:
+        if exit_code is None:
+            response = 'DONE'
+        elif response != 'DONE':
+            # "I ran the command `{{command}}` -> {{ exit_code }}, {{ error_response }}, output: {{ cli_response }
+            # respond with 'DONE' or 'NEEDS_DEBUGGING'"
+            response = convo.send_message('dev_ops/ran_command.prompt',
+                {
+                    'cli_response': cli_response,
+                    'error_response': response,
+                    'command': command['command'],
+                    'exit_code': exit_code,
+                })
+    return cli_response, response
 
 
 def run_command_until_success(convo, command,
@@ -426,11 +433,12 @@ def run_command_until_success(convo, command,
                                                         command_id=command_id,
                                                         force=force)
 
-    if response is None:
+    if cli_response is not None:
         logger.info(f'`{command}` exit code: {exit_code}')
         if exit_code is None:
+            # process is still running
             response = 'DONE'
-        else:
+        elif response != 'DONE':
             # "I ran the command and the output was... respond with 'DONE' or 'NEEDS_DEBUGGING'"
             response = convo.send_message('dev_ops/ran_command.prompt',
                 {
@@ -454,12 +462,13 @@ def run_command_until_success(convo, command,
                 # This catch is necessary to return the correct value (cli_response) to continue development function so
                 # the developer can debug the appropriate issue
                 # this snippet represents the first entry point into debugging recursion because of return_cli_response
-                return convo.agent.debugger.debug(convo, {
+                success = convo.agent.debugger.debug(convo, {
                     'command': command,
                     'timeout': timeout,
                     'command_id': command_id,
                     'success_message': success_message,
                 })
+                return {'success': success, 'cli_response': cli_response}
             except TooDeepRecursionError as e:
                 # this is only to put appropriate message in the response after TooDeepRecursionError is raised
                 raise TooDeepRecursionError(cli_response) if return_cli_response else e

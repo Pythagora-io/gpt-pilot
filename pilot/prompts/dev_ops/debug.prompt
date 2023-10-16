@@ -1,5 +1,7 @@
 {% if issue_description %}
-You wanted me to check this - `{{ issue_description }}` but there was a problem{% else %}Ok, we need to debug this issue{% endif %}{% if command %} and we need to be able to execute `{{ command }}` successfully. {% else %}. Here is a brief explanation of what's happening:
+You wanted me to check this - `{{ issue_description }}` but there was a problem{% else %}Ok, we need to debug this issue{% endif %-}
+{% if command %} and we need to be able to execute `{{ command }}` successfully. {% else %}.
+Here is a brief explanation of what's happening:
 ```
 {{ user_input }}
 ```

@@ -21,6 +21,7 @@ class Debugger:
             convo (AgentConvo): The conversation object.
             command (dict, optional): The command to debug. Default is None.
             user_input (str, optional): User input for debugging. Default is None.
+                Should provide `command` or `user_input`.
             issue_description (str, optional): Description of the issue to debug. Default is None.
 
         Returns:
@@ -84,4 +85,4 @@ class Debugger:
             #         success = True
 
         self.recursion_layer -= 1
-        return response
+        return success

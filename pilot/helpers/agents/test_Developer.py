@@ -70,12 +70,11 @@ class TestDeveloper:
         developer.execute_task.return_value = 'DONE'
 
         # When
-        llm_response = developer.implement_task(0, {'description': 'Do stuff'})
+        developer.implement_task(0, {'description': 'Do stuff'})
 
         # Then we parse the response correctly and send list of steps to execute_task()
-        assert llm_response == 'DONE'
         assert developer.execute_task.call_count == 1
-        developer.execute_task.call_args[0][1] == [{'command': 'ls -al'}]
+        assert developer.execute_task.call_args[0][1] == [{'command': 'ls -al'}]
 
     @patch('helpers.AgentConvo.get_saved_development_step')
     @patch('helpers.AgentConvo.save_development_step')
