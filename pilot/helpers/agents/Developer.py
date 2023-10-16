@@ -71,7 +71,11 @@ class Developer(Agent):
         }, IMPLEMENT_TASK)
         task_steps = response['tasks']
         convo_dev_task.remove_last_x_messages(2)
-        return self.execute_task(convo_dev_task, task_steps, development_task=development_task, continue_development=True, is_root_task=True)
+        return self.execute_task(convo_dev_task,
+                                 task_steps,
+                                 development_task=development_task,
+                                 continue_development=True,
+                                 is_root_task=True)
 
     def step_code_change(self, convo, step, i, test_after_code_changes):
         if step['type'] == 'code_change' and 'code_change_description' in step:
@@ -160,9 +164,7 @@ class Developer(Agent):
         if should_rerun_command == 'NO':
             return { "success": True }
         elif should_rerun_command == 'YES':
-            cli_response, llm_response = execute_command_and_check_cli_response(test_command['command'],
-                                                                                test_command['timeout'],
-                                                                                convo)
+            cli_response, llm_response = execute_command_and_check_cli_response(convo, test_command)
             logger.info('After running command llm_response: ' + llm_response)
             if llm_response == 'NEEDS_DEBUGGING':
                 print(red('Got incorrect CLI response:'))
@@ -454,9 +456,7 @@ class Developer(Agent):
                 }
             })
 
-        cmd = llm_response['command']
-        timeout_val = llm_response['timeout']
-        cli_response, llm_response = execute_command_and_check_cli_response(cmd, timeout_val, self.convo_os_specific_tech)
+        cli_response, llm_response = execute_command_and_check_cli_response(self.convo_os_specific_tech, llm_response)
 
         return llm_response
 

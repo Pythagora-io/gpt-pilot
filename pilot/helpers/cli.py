@@ -365,14 +365,16 @@ def build_directory_tree_with_descriptions(path, prefix="", ignore=None, is_last
     return output
 
 
-def execute_command_and_check_cli_response(command, timeout, convo):
+def execute_command_and_check_cli_response(convo, command: dict):
     """
     Execute a command and check its CLI response.
 
     Args:
-        command (str): The command to run.
-        timeout (int): The maximum execution time in milliseconds.
         convo (AgentConvo): The conversation object.
+        command (dict):
+          ['command'] (str): The command to run.
+          ['timeout'] (int): The maximum execution time in milliseconds.
+
 
     Returns:
         tuple: A tuple containing the CLI response and the agent's response.
@@ -380,12 +382,16 @@ def execute_command_and_check_cli_response(command, timeout, convo):
             - llm_response (str): 'DONE' or 'NEEDS_DEBUGGING'
     """
     # TODO: Prompt mentions `command` could be `INSTALLED` or `NOT_INSTALLED`, where is this handled?
-    cli_response, llm_response, exit_code = execute_command(convo.agent.project, command, timeout=timeout)
+    command_id = command['command_id'] if 'command_id' in command else None
+    cli_response, llm_response, exit_code = execute_command(convo.agent.project,
+                                                            command['command'],
+                                                            timeout=command['timeout'],
+                                                            command_id=command_id)
     if llm_response is None:
         llm_response = convo.send_message('dev_ops/ran_command.prompt',
             {
                 'cli_response': cli_response,
-                'command': command
+                'command': command['command']
             })
     return cli_response, llm_response
 
