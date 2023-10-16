@@ -417,7 +417,7 @@ def run_command_until_success(convo, command,
 
     if response is None:
         logger.info(f'`{command}` exit code: {exit_code}')
-        if exit_code is None:
+        if exit_code is None and command_id is not None:
             response = 'DONE'
         else:
             # "I ran the command and the output was... respond with 'DONE' or 'NEEDS_DEBUGGING'"
