@@ -255,6 +255,8 @@ def execute_command(project, command, timeout=None, success_message=None, comman
 
         was_success = False
         terminate_process(process.pid)
+        # update the returncode
+        process.poll()
 
     elapsed_time = time.time() - start_time
     logger.info(f'`{command}` took {round(elapsed_time * 1000)}ms to execute.')
