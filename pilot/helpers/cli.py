@@ -119,9 +119,10 @@ def execute_command(project, command, timeout=None, success_message=None, comman
 
     Returns:
         cli_response (str): The command output
-                            or: '', 'DONE' if user answered 'no' or 'skip'
+                            or: `None` if user did not authorise the command to run
         done_or_error_response (str): 'DONE' if 'no', 'skip' or `success_message` matched.
-                            Otherwise 'was interrupted by user', 'timed out' or `None` - caller should send `cli_response` to LLM
+                            Otherwise, if `cli_response` is None, user's response to "Can I executed".
+                            If `cli_response` not None: 'was interrupted by user', 'timed out' or `None` - caller should send `cli_response` to LLM
         exit_code (int): The exit code of the process.
     """
     if timeout is not None:
@@ -142,24 +143,19 @@ def execute_command(project, command, timeout=None, success_message=None, comman
             question += '?'
 
         answer = ask_user(project, question, False, hint='If yes, just press ENTER')
-
-        # TODO: I think AutoGPT allows other feedback here, like:
-        #       "That's not going to work, let's do X instead"
-        #       We don't explicitly make "no" or "skip" options to the user
-        #       see https://github.com/Pythagora-io/gpt-pilot/issues/122
-        #       https://github.com/Pythagora-io/gpt-pilot/issues/198
-        #       https://github.com/Pythagora-io/gpt-pilot/issues/43#issuecomment-1756352056
-        #       This may require exiting the list of steps early.
-        # ...or .confirm(question, default='yes').ask()  https://questionary.readthedocs.io/en/stable/pages/types.html#confirmation
+        # TODO can we use .confirm(question, default='yes').ask()  https://questionary.readthedocs.io/en/stable/pages/types.html#confirmation
         print('answer: ' + answer)
-        if answer.lower().startswith('no'):
-            return '', 'DONE', None
-        elif answer == 'skip':
-            return '', 'DONE', None
+        if answer.lower() in ['no', 'skip']:
+            return None, 'DONE', None
+        elif answer.lower() not in ['', 'yes', 'ok', 'okay', 'sure']:
+            # "That's not going to work, let's do X instead"
+            #       https://github.com/Pythagora-io/gpt-pilot/issues/198
+            #       https://github.com/Pythagora-io/gpt-pilot/issues/43#issuecomment-1756352056
+            # TODO: https://github.com/Pythagora-io/gpt-pilot/issues/122
+            return None, answer, None
 
     # TODO when a shell built-in commands (like cd or source) is executed, the output is not captured properly - this will need to be changed at some point
-    # TODO: Windows support
-    if "cd " in command or "source " in command:
+    if platform.system() != 'Windows' and ("cd " in command or "source " in command):
         command = "bash -c '" + command + "'"
 
     project.command_runs_count += 1
@@ -379,7 +375,8 @@ def execute_command_and_check_cli_response(convo, command: dict):
     Returns:
         tuple: A tuple containing the CLI response and the agent's response.
             - cli_response (str): The command output.
-            - response (str): 'DONE' or 'NEEDS_DEBUGGING'
+            - response (str): 'DONE' or 'NEEDS_DEBUGGING'.
+                If `cli_response` is None, user's response to "Can I execute...".
     """
     # TODO: Prompt mentions `command` could be `INSTALLED` or `NOT_INSTALLED`, where is this handled?
     command_id = command['command_id'] if 'command_id' in command else None
@@ -425,6 +422,11 @@ def run_command_until_success(convo, command,
         force (bool, optional): Whether to execute the command without confirmation. Default is False.
         return_cli_response (bool, optional): If True, may raise TooDeepRecursionError(cli_response)
         is_root_task (bool, optional): If True and TokenLimitError is raised, will call `convo.load_branch(reset_branch_id)`
+
+    Returns:
+        - 'success': bool,
+        - 'cli_response': ```stdout: <stdout> stderr: <stderr>```
+        - 'user_input': `None` or user's objection to running the command
     """
     cli_response, response, exit_code = execute_command(convo.agent.project,
                                                         command,
@@ -432,6 +434,8 @@ def run_command_until_success(convo, command,
                                                         success_message=success_message,
                                                         command_id=command_id,
                                                         force=force)
+    if cli_response is None and response != 'DONE':
+        return {'success': False, 'user_input': response}
 
     if cli_response is not None:
         logger.info(f'`{command}` exit code: {exit_code}')

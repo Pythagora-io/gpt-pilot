@@ -1,0 +1,17 @@
+I have something to say about step at index {{ step_index }}:
+```
+{{ step }}
+```
+
+{{ user_input }}
+
+Please update the task list, removing any steps prior to and including index {{ step_index }}, and taking into consideration my comments above.
+{% if running_processes -%}
+Note that the following processes are already running:
+
+{%- for key, data in running_processes.items() %}
+
+command_id: {{ key }}
+command: {{ data[0] }}
+{%- endfor -%}
+{%- endif -%}

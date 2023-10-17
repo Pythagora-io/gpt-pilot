@@ -71,11 +71,27 @@ class Developer(Agent):
         }, IMPLEMENT_TASK)
         task_steps = response['tasks']
         convo_dev_task.remove_last_x_messages(3)
-        self.execute_task(convo_dev_task,
-                                 task_steps,
-                                 development_task=development_task,
-                                 continue_development=True,
-                                 is_root_task=True)
+
+        while True:
+            result = self.execute_task(convo_dev_task,
+                                     task_steps,
+                                     development_task=development_task,
+                                     continue_development=True,
+                                     is_root_task=True)
+
+            if result['success']:
+                break
+
+            if 'step_index' in result:
+                result['running_processes'] = running_processes
+                response = convo_dev_task.send_message('development/task/update_task.prompt', {
+                    result
+                }, IMPLEMENT_TASK)
+                task_steps = response['tasks']
+                convo_dev_task.remove_last_x_messages(1)
+            else:
+                logger.warning('Testing at end of task failed')
+                break
 
     def step_code_change(self, convo, step, i, test_after_code_changes):
         if step['type'] == 'code_change' and 'code_change_description' in step:
@@ -120,7 +136,10 @@ class Developer(Agent):
         """
         :param convo:
         :param step: {'human_intervention_description': 'some description'}
-        :return: { 'user_input': string_from_human }
+        :return: {
+          'success': bool
+          'user_input': string_from_human
+        }
         """
         logger.info('Human intervention needed%s: %s',
                     '' if self.run_command is None else f' for command `{self.run_command}`',
@@ -150,18 +169,19 @@ class Developer(Agent):
             if 'user_input' not in response:
                 continue
 
-            if response['user_input'] != 'continue':
-                debug_success = self.debugger.debug(convo,
+            if response['user_input'] == 'continue':
+                response['success'] = True
+            else:
+                response['success'] = self.debugger.debug(convo,
                                                    user_input=response['user_input'],
                                                    issue_description=step['human_intervention_description'])
-                return response
-            else:
-                return response
+
+            return response
 
     def step_test(self, convo, test_command):
         should_rerun_command = convo.send_message('dev_ops/should_rerun_command.prompt', test_command)
         if should_rerun_command == 'NO':
-            return { "success": True }
+            return { 'success': True }
         elif should_rerun_command == 'YES':
             cli_response, llm_response = execute_command_and_check_cli_response(convo, test_command)
             logger.info('After running command llm_response: ' + llm_response)
@@ -170,7 +190,12 @@ class Developer(Agent):
                 print(cli_response)
                 print(red('-------------------'))
 
-            return { "success": llm_response == 'DONE', "cli_response": cli_response, "llm_response": llm_response }
+            result = {'success': llm_response == 'DONE', 'cli_response': cli_response}
+            if cli_response is None:
+                result['user_input'] = llm_response
+            else:
+                result['llm_response'] = llm_response
+            return result
 
     def task_postprocessing(self, convo, development_task, continue_development, task_result, last_branch_name):
         # TODO: why does `run_command` belong to the Developer class, rather than just being passed?
@@ -280,12 +305,17 @@ class Developer(Agent):
                     elif step['type'] == 'human_intervention':
                         result = self.step_human_intervention(convo, step)
 
-                    logger.info('  result: %s', result)
+                    logger.info('  step result: %s', result)
+                    if not result['success']:
+                        result['step'] = step
+                        result['step_index'] = i
+                        return result
 
                     if test_command is not None and ('check_if_fixed' not in step or step['check_if_fixed']):
                         logger.info('check_if_fixed: %s', test_command)
-                        is_fixed = self.step_test(convo, test_command)
-                        return is_fixed
+                        result = self.step_test(convo, test_command)
+                        logger.info('task result: %s', result)
+                        return result
 
                     break
                 except TokenLimitError as e:
