@@ -16,9 +16,9 @@ def test_execute_command_timeout_exit_code(mock_run, mock_get_saved_command):
     command = 'ping www.google.com'
     timeout = 1
     mock_process = MagicMock()
-    mock_run.return_value = mock_process
     mock_process.poll.return_value = None
     mock_process.pid = 1234
+    mock_run.return_value = mock_process
 
     # When
     cli_response, llm_response, exit_code = execute_command(project, command, timeout, force=True)
@@ -29,13 +29,22 @@ def test_execute_command_timeout_exit_code(mock_run, mock_get_saved_command):
     assert exit_code is not None
 
 
+def mock_run_command(command, path, q, q_stderr):
+    q.put('hello')
+    mock_process = MagicMock()
+    mock_process.returncode = 0
+    return mock_process
+
+
 @patch('helpers.cli.get_saved_command_run')
 @patch('helpers.cli.ask_user', return_value='')
-def test_execute_command_enter(mock_ask, mock_get_saved_command):
+@patch('helpers.cli.run_command')
+def test_execute_command_enter(mock_run, mock_ask, mock_get_saved_command):
     # Given
     project = create_project()
     command = 'echo hello'
     timeout = 1000
+    mock_run.side_effect = mock_run_command
 
     # When
     cli_response, llm_response, exit_code = execute_command(project, command, timeout)
@@ -48,11 +57,13 @@ def test_execute_command_enter(mock_ask, mock_get_saved_command):
 
 @patch('helpers.cli.get_saved_command_run')
 @patch('helpers.cli.ask_user', return_value='yes')
-def test_execute_command_yes(mock_ask, mock_get_saved_command):
+@patch('helpers.cli.run_command')
+def test_execute_command_yes(mock_run, mock_ask, mock_get_saved_command):
     # Given
     project = create_project()
     command = 'echo hello'
     timeout = 1000
+    mock_run.side_effect = mock_run_command
 
     # When
     cli_response, llm_response, exit_code = execute_command(project, command, timeout)
