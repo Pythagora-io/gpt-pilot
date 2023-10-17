@@ -47,7 +47,7 @@ class TestDeveloper:
 
         # Then
         assert llm_response == 'DONE'
-        mock_execute_command.assert_called_once_with(self.project, 'python --version', timeout=10)
+        mock_execute_command.assert_called_once_with(self.project, 'python --version', timeout=10, command_id=None)
 
     @patch('helpers.AgentConvo.get_saved_development_step')
     @patch('helpers.AgentConvo.save_development_step')
@@ -67,7 +67,7 @@ class TestDeveloper:
         # and a developer who will execute any task
         developer = Developer(project)
         developer.execute_task = MagicMock()
-        developer.execute_task.return_value = 'DONE'
+        developer.execute_task.return_value = {'success': True}
 
         # When
         developer.implement_task(0, {'description': 'Do stuff'})
@@ -75,6 +75,38 @@ class TestDeveloper:
         # Then we parse the response correctly and send list of steps to execute_task()
         assert developer.execute_task.call_count == 1
         assert developer.execute_task.call_args[0][1] == [{'command': 'ls -al'}]
+
+    @patch('helpers.AgentConvo.get_saved_development_step')
+    @patch('helpers.AgentConvo.save_development_step')
+    @patch('helpers.AgentConvo.create_gpt_chat_completion',
+           return_value={'text': '{"tasks": [{"command": "ls -al"}]}'})
+    def test_implement_task_reject_with_user_input(self, mock_completion, mock_save, mock_get_saved_step):
+        # Given any project
+        project = create_project()
+        project.project_description = 'Test Project'
+        project.development_plan = [{
+            'description': 'Do stuff',
+            'user_review_goal': 'Do stuff',
+        }]
+        project.get_all_coded_files = lambda: []
+        project.current_step = 'test'
+
+        # and a developer who will execute any task
+        developer = Developer(project)
+        developer.execute_task = MagicMock()
+        developer.execute_task.side_effect = [
+            {'success': False, 'step_index': 2, 'user_input': 'no, use a better command'},
+            {'success': True}
+        ]
+
+        # When
+        developer.implement_task(0, {'description': 'Do stuff'})
+
+        # Then we include the user input in the conversation to update the task list
+        assert mock_completion.call_count == 3
+        assert 'no, use a better command' in mock_completion.call_args_list[2][0][0][2]['content']
+        # and call `execute_task()` again
+        assert developer.execute_task.call_count == 2
 
     @patch('helpers.AgentConvo.get_saved_development_step')
     @patch('helpers.AgentConvo.save_development_step')

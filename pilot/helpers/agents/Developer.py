@@ -84,9 +84,7 @@ class Developer(Agent):
 
             if 'step_index' in result:
                 result['running_processes'] = running_processes
-                response = convo_dev_task.send_message('development/task/update_task.prompt', {
-                    result
-                }, IMPLEMENT_TASK)
+                response = convo_dev_task.send_message('development/task/update_task.prompt', result, IMPLEMENT_TASK)
                 task_steps = response['tasks']
                 convo_dev_task.remove_last_x_messages(1)
             else:
@@ -510,11 +508,10 @@ class Developer(Agent):
 
             user_feedback = response['user_input']
             if user_feedback is not None and user_feedback != 'continue':
-                return_value = self.debugger.debug(convo, user_input=user_feedback, issue_description=description)
-                return_value['user_input'] = user_feedback
-                return return_value
+                debug_success = self.debugger.debug(convo, user_input=user_feedback, issue_description=description)
+                return {'success': debug_success, 'user_input': user_feedback}
             else:
-                return { "success": True, "user_input": user_feedback }
+                return {'success': True, 'user_input': user_feedback}
 
     def implement_step(self, convo, step_index, type, description):
         logger.info('Implementing %s step #%d: %s', type, step_index, description)

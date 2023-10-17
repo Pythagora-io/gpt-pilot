@@ -439,7 +439,7 @@ def run_command_until_success(convo, command,
 
     if cli_response is not None:
         logger.info(f'`{command}` exit code: {exit_code}')
-        if exit_code is None:
+        if exit_code is None and command_id is not None:
             # process is still running
             response = 'DONE'
         elif response != 'DONE':
