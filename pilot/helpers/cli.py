@@ -438,7 +438,7 @@ def run_command_until_success(convo, command,
         return {'success': False, 'user_input': response}
 
     if cli_response is not None:
-        logger.info(f'`{command}` exit code: {exit_code}')
+        logger.info(f'`{command}` ("{command_id}") exit code: {exit_code}')
         if exit_code is None and command_id is not None:
             # process is still running
             response = 'DONE'
@@ -482,4 +482,4 @@ def run_command_until_success(convo, command,
                 else:
                     raise e
     else:
-        return { 'success': True, 'cli_response': cli_response }
+        return {'success': True, 'cli_response': cli_response}

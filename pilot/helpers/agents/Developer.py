@@ -12,7 +12,7 @@ from logger.logger import logger
 from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
-from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes
+from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes, terminate_named_process
 from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK
 from database.database import save_progress, get_progress_steps, update_app_status
 from utils.utils import get_os_info
@@ -84,6 +84,10 @@ class Developer(Agent):
 
             if 'step_index' in result:
                 result['running_processes'] = running_processes
+                result['os'] = platform.system()
+                result['completed_steps'] = task_steps[:result['step_index']]
+                result['rejected_steps'] = task_steps[result['step_index']:]
+
                 response = convo_dev_task.send_message('development/task/update_task.prompt', result, IMPLEMENT_TASK)
                 task_steps = response['tasks']
                 convo_dev_task.remove_last_x_messages(1)
@@ -110,6 +114,7 @@ class Developer(Agent):
                 data = step['code_change']
             self.project.save_file(data)
             # TODO end
+            return {"success": True}
 
     def step_command_run(self, convo, step, i):
         logger.info('Running command: %s', step['command'])
@@ -302,6 +307,10 @@ class Developer(Agent):
 
                     elif step['type'] == 'human_intervention':
                         result = self.step_human_intervention(convo, step)
+
+                    elif step['type'] == 'kill_process':
+                        terminate_named_process(step['kill_process'])
+                        result = {'success': True}
 
                     logger.info('  step result: %s', result)
                     if not result['success']:

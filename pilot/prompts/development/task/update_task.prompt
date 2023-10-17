@@ -1,11 +1,19 @@
-I have something to say about step at index {{ step_index }}:
+{% if completed_steps -%}
+# Completed task steps:
 ```
-{{ step }}
+{{ completed_steps }}
+```
+
+{% endif -%}
+# Rejected task steps:
+```
+{{ rejected_steps }}
 ```
 
 {{ user_input }}
 
-Please update the task list, removing any steps prior to and including index {{ step_index }}, and taking into consideration my comments above.
+Please create a new list of task steps to complete this task. The first item in the rejected task steps list will need to be modified taking into consideration my comments above, and based on that any subsequent steps may or may not still be valid.
+Any commands must be able to run on a {{ os }} machine.
 {% if running_processes -%}
 Note that the following processes are already running:
 

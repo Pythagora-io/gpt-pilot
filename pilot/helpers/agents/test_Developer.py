@@ -79,7 +79,7 @@ class TestDeveloper:
     @patch('helpers.AgentConvo.get_saved_development_step')
     @patch('helpers.AgentConvo.save_development_step')
     @patch('helpers.AgentConvo.create_gpt_chat_completion',
-           return_value={'text': '{"tasks": [{"command": "ls -al"}]}'})
+           return_value={'text': '{"tasks": [{"command": "ls -al"}, {"command": "ls -al src"}, {"command": "ls -al test"}, {"command": "ls -al build"}]}'})
     def test_implement_task_reject_with_user_input(self, mock_completion, mock_save, mock_get_saved_step):
         # Given any project
         project = create_project()
@@ -104,7 +104,18 @@ class TestDeveloper:
 
         # Then we include the user input in the conversation to update the task list
         assert mock_completion.call_count == 3
-        assert 'no, use a better command' in mock_completion.call_args_list[2][0][0][2]['content']
+        prompt = mock_completion.call_args_list[2][0][0][2]['content']
+        assert prompt.startswith('''
+# Completed task steps:
+```
+[{'command': 'ls -al'}, {'command': 'ls -al src'}]
+```
+
+# Rejected task steps:
+```
+[{'command': 'ls -al test'}, {'command': 'ls -al build'}]
+```'''.lstrip())
+        assert 'no, use a better command' in prompt
         # and call `execute_task()` again
         assert developer.execute_task.call_count == 2
 
