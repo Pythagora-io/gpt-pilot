@@ -1,6 +1,6 @@
 from playhouse.shortcuts import model_to_dict
+from utils.style import color_yellow, color_red
 from peewee import DoesNotExist, IntegrityError
-from utils.style import yellow, red
 from functools import reduce
 import operator
 import psycopg2
@@ -262,7 +262,7 @@ def hash_and_save_step(Model, app_id, unique_data_fields, data_fields, message):
                        .execute())
 
         record = Model.get_by_id(inserted_id)
-        logger.debug(yellow(f"{message} with id {record.id}"))
+        logger.debug(color_yellow(f"{message} with id {record.id}"))
     except IntegrityError:
         logger.warn(f"A record with data {unique_data_fields} already exists for {Model.__name__}.")
         return None
@@ -368,7 +368,7 @@ def delete_all_subsequent_steps(project):
 
 
 def delete_subsequent_steps(Model, app, step):
-    logger.info(red(f"Deleting subsequent {Model.__name__} steps after {step.id if step is not None else None}"))
+    logger.info(color_red(f"Deleting subsequent {Model.__name__} steps after {step.id if step is not None else None}"))
     subsequent_steps = Model.select().where(
         (Model.app == app) & (Model.previous_step == (step.id if step is not None else None)))
     for subsequent_step in subsequent_steps:
@@ -405,7 +405,7 @@ def delete_unconnected_steps_from(step, previous_step_field_name):
     ).order_by(DevelopmentSteps.id.desc())
 
     for unconnected_step in unconnected_steps:
-        print(red(f"Deleting unconnected {step.__class__.__name__} step {unconnected_step.id}"))
+        print(color_red(f"Deleting unconnected {step.__class__.__name__} step {unconnected_step.id}"))
         unconnected_step.delete_instance()
 
 

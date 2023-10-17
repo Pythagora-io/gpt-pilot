@@ -1,6 +1,14 @@
 import platform
 import uuid
-from utils.style import green, red, green_bold, yellow_bold, red_bold, blue_bold, white_bold
+from utils.style import (
+    color_green,
+    color_green_bold,
+    color_red,
+    color_red_bold,
+    color_yellow_bold,
+    color_blue_bold,
+    color_white_bold
+)
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
@@ -34,7 +42,7 @@ class Developer(Agent):
             self.project.skip_steps = False if ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0') else True
 
         # DEVELOPMENT
-        print(green_bold("🚀 Now for the actual development...\n"))
+        print(color_green_bold("🚀 Now for the actual development...\n"))
         logger.info("Starting to create the actual code...")
 
         for i, dev_task in enumerate(self.project.development_plan):
@@ -43,10 +51,10 @@ class Developer(Agent):
         # DEVELOPMENT END
         self.project.dot_pilot_gpt.chat_log_folder(None)
         logger.info('The app is DONE!!! Yay...you can use it now.')
-        print(green_bold("The app is DONE!!! Yay...you can use it now.\n"))
+        print(color_green_bold("The app is DONE!!! Yay...you can use it now.\n"))
 
     def implement_task(self, i, development_task=None):
-        print(green_bold(f'Implementing task #{i + 1}: ') + green(f' {development_task["description"]}\n'))
+        print(color_green_bold('Implementing task #{i + 1}: ') + color_green(' {development_task["description"]}\n'))
         self.project.dot_pilot_gpt.chat_log_folder(i + 1)
 
         convo_dev_task = AgentConvo(self)
@@ -127,7 +135,7 @@ class Developer(Agent):
 
             if self.run_command is not None:
                 if (self.project.ipc_client_instance is None or self.project.ipc_client_instance.client is None):
-                    human_intervention_description += yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
+                    human_intervention_description += color_yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
                 else:
                     print(self.run_command, type="run_command")
 
@@ -165,9 +173,9 @@ class Developer(Agent):
                                                                                 convo)
             logger.info('After running command llm_response: ' + llm_response)
             if llm_response == 'NEEDS_DEBUGGING':
-                print(red('Got incorrect CLI response:'))
+                print(color_red('Got incorrect CLI response:'))
                 print(cli_response)
-                print(red('-------------------'))
+                print(color_red('-------------------'))
 
             return { "success": llm_response == 'DONE', "cli_response": cli_response, "llm_response": llm_response }
 
@@ -202,8 +210,8 @@ class Developer(Agent):
         if step_implementation_try >= MAX_COMMAND_DEBUG_TRIES:
             self.dev_help_needed(step)
 
-        print(red_bold('\n--------- LLM Reached Token Limit ----------'))
-        print(red_bold('Can I retry implementing the entire development step?'))
+        print(color_red_bold('\n--------- LLM Reached Token Limit ----------'))
+        print(color_red_bold('Can I retry implementing the entire development step?'))
 
         answer = ''
         while answer != 'y':
@@ -221,9 +229,9 @@ class Developer(Agent):
     def dev_help_needed(self, step):
 
         if step['type'] == 'command':
-            help_description = (red_bold('I tried running the following command but it doesn\'t seem to work:\n\n') +
-                white_bold(step['command']['command']) +
-                red_bold('\n\nCan you please make it work?'))
+            help_description = (color_red_bold('I tried running the following command but it doesn\'t seem to work:\n\n') +
+                color_white_bold(step['command']['command']) +
+                color_red_bold('\n\nCan you please make it work?'))
         elif step['type'] == 'code_change':
             help_description = step['code_change_description']
         elif step['type'] == 'human_intervention':
@@ -242,9 +250,9 @@ class Developer(Agent):
 
         answer = ''
         while answer != 'continue':
-            print(red_bold('\n----------------------------- I need your help ------------------------------'))
+            print(color_red_bold('\n----------------------------- I need your help ------------------------------'))
             print(extract_substring(str(help_description)))
-            print(red_bold('\n-----------------------------------------------------------------------------'))
+            print(color_red_bold('\n-----------------------------------------------------------------------------'))
             answer = styled_text(
                 self.project,
                 'Once you\'re done, type "continue"?'
@@ -314,12 +322,12 @@ class Developer(Agent):
         while True:
             logger.info('Continue development: %s', last_branch_name)
             iteration_convo.load_branch(last_branch_name)
-            user_description = ('Here is a description of what should be working: \n\n' + blue_bold(continue_description) + '\n') \
+            user_description = ('Here is a description of what should be working: \n\n' + color_blue_bold(continue_description) + '\n') \
                                 if continue_description != '' else ''
             user_description = 'Can you check if the app works please? ' + user_description
 
             if self.project.ipc_client_instance is None or self.project.ipc_client_instance.client is None:
-                user_description += yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
+                user_description += color_yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
             else:
                 print(self.run_command, type="run_command")
 
@@ -386,7 +394,7 @@ class Developer(Agent):
         })
         return
         # ENVIRONMENT SETUP
-        print(green("Setting up the environment...\n"))
+        print(color_green_bold("Setting up the environment...\n"))
         logger.info("Setting up the environment...")
 
         os_info = get_os_info()
