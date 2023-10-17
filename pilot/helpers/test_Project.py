@@ -132,15 +132,30 @@ class TestProjectFileLists:
 
         # with directories including common.IGNORE_FOLDERS
         src = os.path.join(project.root_path, 'src')
+        foo = os.path.join(project.root_path, 'src/foo')
+        files_no_folders = os.path.join(foo, 'files_no_folders')
         os.makedirs(src, exist_ok=True)
+        os.makedirs(foo, exist_ok=True)
+        os.makedirs(foo + '/empty1', exist_ok=True)
+        os.makedirs(foo + '/empty2', exist_ok=True)
+        os.makedirs(files_no_folders, exist_ok=True)
         for dir in ['.git', '.idea', '.vscode', '__pycache__', 'node_modules', 'venv', 'dist', 'build']:
             os.makedirs(os.path.join(project.root_path, dir), exist_ok=True)
 
         # ...and files
+
         with open(os.path.join(project.root_path, 'package.json'), 'w') as file:
             json.dump({'name': 'test app'}, file, indent=2)
-        with open(os.path.join(src, 'main.js'), 'w') as file:
-            file.write('console.log("Hello World!");')
+        for path in [
+            os.path.join(src, 'main.js'),
+            os.path.join(src, 'other.js'),
+            os.path.join(foo, 'bar.js'),
+            os.path.join(foo, 'fighters.js'),
+            os.path.join(files_no_folders, 'file1.js'),
+            os.path.join(files_no_folders, 'file2.js'),
+        ]:
+            with open(path, 'w') as file:
+                file.write('console.log("Hello World!");')
 
         # and a non-empty .gpt-pilot directory
         project.dot_pilot_gpt.write_project(project)
@@ -150,11 +165,17 @@ class TestProjectFileLists:
         tree = self.project.get_directory_tree()
 
         # Then we should not be including the .gpt-pilot directory or other ignored directories
+        # print('\n' + tree)
         assert tree == '''
-|-- /
-|   |-- package.json
-|   |-- src/
-|   |   |-- main.js
+/
+  /src
+    /foo
+      /empty1
+      /empty2
+      /files_no_folders: file1.js, file2.js
+      bar.js, fighters.js
+    main.js, other.js
+  package.json
 '''.lstrip()
 
     @patch('helpers.Project.DevelopmentSteps.get_or_create', return_value=('test', True))
@@ -167,6 +188,7 @@ class TestProjectFileLists:
         self.project.save_files_snapshot('test')
 
         # Then the files should be saved to the project, but nothing from `.gpt-pilot/`
-        assert mock_file.call_count == 2
-        assert mock_file.call_args_list[0][1]['name'] == 'package.json'
-        assert mock_file.call_args_list[1][1]['name'] == 'main.js'
+        assert mock_file.call_count == 7
+        files = ['package.json', 'main.js', 'file1.js', 'file2.js', 'bar.js', 'fighters.js', 'other.js']
+        for i in range(7):
+            assert mock_file.call_args_list[i][1]['name'] in files

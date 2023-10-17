@@ -21,6 +21,7 @@ def get_files_content(directory, ignore=[]):
         dirs[:] = [d for d in dirs if d not in ignore]
 
         for file in files:
+            # TODO: avoid sharing `.env` etc
             if file in ignore:
                 continue
 

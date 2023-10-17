@@ -1,8 +1,10 @@
-Ok, now, take your previous message and convert it to actionable items. An item might be a code change or a command run. When you need to change code, make sure that you put the entire content of the file in the value of `content` key even though you will likely copy and paste the most of the previous message.
-{%- if running_processes %}
+Ok, now, take your previous message and convert it to actionable items. An item might be a code change or a command run. When you need to change code, make sure that you put the entire content of the file in the value of `content` key even though you will likely copy and paste the most of the previous message. Note that the commands will run on a {{ os }} machine.
+{% if running_processes -%}
 Note that the following processes are already running:
 
-{% for key, data in running_processes.items() -%}
-- "{{ key }}" (`{{ data[0] }}`)
-{% endfor -%}
-{% endif -%}
+{%- for key, data in running_processes.items() %}
+
+command_id: {{ key }}
+command: {{ data[0] }}
+{%- endfor -%}
+{%- endif -%}
