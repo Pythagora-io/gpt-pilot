@@ -163,7 +163,7 @@ class Developer(Agent):
                     'r': lambda conv: run_command_until_success(conv,
                                                                 self.run_command,
                                                                 command_id='app',
-                                                                timeout=None,
+                                                                timeout=1000,
                                                                 force=True,
                                                                 return_cli_response=True)
                 },
@@ -354,7 +354,7 @@ class Developer(Agent):
 
     def continue_development(self, iteration_convo, last_branch_name, continue_description=''):
         while True:
-            logger.info('Continue development: %s', last_branch_name)
+            logger.info('Continue development, last_branch_name: %s', last_branch_name)
             iteration_convo.load_branch(last_branch_name)
             user_description = ('Here is a description of what should be working: \n\n' + blue_bold(continue_description) + '\n') \
                                 if continue_description != '' else ''
@@ -371,7 +371,7 @@ class Developer(Agent):
                 user_description,
                 cbs={'r': lambda convo: run_command_until_success(convo, self.run_command,
                                                                   command_id='app',
-                                                                  timeout=None,
+                                                                  timeout=1000,
                                                                   force=True,
                                                                   return_cli_response=True, is_root_task=True)},
                 convo=iteration_convo,
