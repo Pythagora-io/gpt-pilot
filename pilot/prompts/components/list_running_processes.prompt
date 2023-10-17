@@ -1,0 +1,9 @@
+{% if running_processes -%}
+Note that the following processes are already running:
+
+{%- for key, data in running_processes.items() %}
+
+command_id: {{ key }}
+command: {{ data[0] }}
+{%- endfor -%}
+{%- endif -%}

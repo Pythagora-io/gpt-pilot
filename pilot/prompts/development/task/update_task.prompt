@@ -14,12 +14,4 @@
 
 Based on the Next Task Steps and my comments above, please create a new list of task steps to complete this task. The first item in the Next Task Steps list will need to be modified, and based on that any subsequent steps may or may not still be valid.
 Any commands must be able to run on a {{ os }} machine.
-{% if running_processes -%}
-Note that the following processes are already running:
-
-{%- for key, data in running_processes.items() %}
-
-command_id: {{ key }}
-command: {{ data[0] }}
-{%- endfor -%}
-{%- endif -%}
+{{ list_running_processes }}
