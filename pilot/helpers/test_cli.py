@@ -38,7 +38,7 @@ def test_execute_command_enter(mock_ask, mock_get_saved_command):
     # Then
     assert 'hello' in cli_response
     assert llm_response is None
-    assert exit_code is 0
+    assert exit_code == 0
 
 
 @patch('helpers.cli.get_saved_command_run')
@@ -55,7 +55,7 @@ def test_execute_command_yes(mock_ask, mock_get_saved_command):
     # Then
     assert 'hello' in cli_response
     assert llm_response is None
-    assert exit_code is 0
+    assert exit_code == 0
 
 
 @patch('helpers.cli.get_saved_command_run')
@@ -159,6 +159,7 @@ def test_run_command_until_success_timed_out(mock_execute):
     assert convo.send_message.call_count == 1
     assert not result['success']
     assert result['cli_response'] == 'hell'
+
 
 @patch('helpers.cli.execute_command', return_value=(None, 'DONE', None))
 def test_run_command_until_success_no(mock_execute):
