@@ -9,11 +9,16 @@ def test_terminate_process_not_running():
 
 
 @patch('helpers.cli.get_saved_command_run')
-def test_execute_command_timeout_exit_code(mock_get_saved_command):
+@patch('helpers.cli.run_command')
+def test_execute_command_timeout_exit_code(mock_run, mock_get_saved_command):
     # Given
     project = create_project()
     command = 'ping www.google.com'
     timeout = 1
+    mock_process = MagicMock()
+    mock_run.return_value = mock_process
+    mock_process.poll.return_value = None
+    mock_process.pid = 1234
 
     # When
     cli_response, llm_response, exit_code = execute_command(project, command, timeout, force=True)
