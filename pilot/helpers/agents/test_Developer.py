@@ -106,12 +106,12 @@ class TestDeveloper:
         assert mock_completion.call_count == 3
         prompt = mock_completion.call_args_list[2][0][0][2]['content']
         assert prompt.startswith('''
-# Completed task steps:
+# Completed Task Steps:
 ```
 [{'command': 'ls -al'}, {'command': 'ls -al src'}]
 ```
 
-# Rejected task steps:
+# Next Task Steps:
 ```
 [{'command': 'ls -al test'}, {'command': 'ls -al build'}]
 ```'''.lstrip())

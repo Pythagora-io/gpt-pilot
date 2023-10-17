@@ -37,7 +37,7 @@ def get_prompt(prompt_name, data=None):
     if data is None:
         data = {}
 
-    data.update(get_prompt_components())
+    get_prompt_components(data)
 
     logger.info(f"Getting prompt for {prompt_name}")
 
@@ -50,15 +50,15 @@ def get_prompt(prompt_name, data=None):
     return output
 
 
-def get_prompt_components():
+def get_prompt_components(data):
     # This function reads and renders all prompts inside /prompts/components and returns them in dictionary
 
     # Create an empty dictionary to store the file contents.
     prompts_components = {}
-    data = {
+    data.update({
         'MAX_QUESTIONS': MAX_QUESTIONS,
         'END_RESPONSE': END_RESPONSE
-    }
+    })
 
     # Create a FileSystemLoader
     prompts_path = os.path.join(os.path.dirname(__file__), '..', 'prompts/components')
@@ -81,7 +81,7 @@ def get_prompt_components():
         # Store the file content in the dictionary
         prompts_components[file_key] = file_content
 
-    return prompts_components
+    return data.update(prompts_components)
 
 
 def get_sys_message(role,args=None):
