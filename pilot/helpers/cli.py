@@ -251,7 +251,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
         else:
             print('\nTimeout detected. Stopping command execution...')
             logger.warn('Timeout detected. Stopping command execution...')
-            done_or_error_response = 'timed out'
+            done_or_error_response = f'took longer than {timeout}ms so I killed it'
 
         terminate_process(process.pid)
         # update the returncode

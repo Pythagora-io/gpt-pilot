@@ -25,7 +25,7 @@ def test_execute_command_timeout_exit_code(mock_run, mock_get_saved_command):
 
     # Then
     assert cli_response is not None
-    assert llm_response == 'timed out'
+    assert llm_response == 'took longer than 2000ms so I killed it'
     assert exit_code is not None
 
 
@@ -159,7 +159,7 @@ def test_run_command_until_success_error(mock_execute):
     assert result['cli_response'] == 'error'
 
 
-@patch('helpers.cli.execute_command', return_value=('hell', 'timed out', 0))
+@patch('helpers.cli.execute_command', return_value=('hell', 'took longer than 2000ms so I killed it', 0))
 def test_run_command_until_success_timed_out(mock_execute):
     # Given
     convo = MagicMock()
