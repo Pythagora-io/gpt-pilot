@@ -1,18 +1,18 @@
 {% if completed_steps -%}
-# Completed task steps:
+# Completed Task Steps:
 ```
 {{ completed_steps }}
 ```
 
 {% endif -%}
-# Rejected task steps:
+# Next Task Steps:
 ```
 {{ rejected_steps }}
 ```
 
 {{ user_input }}
 
-Please create a new list of task steps to complete this task. The first item in the rejected task steps list will need to be modified taking into consideration my comments above, and based on that any subsequent steps may or may not still be valid.
+Based on the Next Task Steps and my comments above, please create a new list of task steps to complete this task. The first item in the Next Task Steps list will need to be modified, and based on that any subsequent steps may or may not still be valid.
 Any commands must be able to run on a {{ os }} machine.
 {% if running_processes -%}
 Note that the following processes are already running:

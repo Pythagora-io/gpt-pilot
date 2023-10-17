@@ -546,10 +546,14 @@ DEBUG_STEPS_BREAKDOWN = {
                             'properties': {
                                 'type': {
                                     'type': 'string',
-                                    'enum': ['command', 'code_change', 'human_intervention'],
+                                    'enum': ['command', 'kill_process', 'code_change', 'human_intervention'],
                                     'description': 'Type of the step that needs to be done to debug this issue.',
                                 },
                                 'command': command_definition('Command that needs to be run to debug this issue.', 'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.'),
+                                'kill_process': {
+                                    'type': 'string',
+                                    'description': 'To kill a process that was left running by a previous `command` step provide the `command_id` in this field and set `type` to "kill_process".',
+                                },
                                 'code_change_description': {
                                     'type': 'string',
                                     'description': 'Description of a step in debugging this issue when there are code changes required. This should be used only if the task is of a type "code_change" and it should thoroughly describe what needs to be done to implement the code change for a single file - it cannot include changes for multiple files.',
@@ -557,6 +561,10 @@ DEBUG_STEPS_BREAKDOWN = {
                                 'human_intervention_description': {
                                     'type': 'string',
                                     'description': 'Description of a step in debugging this issue when there is a human intervention needed. This should be used only if the task is of a type "human_intervention".',
+                                },
+                                "need_to_see_output": {
+                                    'type': 'boolean',
+                                    'description': 'Set to `true` if you need to see the output of executing this step before proceeding with other steps',
                                 },
                                 "check_if_fixed": {
                                     'type': 'boolean',

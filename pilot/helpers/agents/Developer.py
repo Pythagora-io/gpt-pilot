@@ -293,6 +293,7 @@ class Developer(Agent):
 
             result = None
             step_implementation_try = 0
+            need_to_see_output = 'need_to_see_output' in step and step['need_to_see_output']
 
             while True:
                 try:
@@ -301,6 +302,8 @@ class Developer(Agent):
 
                     if step['type'] == 'command':
                         result = self.step_command_run(convo, step, i)
+                        if need_to_see_output and 'cli_response' in result:
+                            result['user_input'] = result['cli_response']
 
                     elif step['type'] == 'code_change':
                         result = self.step_code_change(convo, step, i, test_after_code_changes)
@@ -313,7 +316,8 @@ class Developer(Agent):
                         result = {'success': True}
 
                     logger.info('  step result: %s', result)
-                    if not result['success']:
+
+                    if (not result['success']) or need_to_see_output:
                         result['step'] = step
                         result['step_index'] = i
                         return result
