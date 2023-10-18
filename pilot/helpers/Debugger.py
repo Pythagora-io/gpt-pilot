@@ -22,6 +22,7 @@ class Debugger:
             command (dict, optional): The command to debug. Default is None.
             user_input (str, optional): User input for debugging. Default is None.
             issue_description (str, optional): Description of the issue to debug. Default is None.
+            is_root_task (bool, optional): Pass to `developer.execute_task`
 
         Returns:
             bool: True if debugging was successful, False otherwise.
@@ -29,8 +30,18 @@ class Debugger:
 
         self.recursion_layer += 1
         if self.recursion_layer > MAX_RECUSION_LAYER:
+            # Provide detailed error information
+            details = {
+                "Current Recursion Layer": self.recursion_layer,
+                "Max Allowed Recursion Layer": MAX_RECUSION_LAYER,
+                "Conversation": str(convo),
+                "Command": command,
+                "User Input": user_input,
+                "Issue Description": issue_description
+            }
+            error_message = "\n".join([f"{key}: {value}" for key, value in details.items()])
             self.recursion_layer = 0
-            raise TooDeepRecursionError()
+            raise TooDeepRecursionError(context=error_message)
 
         function_uuid = str(uuid.uuid4())
         convo.save_branch(function_uuid)
