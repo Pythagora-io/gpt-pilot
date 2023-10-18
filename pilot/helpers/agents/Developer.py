@@ -70,7 +70,7 @@ class Developer(Agent):
             'os': platform.system(),
         }, IMPLEMENT_TASK)
         task_steps = response['tasks']
-        convo_dev_task.remove_last_x_messages(3)
+        convo_dev_task.remove_last_x_messages(2)
 
         while True:
             result = self.execute_task(convo_dev_task,
@@ -90,7 +90,7 @@ class Developer(Agent):
 
                 response = convo_dev_task.send_message('development/task/update_task.prompt', result, IMPLEMENT_TASK)
                 task_steps = response['tasks']
-                convo_dev_task.remove_last_x_messages(1)
+                # convo_dev_task.remove_last_x_messages(1)
             else:
                 logger.warning('Testing at end of task failed')
                 break

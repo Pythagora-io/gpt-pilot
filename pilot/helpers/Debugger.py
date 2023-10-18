@@ -76,7 +76,7 @@ class Debugger:
                         result['current_step'] = steps[step_index]
                         result['next_steps'] = steps[step_index + 1:]
 
-                        convo.remove_last_x_messages(2)
+                        convo.remove_last_x_messages(1)
                         llm_response = convo.send_message('development/task/update_task.prompt', result,
                                                                DEBUG_STEPS_BREAKDOWN)
                     else:
