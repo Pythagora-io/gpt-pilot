@@ -94,9 +94,6 @@ class AgentConvo:
 
         response = parse_agent_response(response, function_calls)
         message_content = self.format_message_content(response, function_calls)
-        if function_calls:
-            # Remove the JSON schema `system` message
-            del self.messages[-1]
 
         # TODO we need to specify the response when there is a function called
         # TODO maybe we can have a specific function that creates the GPT response from the function call

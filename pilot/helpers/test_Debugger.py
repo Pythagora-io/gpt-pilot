@@ -143,18 +143,23 @@ def test_debug_need_to_see_output(mock_save_step, mock_get_completion, mock_get_
 
     # Then we call the LLM twice, second time to show the output
     assert mock_get_completion.call_count == 2
-    prompt = mock_get_completion.call_args_list[1][0][0][1]['content']
+    prompt = mock_get_completion.call_args_list[1].args[0][2]['content']
     assert prompt.startswith('''
-# Next Task Steps:
+# Current Step:
+This step was executed successfully.
 ```
-[{'type': 'command', 'command': 'cat package.json', 'need_to_see_output': True}, {'type': 'command', 'command': 'npm install something'}]
+{'type': 'command', 'command': 'cat package.json', 'need_to_see_output': True}
 ```
 
 stdout:
 ```
 {"dependencies": {"something": "0.1.2"}}
 ```
-'''.lstrip())
+
+# Next Task Steps:
+```
+[{'type': 'command', 'command': 'npm install something'}]
+```'''.lstrip())
     # And eventually we start the app
     assert developer.step_command_run.call_count == 2
     assert developer.step_command_run.call_args_list[1].args[1]['command'] == 'npm start'

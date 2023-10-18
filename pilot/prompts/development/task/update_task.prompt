@@ -19,7 +19,7 @@ This step was not executed successfully.
 
 {% if cli_response %}{{ cli_response }}{% endif %}
 
-{% if next_steps -%}
+{%- if next_steps %}
 # Next Task Steps:
 ```
 {{ next_steps }}
