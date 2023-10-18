@@ -92,7 +92,7 @@ class Project:
         self.tech_lead.create_development_plan()
 
         if self.finished:  # once project is finished no need to load all development steps
-            print(color_green(f"✅  Coding"))
+            print(color_green("✅  Coding"))
             return
 
         # TODO move to constructor eventually
