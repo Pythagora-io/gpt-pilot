@@ -450,7 +450,7 @@ def run_command_until_success(convo, command,
                 })
             except TooDeepRecursionError as e:
                 # this is only to put appropriate message in the response after TooDeepRecursionError is raised
-                raise TooDeepRecursionError(cli_response) if return_cli_response else e
+                raise TooDeepRecursionError(cli_response)
             except TokenLimitError as e:
                 if is_root_task:
                     convo.load_branch(reset_branch_id)
