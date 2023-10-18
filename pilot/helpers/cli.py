@@ -175,6 +175,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
 
     if command_id is not None:
         terminate_named_process(command_id)
+        # TODO: We want to be able to send the initial stdout/err to the LLM, but it would also be handy to log ongoing output to a log file, named after `command_id`. Terminating an existing process with the same ID should reset the log file
         running_processes[command_id] = (command, process.pid)
 
     output = ''
@@ -407,6 +408,7 @@ def run_command_until_success(convo, command,
                               additional_message=None,
                               force=False,
                               return_cli_response=False,
+                              success_with_cli_response=False,
                               is_root_task=False):
     """
     Run a command until it succeeds or reaches a timeout.
@@ -418,9 +420,11 @@ def run_command_until_success(convo, command,
         command_id: A name for the process.
                       If `timeout` is not provided, can be used to terminate the process.
         success_message: A message to look for in the output of the command to determine if successful or not.
-        additional_message (str, optional): Additional message to include in the response.
+        additional_message (str, optional): Additional message to include in the "I ran the command..." prompt.
         force (bool, optional): Whether to execute the command without confirmation. Default is False.
         return_cli_response (bool, optional): If True, may raise TooDeepRecursionError(cli_response)
+        success_with_cli_response (bool, optional): If True, simply send the cli_response back to the caller without checking with LLM.
+                                                    The LLM has asked to see the output and may update the task step list.
         is_root_task (bool, optional): If True and TokenLimitError is raised, will call `convo.load_branch(reset_branch_id)`
 
     Returns:
@@ -434,6 +438,10 @@ def run_command_until_success(convo, command,
                                                         success_message=success_message,
                                                         command_id=command_id,
                                                         force=force)
+
+    if success_with_cli_response and cli_response is not None:
+        return {'success': True, 'cli_response': cli_response}
+
     if cli_response is None and response != 'DONE':
         return {'success': False, 'user_input': response}
 

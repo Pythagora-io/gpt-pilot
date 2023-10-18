@@ -564,7 +564,9 @@ DEBUG_STEPS_BREAKDOWN = {
                                 },
                                 "need_to_see_output": {
                                     'type': 'boolean',
-                                    'description': 'Set to `true` if you need to see the output of executing this step before proceeding with other steps',
+                                    'description': 'Set to `true` if the definition of subsequent steps may need to change after you see the output of a successful execution of this step. '
+                                                   'For example, if the purpose of a command is to check the status of a service or contents of a file before deciding how to proceed then this flag should be set to `true`. '
+                                                   'If subsequent steps can be executed as long as this step is successful, then this flag does not need to be set.',
                                 },
                                 "check_if_fixed": {
                                     'type': 'boolean',

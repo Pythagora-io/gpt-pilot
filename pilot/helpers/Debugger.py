@@ -27,7 +27,7 @@ class Debugger:
         Returns:
             bool: True if debugging was successful, False otherwise.
         """
-
+        logger.info('Debugging %s', command)
         self.recursion_layer += 1
         if self.recursion_layer > MAX_RECUSION_LAYER:
             self.recursion_layer = 0
@@ -71,8 +71,10 @@ class Debugger:
                     if 'step_index' in result:
                         # result['running_processes'] = running_processes
                         result['os'] = platform.system()
-                        result['completed_steps'] = steps[:result['step_index']]
-                        result['rejected_steps'] = steps[result['step_index']:]
+                        step_index = result['step_index']
+                        result['completed_steps'] = steps[:step_index]
+                        result['current_step'] = steps[step_index]
+                        result['next_steps'] = steps[step_index + 1:]
 
                         convo.remove_last_x_messages(2)
                         llm_response = convo.send_message('development/task/update_task.prompt', result,

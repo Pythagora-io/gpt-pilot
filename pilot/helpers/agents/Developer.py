@@ -86,7 +86,7 @@ class Developer(Agent):
                 result['running_processes'] = running_processes
                 result['os'] = platform.system()
                 result['completed_steps'] = task_steps[:result['step_index']]
-                result['rejected_steps'] = task_steps[result['step_index']:]
+                result['next_steps'] = task_steps[result['step_index']:]
 
                 response = convo_dev_task.send_message('development/task/update_task.prompt', result, IMPLEMENT_TASK)
                 task_steps = response['tasks']
@@ -116,7 +116,7 @@ class Developer(Agent):
             # TODO end
             return {"success": True}
 
-    def step_command_run(self, convo, step, i):
+    def step_command_run(self, convo, step, i, success_with_cli_response=False):
         logger.info('Running command: %s', step['command'])
         # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
         if isinstance(step['command'], str):
@@ -133,7 +133,8 @@ class Developer(Agent):
                                          timeout=data['timeout'],
                                          command_id=command_id,
                                          success_message=success_message,
-                                         additional_message=additional_message)
+                                         additional_message=additional_message,
+                                         success_with_cli_response=success_with_cli_response)
 
     def step_human_intervention(self, convo, step: dict):
         """
@@ -169,6 +170,7 @@ class Developer(Agent):
                 },
                 convo=convo)
 
+            logger.info('human response: %s', response)
             if 'user_input' not in response:
                 continue
 
@@ -182,10 +184,12 @@ class Developer(Agent):
             return response
 
     def step_test(self, convo, test_command):
+        # TODO: don't re-run if it's already running
         should_rerun_command = convo.send_message('dev_ops/should_rerun_command.prompt', test_command)
         if should_rerun_command == 'NO':
             return { 'success': True }
         elif should_rerun_command == 'YES':
+            logger.info('Re-running test command: %s', test_command)
             cli_response, llm_response = execute_command_and_check_cli_response(convo, test_command)
             logger.info('After running command llm_response: ' + llm_response)
             if llm_response == 'NEEDS_DEBUGGING':
@@ -301,9 +305,9 @@ class Developer(Agent):
                         convo.load_branch(function_uuid)
 
                     if step['type'] == 'command':
-                        result = self.step_command_run(convo, step, i)
-                        if need_to_see_output and 'cli_response' in result:
-                            result['user_input'] = result['cli_response']
+                        result = self.step_command_run(convo, step, i, success_with_cli_response=need_to_see_output)
+                        # if need_to_see_output and 'cli_response' in result:
+                        #     result['user_input'] = result['cli_response']
 
                     elif step['type'] == 'code_change':
                         result = self.step_code_change(convo, step, i, test_after_code_changes)
