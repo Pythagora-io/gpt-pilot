@@ -5,7 +5,7 @@ import sys
 import uuid
 from getpass import getuser
 from database.database import get_app, get_app_by_user_workspace
-from utils.style import green_bold
+from utils.style import color_green_bold, style_config
 from utils.utils import should_execute_step
 from const.common import STEPS
 
@@ -26,14 +26,19 @@ def get_arguments():
         else:
             arguments[arg] = True
 
+    theme_mapping = {'light': style_config.theme.LIGHT, 'dark': style_config.theme.DARK}
+    theme_value = arguments.get('theme', 'dark')
+    style_config.set_theme(theme=theme_mapping.get(theme_value, style_config.theme.DARK))
+
     if 'user_id' not in arguments:
         arguments['user_id'] = username_to_uuid(getuser())
 
     app = None
     if 'workspace' in arguments:
+        arguments['workspace'] = os.path.abspath(arguments['workspace'])
         app = get_app_by_user_workspace(arguments['user_id'], arguments['workspace'])
         if app is not None:
-            arguments['app_id'] = app.id
+            arguments['app_id'] = str(app.id)
     else:
         arguments['workspace'] = None
 
@@ -46,16 +51,16 @@ def get_arguments():
         if 'step' not in arguments or ('step' in arguments and not should_execute_step(arguments['step'], app.status)):
             arguments['step'] = 'finished' if app.status == 'finished' else STEPS[STEPS.index(app.status) + 1]
 
-        print(green_bold('\n------------------ LOADING PROJECT ----------------------'))
-        print(green_bold(f'{app.name} (app_id={arguments["app_id"]})'))
-        print(green_bold('--------------------------------------------------------------\n'))
+        print(color_green_bold('\n------------------ LOADING PROJECT ----------------------'))
+        print(color_green_bold(f'{app.name} (app_id={arguments["app_id"]})'))
+        print(color_green_bold('--------------------------------------------------------------\n'))
 
     elif '--get-created-apps-with-steps' not in args:
         arguments['app_id'] = str(uuid.uuid4())
-        print(green_bold('\n------------------ STARTING NEW PROJECT ----------------------'))
+        print(color_green_bold('\n------------------ STARTING NEW PROJECT ----------------------'))
         print("If you wish to continue with this project in future run:")
-        print(green_bold(f'python {sys.argv[0]} app_id={arguments["app_id"]}'))
-        print(green_bold('--------------------------------------------------------------\n'))
+        print(color_green_bold(f'python {sys.argv[0]} app_id={arguments["app_id"]}'))
+        print(color_green_bold('--------------------------------------------------------------\n'))
 
     if 'email' not in arguments:
         arguments['email'] = get_email()

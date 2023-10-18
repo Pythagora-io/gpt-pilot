@@ -54,7 +54,7 @@ https://github.com/Pythagora-io/gpt-pilot/assets/10895136/0495631b-511e-451b-93d
 
 # 🔌 Requirements
 
-- **Python 3**
+- **Python 3.9-3.11** (3.12 is currently not working due to a [dependency issue](https://github.com/psycopg/psycopg2/issues/1628)
 - **PostgreSQL** (optional, projects default is SQLite)
    - DB is needed for multiple reasons like continuing app development. If you have to stop at any point or the app crashes, go back to a specific step so that you can change some later steps in development, and easier debugging, in future we will add functionality to update project (change some things in existing project or add new features to the project and so on)...
 
@@ -169,6 +169,18 @@ Erase all development steps previously done and continue working on an existing 
 ```bash
 python main.py app_id=<ID_OF_THE_APP> skip_until_dev_step=0
 ```
+
+## `theme`
+```bash
+python main.py theme=light
+```
+
+![屏幕截图 2023-10-15 103907](https://github.com/Pythagora-io/gpt-pilot/assets/138990495/c3d08f21-7e3b-4ee4-981f-281d1c97149e)
+```bash
+python main.py theme=dark
+```
+- Dark mode.
+![屏幕截图 2023-10-15 104120](https://github.com/Pythagora-io/gpt-pilot/assets/138990495/942cd1c9-b774-498e-b72a-677b01be1ac3)
 
 
 ## `delete_unrelated_steps`
