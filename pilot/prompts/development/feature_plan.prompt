@@ -45,12 +45,19 @@ Here are development tasks that specify what was already coded:
 {{ development_tasks }}
 ```
 
+{% if previous_features and previous_features|length > 0 %}
+After those tasks, new features were added to {{ app_type }} ""{{ name }}"". Here is a list of all features that are already implemented:
+{% for feature in previous_features %}
+- {{ loop.index }}. {{ feature['summary'] }}
+{% endfor %}
+
+{% endif %}
 Here is directory tree that shows current folder structure of project:
 ```
 {{ directory_tree }}
 ```
 
-App is already finished and working. Here are files that are currently implemented:
+App and all its features are already finished and working. Here are files that are currently implemented:
 {% for file in files %}
 **{{ file.path }}**:
 ```

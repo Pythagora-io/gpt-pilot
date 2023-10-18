@@ -54,8 +54,15 @@ class Developer(Agent):
 
         # DEVELOPMENT END
         self.project.dot_pilot_gpt.chat_log_folder(None)
-        logger.info('The app is DONE!!! Yay...you can use it now.')
-        print(color_green_bold("The app is DONE!!! Yay...you can use it now.\n"))
+        if not self.project.finished:
+            message = 'The app is DONE!!! Yay...you can use it now.\n'
+            logger.info(message)
+            print(color_green_bold(message))
+        else:
+            message = 'Feature complete!\n'
+            logger.info(message)
+            print(color_green_bold(message))
+
 
     def implement_task(self, i, development_task=None):
         print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'))

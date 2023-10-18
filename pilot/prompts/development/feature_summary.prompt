@@ -1,0 +1,22 @@
+You are working on a {{ app_type }} called "{{ name }}" and you need to create a summary for a new feature.
+Here is a high level description of "{{ name }}":
+```
+{{ app_summary }}
+```
+
+After {{ app_type }} was successfully coded, user asked for an improvement. Here is what user asked:
+```
+{{ feature_description }}
+```
+
+Then a development plan for that feature was created and the feature was then broken down to smaller tasks so that it's easier for development. Here is development plan:
+```{% for task in development_tasks %}
+- {{ loop.index }}. {{ task['description'] }}
+{% endfor %}
+```
+
+Your goal is to create summary describing ONLY this feature in as little amount of sentences as possible. Try to keep it as short as possible.
+
+You are not making summary of project or tasks. Only summary of this feature.
+
+{{summary_instructions}}

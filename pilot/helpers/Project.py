@@ -149,8 +149,8 @@ class Project:
                 return
 
             self.tech_lead.create_feature_plan(feature_description)
-
             self.developer.start_coding()
+            self.tech_lead.create_feature_summary(feature_description)
 
     def get_directory_tree(self, with_descriptions=False):
         """
