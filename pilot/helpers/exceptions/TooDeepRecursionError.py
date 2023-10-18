@@ -1,4 +1,5 @@
 class TooDeepRecursionError(Exception):
-    def __init__(self, message='Recursion is too deep!'):
-        self.message = message
+    def __init__(self, context=None, message='Recursion is too deep!'):
+        if context:
+            message = f"{message} (Context: {context})"
         super().__init__(message)
