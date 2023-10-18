@@ -31,7 +31,7 @@ class TechLead(Agent):
             step_already_finished(self.project.args, step)
             self.project.development_plan = step['development_plan']
             return
-        
+
         # DEVELOPMENT PLANNING
         print(color_green_bold("Starting to create the action plan for development...\n"))
         logger.info("Starting to create the action plan for development...")
@@ -55,4 +55,27 @@ class TechLead(Agent):
             "development_plan": self.project.development_plan, "app_data": generate_app_data(self.project.args)
         })
 
+        return
+
+    def create_feature_plan(self, feature_description):
+        self.convo_feature_plan = AgentConvo(self)
+
+        llm_response = self.convo_feature_plan.send_message('development/feature_plan.prompt',
+            {
+                "name": self.project.args['name'],
+                "app_type": self.project.args['app_type'],
+                "app_summary": self.project.project_description,
+                "clarifications": self.project.clarifications,
+                "user_stories": self.project.user_stories,
+                "user_tasks": self.project.user_tasks,
+                "technologies": self.project.architecture,
+                "directory_tree": self.project.get_directory_tree(True),
+                "development_tasks": self.project.development_plan,
+                "files": self.project.get_all_coded_files(),
+                "feature_description": feature_description
+            }, DEVELOPMENT_PLAN)
+
+        self.project.feature_development_plan = llm_response['plan']
+
+        logger.info('Plan for feature development is created.')
         return

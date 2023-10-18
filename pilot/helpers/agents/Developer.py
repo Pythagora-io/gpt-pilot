@@ -35,17 +35,21 @@ class Developer(Agent):
         self.debugger = Debugger(self)
 
     def start_coding(self):
-        self.project.current_step = 'coding'
-        update_app_status(self.project.args['app_id'], self.project.current_step)
+        if self.project.finished:
+            development_plan = self.project.feature_development_plan
+        else:
+            self.project.current_step = 'coding'
+            development_plan = self.project.development_plan
+            update_app_status(self.project.args['app_id'], self.project.current_step)
 
-        if self.project.skip_steps is None:
-            self.project.skip_steps = False if ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0') else True
+            if self.project.skip_steps is None:
+                self.project.skip_steps = False if ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0') else True
 
         # DEVELOPMENT
         print(color_green_bold("🚀 Now for the actual development...\n"))
         logger.info("Starting to create the actual code...")
 
-        for i, dev_task in enumerate(self.project.development_plan):
+        for i, dev_task in enumerate(development_plan):
             self.implement_task(i, dev_task)
 
         # DEVELOPMENT END
@@ -54,7 +58,7 @@ class Developer(Agent):
         print(color_green_bold("The app is DONE!!! Yay...you can use it now.\n"))
 
     def implement_task(self, i, development_task=None):
-        print(color_green_bold('Implementing task #{i + 1}: ') + color_green(' {development_task["description"]}\n'))
+        print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'))
         self.project.dot_pilot_gpt.chat_log_folder(i + 1)
 
         convo_dev_task = AgentConvo(self)
@@ -69,8 +73,9 @@ class Developer(Agent):
             "array_of_objects_to_string": array_of_objects_to_string,  # TODO check why is this here
             "directory_tree": self.project.get_directory_tree(True),
             "current_task_index": i,
-            "development_tasks": self.project.development_plan,
+            "development_tasks": self.project.feature_development_plan if self.project.finished else self.project.development_plan,
             "files": self.project.get_all_coded_files(),
+            "task_type": 'feature' if self.project.finished else 'app'
         })
 
         response = convo_dev_task.send_message('development/parse_task.prompt', {
