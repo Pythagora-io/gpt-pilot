@@ -448,7 +448,7 @@ def run_command_until_success(convo, command,
                     'command_id': command_id,
                     'success_message': success_message,
                 })
-            except TooDeepRecursionError as e:
+            except TooDeepRecursionError:
                 # this is only to put appropriate message in the response after TooDeepRecursionError is raised
                 raise TooDeepRecursionError(cli_response)
             except TokenLimitError as e:
