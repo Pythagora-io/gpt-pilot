@@ -18,8 +18,9 @@ This step was not executed successfully.
 ```
 
 {%- if cli_response %}
+
 {{ cli_response }}
-{% endif %}
+{%- endif %}
 
 {%- if next_steps %}
 

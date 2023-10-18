@@ -156,6 +156,7 @@ stdout:
 {"dependencies": {"something": "0.1.2"}}
 ```
 
+
 # Next Task Steps:
 ```
 [{'type': 'command', 'command': 'npm install something'}]
