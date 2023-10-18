@@ -91,7 +91,7 @@ class TestDeveloper:
         project.get_all_coded_files = lambda: []
         project.current_step = 'test'
 
-        # and a developer who will execute any task
+        # and a developer who will execute any task except for `ls -al test`
         developer = Developer(project)
         developer.execute_task = MagicMock()
         developer.execute_task.side_effect = [
@@ -104,16 +104,22 @@ class TestDeveloper:
 
         # Then we include the user input in the conversation to update the task list
         assert mock_completion.call_count == 3
-        prompt = mock_completion.call_args_list[2][0][0][2]['content']
+        prompt = mock_completion.call_args_list[2].args[0][2]['content']
         assert prompt.startswith('''
 # Completed Task Steps:
 ```
 [{'command': 'ls -al'}, {'command': 'ls -al src'}]
 ```
 
+# Current Step:
+This step will not be executed. no, use a better command
+```
+{'command': 'ls -al test'}
+```
+
 # Next Task Steps:
 ```
-[{'command': 'ls -al test'}, {'command': 'ls -al build'}]
+[{'command': 'ls -al build'}]
 ```'''.lstrip())
         assert 'no, use a better command' in prompt
         # and call `execute_task()` again

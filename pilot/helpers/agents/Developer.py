@@ -85,12 +85,15 @@ class Developer(Agent):
             if 'step_index' in result:
                 result['running_processes'] = running_processes
                 result['os'] = platform.system()
-                result['completed_steps'] = task_steps[:result['step_index']]
-                result['next_steps'] = task_steps[result['step_index']:]
+                step_index = result['step_index']
+                result['completed_steps'] = task_steps[:step_index]
+                result['current_step'] = task_steps[step_index]
+                result['next_steps'] = task_steps[step_index + 1:]
 
+                convo_dev_task.remove_last_x_messages(1)
                 response = convo_dev_task.send_message('development/task/update_task.prompt', result, IMPLEMENT_TASK)
                 task_steps = response['tasks']
-                # convo_dev_task.remove_last_x_messages(1)
+
             else:
                 logger.warning('Testing at end of task failed')
                 break
