@@ -26,11 +26,9 @@ def get_arguments():
         else:
             arguments[arg] = True
 
-    if 'theme' not in arguments:
-        arguments['theme'] = 'dark'
-
     theme_mapping = {'light': style_config.theme.LIGHT, 'dark': style_config.theme.DARK}
-    style_config.set_theme(theme=theme_mapping.get(arguments['theme'], style_config.theme.DARK))
+    theme_value = arguments.get('theme', 'dark')
+    style_config.set_theme(theme=theme_mapping.get(theme_value, style_config.theme.DARK))
 
     if 'user_id' not in arguments:
         arguments['user_id'] = username_to_uuid(getuser())
