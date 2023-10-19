@@ -166,7 +166,11 @@ class Developer(Agent):
                 cbs={
                     'r': lambda conv: run_command_until_success(conv,
                                                                 self.run_command,
+                                                                # name the process so the LLM can kill it
                                                                 command_id='app',
+                                                                # If the app doesn't crash in the first 1st second
+                                                                # assume it's good and leave it running.
+                                                                # If timeout is None the conversation can't continue
                                                                 timeout=1000,
                                                                 force=True,
                                                                 return_cli_response=True)
@@ -377,7 +381,11 @@ class Developer(Agent):
             response = self.project.ask_for_human_intervention(
                 user_description,
                 cbs={'r': lambda convo: run_command_until_success(convo, self.run_command,
+                                                                  # name the process so the LLM can kill it
                                                                   command_id='app',
+                                                                  # If the app doesn't crash in the first 1st second
+                                                                  # assume it's good and leave it running.
+                                                                  # If timeout is None the conversation can't continue
                                                                   timeout=1000,
                                                                   force=True,
                                                                   return_cli_response=True, is_root_task=True)},

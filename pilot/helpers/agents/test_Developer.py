@@ -219,7 +219,9 @@ This step will not be executed. no, use a better command
         json_received = []
 
         def generate_response(*args, **kwargs):
-            json_received.append(kwargs['json'])
+            # Copy messages, including the validation errors from the request
+            content = [msg['content'] for msg in kwargs['json']['messages']]
+            json_received.append(content)
 
             gpt_response = json.dumps({
                 'type': types_in_response.pop(0),
@@ -249,5 +251,6 @@ This step will not be executed. no, use a better command
         # Then
         assert result == {'success': True, 'cli_response': 'stdout:\n```\n\n```'}
         assert mock_requests_post.call_count == 3
-        assert "The JSON is invalid at $.type - 'command' is not one of ['automated_test', 'command_test', 'manual_test', 'no_test']" in json_received[1]['messages'][3]['content']
+        assert "The JSON is invalid at $.type - 'command' is not one of " \
+               "['automated_test', 'command_test', 'manual_test', 'no_test']" in json_received[1][3]
         assert mock_execute.call_count == 1
