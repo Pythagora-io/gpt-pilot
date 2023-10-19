@@ -78,6 +78,13 @@ After, this, you can just follow the instructions in the terminal.
 All generated code will be stored in the folder `workspace` inside the folder named after the app name you enter upon starting the pilot.
 
 **IMPORTANT: To run GPT Pilot, you need to have PostgreSQL set up on your machine**
+
+After installing postgresql connect to it and create a username and a database for GPT Pilot to use
+`
+sudo -u postgres -i
+createuser -l -d -P custom_username
+postgres@:~$ createdb gpt-pilot -O custom_username
+`
 <br>
 
 ## 🐳 How to start gpt-pilot in docker?
