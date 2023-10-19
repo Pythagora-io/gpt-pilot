@@ -20,6 +20,7 @@ def create_project():
     )
     project.set_root_path(test_root)
     project.app = 'test'
+    project.current_step = 'test'
     return project
 
 

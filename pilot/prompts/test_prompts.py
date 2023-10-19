@@ -12,7 +12,7 @@ def test_prompt_ran_command_None_exit():
 
     # Then
     assert prompt == '''
-I ran the command `./scripts/run_tests` and the output was:
+I ran the command `./scripts/run_tests`. The output was:
 
 stdout:
 ```
@@ -34,7 +34,7 @@ def test_prompt_ran_command_0_exit():
 
     # Then
     assert prompt == '''
-I ran the command `./scripts/run_tests`, the exit code was 0 and the output was:
+I ran the command `./scripts/run_tests`, the exit code was 0. The output was:
 
 stdout:
 ```

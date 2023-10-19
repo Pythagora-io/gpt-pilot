@@ -1,0 +1,37 @@
+{% if completed_steps -%}
+# Completed Task Steps:
+```
+{{ completed_steps }}
+```
+
+{% endif -%}
+
+# Current Step:
+{% if success %}This step was executed successfully.
+{%- elif user_input -%}
+This step will not be executed. {{ user_input }}
+{%- else -%}
+This step was not executed successfully.
+{%- endif %}
+```
+{{ current_step }}
+```
+
+{%- if cli_response %}
+
+{{ cli_response }}
+{%- endif %}
+
+{%- if next_steps %}
+
+# Next Task Steps:
+```
+{{ next_steps }}
+```
+
+Based on the Next Task Steps and my comments above for the Current Step, please create a new list of task steps to complete this task. The Current Step will need to be modified, and based on that any of the Next Task Steps may or may not still be valid.
+{% else -%}
+Based on my comments above for the Current Step, please create a new list of task steps to complete this task.
+{% endif %}
+Any commands must be able to run on a {{ os }} machine.
+{{ list_running_processes }}

@@ -20,7 +20,7 @@ from logger.logger import logger
 from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
-from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes
+from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes, terminate_named_process
 from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK
 from database.database import save_progress, get_progress_steps, update_app_status
 from utils.utils import get_os_info
@@ -79,7 +79,32 @@ class Developer(Agent):
         }, IMPLEMENT_TASK)
         task_steps = response['tasks']
         convo_dev_task.remove_last_x_messages(2)
-        return self.execute_task(convo_dev_task, task_steps, development_task=development_task, continue_development=True, is_root_task=True)
+
+        while True:
+            result = self.execute_task(convo_dev_task,
+                                     task_steps,
+                                     development_task=development_task,
+                                     continue_development=True,
+                                     is_root_task=True)
+
+            if result['success']:
+                break
+
+            if 'step_index' in result:
+                result['running_processes'] = running_processes
+                result['os'] = platform.system()
+                step_index = result['step_index']
+                result['completed_steps'] = task_steps[:step_index]
+                result['current_step'] = task_steps[step_index]
+                result['next_steps'] = task_steps[step_index + 1:]
+
+                convo_dev_task.remove_last_x_messages(1)
+                response = convo_dev_task.send_message('development/task/update_task.prompt', result, IMPLEMENT_TASK)
+                task_steps = response['tasks']
+
+            else:
+                logger.warning('Testing at end of task failed')
+                break
 
     def step_code_change(self, convo, step, i, test_after_code_changes):
         if step['type'] == 'code_change' and 'code_change_description' in step:
@@ -100,8 +125,9 @@ class Developer(Agent):
                 data = step['code_change']
             self.project.save_file(data)
             # TODO end
+            return {"success": True}
 
-    def step_command_run(self, convo, step, i):
+    def step_command_run(self, convo, step, i, success_with_cli_response=False):
         logger.info('Running command: %s', step['command'])
         # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
         if isinstance(step['command'], str):
@@ -118,13 +144,17 @@ class Developer(Agent):
                                          timeout=data['timeout'],
                                          command_id=command_id,
                                          success_message=success_message,
-                                         additional_message=additional_message)
+                                         additional_message=additional_message,
+                                         success_with_cli_response=success_with_cli_response)
 
     def step_human_intervention(self, convo, step: dict):
         """
         :param convo:
         :param step: {'human_intervention_description': 'some description'}
-        :return:
+        :return: {
+          'success': bool
+          'user_input': string_from_human
+        }
         """
         logger.info('Human intervention needed%s: %s',
                     '' if self.run_command is None else f' for command `{self.run_command}`',
@@ -144,40 +174,50 @@ class Developer(Agent):
                 cbs={
                     'r': lambda conv: run_command_until_success(conv,
                                                                 self.run_command,
+                                                                # name the process so the LLM can kill it
                                                                 command_id='app',
-                                                                timeout=None,
+                                                                # If the app doesn't crash in the first 1st second
+                                                                # assume it's good and leave it running.
+                                                                # If timeout is None the conversation can't continue
+                                                                timeout=1000,
                                                                 force=True,
                                                                 return_cli_response=True)
                 },
                 convo=convo)
 
+            logger.info('human response: %s', response)
             if 'user_input' not in response:
                 continue
 
-            if response['user_input'] != 'continue':
-                return_value = self.debugger.debug(convo,
+            if response['user_input'] == 'continue':
+                response['success'] = True
+            else:
+                response['success'] = self.debugger.debug(convo,
                                                    user_input=response['user_input'],
                                                    issue_description=step['human_intervention_description'])
-                return_value['user_input'] = response['user_input']
-                return return_value
-            else:
-                return response
+
+            return response
 
     def step_test(self, convo, test_command):
+        # TODO: don't re-run if it's already running
         should_rerun_command = convo.send_message('dev_ops/should_rerun_command.prompt', test_command)
         if should_rerun_command == 'NO':
-            return { "success": True }
+            return { 'success': True }
         elif should_rerun_command == 'YES':
-            cli_response, llm_response = execute_command_and_check_cli_response(test_command['command'],
-                                                                                test_command['timeout'],
-                                                                                convo)
+            logger.info('Re-running test command: %s', test_command)
+            cli_response, llm_response = execute_command_and_check_cli_response(convo, test_command)
             logger.info('After running command llm_response: ' + llm_response)
             if llm_response == 'NEEDS_DEBUGGING':
                 print(color_red('Got incorrect CLI response:'))
                 print(cli_response)
                 print(color_red('-------------------'))
 
-            return { "success": llm_response == 'DONE', "cli_response": cli_response, "llm_response": llm_response }
+            result = {'success': llm_response == 'DONE', 'cli_response': cli_response}
+            if cli_response is None:
+                result['user_input'] = llm_response
+            else:
+                result['llm_response'] = llm_response
+            return result
 
     def task_postprocessing(self, convo, development_task, continue_development, task_result, last_branch_name):
         # TODO: why does `run_command` belong to the Developer class, rather than just being passed?
@@ -272,6 +312,7 @@ class Developer(Agent):
 
             result = None
             step_implementation_try = 0
+            need_to_see_output = 'need_to_see_output' in step and step['need_to_see_output']
 
             while True:
                 try:
@@ -279,7 +320,9 @@ class Developer(Agent):
                         convo.load_branch(function_uuid)
 
                     if step['type'] == 'command':
-                        result = self.step_command_run(convo, step, i)
+                        result = self.step_command_run(convo, step, i, success_with_cli_response=need_to_see_output)
+                        # if need_to_see_output and 'cli_response' in result:
+                        #     result['user_input'] = result['cli_response']
 
                     elif step['type'] == 'code_change':
                         result = self.step_code_change(convo, step, i, test_after_code_changes)
@@ -287,12 +330,22 @@ class Developer(Agent):
                     elif step['type'] == 'human_intervention':
                         result = self.step_human_intervention(convo, step)
 
-                    logger.info('  result: %s', result)
+                    elif step['type'] == 'kill_process':
+                        terminate_named_process(step['kill_process'])
+                        result = {'success': True}
+
+                    logger.info('  step result: %s', result)
+
+                    if (not result['success']) or need_to_see_output:
+                        result['step'] = step
+                        result['step_index'] = i
+                        return result
 
                     if test_command is not None and ('check_if_fixed' not in step or step['check_if_fixed']):
                         logger.info('check_if_fixed: %s', test_command)
-                        is_fixed = self.step_test(convo, test_command)
-                        return is_fixed
+                        result = self.step_test(convo, test_command)
+                        logger.info('task result: %s', result)
+                        return result
 
                     break
                 except TokenLimitError as e:
@@ -320,7 +373,7 @@ class Developer(Agent):
 
     def continue_development(self, iteration_convo, last_branch_name, continue_description=''):
         while True:
-            logger.info('Continue development: %s', last_branch_name)
+            logger.info('Continue development, last_branch_name: %s', last_branch_name)
             iteration_convo.load_branch(last_branch_name)
             user_description = ('Here is a description of what should be working: \n\n' + color_blue_bold(continue_description) + '\n') \
                                 if continue_description != '' else ''
@@ -336,8 +389,12 @@ class Developer(Agent):
             response = self.project.ask_for_human_intervention(
                 user_description,
                 cbs={'r': lambda convo: run_command_until_success(convo, self.run_command,
+                                                                  # name the process so the LLM can kill it
                                                                   command_id='app',
-                                                                  timeout=None,
+                                                                  # If the app doesn't crash in the first 1st second
+                                                                  # assume it's good and leave it running.
+                                                                  # If timeout is None the conversation can't continue
+                                                                  timeout=1000,
                                                                   force=True,
                                                                   return_cli_response=True, is_root_task=True)},
                 convo=iteration_convo,
@@ -462,9 +519,7 @@ class Developer(Agent):
                 }
             })
 
-        cmd = llm_response['command']
-        timeout_val = llm_response['timeout']
-        cli_response, llm_response = execute_command_and_check_cli_response(cmd, timeout_val, self.convo_os_specific_tech)
+        cli_response, llm_response = execute_command_and_check_cli_response(self.convo_os_specific_tech, llm_response)
 
         return llm_response
 
@@ -489,11 +544,10 @@ class Developer(Agent):
 
             user_feedback = response['user_input']
             if user_feedback is not None and user_feedback != 'continue':
-                return_value = self.debugger.debug(convo, user_input=user_feedback, issue_description=description)
-                return_value['user_input'] = user_feedback
-                return return_value
+                debug_success = self.debugger.debug(convo, user_input=user_feedback, issue_description=description)
+                return {'success': debug_success, 'user_input': user_feedback}
             else:
-                return { "success": True, "user_input": user_feedback }
+                return {'success': True, 'user_input': user_feedback}
 
     def implement_step(self, convo, step_index, type, description):
         logger.info('Implementing %s step #%d: %s', type, step_index, description)

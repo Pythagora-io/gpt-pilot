@@ -232,6 +232,7 @@ class AgentConvo:
         process.communicate(content.replace('{{messages}}', str(self.messages)).encode('utf-8'))
 
     def remove_last_x_messages(self, x):
+        logger.info('removing last %d messages: %s', x, self.messages[-x:])
         self.messages = self.messages[:-x]
 
     def construct_and_add_message_from_prompt(self, prompt_path, prompt_data):
