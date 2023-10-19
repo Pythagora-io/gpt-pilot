@@ -8,6 +8,7 @@ from database.database import get_app, get_app_by_user_workspace
 from utils.style import color_green_bold, style_config
 from utils.utils import should_execute_step
 from const.common import STEPS
+from utils.custom_open import open
 
 
 def get_arguments():

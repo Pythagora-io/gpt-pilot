@@ -13,6 +13,7 @@ from logger.logger import logger
 from prompts.prompts import ask_user
 from const.llm import END_RESPONSE
 from helpers.cli import running_processes
+from utils.custom_open import open
 
 
 class AgentConvo:
@@ -226,7 +227,7 @@ class AgentConvo:
         })
 
     def to_playground(self):
-        with open('const/convert_to_playground_convo.js', 'r', encoding='utf-8') as file:
+        with open('const/convert_to_playground_convo.js', 'r') as file:
             content = file.read()
         process = subprocess.Popen('pbcopy', stdin=subprocess.PIPE)
         process.communicate(content.replace('{{messages}}', str(self.messages)).encode('utf-8'))

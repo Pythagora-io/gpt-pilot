@@ -1,5 +1,6 @@
-from utils.style import color_green
 import os
+from utils.style import color_green
+from utils.custom_open import open
 
 
 def update_file(path, new_content):
@@ -26,7 +27,7 @@ def get_files_content(directory, ignore=[]):
                 continue
 
             path = os.path.join(root, file)
-            with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+            with open(path, 'r', errors='ignore') as f:
                 file_content = f.read()
 
             file_name = os.path.basename(path)

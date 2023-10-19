@@ -4,6 +4,8 @@ import pytest
 from unittest.mock import patch, MagicMock
 from helpers.Project import Project
 from database.models.files import File
+from utils.custom_open import open
+
 
 test_root = os.path.join(os.path.dirname(__file__), '../../workspace/gpt-pilot-test').replace('\\', '/')
 
