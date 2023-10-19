@@ -1,0 +1,21 @@
+I'm going to show you an overview of tasks that you need to do to lead the process of creating this {{ app_type }} and for each task, I will tell you an example of how would you solve this task for the example app.
+Example app description: `Create a script that finds Youtube channels with the word "test" inside the channel name`.
+
+Here is an overview of the tasks that you need to do:
+
+1. Getting additional answers. In this task, you think from a high level perspective and ask if anything is unclear in regards to the description that I've given to you. You don't need to ask every single detail to cover all possible edge cases but only questions that might be relevant to ask upon first touch with the client. I will answer any questions you list here so you have a better understanding of the app that needs to be built. In the example description, you could ask the following questions:
+- `do you want to enable user to be able to specify different word to search for in channel name?`
+- `do you want to save the results in a CSV file on the disk?`
+
+2. Break down user stories. In this task, you will think about the {{ app_type }} description and the answers from step #1 and create a list of all user stories. A user story is a description of how a user can interact with the {{ app_type }}. In the example description, user stories could be:
+- `user will run the script from the CLI`
+- `user will get the list of all channels in a CSV file`
+
+3. Break down user tasks. In this task, you will think about the {{ app_type }} description, answers from step #1 and the user stories from the step #2 and create a list of user tasks that a user needs to do to interact with the {{ app_type }}. In the example description, user tasks could be:
+- `user runs the CLI command in which they specify the keyword youtube channel needs to contain and the location where the CSV file will be saved to`
+
+Let's start with the task #1 Getting additional answers. Think about the description for the {{ app_type }} "{{ name }}" and ask questions that you would like to get cleared before going onto breaking down the user stories.
+
+{{no_microservices}}
+
+{{single_question}}
