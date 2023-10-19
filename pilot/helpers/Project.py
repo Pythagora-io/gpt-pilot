@@ -102,23 +102,24 @@ class Project:
                 clear_directory(self.root_path)
                 delete_all_app_development_data(self.args['app_id'])
                 self.skip_steps = False
-            elif self.skip_until_dev_step is not None:
-                should_overwrite_files = ''
-                while should_overwrite_files != 'y' or should_overwrite_files != 'n':
-                    should_overwrite_files = styled_text(
-                        self,
-                        f'Do you want to overwrite the dev step {self.args["skip_until_dev_step"]} code with system changes? Type y/n',
-                        ignore_user_input_count=True
-                    )
-
-                    logger.info('should_overwrite_files: %s', should_overwrite_files)
-                    if should_overwrite_files == 'n':
-                        break
-                    elif should_overwrite_files == 'y':
-                        FileSnapshot.delete().where(
-                            FileSnapshot.app == self.app and FileSnapshot.development_step == self.skip_until_dev_step).execute()
-                        self.save_files_snapshot(self.skip_until_dev_step)
-                        break
+            # TODO: https://github.com/Pythagora-io/gpt-pilot/issues/199 `git checkout`
+            # elif self.skip_until_dev_step is not None:
+            #     should_overwrite_files = ''
+            #     while should_overwrite_files != 'y' or should_overwrite_files != 'n':
+            #         should_overwrite_files = styled_text(
+            #             self,
+            #             f'Do you want to overwrite the dev step {self.args["skip_until_dev_step"]} code with system changes? Type y/n',
+            #             ignore_user_input_count=True
+            #         )
+            #
+            #         logger.info('should_overwrite_files: %s', should_overwrite_files)
+            #         if should_overwrite_files == 'n':
+            #             break
+            #         elif should_overwrite_files == 'y':
+            #             FileSnapshot.delete().where(
+            #                 FileSnapshot.app == self.app and FileSnapshot.development_step == self.skip_until_dev_step).execute()
+            #             self.save_files_snapshot(self.skip_until_dev_step)
+            #             break
         # TODO END
 
         self.dot_pilot_gpt.write_project(self)
@@ -167,19 +168,22 @@ class Project:
         Get all coded files in the project.
 
         Returns:
-            list: A list of coded files.
+            list: A list of coded files = [{'path': '', 'content': '', 'language': ''}]
         """
-        files = File.select().where(File.app_id == self.args['app_id'])
+        # TODO: https://github.com/Pythagora-io/gpt-pilot/issues/199 I think we should just delete the commented block below
+        files = get_files_content(self.root_path)
 
-        # TODO temoprary fix to eliminate files that are not in the project
-        files = [file for file in files if len(FileSnapshot.select().where(FileSnapshot.file_id == file.id)) > 0]
-        # TODO END
-
-        files = self.get_files([file.path + '/' + file.name for file in files])
-
-        # TODO temoprary fix to eliminate files that are not in the project
-        files = [file for file in files if file['content'] != '']
-        # TODO END
+        # files = File.select().where(File.app_id == self.args['app_id'])
+        #
+        # # TODO temporary fix to eliminate files that are not in the project
+        # files = [file for file in files if len(FileSnapshot.select().where(FileSnapshot.file_id == file.id)) > 0]
+        # # TODO END
+        #
+        # files = self.get_files([file.path + '/' + file.name for file in files])
+        #
+        # # TODO temporary fix to eliminate files that are not in the project
+        # files = [file for file in files if file['content'] != '']
+        # # TODO END
 
         return files
 
@@ -229,14 +233,16 @@ class Project:
         # TODO END
 
         data['path'], data['full_path'] = self.get_full_file_path(data['path'], data['name'])
+        # Write the file to disk
         update_file(data['full_path'], data['content'])
 
-        (File.insert(app=self.app, path=data['path'], name=data['name'], full_path=data['full_path'])
-         .on_conflict(
-            conflict_target=[File.app, File.name, File.path],
-            preserve=[],
-            update={'name': data['name'], 'path': data['path'], 'full_path': data['full_path']})
-         .execute())
+        # TODO: https://github.com/Pythagora-io/gpt-pilot/issues/199 at the end of the task `git commit`
+        # (File.insert(app=self.app, path=data['path'], name=data['name'], full_path=data['full_path'])
+        #  .on_conflict(
+        #     conflict_target=[File.app, File.name, File.path],
+        #     preserve=[],
+        #     update={'name': data['name'], 'path': data['path'], 'full_path': data['full_path']})
+        #  .execute())
 
     def get_full_file_path(self, file_path: str, file_name: str) -> Tuple[str, str]:
 
@@ -299,35 +305,39 @@ class Project:
         return final_file_path, final_absolute_path
 
     def save_files_snapshot(self, development_step_id):
-        files = get_files_content(self.root_path, ignore=IGNORE_FOLDERS)
-        development_step, created = DevelopmentSteps.get_or_create(id=development_step_id)
-
-        for file in files:
-            print(color_cyan(f'Saving file {(file["path"])}/{file["name"]}'))
-            # TODO this can be optimized so we don't go to the db each time
-            file_in_db, created = File.get_or_create(
-                app=self.app,
-                name=file['name'],
-                path=file['path'],
-                full_path=file['full_path'],
-            )
-
-            file_snapshot, created = FileSnapshot.get_or_create(
-                app=self.app,
-                development_step=development_step,
-                file=file_in_db,
-                defaults={'content': file.get('content', '')}
-            )
-            file_snapshot.content = file['content']
-            file_snapshot.save()
+        # TODO: https://github.com/Pythagora-io/gpt-pilot/issues/199
+        # files = get_files_content(self.root_path, ignore=IGNORE_FOLDERS)
+        # development_step, created = DevelopmentSteps.get_or_create(id=development_step_id)
+        #
+        # for file in files:
+        #     print(color_cyan(f'Saving file {(file["path"])}/{file["name"]}'))
+        #     # TODO this can be optimized so we don't go to the db each time
+        #     file_in_db, created = File.get_or_create(
+        #         app=self.app,
+        #         name=file['name'],
+        #         path=file['path'],
+        #         full_path=file['full_path'],
+        #     )
+        #
+        #     file_snapshot, created = FileSnapshot.get_or_create(
+        #         app=self.app,
+        #         development_step=development_step,
+        #         file=file_in_db,
+        #         defaults={'content': file.get('content', '')}
+        #     )
+        #     file_snapshot.content = file['content']
+        #     file_snapshot.save()
+        pass
 
     def restore_files(self, development_step_id):
-        development_step = DevelopmentSteps.get(DevelopmentSteps.id == development_step_id)
-        file_snapshots = FileSnapshot.select().where(FileSnapshot.development_step == development_step)
-
-        clear_directory(self.root_path, IGNORE_FOLDERS)
-        for file_snapshot in file_snapshots:
-            update_file(file_snapshot.file.full_path, file_snapshot.content)
+        # TODO: https://github.com/Pythagora-io/gpt-pilot/issues/199
+        # development_step = DevelopmentSteps.get(DevelopmentSteps.id == development_step_id)
+        # file_snapshots = FileSnapshot.select().where(FileSnapshot.development_step == development_step)
+        #
+        # clear_directory(self.root_path, IGNORE_FOLDERS)
+        # for file_snapshot in file_snapshots:
+        #     update_file(file_snapshot.file.full_path, file_snapshot.content)
+        pass
 
     def delete_all_steps_except_current_branch(self):
         delete_unconnected_steps_from(self.checkpoints['last_development_step'], 'previous_step')

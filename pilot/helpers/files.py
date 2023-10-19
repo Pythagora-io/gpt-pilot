@@ -36,6 +36,7 @@ def get_files_content(directory, ignore=[]):
                 'path': relative_path,
                 'content': file_content,
                 'full_path': path,
+                'language': get_language_for_file(file_name),
             })
 
     return return_array
@@ -57,3 +58,16 @@ def clear_directory(dir_path, ignore=[]):
             dir_path = os.path.join(root, d)
             if not os.listdir(dir_path):  # Check if directory is empty
                 os.rmdir(dir_path)
+
+
+def get_language_for_file(file_name: str) -> str | None:
+    if file_name.endswith('.py'):
+        return 'python'
+    elif file_name.endswith('.md'):
+        return 'markdown'
+    elif file_name.endswith('.js'):
+        return 'javascript'
+    elif file_name.endswith('.ts'):
+        return 'typescript'
+    else:
+        return os.path.splitext(file_name)[1]

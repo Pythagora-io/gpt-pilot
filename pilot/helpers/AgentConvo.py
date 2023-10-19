@@ -175,25 +175,28 @@ class AgentConvo:
             self.replace_files()
 
     def replace_files(self):
-        files = self.agent.project.get_all_coded_files()
-        for msg in self.messages:
-            if msg['role'] == 'user':
-                for file in files:
-                    self.replace_file_content(msg['content'], file['path'], file['content'])
+        # TODO: https://github.com/Pythagora-io/gpt-pilot/issues/199 use git to restore the commit
+        # files = self.agent.project.get_all_coded_files()
+        # for msg in self.messages:
+        #     if msg['role'] == 'user':
+        #         for file in files:
+        #             self.replace_file_content(msg['content'], file['path'], file['content'])
+        pass
 
-    def replace_file_content(self, message, file_path, new_content):
-        escaped_file_path = re.escape(file_path)
-
-        pattern = rf'\*\*{{ {escaped_file_path} }}\*\*\n```\n(.*?)\n```'
-
-        new_section_content = f'**{{ {file_path} }}**\n```\n{new_content}\n```'
-
-        updated_message, num_replacements = re.subn(pattern, new_section_content, message, flags=re.DOTALL)
-
-        if num_replacements == 0:
-            return message
-
-        return updated_message
+    # TODO: https://github.com/Pythagora-io/gpt-pilot/issues/199 - is this needed anymore?
+    # def replace_file_content(self, message, file_path, new_content):
+    #     escaped_file_path = re.escape(file_path)
+    #
+    #     pattern = rf'\*\*{{ {escaped_file_path} }}\*\*\n```\n(.*?)\n```'
+    #
+    #     new_section_content = f'**{{ {file_path} }}**\n```\n{new_content}\n```'
+    #
+    #     updated_message, num_replacements = re.subn(pattern, new_section_content, message, flags=re.DOTALL)
+    #
+    #     if num_replacements == 0:
+    #         return message
+    #
+    #     return updated_message
 
     def convo_length(self):
         return len([msg for msg in self.messages if msg['role'] != 'system'])
