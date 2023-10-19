@@ -26,6 +26,7 @@ from database.models.command_runs import CommandRuns
 from database.models.user_apps import UserApps
 from database.models.user_inputs import UserInputs
 from database.models.files import File
+from database.models.feature import Feature
 
 TABLES = [
             User,
@@ -43,6 +44,7 @@ TABLES = [
             UserApps,
             UserInputs,
             File,
+            Feature,
         ]
 
 
@@ -416,6 +418,24 @@ def save_file_description(project, path, name, description):
         preserve=[],
         update={'description': description})
      .execute())
+
+
+def save_feature(app_id, summary, messages):
+    try:
+        app = get_app(app_id)
+        feature = Feature.create(app=app, summary=summary, messages=messages)
+        return feature
+    except DoesNotExist:
+        raise ValueError(f"No app with id: {app_id}")
+
+
+def get_features_by_app_id(app_id):
+    try:
+        app = get_app(app_id)
+        features = Feature.select().where(Feature.app == app).order_by(Feature.created_at)
+        return [model_to_dict(feature) for feature in features]
+    except DoesNotExist:
+        raise ValueError(f"No app with id: {app_id}")
 
 
 def create_tables():

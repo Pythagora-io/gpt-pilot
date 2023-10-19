@@ -48,6 +48,7 @@ def get_arguments():
 
         arguments['app_type'] = app.app_type
         arguments['name'] = app.name
+        arguments['status'] = app.status
         if 'step' not in arguments or ('step' in arguments and not should_execute_step(arguments['step'], app.status)):
             arguments['step'] = 'finished' if app.status == 'finished' else STEPS[STEPS.index(app.status) + 1]
 

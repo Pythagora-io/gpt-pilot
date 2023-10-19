@@ -1,7 +1,7 @@
 import json
 import os
 from typing import Tuple
-from utils.style import  color_yellow_bold, color_cyan, color_white_bold
+from utils.style import color_yellow_bold, color_cyan, color_white_bold, color_green
 from const.common import IGNORE_FOLDERS, STEPS
 from database.database import delete_unconnected_steps_from, delete_all_app_development_data, update_app_status
 from const.ipc import MESSAGE_TYPE
@@ -57,6 +57,7 @@ class Project:
 
         # self.restore_files({dev_step_id_to_start_from})
 
+        self.finished = args.get('status') == 'finished'
         self.current_step = current_step
         self.name = name
         self.project_description = project_description
@@ -89,6 +90,10 @@ class Project:
 
         self.tech_lead = TechLead(self)
         self.tech_lead.create_development_plan()
+
+        if self.finished:  # once project is finished no need to load all development steps
+            print(color_green("✅  Coding"))
+            return
 
         # TODO move to constructor eventually
         if self.args['step'] is not None and STEPS.index(self.args['step']) < STEPS.index('coding'):
@@ -131,9 +136,17 @@ class Project:
         """
         Finish the project.
         """
-        update_app_status(self.args['app_id'], STEPS[-1])
-        # TODO say that project is finished and ask user for additional features, fixes,...
-        return
+        while True:
+            feature_description = ask_user(self, "Project is finished! Do you want to add any features or changes? "
+                                                 "If yes, describe it here and if no, just press ENTER",
+                                           require_some_input=False)
+
+            if feature_description == '':
+                return
+
+            self.tech_lead.create_feature_plan(feature_description)
+            self.developer.start_coding()
+            self.tech_lead.create_feature_summary(feature_description)
 
     def get_directory_tree(self, with_descriptions=False):
         """
