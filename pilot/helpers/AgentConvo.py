@@ -8,7 +8,7 @@ from database.database import get_saved_development_step, save_development_step,
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from utils.function_calling import parse_agent_response, FunctionCallSet
 from utils.llm_connection import create_gpt_chat_completion
-from utils.utils import array_of_objects_to_string, get_prompt, get_sys_message, capitalize_first_word_with_underscores
+from utils.utils import get_prompt, get_sys_message, capitalize_first_word_with_underscores
 from logger.logger import logger
 from prompts.prompts import ask_user
 from const.llm import END_RESPONSE
@@ -22,6 +22,7 @@ class AgentConvo:
     Args:
         agent: An instance of the agent participating in the conversation.
     """
+
     def __init__(self, agent):
         # [{'role': 'system'|'user'|'assistant', 'content': ''}, ...]
         self.messages: list[dict] = []
@@ -31,7 +32,7 @@ class AgentConvo:
         self.high_level_step = self.agent.project.current_step
 
         # add system message
-        system_message = get_sys_message(self.agent.role,self.agent.project.args)
+        system_message = get_sys_message(self.agent.role, self.agent.project.args)
         logger.info('\n>>>>>>>>>> System Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',
                     system_message['content'])
         self.messages.append(system_message)
@@ -64,11 +65,13 @@ class AgentConvo:
             response = development_step.llm_response
             self.messages = development_step.messages
 
-            if self.agent.project.skip_until_dev_step and str(development_step.id) == self.agent.project.skip_until_dev_step:
+            if self.agent.project.skip_until_dev_step and str(
+                    development_step.id) == self.agent.project.skip_until_dev_step:
                 self.agent.project.skip_steps = False
                 delete_all_subsequent_steps(self.agent.project)
 
-                if 'delete_unrelated_steps' in self.agent.project.args and self.agent.project.args['delete_unrelated_steps']:
+                if 'delete_unrelated_steps' in self.agent.project.args and self.agent.project.args[
+                    'delete_unrelated_steps']:
                     self.agent.project.delete_all_steps_except_current_branch()
 
             if development_step.token_limit_exception_raised:
@@ -76,14 +79,16 @@ class AgentConvo:
         else:
             # if we don't, get the response from LLM
             try:
-                response = create_gpt_chat_completion(self.messages, self.high_level_step, self.agent.project, function_calls=function_calls)
+                response = create_gpt_chat_completion(self.messages, self.high_level_step, self.agent.project,
+                                                      function_calls=function_calls)
             except TokenLimitError as e:
                 save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, '', str(e))
                 raise e
 
             # TODO: move this code to Developer agent - https://github.com/Pythagora-io/gpt-pilot/issues/91#issuecomment-1751964079
             if response != {} and self.agent.__class__.__name__ == 'Developer':
-                development_step = save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, response)
+                development_step = save_development_step(self.agent.project, prompt_path, prompt_data, self.messages,
+                                                         response)
 
         # TODO handle errors from OpenAI
         # It's complicated because calling functions are expecting different types of responses - string or tuple
@@ -97,7 +102,8 @@ class AgentConvo:
 
         # TODO we need to specify the response when there is a function called
         # TODO maybe we can have a specific function that creates the GPT response from the function call
-        logger.info('\n>>>>>>>>>> Assistant Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', message_content)
+        logger.info('\n>>>>>>>>>> Assistant Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',
+                    message_content)
         self.messages.append({"role": "assistant", "content": message_content})
         self.log_message(message_content)
 
@@ -129,7 +135,6 @@ class AgentConvo:
             return json.dumps(response)
         # TODO END
 
-
     def continuous_conversation(self, prompt_path, prompt_data, function_calls=None):
         """
         Conducts a continuous conversation with the agent.
@@ -149,7 +154,8 @@ class AgentConvo:
         # Continue conversation until GPT response equals END_RESPONSE
         while response != END_RESPONSE:
             user_message = ask_user(self.agent.project, response,
-                                    hint=color_yellow("Do you want to add anything else? If not, ") + color_yellow_bold('just press ENTER.'),
+                                    hint=color_yellow("Do you want to add anything else? If not, ") + color_yellow_bold(
+                                        'just press ENTER.'),
                                     require_some_input=False)
 
             if user_message == "":
@@ -198,7 +204,6 @@ class AgentConvo:
     def convo_length(self):
         return len([msg for msg in self.messages if msg['role'] != 'system'])
 
-
     def log_message(self, content):
         """
         Logs a message in the conversation.
@@ -209,7 +214,8 @@ class AgentConvo:
         print_msg = capitalize_first_word_with_underscores(self.high_level_step)
         if self.log_to_user:
             if self.agent.project.checkpoints['last_development_step'] is not None:
-                print(color_yellow("\nDev step ") + color_yellow_bold(str(self.agent.project.checkpoints['last_development_step'])) + '\n', end='')
+                print(color_yellow("\nDev step ") + color_yellow_bold(
+                    str(self.agent.project.checkpoints['last_development_step'])) + '\n', end='')
             print(f"\n{content}\n", type='local')
         logger.info(f"{print_msg}: {content}\n")
 
@@ -240,3 +246,28 @@ class AgentConvo:
             prompt = get_prompt(prompt_path, prompt_data)
             logger.info('\n>>>>>>>>>> User Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', prompt)
             self.messages.append({"role": "user", "content": prompt})
+
+    def get_additional_info_from_user(self, function_calls: FunctionCallSet = None):
+        """
+        Asks user if he wants to make any changes to last message in conversation.
+
+        Args:
+            function_calls: Optional function calls to be included in the message.
+
+        Returns:
+            The response from the agent OR None if user didn't ask for change.
+        """
+        llm_response = None
+        while True:
+            print(color_yellow(
+                "Please check this message and say what needs to be changed. If everything is ok just press ENTER", ))
+            changes = ask_user(self.agent.project, self.messages[-1]['content'], require_some_input=False)
+            if changes.lower() == '':
+                break
+
+            llm_response = self.send_message('utils/update.prompt',
+                                             {'changes': changes},
+                                             function_calls)
+
+        logger.info('Getting additional info from user done')
+        return llm_response

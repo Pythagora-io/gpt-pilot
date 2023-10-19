@@ -3,7 +3,7 @@ from utils.style import color_yellow
 from const import common
 from const.llm import MAX_QUESTIONS, END_RESPONSE
 from utils.llm_connection import create_gpt_chat_completion
-from utils.utils import capitalize_first_word_with_underscores, get_sys_message, find_role_from_step, get_prompt
+from utils.utils import get_sys_message, get_prompt
 from utils.questionary import styled_select, styled_text
 from logger.logger import logger
 
@@ -108,42 +108,6 @@ def get_additional_info_from_openai(project, messages):
 
 
 # TODO refactor this to comply with AgentConvo class
-def get_additional_info_from_user(project, messages, role):
-    """
-    If `advanced` CLI arg, Architect offers user a chance to change the architecture.
-    Prompts: "Please check this message and say what needs to be changed. If everything is ok just press ENTER"...
-    Then asks the LLM to update the messages based on the user's feedback.
-
-    :param project: Project
-    :param messages: array<string | { "text": string }>
-    :param role: 'product_owner', 'architect', 'dev_ops', 'tech_lead', 'full_stack_developer', 'code_monkey'
-    :return: a list of updated messages - see https://github.com/Pythagora-io/gpt-pilot/issues/78
-    """
-    # TODO process with agent convo
-    updated_messages = []
-
-    for message in messages:
-        while True:
-            if isinstance(message, dict) and 'text' in message:
-                message = message['text']
-            print(color_yellow("Please check this message and say what needs to be changed. If everything is ok just press ENTER",))
-            answer = ask_user(project, message, require_some_input=False)
-            if answer.lower() == '':
-                break
-            response = create_gpt_chat_completion(
-                generate_messages_from_custom_conversation(role, [get_prompt('utils/update.prompt'), message, answer], 'user'),
-                'additional_info',
-                project
-            )
-
-            message = response
-
-        updated_messages.append(message)
-
-    logger.info('Getting additional info from user done')
-    return updated_messages
-
-
 def generate_messages_from_description(description, app_type, name):
     """
     Called by ProductOwner.get_description().
