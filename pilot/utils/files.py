@@ -32,6 +32,7 @@ def setup_workspace(args) -> str:
     except Exception as e:
         print(str(e))
 
+    print(os.path.basename(project_path), type='project_folder_name')
     return project_path
 
 

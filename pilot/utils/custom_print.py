@@ -1,6 +1,6 @@
 import builtins
 from helpers.ipc import IPCClient
-from const.ipc import MESSAGE_TYPE
+from const.ipc import MESSAGE_TYPE, LOCAL_IGNORE_MESSAGE_TYPES
 
 
 def get_custom_print(args):
@@ -26,7 +26,7 @@ def get_custom_print(args):
     def local_print(*args, **kwargs):
         message = " ".join(map(str, args))
         if 'type' in kwargs:
-            if kwargs['type'] == MESSAGE_TYPE['info']:
+            if kwargs['type'] in LOCAL_IGNORE_MESSAGE_TYPES:
                 return
             del kwargs['type']
 

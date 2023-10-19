@@ -1,7 +1,8 @@
+import json
 import re
 import subprocess
 import uuid
-from utils.style import yellow, yellow_bold
+from utils.style import color_yellow, color_yellow_bold
 
 from database.database import get_saved_development_step, save_development_step, delete_all_subsequent_steps
 from helpers.exceptions.TokenLimitError import TokenLimitError
@@ -11,6 +12,7 @@ from utils.utils import array_of_objects_to_string, get_prompt, get_sys_message,
 from logger.logger import logger
 from prompts.prompts import ask_user
 from const.llm import END_RESPONSE
+from helpers.cli import running_processes
 
 
 class AgentConvo:
@@ -49,13 +51,14 @@ class AgentConvo:
         # craft message
         self.construct_and_add_message_from_prompt(prompt_path, prompt_data)
 
+        # TODO: move this if block (and the other below) to Developer agent - https://github.com/Pythagora-io/gpt-pilot/issues/91#issuecomment-1751964079
         # check if we already have the LLM response saved
         if self.agent.__class__.__name__ == 'Developer':
             self.agent.project.llm_req_num += 1
         development_step = get_saved_development_step(self.agent.project)
         if development_step is not None and self.agent.project.skip_steps:
             # if we do, use it
-            print(yellow(f'Restoring development step with id {development_step.id}'))
+            print(color_yellow(f'Restoring development step with id {development_step.id}'))
             self.agent.project.checkpoints['last_development_step'] = development_step
             self.agent.project.restore_files(development_step.id)
             response = development_step.llm_response
@@ -78,7 +81,8 @@ class AgentConvo:
                 save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, '', str(e))
                 raise e
 
-            if self.agent.__class__.__name__ == 'Developer':
+            # TODO: move this code to Developer agent - https://github.com/Pythagora-io/gpt-pilot/issues/91#issuecomment-1751964079
+            if response != {} and self.agent.__class__.__name__ == 'Developer':
                 development_step = save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, response)
 
         # TODO handle errors from OpenAI
@@ -89,22 +93,7 @@ class AgentConvo:
             raise Exception("OpenAI API error happened.")
 
         response = parse_agent_response(response, function_calls)
-
-        # TODO remove this once the database is set up properly
-        message_content = response[0] if type(response) == tuple else response
-        if isinstance(message_content, list):
-            if 'to_message' in function_calls:
-                string_response = function_calls['to_message'](message_content)
-            elif len(message_content) > 0 and isinstance(message_content[0], dict):
-                string_response = [
-                    f'#{i}\n' + array_of_objects_to_string(d)
-                    for i, d in enumerate(message_content)
-                ]
-            else:
-                string_response = ['- ' + r for r in message_content]
-
-            message_content = '\n'.join(string_response)
-        # TODO END
+        message_content = self.format_message_content(response, function_calls)
 
         # TODO we need to specify the response when there is a function called
         # TODO maybe we can have a specific function that creates the GPT response from the function call
@@ -113,6 +102,33 @@ class AgentConvo:
         self.log_message(message_content)
 
         return response
+
+    def format_message_content(self, response, function_calls):
+        # TODO remove this once the database is set up properly
+        if isinstance(response, str):
+            return response
+        else:
+            # string_response = []
+            # for key, value in response.items():
+            #     string_response.append(f'# {key}')
+            #
+            #     if isinstance(value, list):
+            #         if 'to_message' in function_calls:
+            #             string_response.append(function_calls['to_message'](value))
+            #         elif len(value) > 0 and isinstance(value[0], dict):
+            #             string_response.extend([
+            #                 f'##{i}\n' + array_of_objects_to_string(d)
+            #                 for i, d in enumerate(value)
+            #             ])
+            #         else:
+            #             string_response.extend(['- ' + r for r in value])
+            #     else:
+            #         string_response.append(str(value))
+            #
+            # return '\n'.join(string_response)
+            return json.dumps(response)
+        # TODO END
+
 
     def continuous_conversation(self, prompt_path, prompt_data, function_calls=None):
         """
@@ -133,7 +149,7 @@ class AgentConvo:
         # Continue conversation until GPT response equals END_RESPONSE
         while response != END_RESPONSE:
             user_message = ask_user(self.agent.project, response,
-                                    hint=yellow("Do you want to add anything else? If not, ") + yellow_bold('just press ENTER.'),
+                                    hint=color_yellow("Do you want to add anything else? If not, ") + color_yellow_bold('just press ENTER.'),
                                     require_some_input=False)
 
             if user_message == "":
@@ -193,9 +209,21 @@ class AgentConvo:
         print_msg = capitalize_first_word_with_underscores(self.high_level_step)
         if self.log_to_user:
             if self.agent.project.checkpoints['last_development_step'] is not None:
-                print(yellow("\nDev step ") + yellow_bold(str(self.agent.project.checkpoints['last_development_step'])) + '\n', end='')
+                print(color_yellow("\nDev step ") + color_yellow_bold(str(self.agent.project.checkpoints['last_development_step'])) + '\n', end='')
             print(f"\n{content}\n", type='local')
         logger.info(f"{print_msg}: {content}\n")
+
+    def to_context_prompt(self):
+        logger.info(f'to_context_prompt({self.agent.project.current_step})')
+
+        # TODO: get dependencies & versions from the project (package.json, requirements.txt, pom.xml, etc.)
+        # Ideally, the LLM could do this, and we update it on load & whenever the file changes
+        # ...or LLM generates a script for `.gpt-pilot/get_dependencies` that we run
+        # https://github.com/Pythagora-io/gpt-pilot/issues/189
+        return get_prompt('development/context.prompt', {
+            'directory_tree': self.agent.project.get_directory_tree(),
+            'running_processes': running_processes,
+        })
 
     def to_playground(self):
         with open('const/convert_to_playground_convo.js', 'r', encoding='utf-8') as file:
@@ -204,6 +232,7 @@ class AgentConvo:
         process.communicate(content.replace('{{messages}}', str(self.messages)).encode('utf-8'))
 
     def remove_last_x_messages(self, x):
+        logger.info('removing last %d messages: %s', x, self.messages[-x:])
         self.messages = self.messages[:-x]
 
     def construct_and_add_message_from_prompt(self, prompt_path, prompt_data):

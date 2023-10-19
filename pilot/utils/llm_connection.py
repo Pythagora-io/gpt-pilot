@@ -8,7 +8,7 @@ import tiktoken
 from prompt_toolkit.styles import Style
 
 from jsonschema import validate, ValidationError
-from utils.style import red
+from utils.style import color_red
 from typing import List
 from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS
 from logger.logger import logger, logging
@@ -96,10 +96,15 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
                 del gpt_data[key]
 
     # Advise the LLM of the JSON response schema we are expecting
+    messages_length = len(messages)
     add_function_calls_to_request(gpt_data, function_calls)
 
     try:
         response = stream_gpt_completion(gpt_data, req_type, project)
+
+        # Remove JSON schema and any added retry messages
+        while len(messages) > messages_length:
+            messages.pop()
         return response
     except TokenLimitError as e:
         raise e
@@ -223,7 +228,7 @@ def retry_on_exception(func):
                         time.sleep(wait_duration_ms / 1000)
                     continue
 
-                print(red('There was a problem with request to openai API:'))
+                print(color_red('There was a problem with request to openai API:'))
                 # spinner_stop(spinner)
                 print(err_str)
                 logger.error(f'There was a problem with request to openai API: {err_str}')

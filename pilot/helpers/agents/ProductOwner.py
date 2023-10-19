@@ -1,5 +1,5 @@
 import json
-from utils.style import green_bold
+from utils.style import color_green_bold
 from helpers.AgentConvo import AgentConvo
 from helpers.Agent import Agent
 from logger.logger import logger
@@ -20,6 +20,10 @@ class ProductOwner(Agent):
         super().__init__('product_owner', project)
 
     def get_project_description(self):
+        print(json.dumps({
+            "project_stage": "project_description"
+        }), type='info')
+
         self.project.app = get_app(self.project.args['app_id'], error_if_not_found=False)
 
         # If this app_id already did this step, just get all data from DB and don't ask user again
@@ -55,7 +59,7 @@ class ProductOwner(Agent):
             self.project,
             generate_messages_from_description(main_prompt, self.project.args['app_type'], self.project.args['name']))
 
-        print(green_bold('Project Summary:\n'))
+        print(color_green_bold('Project Summary:\n'))
         convo_project_description = AgentConvo(self)
         high_level_summary = convo_project_description.send_message('utils/summary.prompt',
                                                                     {'conversation': '\n'.join(
@@ -75,6 +79,13 @@ class ProductOwner(Agent):
         # PROJECT DESCRIPTION END
 
     def get_user_stories(self):
+        if not self.project.args.get('advanced', False):
+            return
+
+        print(json.dumps({
+            "project_stage": "user_stories"
+        }), type='info')
+
         self.project.current_step = USER_STORIES_STEP
         self.convo_user_stories = AgentConvo(self)
 
@@ -83,11 +94,12 @@ class ProductOwner(Agent):
         if step and not should_execute_step(self.project.args['step'], USER_STORIES_STEP):
             step_already_finished(self.project.args, step)
             self.convo_user_stories.messages = step['messages']
-            return step['user_stories']
+            self.project.user_stories = step['user_stories']
+            return
 
         # USER STORIES
         msg = "User Stories:\n"
-        print(green_bold(msg))
+        print(color_green_bold(msg))
         logger.info(msg)
 
         self.project.user_stories = self.convo_user_stories.continuous_conversation('user_stories/specs.prompt', {
@@ -106,7 +118,7 @@ class ProductOwner(Agent):
             "app_data": generate_app_data(self.project.args)
         })
 
-        return self.project.user_stories
+        return
         # USER STORIES END
 
     def get_user_tasks(self):
@@ -121,7 +133,7 @@ class ProductOwner(Agent):
 
         # USER TASKS
         msg = "User Tasks:\n"
-        print(green_bold(msg))
+        print(color_green_bold(msg))
         logger.info(msg)
 
         self.project.user_tasks = self.convo_user_stories.continuous_conversation('user_stories/user_tasks.prompt',

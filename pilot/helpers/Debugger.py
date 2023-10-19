@@ -5,6 +5,7 @@ from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_RECUSION_LAYER
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
+from logger.logger import logger
 
 
 class Debugger:
@@ -20,12 +21,13 @@ class Debugger:
             convo (AgentConvo): The conversation object.
             command (dict, optional): The command to debug. Default is None.
             user_input (str, optional): User input for debugging. Default is None.
+                Should provide `command` or `user_input`.
             issue_description (str, optional): Description of the issue to debug. Default is None.
 
         Returns:
             bool: True if debugging was successful, False otherwise.
         """
-
+        logger.info('Debugging %s', command)
         self.recursion_layer += 1
         if self.recursion_layer > MAX_RECUSION_LAYER:
             self.recursion_layer = 0
@@ -41,25 +43,47 @@ class Debugger:
 
             convo.load_branch(function_uuid)
 
-            debugging_plan = convo.send_message('dev_ops/debug.prompt',
+            llm_response = convo.send_message('dev_ops/debug.prompt',
                 {
                     'command': command['command'] if command is not None else None,
                     'user_input': user_input,
                     'issue_description': issue_description,
-                    'os': platform.system()
+                    'os': platform.system(),
+                    'context': convo.to_context_prompt()
                 },
                 DEBUG_STEPS_BREAKDOWN)
 
             try:
-                # TODO refactor to nicely get the developer agent
-                response = self.agent.project.developer.execute_task(
-                    convo,
-                    debugging_plan,
-                    command,
-                    test_after_code_changes=True,
-                    continue_development=False,
-                    is_root_task=is_root_task)
-                success = response['success']
+                while True:
+                    logger.info('Thoughts: ' + llm_response['thoughts'])
+                    logger.info('Reasoning: ' + llm_response['reasoning'])
+                    steps = llm_response['steps']
+
+                    # TODO refactor to nicely get the developer agent
+                    result = self.agent.project.developer.execute_task(
+                        convo,
+                        steps,
+                        test_command=command,
+                        test_after_code_changes=True,
+                        continue_development=False,
+                        is_root_task=is_root_task)
+
+                    if 'step_index' in result:
+                        # result['running_processes'] = running_processes
+                        result['os'] = platform.system()
+                        step_index = result['step_index']
+                        result['completed_steps'] = steps[:step_index]
+                        result['current_step'] = steps[step_index]
+                        result['next_steps'] = steps[step_index + 1:]
+
+                        # Remove the previous debug plan and build a new one
+                        convo.remove_last_x_messages(1)
+                        llm_response = convo.send_message('development/task/update_task.prompt', result,
+                                                               DEBUG_STEPS_BREAKDOWN)
+                    else:
+                        success = result['success']
+                        break
+
             except TokenLimitError as e:
                 if self.recursion_layer > 0:
                     self.recursion_layer -= 1
@@ -79,4 +103,4 @@ class Debugger:
             #         success = True
 
         self.recursion_layer -= 1
-        return response
+        return success

@@ -2,7 +2,7 @@ import builtins
 import json
 import os
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import requests
 
@@ -12,8 +12,8 @@ load_dotenv()
 
 from main import get_custom_print
 from .Developer import Developer, ENVIRONMENT_SETUP_STEP
-from helpers.Project import Project
 from test.mock_questionary import MockQuestionary
+from helpers.test_Project import create_project
 
 
 class TestDeveloper:
@@ -21,18 +21,12 @@ class TestDeveloper:
         builtins.print, ipc_client_instance = get_custom_print({})
 
         name = 'TestDeveloper'
-        self.project = Project({
-                'app_id': 'test-developer',
-                'name': name,
-                'app_type': ''
-            },
-            name=name,
-            architecture=[],
-            user_stories=[]
-        )
-
+        self.project = create_project()
+        self.project.app_id = 'test-developer'
+        self.project.name = name
         self.project.set_root_path(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                                               '../../../workspace/TestDeveloper')))
+
         self.project.technologies = []
         self.project.current_step = ENVIRONMENT_SETUP_STEP
         self.developer = Developer(self.project)
@@ -53,7 +47,83 @@ class TestDeveloper:
 
         # Then
         assert llm_response == 'DONE'
-        mock_execute_command.assert_called_once_with(self.project, 'python --version', 10)
+        mock_execute_command.assert_called_once_with(self.project, 'python --version', timeout=10, command_id=None)
+
+    @patch('helpers.AgentConvo.get_saved_development_step')
+    @patch('helpers.AgentConvo.save_development_step')
+    @patch('helpers.AgentConvo.create_gpt_chat_completion',
+           return_value={'text': '{"tasks": [{"command": "ls -al"}]}'})
+    def test_implement_task(self, mock_completion, mock_save, mock_get_saved_step):
+        # Given any project
+        project = create_project()
+        project.project_description = 'Test Project'
+        project.development_plan = [{
+            'description': 'Do stuff',
+            'user_review_goal': 'Do stuff',
+        }]
+        project.get_all_coded_files = lambda: []
+        project.current_step = 'test'
+
+        # and a developer who will execute any task
+        developer = Developer(project)
+        developer.execute_task = MagicMock()
+        developer.execute_task.return_value = {'success': True}
+
+        # When
+        developer.implement_task(0, {'description': 'Do stuff'})
+
+        # Then we parse the response correctly and send list of steps to execute_task()
+        assert developer.execute_task.call_count == 1
+        assert developer.execute_task.call_args[0][1] == [{'command': 'ls -al'}]
+
+    @patch('helpers.AgentConvo.get_saved_development_step')
+    @patch('helpers.AgentConvo.save_development_step')
+    @patch('helpers.AgentConvo.create_gpt_chat_completion',
+           return_value={'text': '{"tasks": [{"command": "ls -al"}, {"command": "ls -al src"}, {"command": "ls -al test"}, {"command": "ls -al build"}]}'})
+    def test_implement_task_reject_with_user_input(self, mock_completion, mock_save, mock_get_saved_step):
+        # Given any project
+        project = create_project()
+        project.project_description = 'Test Project'
+        project.development_plan = [{
+            'description': 'Do stuff',
+            'user_review_goal': 'Do stuff',
+        }]
+        project.get_all_coded_files = lambda: []
+        project.current_step = 'test'
+
+        # and a developer who will execute any task except for `ls -al test`
+        developer = Developer(project)
+        developer.execute_task = MagicMock()
+        developer.execute_task.side_effect = [
+            {'success': False, 'step_index': 2, 'user_input': 'no, use a better command'},
+            {'success': True}
+        ]
+
+        # When
+        developer.implement_task(0, {'description': 'Do stuff'})
+
+        # Then we include the user input in the conversation to update the task list
+        assert mock_completion.call_count == 3
+        prompt = mock_completion.call_args_list[2].args[0][2]['content']
+        assert prompt.startswith('''
+# Completed Task Steps:
+```
+[{'command': 'ls -al'}, {'command': 'ls -al src'}]
+```
+
+# Current Step:
+This step will not be executed. no, use a better command
+```
+{'command': 'ls -al test'}
+```
+
+# Next Task Steps:
+```
+[{'command': 'ls -al build'}]
+```'''.lstrip())
+        assert 'no, use a better command' in prompt
+        # and call `execute_task()` again
+        assert developer.execute_task.call_count == 2
 
     @patch('helpers.AgentConvo.get_saved_development_step')
     @patch('helpers.AgentConvo.save_development_step')
@@ -113,7 +183,7 @@ class TestDeveloper:
 
         mock_chat_completion.side_effect = [
             {'text': '{"type": "manual_test", "manual_test_description": "Does it look good?"}'},
-            {'text': '{"steps": [{"type": "command", "command": {"command": "something scary", "timeout": 3000}, "check_if_fixed": true}]}'},
+            {'text': '{"thoughts": "hmmm...", "reasoning": "testing", "steps": [{"type": "command", "command": {"command": "something scary", "timeout": 3000}, "check_if_fixed": true}]}'},
             {'text': 'do something else scary'},
         ]
 
@@ -149,7 +219,9 @@ class TestDeveloper:
         json_received = []
 
         def generate_response(*args, **kwargs):
-            json_received.append(kwargs['json'])
+            # Copy messages, including the validation errors from the request
+            content = [msg['content'] for msg in kwargs['json']['messages']]
+            json_received.append(content)
 
             gpt_response = json.dumps({
                 'type': types_in_response.pop(0),
@@ -179,5 +251,6 @@ class TestDeveloper:
         # Then
         assert result == {'success': True, 'cli_response': 'stdout:\n```\n\n```'}
         assert mock_requests_post.call_count == 3
-        assert "The JSON is invalid at $.type - 'command' is not one of ['automated_test', 'command_test', 'manual_test', 'no_test']" in json_received[1]['messages'][3]['content']
+        assert "The JSON is invalid at $.type - 'command' is not one of " \
+               "['automated_test', 'command_test', 'manual_test', 'no_test']" in json_received[1][3]
         assert mock_execute.call_count == 1

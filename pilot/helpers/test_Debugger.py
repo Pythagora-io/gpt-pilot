@@ -1,15 +1,17 @@
 import builtins
+import json
+
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from dotenv import load_dotenv
 
 load_dotenv()
-from pilot.utils.custom_print import get_custom_print
-from pilot.helpers.agents.Developer import Developer
-from pilot.helpers.AgentConvo import AgentConvo
-from pilot.helpers.Debugger import Debugger
-from pilot.helpers.test_Project import create_project
-from pilot.test.mock_questionary import MockQuestionary
+from utils.custom_print import get_custom_print
+from helpers.agents.Developer import Developer
+from helpers.AgentConvo import AgentConvo
+from helpers.Debugger import Debugger
+from helpers.test_Project import create_project
+from test.mock_questionary import MockQuestionary
 
 
 ################## NOTE: this test needs to be ran in debug with breakpoints ##################
@@ -26,7 +28,7 @@ from pilot.test.mock_questionary import MockQuestionary
 def test_debug(
         # mock_execute_command,
         mock_save_command, mock_run_command, mock_get_saved_command,
-               mock_save_input, mock_user_input, mock_save_step, mock_get_saved_step):
+        mock_save_input, mock_user_input, mock_save_step, mock_get_saved_step):
     # Given
     builtins.print, ipc_client_instance = get_custom_print({})
     project = create_project()
@@ -82,3 +84,83 @@ stdout:
 
         # Then
         assert result == {'success': True}
+
+
+@patch('helpers.AgentConvo.get_saved_development_step')
+@patch('helpers.AgentConvo.create_gpt_chat_completion')
+@patch('helpers.AgentConvo.save_development_step')
+def test_debug_need_to_see_output(mock_save_step, mock_get_completion, mock_get_step):
+    # Given
+    builtins.print, ipc_client_instance = get_custom_print({})
+    project = create_project()
+    project.current_step = 'coding'
+    developer = Developer(project)
+    # hard-wired command output
+    developer.step_command_run = MagicMock()
+    developer.step_command_run.side_effect = [
+        {
+            'cli_response': 'stdout:\n```\n' + json.dumps({'dependencies': {'something': '0.1.2'}}) + '\n```\n',
+            'success': True,
+        }, {
+            'cli_response': 'app is running...',
+            'success': True,
+        }
+    ]
+    developer.step_test = MagicMock()
+    developer.step_test.return_value = {'success': True}
+    project.developer = developer
+    debugger = Debugger(developer)
+    convo = AgentConvo(developer)
+    convo.load_branch = MagicMock()
+    # hard-wired LLM responses, 1st response asks to see output
+    mock_get_completion.side_effect = [{'text': json.dumps(response)} for response in [{
+        'thoughts': 'Hmmm, testing',
+        'reasoning': 'I need to see the output of the command',
+        'steps': [
+            {
+                'type': 'command',
+                'command': 'cat package.json',
+                'need_to_see_output': True
+            }, {
+                'type': 'command',
+                'command': 'npm install something',
+            }
+        ]
+    }, {
+        'thoughts': 'It is already installed',
+        'reasoning': 'I installed it earlier',
+        'steps': [
+            {
+                'type': 'command',
+                'command': 'npm start',
+                'command_id': 'app',
+            }
+        ]
+    }]]
+
+    # When
+    debugger.debug(convo, command={'command': 'npm run start'}, is_root_task=True)
+
+    # Then we call the LLM twice, second time to show the output
+    assert mock_get_completion.call_count == 2
+    prompt = mock_get_completion.call_args_list[1].args[0][2]['content']
+    assert prompt.startswith('''
+# Current Step:
+This step was executed successfully.
+```
+{'type': 'command', 'command': 'cat package.json', 'need_to_see_output': True}
+```
+
+stdout:
+```
+{"dependencies": {"something": "0.1.2"}}
+```
+
+
+# Next Task Steps:
+```
+[{'type': 'command', 'command': 'npm install something'}]
+```'''.lstrip())
+    # And eventually we start the app
+    assert developer.step_command_run.call_count == 2
+    assert developer.step_command_run.call_args_list[1].args[1]['command'] == 'npm start'

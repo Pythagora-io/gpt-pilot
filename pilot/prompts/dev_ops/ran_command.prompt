@@ -1,5 +1,6 @@
 {{ additional_info }}I ran the command `{{ command }}`
-{%- if exit_code is number %}, the exit code was {{ exit_code }}{% endif %} and the output was:
+{%- if exit_code is number %}, the exit code was {{ exit_code }}{% endif %}
+{%- if error_response %}, it {{ error_response }}{% endif %}. The output was:
 
 {{ cli_response }}
 

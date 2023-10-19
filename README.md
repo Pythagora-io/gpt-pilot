@@ -54,7 +54,7 @@ https://github.com/Pythagora-io/gpt-pilot/assets/10895136/0495631b-511e-451b-93d
 
 # 🔌 Requirements
 
-- **Python 3**
+- **Python 3.9-3.11** (3.12 is currently not working due to a [dependency issue](https://github.com/psycopg/psycopg2/issues/1628)
 - **PostgreSQL** (optional, projects default is SQLite)
    - DB is needed for multiple reasons like continuing app development. If you have to stop at any point or the app crashes, go back to a specific step so that you can change some later steps in development, and easier debugging, in future we will add functionality to update project (change some things in existing project or add new features to the project and so on)...
 
@@ -82,12 +82,13 @@ All generated code will be stored in the folder `workspace` inside the folder na
 
 ## 🐳 How to start gpt-pilot in docker?
 1. `git clone https://github.com/Pythagora-io/gpt-pilot.git` (clone the repo)
-2. Update the `docker-compose.yml` environment variables, which can be done via `docker compose config`
-3. run `docker compose build`. this will build a gpt-pilot container for you.
-4. run `docker compose up`.
-5. access the web terminal on `port 7681`
-6. `python db_init.py` (initialize the database)
-7. `python main.py` (start GPT Pilot)
+2. Update the `docker-compose.yml` environment variables, which can be done via `docker compose config` . if you use local model, please go to [https://localai.io/basics/getting_started/](https://localai.io/basics/getting_started/) start. 
+3. By default, GPT Pilot will read & write to `~/gpt-pilot-workspace` on your machine, you can also edit this in `docker-compose.yml`
+4. run `docker compose build`. this will build a gpt-pilot container for you.
+5. run `docker compose up`.
+6. access the web terminal on `port 7681`
+7. `python db_init.py` (initialize the database)
+8. `python main.py` (start GPT Pilot)
 
 This will start two containers, one being a new image built by the `Dockerfile` and a Postgres database. The new image also has [ttyd](https://github.com/tsl0922/ttyd) installed so that you can easily interact with gpt-pilot. Node is also installed on the image and port 3000 is exposed.
 
@@ -169,6 +170,18 @@ Erase all development steps previously done and continue working on an existing 
 ```bash
 python main.py app_id=<ID_OF_THE_APP> skip_until_dev_step=0
 ```
+
+## `theme`
+```bash
+python main.py theme=light
+```
+
+![屏幕截图 2023-10-15 103907](https://github.com/Pythagora-io/gpt-pilot/assets/138990495/c3d08f21-7e3b-4ee4-981f-281d1c97149e)
+```bash
+python main.py theme=dark
+```
+- Dark mode.
+![屏幕截图 2023-10-15 104120](https://github.com/Pythagora-io/gpt-pilot/assets/138990495/942cd1c9-b774-498e-b72a-677b01be1ac3)
 
 
 ## `delete_unrelated_steps`

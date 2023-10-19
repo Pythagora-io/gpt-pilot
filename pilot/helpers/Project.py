@@ -1,7 +1,7 @@
 import json
 import os
 from typing import Tuple
-from utils.style import  yellow_bold, cyan, white_bold
+from utils.style import color_yellow_bold, color_cyan, color_white_bold, color_green
 from const.common import IGNORE_FOLDERS, STEPS
 from database.database import delete_unconnected_steps_from, delete_all_app_development_data, update_app_status
 from const.ipc import MESSAGE_TYPE
@@ -23,8 +23,9 @@ from utils.dot_gpt_pilot import DotGptPilot
 
 
 class Project:
-    def __init__(self, args, name=None, description=None, user_stories=None, user_tasks=None, architecture=None,
-                 development_plan=None, current_step=None, ipc_client_instance=None, enable_dot_pilot_gpt=True):
+    def __init__(self, args, name=None, project_description=None, clarifications=None, user_stories=None,
+                 user_tasks=None, architecture=None, development_plan=None, current_step=None, ipc_client_instance=None,
+                 enable_dot_pilot_gpt=True):
         """
         Initialize a project.
 
@@ -56,20 +57,15 @@ class Project:
 
         # self.restore_files({dev_step_id_to_start_from})
 
-        if current_step is not None:
-            self.current_step = current_step
-        if name is not None:
-            self.name = name
-        if description is not None:
-            self.description = description
-        if user_stories is not None:
-            self.user_stories = user_stories
-        if user_tasks is not None:
-            self.user_tasks = user_tasks
-        if architecture is not None:
-            self.architecture = architecture
-        # if development_plan is not None:
-        #     self.development_plan = development_plan
+        self.finished = args.get('status') == 'finished'
+        self.current_step = current_step
+        self.name = name
+        self.project_description = project_description
+        self.clarifications = clarifications
+        self.user_stories = user_stories
+        self.user_tasks = user_tasks
+        self.architecture = architecture
+        self.development_plan = development_plan
         self.dot_pilot_gpt = DotGptPilot(log_chat_completions=enable_dot_pilot_gpt)
 
     def set_root_path(self, root_path: str):
@@ -81,27 +77,23 @@ class Project:
         Start the project.
         """
         self.project_manager = ProductOwner(self)
-        print(json.dumps({
-            "project_stage": "project_description"
-        }), type='info')
         self.project_manager.get_project_description()
-        print(json.dumps({
-            "project_stage": "user_stories"
-        }), type='info')
-        self.user_stories = self.project_manager.get_user_stories()
+
+        self.project_manager.get_user_stories()
         # self.user_tasks = self.project_manager.get_user_tasks()
 
-        print(json.dumps({
-            "project_stage": "architecture"
-        }), type='info')
         self.architect = Architect(self)
-        self.architecture = self.architect.get_architecture()
+        self.architect.get_architecture()
 
         self.developer = Developer(self)
         self.developer.set_up_environment()
 
         self.tech_lead = TechLead(self)
-        self.development_plan = self.tech_lead.create_development_plan()
+        self.tech_lead.create_development_plan()
+
+        if self.finished:  # once project is finished no need to load all development steps
+            print(color_green("✅  Coding"))
+            return
 
         # TODO move to constructor eventually
         if self.args['step'] is not None and STEPS.index(self.args['step']) < STEPS.index('coding'):
@@ -141,9 +133,20 @@ class Project:
         self.developer.start_coding()
 
     def finish(self):
-        update_app_status(self.args['app_id'], STEPS[-1])
-        # TODO say that project is finished and ask user for additional features, fixes,...
-        return
+        """
+        Finish the project.
+        """
+        while True:
+            feature_description = ask_user(self, "Project is finished! Do you want to add any features or changes? "
+                                                 "If yes, describe it here and if no, just press ENTER",
+                                           require_some_input=False)
+
+            if feature_description == '':
+                return
+
+            self.tech_lead.create_feature_plan(feature_description)
+            self.developer.start_coding()
+            self.tech_lead.create_feature_summary(feature_description)
 
     def get_directory_tree(self, with_descriptions=False):
         """
@@ -155,11 +158,12 @@ class Project:
         Returns:
             dict: The directory tree.
         """
-        files = {}
-        if with_descriptions and False:
-            files = File.select().where(File.app_id == self.args['app_id'])
-            files = {snapshot.name: snapshot for snapshot in files}
-        return build_directory_tree(self.root_path + '/', ignore=IGNORE_FOLDERS, files=files, add_descriptions=False)
+        # files = {}
+        # if with_descriptions and False:
+        #     files = File.select().where(File.app_id == self.args['app_id'])
+        #     files = {snapshot.name: snapshot for snapshot in files}
+        # return build_directory_tree_with_descriptions(self.root_path, ignore=IGNORE_FOLDERS, files=files, add_descriptions=False)
+        return build_directory_tree(self.root_path, ignore=IGNORE_FOLDERS)
 
     def get_test_directory_tree(self):
         """
@@ -312,7 +316,7 @@ class Project:
         development_step, created = DevelopmentSteps.get_or_create(id=development_step_id)
 
         for file in files:
-            print(cyan(f'Saving file {(file["path"])}/{file["name"]}'))
+            print(color_cyan(f'Saving file {(file["path"])}/{file["name"]}'))
             # TODO this can be optimized so we don't go to the db each time
             file_in_db, created = File.get_or_create(
                 app=self.app,
@@ -345,10 +349,10 @@ class Project:
 
     def ask_for_human_intervention(self, message, description=None, cbs={}, convo=None, is_root_task=False):
         answer = ''
-        question = yellow_bold(message)
+        question = color_yellow_bold(message)
 
         if description is not None:
-            question += '\n' + '-' * 100 + '\n' + white_bold(description) + '\n' + '-' * 100 + '\n'
+            question += '\n' + '-' * 100 + '\n' + color_white_bold(description) + '\n' + '-' * 100 + '\n'
 
         reset_branch_id = None if convo is None else convo.save_branch()
 
