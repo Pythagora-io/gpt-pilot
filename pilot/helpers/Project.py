@@ -137,8 +137,8 @@ class Project:
         Finish the project.
         """
         while True:
-            feature_description = ask_user(self, "Project is finished! Do you want to add any features or changes? If "
-                                                 "yes, describe it here and if no, just press ENTER",
+            feature_description = ask_user(self, "Project is finished! Do you want to add any features or changes? "
+                                                 "If yes, describe it here and if no, just press ENTER",
                                            require_some_input=False)
 
             if feature_description == '':
