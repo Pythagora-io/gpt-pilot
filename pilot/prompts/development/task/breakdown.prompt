@@ -54,7 +54,7 @@ Now, tell me all the code that needs to be written to implement ONLY this task a
 
 **IMPORTANT**
 {% if task_type == 'app' %}
-Remember, I created an empty folder where I will start writing files that you tell me and that are needed for this app.
+{% if not files %}Remember, I'm currently in an empty folder where I will start writing files that you tell me. {% endif -%}
 You do not need to make any automated tests work.
 {% endif %}
 Tell me how can I test this task to see if it's working or not.
