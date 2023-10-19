@@ -136,10 +136,6 @@ class Project:
         """
         Finish the project.
         """
-        self.current_step = STEPS[-1]
-        self.finished = True
-        update_app_status(self.args['app_id'], self.current_step)
-
         while True:
             feature_description = ask_user(self, "Project is finished! Do you want to add any features or changes? If "
                                                  "yes, describe it here and if no, just press ENTER",

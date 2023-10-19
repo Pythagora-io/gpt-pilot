@@ -71,7 +71,7 @@ class TechLead(Agent):
                 "feature_description": feature_description,
             }, DEVELOPMENT_PLAN)
 
-        self.project.feature_development_plan = llm_response['plan']
+        self.project.development_plan = llm_response['plan']
 
         logger.info('Plan for feature development is created.')
         return
@@ -85,7 +85,7 @@ class TechLead(Agent):
                 "app_type": self.project.args['app_type'],
                 "app_summary": self.project.project_description,
                 "feature_description": feature_description,
-                "development_tasks": self.project.feature_development_plan,
+                "development_tasks": self.project.development_plan,
             })
 
         self.project.feature_summary = llm_response

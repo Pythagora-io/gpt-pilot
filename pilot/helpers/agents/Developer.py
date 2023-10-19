@@ -35,11 +35,8 @@ class Developer(Agent):
         self.debugger = Debugger(self)
 
     def start_coding(self):
-        if self.project.finished:
-            development_plan = self.project.feature_development_plan
-        else:
+        if not self.project.finished:
             self.project.current_step = 'coding'
-            development_plan = self.project.development_plan
             update_app_status(self.project.args['app_id'], self.project.current_step)
 
             if self.project.skip_steps is None:
@@ -49,12 +46,15 @@ class Developer(Agent):
         print(color_green_bold("🚀 Now for the actual development...\n"))
         logger.info("Starting to create the actual code...")
 
-        for i, dev_task in enumerate(development_plan):
+        for i, dev_task in enumerate(self.project.development_plan):
             self.implement_task(i, dev_task)
 
         # DEVELOPMENT END
         self.project.dot_pilot_gpt.chat_log_folder(None)
         if not self.project.finished:
+            self.project.current_step = 'finished'
+            self.project.finished = True
+            update_app_status(self.project.args['app_id'], self.project.current_step)
             message = 'The app is DONE!!! Yay...you can use it now.\n'
             logger.info(message)
             print(color_green_bold(message))
@@ -80,7 +80,7 @@ class Developer(Agent):
             "array_of_objects_to_string": array_of_objects_to_string,  # TODO check why is this here
             "directory_tree": self.project.get_directory_tree(True),
             "current_task_index": i,
-            "development_tasks": self.project.feature_development_plan if self.project.finished else self.project.development_plan,
+            "development_tasks": self.project.development_plan,
             "files": self.project.get_all_coded_files(),
             "task_type": 'feature' if self.project.finished else 'app'
         })
