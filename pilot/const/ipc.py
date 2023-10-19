@@ -6,4 +6,10 @@ MESSAGE_TYPE = {
     'info': 'info',                        # JSON data can be sent to progress `progress_stage`
     'local': 'local',
     'run_command': 'run_command',
+    'project_folder_name': 'project_folder_name'
 }
+
+LOCAL_IGNORE_MESSAGE_TYPES = [
+    'info',
+    'project_folder_name',
+]
