@@ -1,5 +1,5 @@
-from utils.style import color_green
 import os
+from utils.style import color_green
 
 
 def update_file(path, new_content):
@@ -12,6 +12,7 @@ def update_file(path, new_content):
     with open(path, 'w') as file:
         file.write(new_content)
         print(color_green(f"Updated file {path}"))
+
 
 def get_files_content(directory, ignore=[]):
     return_array = []
@@ -41,7 +42,10 @@ def get_files_content(directory, ignore=[]):
 
     return return_array
 
-def clear_directory(dir_path, ignore=[]):
+
+def clear_directory(dir_path, ignore=None):
+    if ignore is None:
+        ignore = []
     for root, dirs, files in os.walk(dir_path, topdown=True):
         # Remove ignored directories from dirs so os.walk doesn't traverse them
         dirs[:] = [d for d in dirs if d not in ignore]
@@ -60,7 +64,7 @@ def clear_directory(dir_path, ignore=[]):
                 os.rmdir(dir_path)
 
 
-def get_language_for_file(file_name: str) -> str | None:
+def get_language_for_file(file_name: str) -> str:
     if file_name.endswith('.py'):
         return 'python'
     elif file_name.endswith('.md'):
