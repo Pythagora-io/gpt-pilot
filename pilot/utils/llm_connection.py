@@ -96,14 +96,15 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
                 del gpt_data[key]
 
     # Advise the LLM of the JSON response schema we are expecting
-    messages_length = len(gpt_data['messages'])
+    messages_length = len(messages)
     add_function_calls_to_request(gpt_data, function_calls)
 
     try:
         response = stream_gpt_completion(gpt_data, req_type, project)
 
         # Remove JSON schema and any added retry messages
-        gpt_data['messages'] = gpt_data['messages'][:messages_length]
+        while len(messages) > messages_length:
+            messages.pop()
         return response
     except TokenLimitError as e:
         raise e
