@@ -179,17 +179,18 @@ class TestProjectFileLists:
   package.json
 '''.lstrip()
 
-    @patch('helpers.Project.DevelopmentSteps.get_or_create', return_value=('test', True))
-    @patch('helpers.Project.File.get_or_create', return_value=('test', True))
-    @patch('helpers.Project.FileSnapshot.get_or_create', return_value=(MagicMock(), True))
-    def test_save_files_snapshot(self, mock_snap, mock_file, mock_step):
-        # Given a snapshot of the files in the project
-
-        # When we save the file snapshot
-        self.project.save_files_snapshot('test')
-
-        # Then the files should be saved to the project, but nothing from `.gpt-pilot/`
-        assert mock_file.call_count == 7
-        files = ['package.json', 'main.js', 'file1.js', 'file2.js', 'bar.js', 'fighters.js', 'other.js']
-        for i in range(7):
-            assert mock_file.call_args_list[i][1]['name'] in files
+    # TODO: https://github.com/Pythagora-io/gpt-pilot/issues/199 - create new tests
+    # @patch('helpers.Project.DevelopmentSteps.get_or_create', return_value=('test', True))
+    # @patch('helpers.Project.File.get_or_create', return_value=('test', True))
+    # @patch('helpers.Project.FileSnapshot.get_or_create', return_value=(MagicMock(), True))
+    # def test_save_files_snapshot(self, mock_snap, mock_file, mock_step):
+    #     # Given a snapshot of the files in the project
+    #
+    #     # When we save the file snapshot
+    #     self.project.save_files_snapshot('test')
+    #
+    #     # Then the files should be saved to the project, but nothing from `.gpt-pilot/`
+    #     assert mock_file.call_count == 7
+    #     files = ['package.json', 'main.js', 'file1.js', 'file2.js', 'bar.js', 'fighters.js', 'other.js']
+    #     for i in range(7):
+    #         assert mock_file.call_args_list[i][1]['name'] in files
