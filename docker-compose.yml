@@ -16,6 +16,8 @@ services:
             - DB_PORT=5432
             - DB_USER=pilot
             - DB_PASSWORD=pilot
+        volumes:
+            - ~/gpt-pilot-workspace:/usr/src/app/workspace
         build:
             context: .
             dockerfile: Dockerfile
