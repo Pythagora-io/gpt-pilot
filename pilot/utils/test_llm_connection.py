@@ -22,6 +22,38 @@ load_dotenv()
 project = Project({'app_id': 'test-app'}, current_step='test', enable_dot_pilot_gpt=False)
 
 
+def test_clean_json_response_concluding_remarks():
+    # Given a JSON response with Title Case True and False
+    response = '''
+```json
+{
+    "steps": [
+        {
+            "type": "command",
+            "command": {
+                "command": "git init",
+                "daemon": False,
+                "timeout": 3000,
+                "boolean": False
+            },
+            "another_True": True,
+            "check_if_fixed": True
+        }
+    ]
+}
+```
+Please let me know if you need any further assistance.'''
+
+    # When
+    response = clean_json_response(response)
+
+    # Then the markdown is removed
+    assert response.startswith('{')
+    assert '"command": {' in response
+    assert '"command": "git init"' in response
+    assert response.endswith('}')
+
+
 def test_clean_json_response_True_False():
     # Given a JSON response with Title Case True and False
     response = '''
