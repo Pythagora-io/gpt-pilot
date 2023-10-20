@@ -1,6 +1,6 @@
 from colorama import Fore, Style as ColoramaStyle, init
 from enum import Enum
-from questionary import Style
+from prompt_toolkit.styles import Style
 
 # Initialize colorama. Ensures that ANSI codes work on Windows systems.
 init(autoreset=True)

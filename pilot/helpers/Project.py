@@ -14,6 +14,7 @@ from helpers.agents.TechLead import TechLead
 from helpers.agents.Developer import Developer
 from helpers.agents.Architect import Architect
 from helpers.agents.ProductOwner import ProductOwner
+from helpers.agents.TechnicalWriter import TechnicalWriter
 
 from database.models.development_steps import DevelopmentSteps
 from database.models.file_snapshot import FileSnapshot
@@ -82,6 +83,8 @@ class Project:
         self.project_manager.get_user_stories()
         # self.user_tasks = self.project_manager.get_user_tasks()
 
+        self.tech_writer = TechnicalWriter(self)
+
         self.architect = Architect(self)
         self.architect.get_architecture()
 
@@ -137,6 +140,8 @@ class Project:
         Finish the project.
         """
         while True:
+            self.tech_writer.document_project()
+
             feature_description = ask_user(self, "Project is finished! Do you want to add any features or changes? "
                                                  "If yes, describe it here and if no, just press ENTER",
                                            require_some_input=False)
@@ -209,17 +214,20 @@ class Project:
         files_with_content = []
         for file in files:
             # TODO this is a hack, fix it
-            try:
-                relative_path, full_path = self.get_full_file_path('', file)
-                file_content = open(full_path, 'r').read()
-            except OSError:
-                file_content = ''
+            file_content = self.get_file_content(file)
 
             files_with_content.append({
                 "path": file,
                 "content": file_content
             })
         return files_with_content
+
+    def get_file_content(self, relative_file_path, default_content=''):
+        try:
+            relative_path, full_path = self.get_full_file_path('', relative_file_path)
+            return open(full_path, 'r').read()
+        except OSError:
+            return default_content
 
     def save_file(self, data):
         """
