@@ -9,7 +9,7 @@ This project uses the following technologies:
 The directory structure of the project is as follows:
 
 ```
-{{ directory_structure }}
+{{ directory_tree }}
 ```
 {%- else %}
 There a currently no files in the project workspace.
@@ -18,12 +18,14 @@ There a currently no files in the project workspace.
 I want you to ensure that the following files are created for this {{ app_type }} and ready for use by developers.
 
 - .editorconfig - should have the standard settings for the languages
-- .gitignore
+- .gitignore - ignore build & test artifacts, IDE files (IntelliJ, VS Code)...
 - scripts/: lint, test, build, start, deploy, get_dependencies
 - .github/workflows/: ci.yml, deploy.yml
 
-All of the scripts should be able to be run from Windows, Mac, and Linux.
-If the project is based on a scripting language, then the the scripts should be written using the same language, otherwise for each script provide a bash script for Mac & Linux and a batch script for Windows.
+
+A pre-commit hook should be configured to run lint and test. If the project has a `package.json`, ensure that the pre-commit `pre-commit` dependency is installed and configured, otherwise configure the hook using the `pre-commit` package from pip.
+
+For Mac, and Linux provide implement the scripts in bash, for Windows provide an equivalent batch file for each script.
 
 The `get_dependencies` script should parse the project's build/dependency file (package.json, requirements.txt, build.gradle etc) and write all of the dependencies with version information to stdout.
 

@@ -18,7 +18,7 @@ def create_project(name='TestProject'):
         architecture=[],
         user_stories=[]
     )
-    project.set_root_path(test_root)
+    project.set_root_path(test_root.replace('gpt-pilot-test', name))
     project.app = 'test'
     project.current_step = 'test'
     return project

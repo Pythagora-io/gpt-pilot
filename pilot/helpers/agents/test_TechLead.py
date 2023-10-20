@@ -7,10 +7,8 @@ load_dotenv()
 
 from main import get_custom_print
 from helpers.agents.TechLead import TechLead, DEVELOPMENT_PLANNING_STEP
-from helpers.Project import Project
 from test.test_utils import assert_non_empty_string
 from test.mock_questionary import MockQuestionary
-from database.models.files import File
 from helpers.test_Project import create_project
 
 
@@ -59,18 +57,3 @@ The development process will include the creation of user stories and tasks, bas
             assert_non_empty_string(development_plan[0]['description'])
             assert_non_empty_string(development_plan[0]['programmatic_goal'])
             assert_non_empty_string(development_plan[0]['user_review_goal'])
-
-    @pytest.mark.uses_tokens
-    @patch('helpers.AgentConvo.get_saved_development_step', return_value=None)
-    @patch('helpers.agents.TechLead.save_progress', return_value=None)
-    @patch('helpers.agents.TechLead.get_progress_steps', return_value=None)
-    @patch.object(File, 'insert')
-    def test_create_project_scripts(self, mock_insert, mock_get_saved_step, mock_save_progress, mock_get_progress_steps):
-        # Given
-        self.project.architecture = ['Node.js', 'Socket.io', 'Bootstrap', 'JavaScript', 'HTML5', 'CSS3']
-
-        # When
-        self.tech_lead.create_project_scripts()
-
-        # Then
-        pass

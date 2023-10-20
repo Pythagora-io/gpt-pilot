@@ -1,9 +1,13 @@
+import builtins
+import json
 import re
 import os
+import pytest
 from unittest.mock import patch, MagicMock
 from dotenv import load_dotenv
 load_dotenv()
 
+from main import get_custom_print
 from .CodeMonkey import CodeMonkey
 from .Developer import Developer
 from database.models.files import File
@@ -11,6 +15,7 @@ from database.models.development_steps import DevelopmentSteps
 from helpers.Project import Project, update_file, clear_directory
 from helpers.AgentConvo import AgentConvo
 from test.test_utils import mock_terminal_size
+from helpers.test_Project import create_project
 
 SEND_TO_LLM = False
 WRITE_TO_FILE = False
@@ -18,27 +23,16 @@ WRITE_TO_FILE = False
 
 class TestCodeMonkey:
     def setup_method(self):
-        name = 'TestDeveloper'
-        self.project = Project({
-                'app_id': 'test-developer',
-                'name': name,
-                'app_type': ''
-            },
-            name=name,
-            architecture=[],
-            user_stories=[],
-            current_step='coding',
-        )
+        builtins.print, ipc_client_instance = get_custom_print({})
 
-        self.project.set_root_path(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                                              '../../../workspace/TestDeveloper')))
+        name = 'TestDeveloper'
+        self.project = create_project('TestCodeMonkey')
         self.project.technologies = []
         last_step = DevelopmentSteps()
         last_step.id = 1
         self.project.checkpoints = {'last_development_step': last_step}
-        self.project.app = None
         self.developer = Developer(self.project)
-        self.codeMonkey = CodeMonkey(self.project, developer=self.developer)
+        self.code_monkey = CodeMonkey(self.project, developer=self.developer)
 
     @patch('helpers.AgentConvo.get_saved_development_step', return_value=None)
     @patch('helpers.AgentConvo.save_development_step')
@@ -49,7 +43,7 @@ class TestCodeMonkey:
         code_changes_description = "Write the word 'Washington' to a .txt file"
 
         if SEND_TO_LLM:
-            convo = AgentConvo(self.codeMonkey)
+            convo = AgentConvo(self.code_monkey)
         else:
             convo = MagicMock()
             mock_responses = [
@@ -64,12 +58,12 @@ class TestCodeMonkey:
             convo.send_message.side_effect = mock_responses
 
         if WRITE_TO_FILE:
-            self.codeMonkey.implement_code_changes(convo, code_changes_description)
+            self.code_monkey.implement_code_changes(convo, code_changes_description)
         else:
             # don't write the file, just
             with patch.object(Project, 'save_file') as mock_save_file:
                 # When
-                self.codeMonkey.implement_code_changes(convo, code_changes_description)
+                self.code_monkey.implement_code_changes(convo, code_changes_description)
 
                 # Then
                 mock_save_file.assert_called_once()
@@ -89,7 +83,7 @@ class TestCodeMonkey:
         update_file(os.path.join(workspace, 'file_to_read.txt'), 'Hello World!\n')
 
         if SEND_TO_LLM:
-            convo = AgentConvo(self.codeMonkey)
+            convo = AgentConvo(self.code_monkey)
         else:
             convo = MagicMock()
             mock_responses = [
@@ -104,11 +98,11 @@ class TestCodeMonkey:
             convo.send_message.side_effect = mock_responses
 
         if WRITE_TO_FILE:
-            self.codeMonkey.implement_code_changes(convo, code_changes_description)
+            self.code_monkey.implement_code_changes(convo, code_changes_description)
         else:
             with patch.object(Project, 'save_file') as mock_save_file:
                 # When
-                self.codeMonkey.implement_code_changes(convo, code_changes_description)
+                self.code_monkey.implement_code_changes(convo, code_changes_description)
 
                 # Then
                 clear_directory(workspace)
@@ -117,3 +111,35 @@ class TestCodeMonkey:
                 assert called_data['name'] == 'output.txt'
                 assert (called_data['path'] == '/' or called_data['path'] == called_data['name'])
                 assert called_data['content'] == 'Hello World!\n'
+
+    @pytest.mark.uses_tokens
+    @patch('helpers.AgentConvo.get_saved_development_step', return_value=None)
+    @patch('helpers.agents.TechLead.save_progress', return_value=None)
+    @patch('helpers.agents.TechLead.get_progress_steps', return_value=None)
+    @patch.object(File, 'insert')
+    def test_create_project_scripts_python(self, mock_insert, mock_get_saved_step, mock_save_progress, mock_get_progress_steps):
+        # Given
+        self.project.architecture = ['Python', 'FastAPI']
+
+        # When
+        self.code_monkey.create_project_scripts()
+
+        # Then
+        pass
+
+    @pytest.mark.uses_tokens
+    @patch('helpers.AgentConvo.get_saved_development_step', return_value=None)
+    @patch('helpers.agents.TechLead.save_progress', return_value=None)
+    @patch('helpers.agents.TechLead.get_progress_steps', return_value=None)
+    @patch.object(File, 'insert')
+    def test_create_project_scripts_node(self, mock_insert, mock_get_saved_step, mock_save_progress,
+                                    mock_get_progress_steps):
+        # Given
+        self.project.architecture = ['Node.js', 'Socket.io', 'Bootstrap', 'JavaScript', 'HTML5', 'CSS3']
+        self.project.save_file({'path': 'package.json', 'content': json.dumps({'name': 'test'})})
+
+        # When
+        self.code_monkey.create_project_scripts()
+
+        # Then
+        pass
