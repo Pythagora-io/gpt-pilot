@@ -1,0 +1,31 @@
+This project uses the following technologies:
+```
+{% for tech in technologies %}
+- {{ tech }}
+{% endfor %}
+```
+
+{% if directory_structure -%}
+The directory structure of the project is as follows:
+
+```
+{{ directory_structure }}
+```
+{%- else %}
+There a currently no files in the project workspace.
+{%- endif %}
+
+I want you to ensure that the following files are created for this {{ app_type }} and ready for use by developers.
+
+- .editorconfig - should have the standard settings for the languages
+- .gitignore
+- scripts/: lint, test, build, start, deploy, get_dependencies
+- .github/workflows/: ci.yml, deploy.yml
+
+All of the scripts should be able to be run from Windows, Mac, and Linux.
+If the project is based on a scripting language, then the the scripts should be written using the same language, otherwise for each script provide a bash script for Mac & Linux and a batch script for Windows.
+
+The `get_dependencies` script should parse the project's build/dependency file (package.json, requirements.txt, build.gradle etc) and write all of the dependencies with version information to stdout.
+
+You can use the function `get_files` as many times as you want to read files that may be of interest, each time you call `get_files` I will add the contents of the file to the conversation context.
+Once you use the function `write_files` I will assume that you have finished updating the documentation.

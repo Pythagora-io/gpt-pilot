@@ -48,22 +48,35 @@ The development process will include the creation of user stories and tasks, bas
         ]
         self.project.architecture = ['Node.js', 'Socket.io', 'Bootstrap', 'JavaScript', 'HTML5', 'CSS3']
         self.project.current_step = DEVELOPMENT_PLANNING_STEP
+        self.tech_lead = TechLead(self.project)
 
     @pytest.mark.uses_tokens
     @patch('helpers.AgentConvo.get_saved_development_step', return_value=None)
     @patch('helpers.agents.TechLead.save_progress', return_value=None)
     @patch('helpers.agents.TechLead.get_progress_steps', return_value=None)
     def test_create_development_plan(self, mock_get_saved_step, mock_save_progress, mock_get_progress_steps):
-        self.techLead = TechLead(self.project)
-
         mock_questionary = MockQuestionary(['', '', 'no'])
 
         with patch('utils.questionary.questionary', mock_questionary):
             # When
-            development_plan = self.techLead.create_development_plan()
+            development_plan = self.tech_lead.create_development_plan()
 
             # Then
             assert development_plan is not None
             assert_non_empty_string(development_plan[0]['description'])
             assert_non_empty_string(development_plan[0]['programmatic_goal'])
             assert_non_empty_string(development_plan[0]['user_review_goal'])
+
+    @pytest.mark.uses_tokens
+    @patch('helpers.AgentConvo.get_saved_development_step', return_value=None)
+    @patch('helpers.agents.TechLead.save_progress', return_value=None)
+    @patch('helpers.agents.TechLead.get_progress_steps', return_value=None)
+    def test_create_project_scripts(self, mock_get_saved_step, mock_save_progress, mock_get_progress_steps):
+        # Given
+        self.project.architecture = ['Node.js', 'Socket.io', 'Bootstrap', 'JavaScript', 'HTML5', 'CSS3']
+
+        # When
+        self.tech_lead.create_project_scripts()
+
+        # Then
+        pass

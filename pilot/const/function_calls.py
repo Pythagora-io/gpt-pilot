@@ -422,25 +422,74 @@ EXECUTE_COMMANDS = {
     }
 }
 
-GET_FILES = {
-    'definitions': [{
-        'name': 'get_files',
-        'description': 'Returns development files that are currently implemented so that they can be analized and so that changes can be appropriatelly made.',
-        'parameters': {
-            'type': 'object',
-            'properties': {
-                'files': {
-                    'type': 'array',
-                    'description': 'List of files that need to be analized to implement the reqired changes. Any file name in this array MUST be from the directory tree listed in the previous message.',
-                    'items': {
-                        'type': 'string',
-                        'description': 'A single file name that needs to be analized to implement the reqired changes. Remember, this is a file name with path relative to the project root. For example, if a file path is `{{project_root}}/models/model.py`, this value needs to be `models/model.py`. This file name MUST be listed in the directory from the previous message.',
+GET_FILES_FUNCTION = {
+    'name': 'get_files',
+    'description': 'Use this function to read files from the workspace.',
+    'parameters': {
+        'type': 'object',
+        'properties': {
+            'files': {
+                'type': 'array',
+                # 'description': 'List of files that read from the workspace',
+                'items': {
+                    'type': 'string',
+                    'description': 'File name with path relative to the project root.'
+                                   # ' For example, if a file path is `{{project_root}}/models/model.py`, this value needs to be `models/model.py`. '
+                                   # 'This file name MUST be listed in the directory from the previous message.',
+                }
+            }
+        },
+        'required': ['files'],
+    },
+}
+
+SAVE_FILES_FUNCTION = {
+    'name': 'save_files',
+    'description': 'Use this function to write files to the workspace.',
+    'parameters': {
+        'type': 'object',
+        'properties': {
+            'files': {
+                'type': 'array',
+                # 'description': 'List of files that read from the workspace',
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'path': {
+                            'type': 'string',
+                            'description': 'File name with path relative to the project root.',
+                        },
+                        'content': {
+                            'type': 'string',
+                            'description': 'Full content of the file that needs to be saved on the disk.'
+                                           # ' For example, if a file path is `{{project_root}}/models/model.py`, this value needs to be `models/model.py`. '
+                                           # 'This file name MUST be listed in the directory from the previous message.',
+                        },
                     }
                 }
-            },
-            'required': ['files'],
+            }
         },
-    }],
+        'required': ['files'],
+    },
+}
+
+READ_WRITE_FILES = {
+    'definitions': [GET_FILES_FUNCTION, SAVE_FILES_FUNCTION],
+    'functions': {
+        'get_files': return_files,
+        'save_files': lambda files: files
+    }
+}
+
+WRITE_FILES = {
+    'definitions': [SAVE_FILES_FUNCTION],
+    'functions': {
+        'save_files': lambda files: files
+    }
+}
+
+GET_FILES = {
+    'definitions': [GET_FILES_FUNCTION],
     'functions': {
         'get_files': lambda files: files
     }
