@@ -60,7 +60,7 @@ https://github.com/Pythagora-io/gpt-pilot/assets/10895136/0495631b-511e-451b-93d
 
 
 # 🚦How to start using gpt-pilot?
-After you have Python and PostgreSQL installed, follow these steps:
+After you have Python and (optionally) PostgreSQL installed, follow these steps:
 1. `git clone https://github.com/Pythagora-io/gpt-pilot.git` (clone the repo)
 2. `cd gpt-pilot`
 3. `python -m venv pilot-env` (create a virtual environment)
@@ -77,8 +77,6 @@ After, this, you can just follow the instructions in the terminal.
 
 All generated code will be stored in the folder `workspace` inside the folder named after the app name you enter upon starting the pilot.
 
-**IMPORTANT: To run GPT Pilot, you need to have PostgreSQL set up on your machine**
-<br>
 
 ## 🐳 How to start gpt-pilot in docker?
 1. `git clone https://github.com/Pythagora-io/gpt-pilot.git` (clone the repo)
