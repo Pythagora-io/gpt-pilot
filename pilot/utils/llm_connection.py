@@ -460,13 +460,20 @@ def clean_json_response(response: str) -> str:
     return response
 
 
+def assert_json_schema(response: str, functions: list[FunctionType]) -> str:
+    parsed = json.loads(response)
 
-def assert_json_schema(response: str, functions: list[FunctionType]) -> True:
     for function in functions:
         schema = function['parameters']
-        parsed = json.loads(response)
+        # If there are multiple functions, check if the response provides matching `name` with `arguments`
+        if len(functions) > 1 and 'name' in parsed and 'arguments' in parsed:
+            if parsed['name'] == function['name']:
+                parsed = parsed['arguments']
+            else:
+                continue
         validate(parsed, schema)
-        return True
+        # TODO: don't dumps just so that can loads again later
+        return json.dumps(parsed)
 
 
 def postprocessing(gpt_response: str, req_type) -> str:
