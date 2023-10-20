@@ -20,7 +20,7 @@ class TechnicalWriter(Agent):
         }, READ_WRITE_FILES)
 
         files_written = False
-        while not files_written:
+        while True:
             for file in llm_response['files']:
                 if isinstance(file, dict):
                     # Write content to file path
