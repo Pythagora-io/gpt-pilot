@@ -418,7 +418,7 @@ def stream_gpt_completion(data, req_type, project):
 
     if expecting_json:
         gpt_response = clean_json_response(gpt_response)
-        assert_json_schema(gpt_response, expecting_json)
+        gpt_response = assert_json_schema(gpt_response, expecting_json)
         # Note, we log JSON separately from the YAML log above incase the JSON is invalid and an error is raised
         project.dot_pilot_gpt.log_chat_completion_json(endpoint, model, req_type, expecting_json, gpt_response)
 
@@ -444,10 +444,21 @@ def assert_json_response(response: str, or_fail=True) -> bool:
 
 
 def clean_json_response(response: str) -> str:
-    response = re.sub(r'^.*```json\s*', '', response, flags=re.DOTALL)
+    braces = re.search(r'\{.*}', response, flags=re.DOTALL)
+    if braces is None:
+        braces = re.search(r'\[.*]', response, flags=re.DOTALL)
+
+    if braces is not None:
+        response = braces.group(0)
+    else:
+        logger.warning('Unable to find JSON braces in response: %s', response)
+        # This probably isn't going to help in this scenario...
+        response = re.sub(r'^.*```json\s*', '', response, flags=re.DOTALL).strip('` \n')
+
     response = re.sub(r': ?True(,)?$', r':true\1', response, flags=re.MULTILINE)
     response = re.sub(r': ?False(,)?$', r':false\1', response, flags=re.MULTILINE)
-    return response.strip('` \n')
+    return response
+
 
 
 def assert_json_schema(response: str, functions: list[FunctionType]) -> True:
