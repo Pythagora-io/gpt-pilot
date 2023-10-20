@@ -28,7 +28,7 @@ You can use the function `get_files` as many times as you want to read files tha
 The directory structure of the project is as follows:
 
 ```
-{{ directory_structure }}
+{{ directory_tree }}
 ```
 {% else %}
 There a currently no files in the project workspace.
