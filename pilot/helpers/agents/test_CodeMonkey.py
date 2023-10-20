@@ -25,7 +25,6 @@ class TestCodeMonkey:
     def setup_method(self):
         builtins.print, ipc_client_instance = get_custom_print({})
 
-        name = 'TestDeveloper'
         self.project = create_project('TestCodeMonkey')
         self.project.technologies = []
         last_step = DevelopmentSteps()
