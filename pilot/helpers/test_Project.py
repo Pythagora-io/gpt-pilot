@@ -8,13 +8,13 @@ from database.models.files import File
 test_root = os.path.join(os.path.dirname(__file__), '../../workspace/gpt-pilot-test').replace('\\', '/')
 
 
-def create_project():
+def create_project(name='TestProject'):
     project = Project({
         'app_id': 'test-project',
-        'name': 'TestProject',
+        'name': name,
         'app_type': ''
     },
-        name='TestProject',
+        name=name,
         architecture=[],
         user_stories=[]
     )
