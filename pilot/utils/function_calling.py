@@ -39,7 +39,7 @@ def add_function_calls_to_request(gpt_data, function_calls: Union[FunctionCallSe
         return
 
     model: str = gpt_data['model']
-    is_instruct = 'llama' in model or 'anthropic' in model
+    is_instruct = 'llama' in model or 'anthropic' in model or 'instruct' in model
 
     gpt_data['functions'] = function_calls['definitions']
 
@@ -150,9 +150,18 @@ class JsonPrompter:
         Returns:
             str: The summary of the function, as a bullet point
         """
-        return f"- {function['name']}" + (
-            f" - {function['description']}" if "description" in function else ""
-        )
+        return '\n'.join([
+            f"# {function['name']}" + (
+                f" - {function['description']}" if "description" in function else ""
+            ),
+            'JSON schema:',
+            "```json",
+            json.dumps({
+                'name': function['name'],
+                'arguments': function["parameters"]["properties"]
+            }, indent=4),
+            "```"
+        ]) + '\n'
 
     def functions_summary(self, functions: list[FunctionType]) -> str:
         """Get a summary of the functions
@@ -186,10 +195,11 @@ class JsonPrompter:
                 specified
         """
         system = (
-            "Help choose the appropriate function to call to answer the user's question."
+            "Choose the appropriate function to call. "
+            'example: {"name": "' + functions[0]['name'] + '", "arguments": {...}}'
             if function_to_call is None
             else f"Please provide a JSON object that defines the arguments for the `{function_to_call}` function to answer the user's question."
-        ) + "\nThe response must contain ONLY the JSON object, with NO additional text or explanation."
+        ) + "\nYour response must be a JSON object only. Do not include any introductory or concluding sentences."
 
         data = (
             self.function_data(functions, function_to_call)
