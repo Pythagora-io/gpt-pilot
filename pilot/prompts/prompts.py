@@ -91,7 +91,7 @@ def get_additional_info_from_openai(project, messages):
         if response is not None:
             if response['text'] and response['text'].strip() == END_RESPONSE:
                 # print(response['text'] + '\n')
-                return messages
+                break
 
             # Ask the question to the user
             answer = ask_user(project, response['text'])
@@ -104,7 +104,7 @@ def get_additional_info_from_openai(project, messages):
 
     logger.info('Getting additional info from openai done')
 
-    return messages
+    return [msg for msg in messages if msg['role'] != 'system']
 
 
 # TODO refactor this to comply with AgentConvo class
@@ -120,24 +120,29 @@ def generate_messages_from_description(description, app_type, name):
       ]
     """
     # "I want you to create the app {name} that can be described: ```{description}```
+    prompt = get_prompt('high_level_questions/specs.prompt', {
+        'name': name,
+        'prompt': description,
+        'app_type': app_type,
+    })
+
     # Get additional answers
     # Break down stories
     # Break down user tasks
     # Start with Get additional answers
     # {prompts/components/no_microservices}
     # {prompts/components/single_question}
-    # "
-    prompt = get_prompt('high_level_questions/specs.prompt', {
-        'name': name,
-        'prompt': description,
-        'app_type': app_type,
-        # TODO: MAX_QUESTIONS should be configurable by ENV or CLI arg
-        'MAX_QUESTIONS': MAX_QUESTIONS
-    })
+    specs_instructions = get_prompt('high_level_questions/specs_instruction.prompt', {
+            'name': name,
+            'app_type': app_type,
+            # TODO: MAX_QUESTIONS should be configurable by ENV or CLI arg
+            'MAX_QUESTIONS': MAX_QUESTIONS
+        })
 
     return [
         get_sys_message('product_owner'),
-        {"role": "user", "content": prompt},
+        {'role': 'user', 'content': prompt},
+        {'role': 'system', 'content': specs_instructions},
     ]
 
 
