@@ -258,7 +258,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
         else:
             print('\nTimeout detected. Stopping command execution...')
             logger.warn('Timeout detected. Stopping command execution...')
-            done_or_error_response = f'took longer than {timeout}ms so I killed it'
+            done_or_error_response = f'took longer than {timeout}ms and you didn\'t provide a `command_id` so I killed the process'
 
         terminate_process(process.pid)
         # update the returncode
@@ -475,7 +475,7 @@ def run_command_until_success(convo, command,
                     'timeout': timeout,
                     'command_id': command_id,
                     'success_message': success_message,
-                })
+                }, user_input=cli_response)
                 return {'success': success, 'cli_response': cli_response}
             except TooDeepRecursionError as e:
                 # this is only to put appropriate message in the response after TooDeepRecursionError is raised

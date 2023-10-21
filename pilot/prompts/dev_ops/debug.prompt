@@ -3,11 +3,12 @@ You wanted me to check this - `{{ issue_description }}` but there was a problem
 {%- else -%}
 Ok, we need to debug this issue
 {%- endif -%}
-{% if command %} and we need to be able to execute `{{ command }}` successfully. {% else %}.
+{% if command %} and we need to be able to execute `{{ command }}` successfully.{% endif %}
+{% if user_input %}
 Here is a brief explanation of what's happening:
-```
+---
 {{ user_input }}
-```
+---
 {% endif -%}
 {{ context }}
 I want you to debug this issue by yourself using the `steps` of the `start_debugging` function.
@@ -16,6 +17,6 @@ I want you to debug this issue by yourself using the `steps` of the `start_debug
 
 `code_change` step will change the code where you just need to thoroughly describe what needs to be implemented, I will implement the requested changes and let you know.
 
-Return a list of steps that are needed to debug this issue. By the time we execute the last step, the issue should be fixed completely. Also, make sure that at least the last step has `check_if_fixed` set to TRUE.
+Return a list of steps that are needed to debug this issue. By the time we execute the last step, the issue should be fixed completely. Also, make sure that at least the last step has `check_if_fixed` set to `true`.
 
 {# After this, you need to decide what to do next. You can rerun the command `{{ command }}` to check if the problem is fixed or run another command with `run_command` or change more code with `implement_code_changes`. #}
