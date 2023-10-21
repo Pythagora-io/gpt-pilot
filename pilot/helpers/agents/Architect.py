@@ -4,10 +4,9 @@ import json
 from utils.style import color_green_bold
 from const.function_calls import ARCHITECTURE
 
-from utils.utils import should_execute_step, find_role_from_step, generate_app_data
+from utils.utils import should_execute_step, generate_app_data
 from database.database import save_progress, get_progress_steps
 from logger.logger import logger
-from prompts.prompts import get_additional_info_from_user
 from helpers.AgentConvo import AgentConvo
 
 ARCHITECTURE_STEP = 'architecture'
@@ -48,7 +47,9 @@ class Architect(Agent):
 
         # TODO: Project.args should be a defined class so that all of the possible args are more obvious
         if self.project.args.get('advanced', False):
-            self.project.architecture = get_additional_info_from_user(self.project, self.project.architecture, 'architect')
+            llm_response = self.convo_architecture.get_additional_info_from_user(ARCHITECTURE)
+            if llm_response is not None:
+                self.project.architecture = llm_response['technologies']
 
         logger.info(f"Final architecture: {self.project.architecture}")
 

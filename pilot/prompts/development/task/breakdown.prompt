@@ -1,4 +1,4 @@
-You are working on a {{ app_type }} called "{{ name }}" and you need to write code for the entire application based on the tasks that the tech lead gives you. So that you understand better what you're working on, you're given other specs for "{{ name }}" as well.
+You are working on a {{ app_type }} called "{{ name }}" and you need to write code for the entire {{ task_type }} based on the tasks that the tech lead gives you. So that you understand better what you're working on, you're given other specs for "{{ name }}" as well.
 
 Here is a high level description of "{{ name }}":
 ```
@@ -19,13 +19,13 @@ Here are user tasks that specify what users need to do to interact with "{{ name
 ```
 
 {% endif %}
-Here are the technologies that you need to use for this project:
+Here are the technologies that {% if task_type == 'app' %}you need to use{% else %}that were used{% endif %} for this project:
 ```{% for tech in technologies %}
 - {{ tech }}{% endfor %}
 ```
 
-{% if current_task_index != 0 %}
-So far, this code has been implemented
+{% if current_task_index != 0 or task_type == 'feature' %}
+So far, this code has been implemented:
 {% for file in files %}
 **{{ file.path }}**
 ```{# file.language #}
@@ -35,7 +35,7 @@ So far, this code has been implemented
 {% endfor %}
 {% endif %}
 
-We've broken the development of this app down to these tasks:
+We've broken the development of this {{ task_type }} down to these tasks:
 ```{% for task in development_tasks %}
 - {{ loop.index }}. {{ task['description'] }}
 {% endfor %}
@@ -45,6 +45,7 @@ You are currently working on task {{ current_task_index + 1 }} with the followin
 ```
 {{ development_tasks[current_task_index]['description'] }}
 ```
+{% if current_task_index != 0 %}All previous tasks are finished and you don't have to work on them.{% endif %}
 After all the code is finished, a human developer will check it works this way - {{ development_tasks[current_task_index]['user_review_goal'] }}
 
 Now, tell me all the code that needs to be written to implement ONLY this task and have it fully working and all commands that need to be run to implement this task.
@@ -52,8 +53,10 @@ Now, tell me all the code that needs to be written to implement ONLY this task a
 {{no_microservices}}
 
 **IMPORTANT**
-Remember, I created an empty folder where I will start writing files that you tell me and that are needed for this app.
-Tell me how can I test this task to see if it's working or not.
+{% if task_type == 'app' %}
+{% if not files %}Remember, I'm currently in an empty folder where I will start writing files that you tell me. {% endif -%}
 You do not need to make any automated tests work.
+{% endif %}
+Tell me how can I test this task to see if it's working or not.
 DO NOT specify commands to create any folders or files, they will be created automatically - just specify the relative path to each file that needs to be written.
 Never use the port 5000 to run the app, it's reserved.

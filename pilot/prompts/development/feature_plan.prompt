@@ -1,0 +1,79 @@
+You are working in a software development agency and a project manager and software architect approach you telling you that you're assigned to add new feature to an existing project. You are working on a {{ app_type }} called "{{ name }}" and you need to create a detailed development plan so that developers can start developing the new feature.
+
+Here is a high level description of "{{ name }}":
+```
+{{ app_summary }}
+```
+
+{% if clarifications %}
+Here are some additional questions and answers to clarify the apps description:
+```
+{% for clarification in clarifications %}
+Q: {{ clarification.question }}
+A: {{ clarification.answer }}
+{% endfor %}
+```
+
+{% endif %}
+{% if user_stories %}
+Here are user stories that specify how users use "{{ name }}":
+```
+{% for story in user_stories %}
+- {{ story }}
+{% endfor %}
+```
+
+{% endif %}
+{% if user_tasks %}
+Here are user tasks that specify what users need to do to interact with "{{ name }}":
+```
+{% for task in user_tasks %}
+- {{ task }}
+{% endfor %}
+```
+
+{% endif %}
+Here are the technologies that you need to use for this project:
+```
+{% for tech in technologies %}
+- {{ tech }}
+{% endfor %}
+```
+
+Here are development tasks that specify what was already coded:
+```
+{{ development_tasks }}
+```
+
+{% if previous_features and previous_features|length > 0 %}
+After those tasks, new features were added to {{ app_type }} ""{{ name }}"". Here is a list of all features that are already implemented:
+{% for feature in previous_features %}
+- {{ loop.index }}. {{ feature['summary'] }}
+{% endfor %}
+
+{% endif %}
+Here is directory tree that shows current folder structure of project:
+```
+{{ directory_tree }}
+```
+
+App and all its features are already finished and working. Here are files that are currently implemented:
+{% for file in files %}
+**{{ file.path }}**:
+```
+{{ file.content }}
+```
+{% endfor %}
+
+Finally, here is the description of new feature that needs to be added to {{ app_type }} "{{ name }}":
+```
+{{ feature_description }}
+```
+
+OK, now, you need to create code to have this feature fully working but before we go into the coding part, I want you to split the development process of creating this feature into smaller tasks so that it is easier to debug and make the feature work. Each smaller task of this feature has to be a whole that can be reviewed by a developer to make sure we're on a right track to create this feature. Make sure that you do NOT split feature into tasks that are too small as well, they need to be split logically for developer to keep track of his progress.
+
+Each task needs to be related only to the development of this feature and nothing else - once the feature is fully working, that is it. There shouldn't be a task for researching, deployment, writing documentation, or anything that is not writing the actual code. Think task by task and create the minimum number of tasks that are relevant for this specific feature. If the feature is small, it is ok to have only 1 task.
+
+For each task, there must be a way for human developer to check if the task is done or not. Write how should the developer check if the task is done.
+
+Now, based on the project details provided and new feature description, think task by task and create the entire development plan for new feature. For each task, write a description and a user-review goal.

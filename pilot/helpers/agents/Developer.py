@@ -35,11 +35,12 @@ class Developer(Agent):
         self.debugger = Debugger(self)
 
     def start_coding(self):
-        self.project.current_step = 'coding'
-        update_app_status(self.project.args['app_id'], self.project.current_step)
+        if not self.project.finished:
+            self.project.current_step = 'coding'
+            update_app_status(self.project.args['app_id'], self.project.current_step)
 
-        if self.project.skip_steps is None:
-            self.project.skip_steps = False if ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0') else True
+            if self.project.skip_steps is None:
+                self.project.skip_steps = False if ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0') else True
 
         # DEVELOPMENT
         print(color_green_bold("🚀 Now for the actual development...\n"))
@@ -50,11 +51,21 @@ class Developer(Agent):
 
         # DEVELOPMENT END
         self.project.dot_pilot_gpt.chat_log_folder(None)
-        logger.info('The app is DONE!!! Yay...you can use it now.')
-        print(color_green_bold("The app is DONE!!! Yay...you can use it now.\n"))
+        if not self.project.finished:
+            self.project.current_step = 'finished'
+            self.project.finished = True
+            update_app_status(self.project.args['app_id'], self.project.current_step)
+            message = 'The app is DONE!!! Yay...you can use it now.\n'
+            logger.info(message)
+            print(color_green_bold(message))
+        else:
+            message = 'Feature complete!\n'
+            logger.info(message)
+            print(color_green_bold(message))
+
 
     def implement_task(self, i, development_task=None):
-        print(color_green_bold('Implementing task #{i + 1}: ') + color_green(' {development_task["description"]}\n'))
+        print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'))
         self.project.dot_pilot_gpt.chat_log_folder(i + 1)
 
         convo_dev_task = AgentConvo(self)
@@ -71,6 +82,7 @@ class Developer(Agent):
             "current_task_index": i,
             "development_tasks": self.project.development_plan,
             "files": self.project.get_all_coded_files(),
+            "task_type": 'feature' if self.project.finished else 'app'
         })
 
         response = convo_dev_task.send_message('development/parse_task.prompt', {

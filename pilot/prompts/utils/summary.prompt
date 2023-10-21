@@ -1,24 +1,3 @@
 Based on the following conversation, write a summary:
 
 ``` {{conversation}} ```
-
-**IMPORTANT**
-Here are the instructions for Writing the Summary:
-
-1. **Stick to the Facts**: Every sentence should be informative and relevant. Length is not an issue as long as all pertinent details of the project are included, without unnecessary anecdotes, background stories, or subjective interpretations.
-
-2. **Avoid Subjectivity and Mentioning The Client or Any External Entities**: Do not mention phrases like "the client wants" or "the client said". Do not provide personal opinions, interpretations, or unnecessary background stories. Summarize information in a direct and neutral manner.
-
-3. **Use Active Voice**: Use active rather than passive voice. For instance, "The project includes 5 subdomains" instead of "It was decided that the project should include 5 subdomains."
-
-4. **Be Direct**: Replace indirect phrases with direct statements. For example, instead of saying "The client said there might be a need for...", state "There will be...".
-
-5. **Prioritize Clarity**: Each statement should be clear and easy to understand. Refrain from using jargon unless it's widely recognized in the project's context.
-
-6. **Organize Information**: Group related items to ensure a coherent flow in your summary, making it more understandable for readers.
-
-**Examples**:
-- Instead of "The client expressed a preference for blue in our last meeting", write "The primary color is blue".
-- Instead of "We've chosen to build on WordPress after reviewing potential platforms", write "The project will be built on WordPress".
-
-Remember: The goal of the summary is to provide a concise and accurate overview of the project, focusing strictly on its factual aspects.
