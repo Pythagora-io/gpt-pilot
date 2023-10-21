@@ -29,7 +29,7 @@ Tell me all the new code that needs to be written or modified to implement this 
 
 {# Do not leave any parts of the code to be written afterwards. Make sure that all the code you provide is working and does as outlined in the description area above.
 #}
-Remember, I'm currently in an empty folder where I will start writing files that you tell me. You do not need to make any automated tests work.
+You do not need to make any automated tests work.
 
 **IMPORTANT**
 Do not tell me anything about setting up the database or anything OS related - only if some dependencies need to be installed.
