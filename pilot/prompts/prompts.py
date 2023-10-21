@@ -140,6 +140,7 @@ def generate_messages_from_description(description, app_type, name):
         })
 
     return [
+        {'role': 'system', 'content': get_prompt('components/single_question.prompt')},
         get_sys_message('product_owner'),
         {'role': 'user', 'content': prompt},
         {'role': 'system', 'content': specs_instructions},
