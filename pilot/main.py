@@ -37,11 +37,14 @@ def init():
 if __name__ == "__main__":
     ask_feedback = True
     try:
-        # sys.argv.append('--ux-test=' + 'continue_development')
-        args = init()
-        builtins.print, ipc_client_instance = get_custom_print(args)
         # Override the built-in 'open' with our version
         builtins.open = get_custom_open
+        # sys.argv.append('--ux-test=' + 'continue_development')
+        
+        args = init()
+        
+        builtins.print, ipc_client_instance = get_custom_print(args)
+
 
         if '--api-key' in args:
             os.environ["OPENAI_API_KEY"] = args['--api-key']
