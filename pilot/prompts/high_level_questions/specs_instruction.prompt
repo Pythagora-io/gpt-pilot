@@ -15,6 +15,7 @@ Here is an overview of the tasks that you need to do:
 - `user runs the CLI command in which they specify the keyword youtube channel needs to contain and the location where the CSV file will be saved to`
 
 Let's start with the task #1 Getting additional answers. Think about the description for the {{ app_type }} "{{ name }}" and ask questions that you would like to get cleared before going onto breaking down the user stories.
+We will follow the agile development methodology, so we will start with an MVP (Minimal Viable Product) - let's keep the first iteration simple and we can add extra features in future sprints.
 
 {{no_microservices}}
 
