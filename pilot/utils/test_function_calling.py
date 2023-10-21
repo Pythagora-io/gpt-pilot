@@ -106,7 +106,7 @@ def test_json_prompter_named():
     prompt = prompter.prompt('Create a web-based chat app', ARCHITECTURE['definitions'], 'process_technologies')
 
     # Then
-    assert prompt == '''Please provide a JSON object that defines the arguments for the `process_technologies` function to answer the user's question.
+    assert prompt == '''I need a JSON object that defines the arguments for the `process_technologies` function to answer the user's question.
 The response must contain ONLY the JSON object, with NO additional text or explanation.
 
 # process_technologies: Print the list of technologies that are created.
@@ -136,7 +136,7 @@ def test_llama_json_prompter_named():
 
     # Then
     assert prompt == '''[INST] <<SYS>>
-Please provide a JSON object that defines the arguments for the `process_technologies` function to answer the user's question.
+I need a JSON object that defines the arguments for the `process_technologies` function to answer the user's question.
 The response must contain ONLY the JSON object, with NO additional text or explanation.
 
 # process_technologies: Print the list of technologies that are created.

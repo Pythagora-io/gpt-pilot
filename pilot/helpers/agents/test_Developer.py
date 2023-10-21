@@ -112,7 +112,7 @@ class TestDeveloper:
 ```
 
 # Current Step:
-This step will not be executed. no, use a better command
+I want to skip this step which you suggested but I think no, use a better command
 ```
 {'command': 'ls -al test'}
 ```
@@ -179,6 +179,7 @@ This step will not be executed. no, use a better command
         convo = AgentConvo(self.developer)
         convo.save_branch = lambda branch_name=None: branch_name
         convo.load_branch = lambda function_uuid=None: function_uuid
+        self.project.get_all_coded_files = lambda: []
         self.project.developer = self.developer
 
         mock_chat_completion.side_effect = [
