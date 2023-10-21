@@ -386,6 +386,8 @@ class TestProjectFileLists:
 
         with open(os.path.join(project.root_path, 'package.json'), 'w') as file:
             json.dump({'name': 'test app'}, file, indent=2)
+        with open(os.path.join(project.root_path, 'package-lock.json'), 'w') as file:
+            json.dump({'name': 'test app'}, file, indent=2)
         for path in [
             os.path.join(src, 'main.js'),
             os.path.join(src, 'other.js'),

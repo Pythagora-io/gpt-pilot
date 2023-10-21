@@ -164,7 +164,7 @@ class Project:
         #     files = File.select().where(File.app_id == self.args['app_id'])
         #     files = {snapshot.name: snapshot for snapshot in files}
         # return build_directory_tree_with_descriptions(self.root_path, ignore=IGNORE_FOLDERS, files=files, add_descriptions=False)
-        return build_directory_tree(self.root_path, ignore=IGNORE_FOLDERS)
+        return build_directory_tree(self.root_path)
 
     def get_test_directory_tree(self):
         """
@@ -174,7 +174,7 @@ class Project:
             dict: The directory tree of tests.
         """
         # TODO remove hardcoded path
-        return build_directory_tree(self.root_path + '/tests', ignore=IGNORE_FOLDERS)
+        return build_directory_tree(self.root_path + '/tests')
 
     def get_all_coded_files(self):
         """

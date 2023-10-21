@@ -23,6 +23,7 @@ IGNORE_FOLDERS = [
     '.gpt-pilot',
     '.idea',
     '.vscode',
+    '.env',
     '__pycache__',
     'node_modules',
     'package-lock.json',

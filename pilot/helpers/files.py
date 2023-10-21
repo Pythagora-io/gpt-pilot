@@ -1,5 +1,6 @@
-from utils.style import color_green
 import os
+from const.common import IGNORE_FOLDERS
+from utils.style import color_green
 
 
 def update_file(path, new_content):
@@ -13,7 +14,10 @@ def update_file(path, new_content):
         file.write(new_content)
         print(color_green(f"Updated file {path}"))
 
-def get_files_content(directory, ignore=[]):
+
+def get_files_content(directory, ignore=None):
+    if ignore is None:
+        ignore = IGNORE_FOLDERS
     return_array = []
 
     for root, dirs, files in os.walk(directory):
@@ -21,7 +25,7 @@ def get_files_content(directory, ignore=[]):
         dirs[:] = [d for d in dirs if d not in ignore]
 
         for file in files:
-            # TODO: avoid sharing `.env` etc
+            # TODO: avoid sharing `package-lock.json`, `.env` etc
             if file in ignore:
                 continue
 
@@ -40,7 +44,11 @@ def get_files_content(directory, ignore=[]):
 
     return return_array
 
-def clear_directory(dir_path, ignore=[]):
+
+def clear_directory(dir_path, ignore=None):
+    if ignore is None:
+        ignore = IGNORE_FOLDERS
+
     for root, dirs, files in os.walk(dir_path, topdown=True):
         # Remove ignored directories from dirs so os.walk doesn't traverse them
         dirs[:] = [d for d in dirs if d not in ignore]

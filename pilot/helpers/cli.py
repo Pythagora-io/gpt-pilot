@@ -7,6 +7,7 @@ import time
 import platform
 from typing import Dict, Union
 
+from const.common import IGNORE_FOLDERS
 from logger.logger import logger
 from utils.style import color_yellow, color_green, color_red, color_yellow_bold, color_white_bold
 from database.database import get_saved_command_run, save_command_run
@@ -296,6 +297,8 @@ def build_directory_tree(path, prefix='', is_root=True, ignore=None):
     """
     output = ""
     indent = '  '
+    if ignore is None:
+        ignore = IGNORE_FOLDERS
 
     if os.path.isdir(path):
         dir_name = os.path.basename(path)
@@ -307,7 +310,7 @@ def build_directory_tree(path, prefix='', is_root=True, ignore=None):
         # List items in the directory
         items = os.listdir(path)
         dirs = [item for item in items if os.path.isdir(os.path.join(path, item)) and item not in ignore]
-        files = [item for item in items if os.path.isfile(os.path.join(path, item))]
+        files = [item for item in items if os.path.isfile(os.path.join(path, item)) and item not in ignore]
         dirs.sort()
         files.sort()
 
@@ -328,34 +331,34 @@ def build_directory_tree(path, prefix='', is_root=True, ignore=None):
     return output
 
 
-def res_for_build_directory_tree(path, files=None):
-   return ' - ' + files[os.path.basename(path)].description + ' ' if files and os.path.basename(path) in files else ''
-
-
-def build_directory_tree_with_descriptions(path, prefix="", ignore=None, is_last=False, files=None):
-   """Build the directory tree structure in tree-like format.
-   Args:
-   - path: The starting directory path.
-   - prefix: Prefix for the current item, used for recursion.
-   - ignore: List of directory names to ignore.
-   - is_last: Flag to indicate if the current item is the last in its parent directory.
-   Returns:
-   - A string representation of the directory tree.
-   """
-   ignore |= []
-   if os.path.basename(path) in ignore:
-       return ""
-   output = ""
-   indent = '|   ' if not is_last else '    '
-   # It's a directory, add its name to the output and then recurse into it
-   output += prefix + "|-- " + os.path.basename(path) + res_for_build_directory_tree(path, files) + "/\n"
-   if os.path.isdir(path):
-       # List items in the directory
-       items = os.listdir(path)
-       for index, item in enumerate(items):
-           item_path = os.path.join(path, item)
-           output += build_directory_tree(item_path, prefix + indent, ignore, index == len(items) - 1, files)
-   return output
+# def res_for_build_directory_tree(path, files=None):
+#     return ' - ' + files[os.path.basename(path)].description + ' ' if files and os.path.basename(path) in files else ''
+#
+#
+# def build_directory_tree_with_descriptions(path, prefix="", ignore=None, is_last=False, files=None):
+#     """Build the directory tree structure in tree-like format.
+#     Args:
+#     - path: The starting directory path.
+#     - prefix: Prefix for the current item, used for recursion.
+#     - ignore: List of directory names to ignore.
+#     - is_last: Flag to indicate if the current item is the last in its parent directory.
+#     Returns:
+#     - A string representation of the directory tree.
+#     """
+#     ignore |= []
+#     if os.path.basename(path) in ignore:
+#         return ""
+#     output = ""
+#     indent = '|   ' if not is_last else '    '
+#     # It's a directory, add its name to the output and then recurse into it
+#     output += prefix + "|-- " + os.path.basename(path) + res_for_build_directory_tree(path, files) + "/\n"
+#     if os.path.isdir(path):
+#         # List items in the directory
+#         items = os.listdir(path)
+#         for index, item in enumerate(items):
+#             item_path = os.path.join(path, item)
+#             output += build_directory_tree(item_path, prefix + indent, ignore, index == len(items) - 1, files)
+#     return output
 
 
 def execute_command_and_check_cli_response(convo, command: dict):
