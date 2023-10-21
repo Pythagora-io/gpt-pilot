@@ -72,6 +72,8 @@ class Debugger:
                         continue_development=False,
                         is_root_task=is_root_task)
 
+                    logger.info('execute_task result: %s', result)
+
                     if 'step_index' in result:
                         # result['running_processes'] = running_processes
                         result['os'] = platform.system()

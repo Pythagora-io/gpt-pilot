@@ -8,7 +8,7 @@
 
 # Current Step:
 {% if success %}Ok, this step was executed successfully and you wanted to see the output.
-{%- elif user_input %}This step will not be executed. {{ user_input }}
+{%- elif user_input %}I want to skip this step which you suggested but I think {{ user_input }}
 {%- else %}This step was not executed successfully.
 {%- endif %}
 ```
