@@ -25,7 +25,7 @@ def test_execute_command_timeout_exit_code(mock_run, mock_get_saved_command):
 
     # Then
     assert cli_response is not None
-    assert llm_response == 'took longer than 2000ms so I killed it'
+    assert llm_response == 'took longer than 2000ms and you didn\'t provide a `command_id` so I killed the process'
     assert exit_code is not None
 
 
