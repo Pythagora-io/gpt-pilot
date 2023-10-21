@@ -10,7 +10,16 @@ Here are the technologies that you need to use for this project:
 - {{ tech }}{% endfor %}
 ```
 
-A big part of the app is already finished. Here are files that are currently implemented:
+{% if development_tasks and current_task %}
+Development process of this app was split into smaller tasks. Here is the list of all tasks:
+```{% for task in development_tasks %}
+- {{ loop.index }}. {{ task['description'] }}
+{% endfor %}
+```
+You are currently working on task "{{ current_task.description }}" and you have to focus only on that task.
+
+{% endif %}
+A part of the app is already finished.Here are files that are currently implemented:
 {% for file in files %}
 **{{ file.path }}**:
 ```
@@ -25,7 +34,7 @@ Now, your colleague who is testing the app "{{ name }}" sent you some additional
 
 Can you debug this issue or implement changes to comply with the additional user input?
 
-Tell me all the new code that needs to be written or modified to implement this app and have it fully working. You can count that the environment is set up previously and packages listed in files are installed so tell me only commands needed for installation of new dependencies.
+Tell me all the new code that needs to be written or modified to implement current task and have it fully working. You can count that the environment is set up previously and packages listed in files are installed so tell me only commands needed for installation of new dependencies, if there are any.
 
 {# Do not leave any parts of the code to be written afterwards. Make sure that all the code you provide is working and does as outlined in the description area above.
 #}
