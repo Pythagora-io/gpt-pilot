@@ -190,6 +190,9 @@ class AgentConvo:
     def replace_file_content(self, message, file_path, new_content):
         escaped_file_path = re.escape(file_path)
 
+        # Escape any \U in the file path
+        escaped_file_path = escaped_file_path.replace("\\U", "\\\\U")
+
         pattern = rf'\*\*{{ {escaped_file_path} }}\*\*\n```\n(.*?)\n```'
 
         new_section_content = f'**{{ {file_path} }}**\n```\n{new_content}\n```'
