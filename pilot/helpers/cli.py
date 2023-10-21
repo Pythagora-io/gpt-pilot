@@ -175,12 +175,14 @@ def execute_command(project, command, timeout=None, success_message=None, comman
     return_value = None
     done_or_error_response = None
 
+    if command_id is not None:
+        terminate_named_process(command_id)
+
     q_stderr = queue.Queue()
     q = queue.Queue()
     process = run_command(command, project.root_path, q, q_stderr)
 
     if command_id is not None:
-        terminate_named_process(command_id)
         # TODO: We want to be able to send the initial stdout/err to the LLM, but it would also be handy to log ongoing output to a log file, named after `command_id`. Terminating an existing process with the same ID should reset the log file
         running_processes[command_id] = (command, process.pid)
 
