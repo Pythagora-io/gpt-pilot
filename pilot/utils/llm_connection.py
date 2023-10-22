@@ -197,6 +197,8 @@ def retry_on_exception(func):
                     function_error_count = update_error_count(args)
                     logger.warning('Received invalid character in JSON response from LLM. Asking to retry...')
                     logger.info(f'  received: {e.doc}')
+                    if e.doc == '[INST]':
+                        continue
                     set_function_error(args, err_str)
                     if function_error_count < 3:
                         continue
