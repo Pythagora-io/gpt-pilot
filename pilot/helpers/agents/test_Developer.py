@@ -127,7 +127,8 @@ class TestDeveloper:
 
         # Then we parse the response correctly and send list of steps to execute_task()
         assert developer.execute_task.call_count == 1
-
+        # mistral-7b-instruct initially came back with a list of `touch` and `mkdir` commands
+        assert any(step['type'] == 'code_change' for step in developer.execute_task.call_args.args[1])
 
     @patch('helpers.AgentConvo.get_saved_development_step')
     @patch('helpers.AgentConvo.save_development_step')

@@ -40,16 +40,18 @@ def return_array_from_prompt(name_plural, name_singular, return_var_name):
     }
 
 
-def command_definition(description_command='A single command that needs to be executed.',
+def command_definition(description='Command that needs to be run to complete the current task. '
+                                   'This should be used only if the task is of a type "command".',
+                       description_command='A single command that needs to be executed. If you need to run a '
+                       'command that doesn\'t finish by itself (eg. a command to run an app), provide a command_id '
+                       'and set the timeout to to a value long enough to determine that it has started successfully.',
+                       # 'If you need to create an empty directory that doesn\'t exist and is not the root project '
+                       # 'directory, always create it by running a command `mkdir`',
                        description_timeout=
-                       'Timeout in milliseconds that represent the approximate time this command takes to finish. '
-                       'If you need to run a command that doesn\'t finish by itself (eg. a command to run an app), '
-                       'set the timeout to to a value long enough to determine that it has started successfully and provide a command_id. '
-                       'If you need to create a directory that doesn\'t exist and is not the root project directory, '
-                       'always create it by running a command `mkdir`'):
+                       'Timeout in milliseconds that represent the approximate time this command takes to finish.'):
     return {
         'type': 'object',
-        'description': 'Command that needs to be run to complete the current task. This should be used only if the task is of a type "command".',
+        'description': description,
         'properties': {
             'command': {
                 'type': 'string',
@@ -140,14 +142,23 @@ DEV_TASKS_BREAKDOWN = {
                         'description': 'List of smaller development steps that need to be done to complete the entire task.',
                         'items': {
                             'type': 'object',
-                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
+                            'description': 'A smaller development step that needs to be done to complete the entire task.',
+                                           # ' Remember, if you need to run a command that doesn\'t finish by itself (eg. a command to run an app), '
+                                           # 'put the timeout to 3000 milliseconds. If you need to create a directory '
+                                           # 'that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
                             'properties': {
                                 'type': {
                                     'type': 'string',
                                     'enum': ['command', 'code_change', 'human_intervention'],
                                     'description': 'Type of the development step that needs to be done to complete the entire task.',
                                 },
-                                'command': command_definition('A single command that needs to be executed.', 'Timeout in milliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. Remember, this is not in seconds but in milliseconds so likely it always needs to be greater than 1000.'),
+                                'command': command_definition(),
+                                            # 'A single command that needs to be executed.',
+                                            # 'Timeout in milliseconds that represent the approximate time the command takes to finish. '
+                                            # 'This should be used only if the task is of a type "command". '
+                                            # 'If you need to run a command that doesn\'t finish by itself '
+                                            # '(eg. a command to run an app), put the timeout to 3000 milliseconds. '
+                                            # 'Remember, this is not in seconds but in milliseconds so likely it always needs to be greater than 1000.'),
                                 'code_change_description': {
                                     'type': 'string',
                                     'description': 'Description of a the development step that needs to be done. This should be used only if the task is of a type "code_change" and it should thoroughly describe what needs to be done to implement the code change for a single file - it cannot include changes for multiple files.',
@@ -183,10 +194,13 @@ IMPLEMENT_TASK = {
                         'description': 'List of smaller development steps that need to be done to complete the entire task.',
                         'items': {
                             'type': 'object',
-                            'description': 'A smaller development step that needs to be done to complete the entire task. '
-                                           'Remember, if you need to run a command that doesn\'t finish by itself '
-                                           '(eg. a command to run an '
-                                           'If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
+                            'description': 'A smaller development step that needs to be done to complete the entire task.'
+                                           # 'Remember, if you need to run a command that doesn\'t finish by itself '
+                                           # '(eg. a command to run an app), provide a command_id and set the timeout '
+                                           # 'to to a value long enough to determine that it has started successfully. '
+                                           # 'If you need to create an empty directory that doesn\'t exist and is not '
+                                           # 'the root project directory, always create it by running a command `mkdir`'
+                            ,
                             'properties': {
                                 'type': {
                                     'type': 'string',
@@ -341,16 +355,19 @@ CODE_CHANGES = {
                             'description': 'A smaller development step that needs to be done to complete the entire task. '
                                            'If you need to create a directory that doesn\'t exist and is not the root project directory, '
                                            'you can use `code_change` to write a file and the directory will be created, '
-                                           'or create an an empty directory by running a command `mkdir`',
+                                           # 'or create an an empty directory by running a command `mkdir`. '
+                                           'We are currently in project root directory',
                             'properties': {
                                 'type': {
                                     'type': 'string',
                                     'enum': ['command', 'code_change'],
                                     'description': 'Type of the development step that needs to be done to complete the entire task.',
                                 },
-                                'command': command_definition('Command that needs to be run to complete the current task. This should be used only if the task is of a type "command".',
-                                                              'Timeout in milliseconds that represent the approximate time the command takes to finish. '
-                                                              'This should be used only if the task is of a type "command".'),
+                                'command': command_definition(),
+                                        # ('Command that needs to be run to complete the current task. '
+                                        # 'This should be used only if the task is of a type "command".',
+                                        # 'Timeout in milliseconds that represent the approximate time the command takes to finish. '
+                                        # 'This should be used only if the task is of a type "command".'),
                                 'code_change_description': {
                                     'type': 'string',
                                     'description': 'Description of a the development step that needs to be done. This should be used only if the task is of a type "code_change" and it should thoroughly describe what needs to be done to implement the code change.',
@@ -417,12 +434,15 @@ EXECUTE_COMMANDS = {
             'properties': {
                 'commands': {
                     'type': 'array',
-                    'description': 'List of commands that need to be executed. '
-                                   'Remember, if you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. '
-                                   'If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
-                    'items': command_definition('A single command that needs to be executed.',
-                                                'Timeout in milliseconds that represent the approximate time this command takes to finish. '
-                                                'If you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.')
+                    'description': 'List of commands that need to be executed.',
+                                   # 'Remember, if you need to run a command that doesn\'t finish by itself '
+                                   # '(eg. a command to run an app), put the timeout to 3000 milliseconds. '
+                                   # 'If you need to create a directory that doesn\'t exist and is not the '
+                                   # 'root project directory, always create it by running a command `mkdir`',
+                    'items': command_definition('A single command that needs to be executed.'),
+                        # 'Timeout in milliseconds that represent the approximate time this command takes to finish. '
+                        # 'If you need to run a command that doesn\'t finish by itself (eg. a command to run an app),
+                        # put the timeout to 3000 milliseconds.')
                 }
             },
             'required': ['commands'],
@@ -511,10 +531,16 @@ GET_TEST_TYPE = {
             'properties': {
                 'type': {
                     'type': 'string',
-                    'description': 'Type of a test that needs to be run. If this is just an intermediate step in getting a task done, put `no_test` as the type and we\'ll just go onto the next task without testing.',
+                    'description': 'Type of a test that needs to be run. '
+                                   'If this is just an intermediate step in getting a task done, put `no_test` '
+                                   'as the type and we\'ll just go onto the next task without testing.',
                     'enum': ['automated_test', 'command_test', 'manual_test', 'no_test']
                 },
-                'command': command_definition('Command that needs to be run to test the changes.', 'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`'),
+                'command': command_definition('Command that needs to be run to test the changes. '
+                                              'This should only be used if the task is of at type "command_test"'),
+                      # 'Timeout in milliseconds that represent the approximate time this command takes to finish. '
+                      # 'If you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. '
+                      # 'If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`'),
                 'automated_test_description': {
                     'type': 'string',
                     'description': 'Description of an automated test that needs to be run to test the changes. This should be used only if the test type is "automated_test" and it should thoroughly describe what needs to be done to implement the automated test so that when someone looks at this test can know exactly what needs to be done to implement this automated test.',
@@ -553,14 +579,22 @@ DEBUG_STEPS_BREAKDOWN = {
                         'description': 'List of steps that need to be done to debug the problem.',
                         'items': {
                             'type': 'object',
-                            'description': 'A single step that needs to be done to get closer to debugging this issue.  Remember, if you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
+                            'description': 'A single step that needs to be done to get closer to debugging this issue.',
+                                           # ' Remember, if you need to run a command that doesn\'t finish by itself '
+                                           # '(eg. a command to run an app), put the timeout to 3000 milliseconds. '
+                                           # 'If you need to create a directory that doesn\'t exist and is not the '
+                                           # 'root project directory, always create it by running a command `mkdir`',
                             'properties': {
                                 'type': {
                                     'type': 'string',
                                     'enum': ['command', 'kill_process', 'code_change', 'human_intervention'],
                                     'description': 'Type of the step that needs to be done to debug this issue.',
                                 },
-                                'command': command_definition('Command that needs to be run to debug this issue.', 'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.'),
+                                'command': command_definition(),
+                                           # 'Command that needs to be run to debug this issue.',
+                                           # 'Timeout in milliseconds that represent the approximate time this command takes to finish. '
+                                           # 'If you need to run a command that doesn\'t finish by itself (eg. a command to run an app), '
+                                           # 'put the timeout to 3000 milliseconds.'),
                                 'kill_process': {
                                     'type': 'string',
                                     'description': 'To kill a process that was left running by a previous `command` step provide the `command_id` in this field and set `type` to "kill_process".',
