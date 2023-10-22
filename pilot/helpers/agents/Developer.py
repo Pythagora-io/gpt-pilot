@@ -251,7 +251,7 @@ class Developer(Agent):
         try:
             if continue_development:
                 continue_description = detailed_user_review_goal if detailed_user_review_goal is not None else None
-                return self.continue_development(convo, last_branch_name, continue_description)
+                return self.continue_development(convo, last_branch_name, continue_description, development_task)
         except TooDeepRecursionError as e:
             logger.warning('Too deep recursion error. Call dev_help_needed() for human_intervention: %s', e.message)
             return self.dev_help_needed({"type": "human_intervention", "human_intervention_description": e.message})
@@ -383,7 +383,7 @@ class Developer(Agent):
         convo.load_branch(function_uuid)
         return self.task_postprocessing(convo, development_task, continue_development, result, function_uuid)
 
-    def continue_development(self, iteration_convo, last_branch_name, continue_description=''):
+    def continue_development(self, iteration_convo, last_branch_name, continue_description='', development_task=None):
         while True:
             logger.info('Continue development, last_branch_name: %s', last_branch_name)
             iteration_convo.load_branch(last_branch_name)
@@ -429,6 +429,8 @@ class Developer(Agent):
                     "technologies": self.project.architecture,
                     "array_of_objects_to_string": array_of_objects_to_string,  # TODO check why is this here
                     "directory_tree": self.project.get_directory_tree(True),
+                    "current_task": development_task,
+                    "development_tasks": self.project.development_plan,
                     "files": self.project.get_all_coded_files(),
                     "user_input": user_feedback,
                 })
