@@ -245,7 +245,7 @@ class Developer(Agent):
             convo.remove_last_x_messages(2)
             detailed_user_review_goal = convo.send_message('development/define_user_review_goal.prompt', {
                 'os': platform.system()
-            })
+            }, should_log_message=False)
             convo.remove_last_x_messages(2)
 
         try:
