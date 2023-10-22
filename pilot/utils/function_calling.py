@@ -189,7 +189,8 @@ class JsonPrompter:
             "Help choose the appropriate function to call to answer the user's question."
             if function_to_call is None
             else f"Please provide a JSON object that defines the arguments for the `{function_to_call}` function to answer the user's question."
-        ) + "\nThe response must contain ONLY the JSON object, with NO additional text or explanation."
+        ) + "\nThe response must contain ONLY the JSON object, with NO additional text or explanation. " \
+            "Do not escape any underscore characters in the response."
 
         data = (
             self.function_data(functions, function_to_call)

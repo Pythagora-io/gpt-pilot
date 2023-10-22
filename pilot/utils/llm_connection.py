@@ -445,6 +445,7 @@ def assert_json_response(response: str, or_fail=True) -> bool:
 
 def clean_json_response(response: str) -> str:
     response = re.sub(r'^.*```json\s*', '', response, flags=re.DOTALL)
+    response = response.replace('\\_', '_')  # Mistral7B likes to escape underscores
     response = re.sub(r': ?True(,)?$', r':true\1', response, flags=re.MULTILINE)
     response = re.sub(r': ?False(,)?$', r':false\1', response, flags=re.MULTILINE)
     return response.strip('` \n')
