@@ -615,10 +615,13 @@ DEBUG_STEPS_BREAKDOWN = {
                                 },
                                 "check_if_fixed": {
                                     'type': 'boolean',
-                                    'description': 'Flag that indicates if the original command that triggered the error that\'s being debugged should be tried after this step to check if the error is fixed. If you think that the original command `delete node_modules/ && delete package-lock.json` will pass after this step, then this flag should be set to TRUE and if you think that the original command will still fail after this step, then this flag should be set to `false`.',
+                                    'description': 'Flag that indicates if the original command that triggered the '
+                                                   'error that\'s being debugged should be tried after this step to check if the error is fixed. '
+                                                   'Set to `true` if you think that the original command will pass after this step, '
+                                                   'otherwise set to `false` if you think that the original command will still fail after this step.',
                                 }
                             },
-                            'required': ['type', 'check_if_fixed'],
+                            'required': ['type'],
                         }
                     }
                 },

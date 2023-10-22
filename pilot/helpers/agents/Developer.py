@@ -353,7 +353,8 @@ class Developer(Agent):
                         result['step_index'] = i
                         return result
 
-                    if test_command is not None and ('check_if_fixed' not in step or step['check_if_fixed']):
+                    if test_command is not None and (i + 1 >= len(task_steps) or
+                                                     ('check_if_fixed' in step and step['check_if_fixed'])):
                         logger.info('check_if_fixed: %s', test_command)
                         result = self.step_test(convo, test_command)
                         logger.info('task result: %s', result)
