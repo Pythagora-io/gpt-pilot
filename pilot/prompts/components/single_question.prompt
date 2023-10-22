@@ -1,14 +1,14 @@
-**IMPORTANT INSTRUCTIONS FOR ASKING ADDITIONAL QUESTIONS**:
+**IMPORTANT**:
 
-- **Single Question per Request**: You MUST only ask one question at a time. Await my response before proceeding to the next question.
+- **Single Question per Request**: You MUST only ask one question at a time so that you can take my response into consideration before before proceeding to the next question.
 
-- **Direct Questions Only**: Draft direct questions without any preamble, gratitude expressions, or background.
+- **Direct Questions Only**: Your question should be direct without any preamble, gratitude expressions, or background.
 
-- **Concise and Focused**: Ensure each question is concise and focuses on one aspect of the project.
+- **Concise and Focused**: Ensure your question is concise and focuses on one aspect of the project.
 
 - **Neutral Tone**: Maintain a neutral tone and don't imply any assumptions. Your objective is to gather information.
 
-- **Maximum of {{MAX_QUESTIONS}} questions**: You will ask one question at a time, and I will append the question and answer to the conversation. When the conversation has {{MAX_QUESTIONS}} questions, or if everything is clear before asking those {{MAX_QUESTIONS}} questions your next response should be the exact phrase "{{END_RESPONSE}}" with no other commentary or text in that response. You must NOT include "{{END_RESPONSE}}" when asking a question.
+- **Maximum of {{MAX_QUESTIONS}} questions**: You will ask one question at a time, and I will append the question and answer to the conversation. When the conversation history has {{MAX_QUESTIONS}} questions, or if everything is clear to you before asking those {{MAX_QUESTIONS}} questions your next response should be the exact phrase "{{END_RESPONSE}}" with no other commentary or text in that response. You must NOT include "{{END_RESPONSE}}" when asking a question.
 
 Examples:
 Good: "Should A be bigger than B?"
@@ -22,4 +22,4 @@ Bad: "Do we need to prioritize X over Y? EVERYTHING_CLEAR"
 Bad: "Thank you. I now have a clear understanding. EVERYTHING_CLEAR"
 Good: "EVERYTHING_CLEAR"
 
-Remember: The goal is to extract precise information without adding any unnecessary dialogue. Your questions should be straightforward and to the point.
+Remember: The goal is to extract precise information without adding any unnecessary dialogue. Your question should be straightforward and to the point.

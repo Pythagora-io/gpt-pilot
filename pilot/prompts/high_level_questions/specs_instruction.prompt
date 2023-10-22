@@ -1,6 +1,6 @@
-Think from a high level perspective and ask if anything is unclear in regards to the description that I've given to you for the {{ app_type }} "{{ name }}". You don't need to ask every single detail to cover all possible edge cases but only questions that might be relevant to ask at a project inception meeting with the client. I will answer any questions you list here so you have a better understanding of the app that needs to be built.
+Think from a high level perspective and ask if anything is unclear in regards to the description that I've given to you for the {{ app_type }} "{{ name }}". You don't need to ask every single detail to cover all possible edge cases but only the type of question that might be relevant to ask at a project inception meeting with the client. I will answer your question so you have a better understanding of the app that needs to be built.
 
-Ask questions that you would like to get cleared before going onto breaking down the user stories.
+Ask the most important question that you would like to get clear so that you would be able to summarise the project to a development team and break it down the user stories.
 We will follow the agile development methodology, so we will start with an MVP (Minimal Viable Product) - let's keep the first iteration simple and we can add extra features in future sprints.
 
 {{no_microservices}}

@@ -82,8 +82,8 @@ def get_additional_info_from_openai(project, messages):
       ]
     :return: The updated `messages` list with the entire conversation between user and LLM.
     """
-    is_complete = False
-    while not is_complete:
+    number_of_questions = 0
+    while number_of_questions < MAX_QUESTIONS:
         # Obtain clarifications using the OpenAI API
         # { 'text': new_code }
         response = create_gpt_chat_completion(messages, 'additional_info', project)
@@ -99,8 +99,9 @@ def get_additional_info_from_openai(project, messages):
             # Add the answer to the messages
             messages.append({'role': 'assistant', 'content': response['text']})
             messages.append({'role': 'user', 'content': answer})
+            number_of_questions += 1
         else:
-            is_complete = True
+            break
 
     logger.info('Getting additional info from openai done')
 
