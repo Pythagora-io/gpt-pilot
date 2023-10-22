@@ -250,6 +250,8 @@ def retry_on_exception(func):
                 if user_message != '':
                     return {}
 
+                if 'function_error_count' in args[0]:
+                    del args[0]['function_error_count']
     return wrapper
 
 
