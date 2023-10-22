@@ -88,11 +88,28 @@ def test_llama_json_prompter():
 
     # Then
     assert prompt == '''[INST] <<SYS>>
-Help choose the appropriate function to call to answer the user's question.
-The response must contain ONLY the JSON object, with NO additional text or explanation.
+Choose the appropriate function to call. example: {"name": "process_technologies", "arguments": {...}}
+Your response must be a JSON object only. Do not include any introductory or concluding sentences.
 
 Available functions:
-- process_technologies - Print the list of technologies that are created.
+# process_technologies - Print the list of technologies that are created.
+JSON schema:
+```json
+{
+    "name": "process_technologies",
+    "arguments": {
+        "technologies": {
+            "type": "array",
+            "description": "List of technologies.",
+            "items": {
+                "type": "string",
+                "description": "technology"
+            }
+        }
+    }
+}
+```
+
 <</SYS>>
 
 Create a web-based chat app [/INST]'''
@@ -107,7 +124,7 @@ def test_json_prompter_named():
 
     # Then
     assert prompt == '''Please provide a JSON object that defines the arguments for the `process_technologies` function to answer the user's question.
-The response must contain ONLY the JSON object, with NO additional text or explanation.
+Your response must be a JSON object only. Do not include any introductory or concluding sentences.
 
 # process_technologies: Print the list of technologies that are created.
 Here is the schema for the expected JSON object:
@@ -137,7 +154,7 @@ def test_llama_json_prompter_named():
     # Then
     assert prompt == '''[INST] <<SYS>>
 Please provide a JSON object that defines the arguments for the `process_technologies` function to answer the user's question.
-The response must contain ONLY the JSON object, with NO additional text or explanation.
+Your response must be a JSON object only. Do not include any introductory or concluding sentences.
 
 # process_technologies: Print the list of technologies that are created.
 Here is the schema for the expected JSON object:
