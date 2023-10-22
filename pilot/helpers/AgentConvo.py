@@ -187,15 +187,36 @@ class AgentConvo:
                 for file in files:
                     self.replace_file_content(msg['content'], file['path'], file['content'])
 
+    def escape_specials(self, s):
+        s = s.replace("\\", "\\\\")
+
+        # List of sequences to preserve
+        sequences_to_preserve = [
+            # todo check if needed "\\\\",  # Backslash - note: probably not eg. paths on Windows
+            "\\'",  # Single quote
+            '\\"',  # Double quote
+            # todo check if needed '\\a',  # ASCII Bell (BEL)
+            # todo check if needed '\\b',  # ASCII Backspace (BS) - note: different from regex \b
+            # todo check if needed '\\f',  # ASCII Formfeed (FF)
+            '\\n',  # ASCII Linefeed (LF)
+            # todo check if needed '\\r',  # ASCII Carriage Return (CR)
+            '\\t',  # ASCII Horizontal Tab (TAB)
+            # todo check if needed '\\v'  # ASCII Vertical Tab (VT)
+        ]
+
+        for seq in sequences_to_preserve:
+            s = s.replace('\\\\' + seq[-1], seq)
+        return s
+
     def replace_file_content(self, message, file_path, new_content):
         escaped_file_path = re.escape(file_path)
 
-        # Double escape backslashes in new_content
-        new_content = new_content.replace("\\", "\\\\")
-
         pattern = rf'\*\*{{ {escaped_file_path} }}\*\*\n```\n(.*?)\n```'
 
-        new_section_content = f'**{{ {file_path} }}**\n```\n{new_content}\n```'
+        # Escape special characters in new_content for the sake of regex replacement
+        new_content_escaped = self.escape_specials(new_content)
+
+        new_section_content = f'**{{ {file_path} }}**\n```\n{new_content_escaped}\n```'
 
         updated_message, num_replacements = re.subn(pattern, new_section_content, message, flags=re.DOTALL)
 
