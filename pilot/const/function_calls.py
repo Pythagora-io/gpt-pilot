@@ -43,7 +43,7 @@ def return_array_from_prompt(name_plural, name_singular, return_var_name):
 def command_definition(description_command='A single command that needs to be executed.',
                        description_timeout=
                        'Timeout in milliseconds that represent the approximate time this command takes to finish. '
-                       'If you need to run a command that doesnt\'t finish by itself (eg. a command to run an app), '
+                       'If you need to run a command that doesn\'t finish by itself (eg. a command to run an app), '
                        'set the timeout to to a value long enough to determine that it has started successfully and provide a command_id. '
                        'If you need to create a directory that doesn\'t exist and is not the root project directory, '
                        'always create it by running a command `mkdir`'):
