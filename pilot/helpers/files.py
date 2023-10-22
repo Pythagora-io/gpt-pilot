@@ -13,6 +13,7 @@ def update_file(path, new_content):
         file.write(new_content)
         print(color_green(f"Updated file {path}"))
 
+
 def get_files_content(directory, ignore=[]):
     return_array = []
 

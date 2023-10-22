@@ -183,7 +183,10 @@ IMPLEMENT_TASK = {
                         'description': 'List of smaller development steps that need to be done to complete the entire task.',
                         'items': {
                             'type': 'object',
-                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesn\'t finish by itself (eg. a command to run an  If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
+                            'description': 'A smaller development step that needs to be done to complete the entire task. '
+                                           'Remember, if you need to run a command that doesn\'t finish by itself '
+                                           '(eg. a command to run an '
+                                           'If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
                             'properties': {
                                 'type': {
                                     'type': 'string',
@@ -335,14 +338,19 @@ CODE_CHANGES = {
                         'description': 'List of smaller development steps that need to be done to complete the entire task.',
                         'items': {
                             'type': 'object',
-                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
+                            'description': 'A smaller development step that needs to be done to complete the entire task. '
+                                           'If you need to create a directory that doesn\'t exist and is not the root project directory, '
+                                           'you can use `code_change` to write a file and the directory will be created, '
+                                           'or create an an empty directory by running a command `mkdir`',
                             'properties': {
                                 'type': {
                                     'type': 'string',
                                     'enum': ['command', 'code_change'],
                                     'description': 'Type of the development step that needs to be done to complete the entire task.',
                                 },
-                                'command': command_definition('Command that needs to be run to complete the current task. This should be used only if the task is of a type "command".', 'Timeout in milliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. Remember, this is not in seconds but in milliseconds so likely it always needs to be greater than 1000.'),
+                                'command': command_definition('Command that needs to be run to complete the current task. This should be used only if the task is of a type "command".',
+                                                              'Timeout in milliseconds that represent the approximate time the command takes to finish. '
+                                                              'This should be used only if the task is of a type "command".'),
                                 'code_change_description': {
                                     'type': 'string',
                                     'description': 'Description of a the development step that needs to be done. This should be used only if the task is of a type "code_change" and it should thoroughly describe what needs to be done to implement the code change.',
@@ -409,9 +417,12 @@ EXECUTE_COMMANDS = {
             'properties': {
                 'commands': {
                     'type': 'array',
-                    'description': 'List of commands that need to be executed.  Remember, if you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
+                    'description': 'List of commands that need to be executed. '
+                                   'Remember, if you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. '
+                                   'If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
                     'items': command_definition('A single command that needs to be executed.',
-                                                'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.')
+                                                'Timeout in milliseconds that represent the approximate time this command takes to finish. '
+                                                'If you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.')
                 }
             },
             'required': ['commands'],
