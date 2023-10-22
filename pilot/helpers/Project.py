@@ -110,7 +110,7 @@ class Project:
                 self.skip_steps = False
             elif self.skip_until_dev_step is not None:
                 should_overwrite_files = ''
-                while should_overwrite_files != 'y' or should_overwrite_files != 'n':
+                while should_overwrite_files.lower() not in ['y', 'n']:
                     should_overwrite_files = styled_text(
                         self,
                         f'Do you want to overwrite the dev step {self.args["skip_until_dev_step"]} code with system changes? Type y/n',
