@@ -147,7 +147,7 @@ class Developer(Agent):
         else:
             data = step['command']
         # TODO END
-        additional_message = 'Let\'s start with the step #0:\n\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i)) } are finished so let\'s do step #{i + 1} now.\n\n'
+        additional_message = 'Let\'s start with the step #0:\n\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i+1)) } are finished so let\'s do step #{i + 1} now.\n\n'
 
         command_id = data['command_id'] if 'command_id' in data else None
         success_message = data['success_message'] if 'success_message' in data else None
@@ -245,7 +245,7 @@ class Developer(Agent):
             convo.remove_last_x_messages(2)
             detailed_user_review_goal = convo.send_message('development/define_user_review_goal.prompt', {
                 'os': platform.system()
-            })
+            }, should_log_message=False)
             convo.remove_last_x_messages(2)
 
         try:
