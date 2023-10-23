@@ -7,11 +7,9 @@
 {% endif -%}
 
 # Current Step:
-{% if success %}This step was executed successfully.
-{%- elif user_input -%}
-This step will not be executed. {{ user_input }}
-{%- else -%}
-This step was not executed successfully.
+{% if success %}Ok, this step was executed successfully and you wanted to see the output.
+{%- elif user_input %}I want to skip this step which you suggested but I think {{ user_input }}
+{%- else %}This step was not executed successfully.
 {%- endif %}
 ```
 {{ current_step }}
@@ -29,7 +27,10 @@ This step was not executed successfully.
 {{ next_steps }}
 ```
 
-Based on the Next Task Steps and my comments above for the Current Step, please create a new list of task steps to complete this task. The Current Step will need to be modified, and based on that any of the Next Task Steps may or may not still be valid.
+{% if success %}
+Given the output above, what should be the immediate next steps to achieve the debugging goal?
+{% else %}
+Based on the Next Task Steps and my comments above for the Current Step, please create a new list of task steps to complete this task. The Current Step will need to be modified, and based on that any of the Next Task Steps may or may not still be valid.{% endif %}
 {% else -%}
 Based on my comments above for the Current Step, please create a new list of task steps to complete this task.
 {% endif %}

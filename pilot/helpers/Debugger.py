@@ -3,6 +3,7 @@ import uuid
 
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_RECUSION_LAYER
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
+from helpers.AgentConvo import AgentConvo
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
 from logger.logger import logger
@@ -19,7 +20,7 @@ class Debugger:
 
         Args:
             convo (AgentConvo): The conversation object.
-            command (dict, optional): The command to debug. Default is None.
+            command (dict, optional): The command to debug: {command: '', timeout: ms, command_id: ''}. Default is None.
             user_input (str, optional): User input for debugging. Default is None.
                 Should provide `command` or `user_input`.
             issue_description (str, optional): Description of the issue to debug. Default is None.
@@ -32,6 +33,9 @@ class Debugger:
         if self.recursion_layer > MAX_RECUSION_LAYER:
             self.recursion_layer = 0
             raise TooDeepRecursionError()
+
+        convo = AgentConvo(self.agent)
+        convo.high_level_step = f'debug-{self.recursion_layer}'
 
         function_uuid = str(uuid.uuid4())
         convo.save_branch(function_uuid)
@@ -68,6 +72,8 @@ class Debugger:
                         continue_development=False,
                         is_root_task=is_root_task)
 
+                    logger.info('execute_task result: %s', result)
+
                     if 'step_index' in result:
                         # result['running_processes'] = running_processes
                         result['os'] = platform.system()
@@ -76,13 +82,15 @@ class Debugger:
                         result['current_step'] = steps[step_index]
                         result['next_steps'] = steps[step_index + 1:]
 
-                        # Remove the previous debug plan and build a new one
-                        convo.remove_last_x_messages(1)
-                        llm_response = convo.send_message('development/task/update_task.prompt', result,
-                                                               DEBUG_STEPS_BREAKDOWN)
-                    else:
-                        success = result['success']
-                        break
+                        if not result['success'] or len(result['next_steps']) > 0:
+                            # Remove the previous debug plan and build a new one
+                            convo.remove_last_x_messages(1)
+                            llm_response = convo.send_message('development/task/update_task.prompt', result,
+                                                                   DEBUG_STEPS_BREAKDOWN)
+                            continue
+
+                    success = result['success']
+                    break
 
             except TokenLimitError as e:
                 if self.recursion_layer > 0:
