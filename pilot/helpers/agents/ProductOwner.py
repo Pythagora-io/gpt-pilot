@@ -43,9 +43,9 @@ class ProductOwner(Agent):
         if 'name' not in self.project.args:
             self.project.args['name'] = clean_filename(ask_user(self.project, 'What is the project name?'))
 
-        self.project.set_root_path(setup_workspace(self.project.args))
-
         self.project.app = save_app(self.project)
+
+        self.project.set_root_path(setup_workspace(self.project.args))
 
         main_prompt = ask_for_main_app_definition(self.project)
 
