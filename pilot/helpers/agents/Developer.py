@@ -191,7 +191,7 @@ class Developer(Agent):
                                                                 # If the app doesn't crash in the first 1st second
                                                                 # assume it's good and leave it running.
                                                                 # If timeout is None the conversation can't continue
-                                                                timeout=1000,
+                                                                timeout=None,
                                                                 force=True,
                                                                 return_cli_response=True)
                 },
@@ -406,7 +406,7 @@ class Developer(Agent):
                                                                   # If the app doesn't crash in the first 1st second
                                                                   # assume it's good and leave it running.
                                                                   # If timeout is None the conversation can't continue
-                                                                  timeout=1000,
+                                                                  timeout=None,
                                                                   force=True,
                                                                   return_cli_response=True, is_root_task=True)},
                 convo=iteration_convo,

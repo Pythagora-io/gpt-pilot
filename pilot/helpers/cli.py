@@ -8,10 +8,11 @@ import platform
 from typing import Dict, Union
 
 from logger.logger import logger
-from utils.style import color_yellow, color_green, color_red, color_yellow_bold, color_white_bold
+from utils.style import color_yellow, color_green, color_red, color_yellow_bold
 from database.database import get_saved_command_run, save_command_run
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
 from helpers.exceptions.TokenLimitError import TokenLimitError
+from helpers.exceptions.CommandFinishedEarly import CommandFinishedEarly
 from prompts.prompts import ask_user
 from const.code_execution import MIN_COMMAND_RUN_TIME, MAX_COMMAND_RUN_TIME, MAX_COMMAND_OUTPUT_LENGTH
 
@@ -236,8 +237,8 @@ def execute_command(project, command, timeout=None, success_message=None, comman
                 logger.info('CLI OUTPUT: ' + line)
                 if success_message is not None and success_message in line:
                     logger.info('Success message found: %s', success_message)
-                    done_or_error_response = 'DONE'
-                    break
+                    # break # TODO background_command - this is if we want to leave command running in background but sometimes processes keep hanging and terminal gets bugged, also if we do that we have to change user messages to make it clear that there is command running in background
+                    raise CommandFinishedEarly()
 
             # Read stderr
             try:
@@ -250,19 +251,25 @@ def execute_command(project, command, timeout=None, success_message=None, comman
                 print(color_red('CLI ERROR:') + stderr_line, end='')  # Print with different color for distinction
                 logger.error('CLI ERROR: ' + stderr_line)
 
-    except (KeyboardInterrupt, TimeoutError) as e:
+    except (KeyboardInterrupt, TimeoutError, CommandFinishedEarly) as e:
         if isinstance(e, KeyboardInterrupt):
             print('\nCTRL+C detected. Stopping command execution...')
             logger.info('CTRL+C detected. Stopping command execution...')
             done_or_error_response = 'was interrupted by user'
-        else:
+        elif isinstance(e, TimeoutError):
             print('\nTimeout detected. Stopping command execution...')
             logger.warn('Timeout detected. Stopping command execution...')
             done_or_error_response = f'took longer than {timeout}ms so I killed it'
+        elif isinstance(e, CommandFinishedEarly):
+            print('\nCommand finished before timeout. Handling early completion...')
+            logger.info('Command finished before timeout. Handling early completion...')
+            done_or_error_response = 'DONE'
 
         terminate_process(process.pid)
         # update the returncode
         process.poll()
+    finally:
+        terminate_process(process.pid)  # TODO: background_command - remove this is if we want to leave command running in background, look todo above
 
     elapsed_time = time.time() - start_time
     logger.info(f'`{command}` took {round(elapsed_time * 1000)}ms to execute.')
