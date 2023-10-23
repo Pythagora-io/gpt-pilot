@@ -88,9 +88,8 @@ class AgentConvo:
                 raise e
 
             # TODO: move this code to Developer agent - https://github.com/Pythagora-io/gpt-pilot/issues/91#issuecomment-1751964079
-            if response != {} and self.agent.__class__.__name__ == 'Developer':
-                development_step = save_development_step(self.agent.project, prompt_path, prompt_data, self.messages,
-                                                         response)
+            if self.agent.__class__.__name__ == 'Developer':
+                save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, response)
 
         # TODO handle errors from OpenAI
         # It's complicated because calling functions are expecting different types of responses - string or tuple
