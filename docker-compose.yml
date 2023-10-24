@@ -2,12 +2,13 @@ version: '3'
 services:
     gpt-pilot:
         environment:
-            #OPENAI or AZURE
+            # OPENAI/AZURE/OPENROUTER
             - ENDPOINT=OPENAI
             - OPENAI_API_KEY=
             # - AZURE_API_KEY=
             # - AZURE_ENDPOINT=
-            #In case of Azure endpoint, change this to your deployed model name
+            # - OPENROUTER_API_KEY=
+            # In case of Azure endpoint, change this to your deployed model name
             - MODEL_NAME=gpt-4
             - MAX_TOKENS=8192
             - DATABASE_TYPE=postgres
@@ -16,6 +17,8 @@ services:
             - DB_PORT=5432
             - DB_USER=pilot
             - DB_PASSWORD=pilot
+            # Folders which shouldn't be tracked in workspace (useful to ignore folders created by compiler)
+            # IGNORE_FOLDERS=folder1,folder2
         volumes:
             - ~/gpt-pilot-workspace:/usr/src/app/workspace
         build:

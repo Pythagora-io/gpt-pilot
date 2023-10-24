@@ -34,7 +34,6 @@ IGNORE_FOLDERS = [
     'venv',
     'dist',
     'build',
-    # Used by Rust compiler
     'target'
 ] + [folder for folder in additional_ignore_folders if folder]
 
