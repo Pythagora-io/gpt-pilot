@@ -98,7 +98,7 @@ If not provided, the ProductOwner will ask for these values:
 
 `app_type` is used as a hint to the LLM as to what kind of architecture, language options and conventions would apply. If not provided, `prompts.prompts.ask_for_app_type()` will ask for it.
 
-See `const.common.ALL_TYPES`: 'Web App', 'Script', 'Mobile App', 'Chrome Extension'
+See `const.common.APP_TYPES`: 'Web App', 'Script', 'Mobile App', 'Chrome Extension'
 
 
 ## `app_id` and `workspace`
