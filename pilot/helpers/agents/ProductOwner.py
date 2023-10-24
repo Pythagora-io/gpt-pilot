@@ -34,6 +34,7 @@ class ProductOwner(Agent):
                 self.project.set_root_path(setup_workspace(self.project.args))
                 self.project.project_description = step['summary']
                 self.project.project_description_messages = step['messages']
+                self.project.main_prompt = step['prompt']
                 return
 
         # PROJECT DESCRIPTION
