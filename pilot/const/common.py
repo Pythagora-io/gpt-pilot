@@ -1,3 +1,6 @@
+import os
+
+
 APP_TYPES = ['Web App', 'Script', 'Mobile App', 'Chrome Extension']
 ROLES = {
     'product_owner': ['project_description', 'user_stories', 'user_tasks'],
@@ -18,6 +21,8 @@ STEPS = [
     'finished'
 ]
 
+additional_ignore_folders = os.environ.get('IGNORE_FOLDERS', '').split(',')
+
 IGNORE_FOLDERS = [
     '.git',
     '.gpt-pilot',
@@ -29,6 +34,8 @@ IGNORE_FOLDERS = [
     'venv',
     'dist',
     'build',
-]
+    # Used by Rust compiler
+    'target'
+] + [folder for folder in additional_ignore_folders if folder]
 
 PROMPT_DATA_TO_IGNORE = {'directory_tree', 'name'}
