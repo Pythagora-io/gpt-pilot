@@ -47,7 +47,7 @@ class ProductOwner(Agent):
 
         self.project.set_root_path(setup_workspace(self.project.args))
 
-        main_prompt = ask_for_main_app_definition(self.project)
+        self.project.main_prompt = ask_for_main_app_definition(self.project)
 
         print(json.dumps({'open_project': {
             #'uri': 'file:///' + self.project.root_path.replace('\\', '/'),
@@ -55,12 +55,12 @@ class ProductOwner(Agent):
             'name': self.project.args['name'],
         }}), type='info')
 
-        high_level_messages = self.ask_clarifying_questions(main_prompt)
+        high_level_messages = self.ask_clarifying_questions(self.project.main_prompt)
 
         high_level_summary = self.generate_project_summary(high_level_messages)
 
         save_progress(self.project.args['app_id'], self.project.current_step, {
-            "prompt": main_prompt,
+            "prompt": self.project.main_prompt,
             "messages": high_level_messages,
             "summary": high_level_summary,
             "app_data": generate_app_data(self.project.args)

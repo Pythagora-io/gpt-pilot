@@ -53,6 +53,7 @@ class Project:
         self.root_path = ''
         self.skip_until_dev_step = None
         self.skip_steps = None
+        self.main_prompt = None
 
         self.ipc_client_instance = ipc_client_instance
 
