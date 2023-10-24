@@ -73,6 +73,5 @@ if __name__ == "__main__":
         print(color_red('--------------------------------------------------'))
         ask_feedback = False
     finally:
-        init_prompt = project.main_prompt if project is not None and project.main_prompt else None
-        exit_gpt_pilot(init_prompt, ask_feedback)
+        exit_gpt_pilot(project, ask_feedback)
         sys.exit(0)
