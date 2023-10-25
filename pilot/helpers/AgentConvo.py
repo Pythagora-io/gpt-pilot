@@ -37,7 +37,7 @@ class AgentConvo:
                     system_message['content'])
         self.messages.append(system_message)
 
-    def send_message(self, prompt_path=None, prompt_data=None, function_calls: FunctionCallSet = None):
+    def send_message(self, prompt_path=None, prompt_data=None, function_calls: FunctionCallSet = None, should_log_message=True):
         """
         Sends a message in the conversation.
 
@@ -45,7 +45,7 @@ class AgentConvo:
             prompt_path: The path to a prompt.
             prompt_data: Data associated with the prompt.
             function_calls: Optional function calls to be included in the message.
-
+            should_log_message: Flag if final response should be logged.
         Returns:
             The response from the agent.
         """
@@ -73,6 +73,8 @@ class AgentConvo:
                 if 'delete_unrelated_steps' in self.agent.project.args and self.agent.project.args[
                     'delete_unrelated_steps']:
                     self.agent.project.delete_all_steps_except_current_branch()
+            else:
+                should_log_message = True
 
             if development_step.token_limit_exception_raised:
                 raise TokenLimitError(development_step.token_limit_exception_raised)
@@ -86,9 +88,8 @@ class AgentConvo:
                 raise e
 
             # TODO: move this code to Developer agent - https://github.com/Pythagora-io/gpt-pilot/issues/91#issuecomment-1751964079
-            if response != {} and self.agent.__class__.__name__ == 'Developer':
-                development_step = save_development_step(self.agent.project, prompt_path, prompt_data, self.messages,
-                                                         response)
+            if self.agent.__class__.__name__ == 'Developer':
+                save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, response)
 
         # TODO handle errors from OpenAI
         # It's complicated because calling functions are expecting different types of responses - string or tuple
@@ -105,7 +106,8 @@ class AgentConvo:
         logger.info('\n>>>>>>>>>> Assistant Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',
                     message_content)
         self.messages.append({"role": "assistant", "content": message_content})
-        self.log_message(message_content)
+        if should_log_message:
+            self.log_message(message_content)
 
         return response
 

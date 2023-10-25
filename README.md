@@ -68,8 +68,11 @@ After you have Python and (optionally) PostgreSQL installed, follow these steps:
 5. `pip install -r requirements.txt` (install the dependencies)
 6. `cd pilot`
 7. `mv .env.example .env` (create the .env file)
-8. Add your environment (OpenAI/Azure), your API key, and the SQLite/PostgreSQL database info to the `.env` file
-   - to change from SQLite to PostgreSQL in your .env, just set `DATABASE_TYPE=postgres`
+8. Add your environment to the `.env` file:
+   - LLM Provider (OpenAI/Azure/Openrouter)
+   - your API key
+   - database settings: SQLite/PostgreSQL (to change from SQLite to PostgreSQL, just set `DATABASE_TYPE=postgres`)
+   - optionally set IGNORE_FOLDERS for the folders which shouldn't be tracked by GPT Pilot in workspace, useful to ignore folders created by compilers (i.e. `IGNORE_FOLDERS=folder1,folder2,folder3`)
 9. `python db_init.py` (initialize the database)
 10. `python main.py` (start GPT Pilot)
 
@@ -98,7 +101,7 @@ If not provided, the ProductOwner will ask for these values:
 
 `app_type` is used as a hint to the LLM as to what kind of architecture, language options and conventions would apply. If not provided, `prompts.prompts.ask_for_app_type()` will ask for it.
 
-See `const.common.ALL_TYPES`: 'Web App', 'Script', 'Mobile App', 'Chrome Extension'
+See `const.common.APP_TYPES`: 'Web App', 'Script', 'Mobile App', 'Chrome Extension'
 
 
 ## `app_id` and `workspace`
