@@ -37,7 +37,7 @@ def styled_text(project, question, ignore_user_input_count=False, style=None):
         print(response)
 
     if not ignore_user_input_count:
-        user_input = save_user_input(project, question, response)
+        save_user_input(project, question, response)
 
     print('\n\n', end='')
     return response
