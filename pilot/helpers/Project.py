@@ -2,6 +2,8 @@ import json
 import os
 import re
 from typing import Tuple
+
+from const.messages import CHECK_AND_CONTINUE
 from utils.style import color_yellow_bold, color_cyan, color_white_bold, color_green
 from const.common import IGNORE_FOLDERS, STEPS
 from database.database import delete_unconnected_steps_from, delete_all_app_development_data, update_app_status
@@ -318,10 +320,11 @@ class Project:
 
         reset_branch_id = None if convo is None else convo.save_branch()
 
-        while answer != 'continue':
+        while answer.lower() != 'continue':
+            print('continue', type='button')
             answer = ask_user(self, question,
                               require_some_input=False,
-                              hint='If something is wrong, tell me or type "continue" to continue.')
+                              hint=CHECK_AND_CONTINUE)
 
             try:
                 if answer in cbs:

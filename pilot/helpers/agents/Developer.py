@@ -1,5 +1,7 @@
 import platform
 import uuid
+
+from const.messages import WHEN_USER_DONE
 from utils.style import (
     color_green,
     color_green_bold,
@@ -301,13 +303,14 @@ class Developer(Agent):
         # TODO end
 
         answer = ''
-        while answer != 'continue':
+        while answer.lower() != 'continue':
             print(color_red_bold('\n----------------------------- I need your help ------------------------------'))
             print(extract_substring(str(help_description)))
             print(color_red_bold('\n-----------------------------------------------------------------------------'))
+            print('continue', type='button')
             answer = styled_text(
                 self.project,
-                'Once you\'re done, type "continue"?'
+                WHEN_USER_DONE
             )
             logger.info("help needed: %s", answer)
 
