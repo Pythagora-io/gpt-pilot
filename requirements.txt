@@ -16,7 +16,7 @@ pytest==7.4.2
 pyyaml==6.0.1
 questionary==2.0.1
 readchar==4.0.5
-regex==2023.6.3
+regex==2023.10.3
 requests==2.31.0
 six==1.16.0
 termcolor==2.3.0
