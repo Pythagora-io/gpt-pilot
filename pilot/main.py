@@ -36,6 +36,7 @@ def init():
 
 if __name__ == "__main__":
     ask_feedback = True
+    project = None
     try:
         # Override the built-in 'open' with our version
         builtins.open = get_custom_open
@@ -72,5 +73,5 @@ if __name__ == "__main__":
         print(color_red('--------------------------------------------------'))
         ask_feedback = False
     finally:
-        exit_gpt_pilot(ask_feedback)
+        exit_gpt_pilot(project, ask_feedback)
         sys.exit(0)

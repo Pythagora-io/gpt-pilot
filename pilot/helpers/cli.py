@@ -141,6 +141,14 @@ def execute_command(project, command, timeout=None, success_message=None, comman
 
             timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
 
+    project.command_runs_count += 1
+    command_run = get_saved_command_run(project, command)
+    if command_run is not None and project.skip_steps:
+        # if we do, use it
+        project.checkpoints['last_command_run'] = command_run
+        print(color_yellow(f'Restoring command run response id {command_run.id}:\n```\n{command_run.cli_response}```'))
+        return command_run.cli_response, command_run.done_or_error_response, command_run.exit_code
+
     if not force:
         print(color_yellow_bold('\n--------- EXECUTE COMMAND ----------'))
         question = f'Can I execute the command: `{color_yellow_bold(command)}`'
@@ -153,25 +161,19 @@ def execute_command(project, command, timeout=None, success_message=None, comman
         # TODO can we use .confirm(question, default='yes').ask()  https://questionary.readthedocs.io/en/stable/pages/types.html#confirmation
         print('answer: ' + answer)
         if answer.lower() in ['no', 'skip']:
+            save_command_run(project, command, None, 'DONE', None)
             return None, 'DONE', None
         elif answer.lower() not in ['', 'yes', 'ok', 'okay', 'sure']:
             # "That's not going to work, let's do X instead"
             #       https://github.com/Pythagora-io/gpt-pilot/issues/198
             #       https://github.com/Pythagora-io/gpt-pilot/issues/43#issuecomment-1756352056
             # TODO: https://github.com/Pythagora-io/gpt-pilot/issues/122
+            save_command_run(project, command, None, answer, None)
             return None, answer, None
 
     # TODO when a shell built-in commands (like cd or source) is executed, the output is not captured properly - this will need to be changed at some point
     if platform.system() != 'Windows' and ("cd " in command or "source " in command):
         command = "bash -c '" + command + "'"
-
-    project.command_runs_count += 1
-    command_run = get_saved_command_run(project, command)
-    if command_run is not None and project.skip_steps:
-        # if we do, use it
-        project.checkpoints['last_command_run'] = command_run
-        print(color_yellow(f'Restoring command run response id {command_run.id}:\n```\n{command_run.cli_response}```'))
-        return command_run.cli_response, None, None
 
     return_value = None
     done_or_error_response = None
@@ -284,7 +286,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
             return_value = 'stderr:\n```\n' + stderr_output[0:MAX_COMMAND_OUTPUT_LENGTH] + '\n```\n'
         return_value += 'stdout:\n```\n' + output[-MAX_COMMAND_OUTPUT_LENGTH:] + '\n```'
 
-    save_command_run(project, command, return_value)
+    save_command_run(project, command, return_value, done_or_error_response, process.returncode)
 
     return return_value, done_or_error_response, process.returncode
 
