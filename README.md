@@ -54,8 +54,8 @@ https://github.com/Pythagora-io/gpt-pilot/assets/10895136/0495631b-511e-451b-93d
 
 # 🔌 Requirements
 
-- **Python 3.9-3.11** (3.12 is currently not working due to a [dependency issue](https://github.com/psycopg/psycopg2/issues/1628)
-- **PostgreSQL** (optional, projects default is SQLite)
+- **Python 3.9+**
+- **PostgreSQL** (Optional, default database is SQLite)
    - DB is needed for multiple reasons like continuing app development. If you have to stop at any point or the app crashes, go back to a specific step so that you can change some later steps in development, and easier debugging, in future we will add functionality to update project (change some things in existing project or add new features to the project and so on)...
 
 
@@ -68,13 +68,14 @@ After you have Python and (optionally) PostgreSQL installed, follow these steps:
 5. `pip install -r requirements.txt` (install the dependencies)
 6. `cd pilot`
 7. `mv .env.example .env` (create the .env file)
-8. Add your environment to the `.env` file:
+8. If you wish to use a local model, please go to [https://localai.io/basics/getting_started/](https://localai.io/basics/getting_started/).
+9. Add your environment to the `.env` file:
    - LLM Provider (OpenAI/Azure/Openrouter)
    - your API key
    - database settings: SQLite/PostgreSQL (to change from SQLite to PostgreSQL, just set `DATABASE_TYPE=postgres`)
    - optionally set IGNORE_FOLDERS for the folders which shouldn't be tracked by GPT Pilot in workspace, useful to ignore folders created by compilers (i.e. `IGNORE_FOLDERS=folder1,folder2,folder3`)
-9. `python db_init.py` (initialize the database)
-10. `python main.py` (start GPT Pilot)
+10. `python db_init.py` (initialize the database)
+11. `python main.py` (start GPT Pilot)
 
 After, this, you can just follow the instructions in the terminal.
 
@@ -83,7 +84,7 @@ All generated code will be stored in the folder `workspace` inside the folder na
 
 ## 🐳 How to start gpt-pilot in docker?
 1. `git clone https://github.com/Pythagora-io/gpt-pilot.git` (clone the repo)
-2. Update the `docker-compose.yml` environment variables, which can be done via `docker compose config` . if you use local model, please go to [https://localai.io/basics/getting_started/](https://localai.io/basics/getting_started/) start. 
+2. Update the `docker-compose.yml` environment variables, which can be done via `docker compose config` . If you wish to use a local model, please go to [https://localai.io/basics/getting_started/](https://localai.io/basics/getting_started/).
 3. By default, GPT Pilot will read & write to `~/gpt-pilot-workspace` on your machine, you can also edit this in `docker-compose.yml`
 4. run `docker compose build`. this will build a gpt-pilot container for you.
 5. run `docker compose up`.
