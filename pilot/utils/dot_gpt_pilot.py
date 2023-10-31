@@ -25,7 +25,7 @@ class DotGptPilot:
     def with_root_path(self, root_path: str, create=True):
         if not USE_GPTPILOT_FOLDER:
             return
-        dot_gpt_pilot_path = os.path.join(root_path, '.gpt-pilot')
+        dot_gpt_pilot_path = os.path.expanduser(os.path.join(root_path, '.gpt-pilot'))
         self.dot_gpt_pilot_path = dot_gpt_pilot_path
 
         # Create the `.gpt-pilot` directory if required.
