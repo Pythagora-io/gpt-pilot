@@ -141,14 +141,6 @@ def execute_command(project, command, timeout=None, success_message=None, comman
 
             timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
 
-    project.command_runs_count += 1
-    command_run = get_saved_command_run(project, command)
-    if command_run is not None and project.skip_steps:
-        # if we do, use it
-        project.checkpoints['last_command_run'] = command_run
-        print(color_yellow(f'Restoring command run response id {command_run.id}:\n```\n{command_run.cli_response}```'))
-        return command_run.cli_response, command_run.done_or_error_response, command_run.exit_code
-
     if not force:
         print(color_yellow_bold('\n--------- EXECUTE COMMAND ----------'))
         question = f'Can I execute the command: `{color_yellow_bold(command)}`'
@@ -157,23 +149,28 @@ def execute_command(project, command, timeout=None, success_message=None, comman
         else:
             question += '?'
 
-        answer = ask_user(project, question, False, hint='If yes, just press ENTER')
+        answer = ask_user(project, 'If yes, just press ENTER', False, hint=question)
         # TODO can we use .confirm(question, default='yes').ask()  https://questionary.readthedocs.io/en/stable/pages/types.html#confirmation
         print('answer: ' + answer)
         if answer.lower() in ['no', 'skip']:
-            save_command_run(project, command, None, 'DONE', None)
             return None, 'DONE', None
         elif answer.lower() not in ['', 'yes', 'ok', 'okay', 'sure']:
             # "That's not going to work, let's do X instead"
             #       https://github.com/Pythagora-io/gpt-pilot/issues/198
             #       https://github.com/Pythagora-io/gpt-pilot/issues/43#issuecomment-1756352056
             # TODO: https://github.com/Pythagora-io/gpt-pilot/issues/122
-            save_command_run(project, command, None, answer, None)
             return None, answer, None
 
     # TODO when a shell built-in commands (like cd or source) is executed, the output is not captured properly - this will need to be changed at some point
     if platform.system() != 'Windows' and ("cd " in command or "source " in command):
         command = "bash -c '" + command + "'"
+
+    project.command_runs_count += 1
+    command_run = get_saved_command_run(project, command)
+    if command_run is not None and project.skip_steps:
+        project.checkpoints['last_command_run'] = command_run
+        print(color_yellow(f'Restoring command run response id {command_run.id}:\n```\n{command_run.cli_response}```'))
+        return command_run.cli_response, command_run.done_or_error_response, command_run.exit_code
 
     return_value = None
     done_or_error_response = None
@@ -199,6 +196,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
     try:
         while True:
             elapsed_time = time.time() - start_time
+            time.sleep(0.1)  # TODO this shouldn't be used
             # if timeout is not None:
             #     # TODO: print to IPC using a different message type so VS Code can ignore it or update the previous value
             #     print(color_white_bold(f'\rt: {round(elapsed_time * 1000)}ms : '), end='', flush=True)
@@ -209,7 +207,6 @@ def execute_command(project, command, timeout=None, success_message=None, comman
                 if command_id is not None:
                     del running_processes[command_id]
                 # Get remaining lines from the queue
-                time.sleep(0.1)  # TODO this shouldn't be used
                 while not q.empty():
                     output_line = q.get_nowait()
                     if output_line not in output:
@@ -484,7 +481,7 @@ def run_command_until_success(convo, command,
                     'timeout': timeout,
                     'command_id': command_id,
                     'success_message': success_message,
-                }, user_input=cli_response)
+                }, user_input=cli_response, is_root_task=is_root_task)
                 return {'success': success, 'cli_response': cli_response}
             except TooDeepRecursionError as e:
                 # this is only to put appropriate message in the response after TooDeepRecursionError is raised

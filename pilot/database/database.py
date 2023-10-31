@@ -335,7 +335,7 @@ def get_saved_command_run(project, command):
     return command_run
 
 
-def save_user_input(project, query, user_input):
+def save_user_input(project, query, user_input, hint):
     if project.current_step != 'coding':
         return
 
@@ -347,6 +347,7 @@ def save_user_input(project, query, user_input):
     data_fields = {
         'query': query,
         'user_input': user_input,
+        'hint': hint,
     }
     user_input = hash_and_save_step(UserInputs, project.args['app_id'], unique_data, data_fields, "Saved User Input")
     project.checkpoints['last_user_input'] = user_input

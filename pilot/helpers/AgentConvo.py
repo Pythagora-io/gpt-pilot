@@ -155,8 +155,9 @@ class AgentConvo:
 
         # Continue conversation until GPT response equals END_RESPONSE
         while response != END_RESPONSE:
-            user_message = ask_user(self.agent.project, response,
-                                    hint="Do you want to add anything else? If not, just press ENTER.",
+            user_message = ask_user(self.agent.project,
+                                    'Do you want to add anything else? If not, just press ENTER.',
+                                    hint=response,
                                     require_some_input=False)
 
             if user_message == "":

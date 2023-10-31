@@ -322,9 +322,9 @@ class Project:
 
         while answer.lower() != 'continue':
             print('continue', type='button')
-            answer = ask_user(self, question,
+            answer = ask_user(self, CHECK_AND_CONTINUE,
                               require_some_input=False,
-                              hint=CHECK_AND_CONTINUE)
+                              hint=question)
 
             try:
                 if answer in cbs:

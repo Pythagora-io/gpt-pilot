@@ -9,6 +9,7 @@ class UserInputs(BaseModel):
     app = ForeignKeyField(App, on_delete='CASCADE')
     query = TextField(null=True)
     user_input = TextField(null=True)
+    hint = TextField(null=True)
     previous_step = ForeignKeyField('self', null=True, column_name='previous_step')
     high_level_step = CharField(null=True)
 

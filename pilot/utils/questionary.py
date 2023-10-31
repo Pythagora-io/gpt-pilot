@@ -13,10 +13,11 @@ def remove_ansi_codes(s: str) -> str:
 
 def styled_select(*args, **kwargs):
     kwargs["style"] = style_config.get_style()
+    # TODO add saving and loading of user input
     return questionary.select(*args, **kwargs).unsafe_ask()  # .ask() is included here
 
 
-def styled_text(project, question, ignore_user_input_count=False, style=None):
+def styled_text(project, question, ignore_user_input_count=False, style=None, hint=None):
     if not ignore_user_input_count:
         project.user_inputs_count += 1
         user_input = get_saved_user_input(project, question)
@@ -37,7 +38,7 @@ def styled_text(project, question, ignore_user_input_count=False, style=None):
         print(response)
 
     if not ignore_user_input_count:
-        save_user_input(project, question, response)
+        save_user_input(project, question, response, hint)
 
     print('\n\n', end='')
     return response
