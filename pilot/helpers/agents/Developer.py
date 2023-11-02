@@ -466,6 +466,7 @@ class Developer(Agent):
 
         user_input = ''
         while user_input.lower() != 'done':
+            print('done', type='button')
             user_input = styled_text(self.project, 'Please set up your local environment so that the technologies listed can be utilized. When you\'re done, write "DONE"')
         save_progress(self.project.args['app_id'], self.project.current_step, {
             "os_specific_technologies": [], "newly_installed_technologies": [], "app_data": generate_app_data(self.project.args)
