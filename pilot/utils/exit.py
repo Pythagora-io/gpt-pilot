@@ -85,3 +85,5 @@ def exit_gpt_pilot(project, ask_feedback=True):
     ask_to_store_prompt(project, path_id)
 
     ask_user_feedback(project, path_id, ask_feedback)
+
+    print('Exit', type='exit')
