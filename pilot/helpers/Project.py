@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 import re
 from typing import Tuple
 
@@ -11,7 +12,7 @@ from const.ipc import MESSAGE_TYPE
 from prompts.prompts import ask_user
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from utils.questionary import styled_text
-from helpers.files import get_files_content, clear_directory, update_file
+from helpers.files import get_directory_contents, get_file_contents, clear_directory, update_file
 from helpers.cli import build_directory_tree
 from helpers.agents.TechLead import TechLead
 from helpers.agents.Developer import Developer
@@ -213,18 +214,12 @@ class Project:
         """
         files_with_content = []
         for file_path in files:
-            # TODO this is a hack, fix it
             try:
-                name = os.path.basename(file_path)
-                relative_path, full_path = self.get_full_file_path(file_path, name)
-                file_content = open(full_path, 'r').read()
-            except OSError:
-                file_content = ''
+                file_data = get_file_contents(file_path, self.root_path)
+            except ValueError:
+                file_data = {"path": file_path, "content": ''}
 
-            files_with_content.append({
-                "path": file_path,
-                "content": file_content
-            })
+            files_with_content.append(file_data)
         return files_with_content
 
     def save_file(self, data):
@@ -250,40 +245,35 @@ class Project:
          .execute())
 
     def get_full_file_path(self, file_path: str, file_name: str) -> Tuple[str, str]:
+        # This is required to handle Windows drive-relative paths in a sane manner, otherwise
+        # eg. \file.txt is treated as relative but messes up our path join later
+        if file_path.startswith("/") or file_path.startswith("\\"):
+            file_path = file_path[1:]
+
         file_name = os.path.basename(file_name)
+        file_path = Path(file_path)
+        if file_path.is_absolute():
+            try:
+                # Force all paths to be relative to the workspace
+                file_path = file_path.relative_to(self.root_path)
+            except ValueError:
+                # TODO: Treatment of paths outside of the project workspace - https://github.com/Pythagora-io/gpt-pilot/issues/129
+                # As of now, we treat it as a relative path within the workspace
+                file_path = file_path.relative_to(file_path.anchor)
 
-        if file_path.startswith(self.root_path):
-            file_path = file_path.replace(self.root_path, '')
+        # file_path should not include the file name
+        if file_path.name == file_name:
+            file_path = file_path.parent
 
-        if file_path == file_name:
-            file_path = ''
-        else:
-            are_windows_paths = '\\' in file_path or '\\' in file_name or '\\' in self.root_path
-            if are_windows_paths:
-                file_path = file_path.replace('\\', '/')
-
-            # Force all paths to be relative to the workspace
-            file_path = re.sub(r'^(\w+:/|[/~.]+)', '', file_path, 1)
-
-            # file_path should not include the file name
-            if file_path == file_name:
-                file_path = ''
-            elif file_path.endswith('/' + file_name):
-                file_path = file_path.replace('/' + file_name, '')
-            elif file_path.endswith('/'):
-                file_path = file_path[:-1]
-
-        absolute_path = self.root_path + '/' + file_name if file_path == '' \
-            else self.root_path + '/' + file_path + '/' + file_name
-
-        return file_path, absolute_path
+        absolute_path = Path(self.root_path) / file_path / file_name
+        return str(file_path), str(absolute_path)
 
     def save_files_snapshot(self, development_step_id):
-        files = get_files_content(self.root_path, ignore=IGNORE_FOLDERS)
+        files = get_directory_contents(self.root_path, ignore=IGNORE_FOLDERS)
         development_step, created = DevelopmentSteps.get_or_create(id=development_step_id)
 
         for file in files:
-            print(color_cyan(f'Saving file {(file["path"])}/{file["name"]}'))
+            print(color_cyan(f'Saving file {file["full_path"]}'))
             # TODO this can be optimized so we don't go to the db each time
             file_in_db, created = File.get_or_create(
                 app=self.app,

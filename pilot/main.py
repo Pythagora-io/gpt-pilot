@@ -10,7 +10,6 @@ load_dotenv()
 
 from utils.style import color_red
 from utils.custom_print import get_custom_print
-from utils.custom_open import get_custom_open
 from helpers.Project import Project
 from utils.arguments import get_arguments
 from utils.exit import exit_gpt_pilot
@@ -39,12 +38,10 @@ if __name__ == "__main__":
     project = None
     run_exit_fn = True
     try:
-        # Override the built-in 'open' with our version
-        builtins.open = get_custom_open
         # sys.argv.append('--ux-test=' + 'continue_development')
-        
+
         args = init()
-        
+
         builtins.print, ipc_client_instance = get_custom_print(args)
 
 

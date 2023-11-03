@@ -258,7 +258,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
             done_or_error_response = 'was interrupted by user'
         elif isinstance(e, TimeoutError):
             print('\nTimeout detected. Stopping command execution...')
-            logger.warn('Timeout detected. Stopping command execution...')
+            logger.warning('Timeout detected. Stopping command execution...')
             done_or_error_response = f'took longer than {timeout}ms so I killed it'
         elif isinstance(e, CommandFinishedEarly):
             print('\nCommand finished before timeout. Handling early completion...')

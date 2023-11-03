@@ -258,6 +258,7 @@ class AgentConvo:
         })
 
     def to_playground(self):
+        # Internal function to help debugging in OpenAI Playground, not to be used in production
         with open('const/convert_to_playground_convo.js', 'r', encoding='utf-8') as file:
             content = file.read()
         process = subprocess.Popen('pbcopy', stdin=subprocess.PIPE)
