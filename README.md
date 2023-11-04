@@ -54,9 +54,10 @@ https://github.com/Pythagora-io/gpt-pilot/assets/10895136/0495631b-511e-451b-93d
 
 # 🔌 Requirements
 
+
 - **Python 3.9-3.12**
 - **PostgreSQL** (optional, projects default is SQLite)
-   - DB is needed for multiple reasons like continuing app development. If you have to stop at any point or the app crashes, go back to a specific step so that you can change some later steps in development, and easier debugging, in future we will add functionality to update project (change some things in existing project or add new features to the project and so on)...
+   - DB is needed for multiple reasons like continuing app development. If you have to stop at any point or the app crashes, go back to a specific step so that you can change some later steps in development, and easier debugging, in future we will add functionality to update project (change some things in existing project or add new features to the project and so on..)
 
 
 # 🚦How to start using gpt-pilot?
@@ -70,7 +71,7 @@ After you have Python and (optionally) PostgreSQL installed, follow these steps:
 7. `mv .env.example .env` (create the .env file)
 8. Add your environment to the `.env` file:
    - LLM Provider (OpenAI/Azure/Openrouter)
-   - your API key
+   - Your API key
    - database settings: SQLite/PostgreSQL (to change from SQLite to PostgreSQL, just set `DATABASE_TYPE=postgres`)
    - optionally set IGNORE_FOLDERS for the folders which shouldn't be tracked by GPT Pilot in workspace, useful to ignore folders created by compilers (i.e. `IGNORE_FOLDERS=folder1,folder2,folder3`)
 9. `python db_init.py` (initialize the database)
