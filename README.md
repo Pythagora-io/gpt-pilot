@@ -70,7 +70,7 @@ After you have Python and (optionally) PostgreSQL installed, follow these steps:
 7. `mv .env.example .env` (create the .env file)
 8. Add your environment to the `.env` file:
    - LLM Provider (OpenAI/Azure/Openrouter)
-   - your API key
+   - Your API key
    - database settings: SQLite/PostgreSQL (to change from SQLite to PostgreSQL, just set `DATABASE_TYPE=postgres`)
    - optionally set IGNORE_FOLDERS for the folders which shouldn't be tracked by GPT Pilot in workspace, useful to ignore folders created by compilers (i.e. `IGNORE_FOLDERS=folder1,folder2,folder3`)
 9. `python db_init.py` (initialize the database)
