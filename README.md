@@ -68,7 +68,7 @@ After you have Python and (optionally) PostgreSQL installed, follow these steps:
 4. `source pilot-env/bin/activate` (or on Windows `pilot-env\Scripts\activate`) (activate the virtual environment)
 5. `pip install -r requirements.txt` (install the dependencies)
 6. `cd pilot`
-7. `mv .env.example .env` (create the .env file)
+7. `mv .env.example .env` (or on Windows `copy .env.example .env`) (create the .env file)
 8. Add your environment to the `.env` file:
    - LLM Provider (OpenAI/Azure/Openrouter)
    - Your API key
