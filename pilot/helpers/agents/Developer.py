@@ -568,7 +568,7 @@ class Developer(Agent):
 
                 user_feedback = response['user_input']
                 if user_feedback is not None and user_feedback != 'continue':
-                    debug_success = self.debugger.debug(convo, user_input=user_feedback, issue_description=description)
+                    debug_success = self.debugger.debug(convo, user_input=user_feedback, issue_description=description)  # noqa
                     # return_value = {'success': debug_success, 'user_input': user_feedback}
                 else:
                     return_value = {'success': True, 'user_input': user_feedback}
