@@ -1,5 +1,5 @@
 # prompts/prompts.py
-from utils.style import color_yellow_bold
+from utils.style import color_white_bold
 from const import common
 from const.llm import MAX_QUESTIONS, END_RESPONSE
 from utils.llm_connection import create_gpt_chat_completion
@@ -52,8 +52,8 @@ def ask_for_main_app_definition(project):
 def ask_user(project, question: str, require_some_input=True, hint: str = None):
     while True:
         if hint is not None:
-            print(color_yellow_bold(hint), type='hint')
-        answer = styled_text(project, question)
+            print(color_white_bold(hint), type='hint')
+        answer = styled_text(project, question, hint=hint)
 
         logger.info('Q: %s', question)
         logger.info('A: %s', answer)

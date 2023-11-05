@@ -290,10 +290,9 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
 
     development_step = hash_and_save_step(DevelopmentSteps, project.args['app_id'], unique_data, data_fields,
                                           "Saved Development Step")
-    if development_step is not None:
-        project.checkpoints['last_development_step'] = development_step
+    project.checkpoints['last_development_step'] = development_step
 
-        project.save_files_snapshot(development_step.id)
+    project.save_files_snapshot(development_step.id)
 
     return development_step
 
@@ -304,7 +303,7 @@ def get_saved_development_step(project):
     return development_step
 
 
-def save_command_run(project, command, cli_response):
+def save_command_run(project, command, cli_response, done_or_error_response, exit_code):
     if project.current_step != 'coding':
         return
 
@@ -317,6 +316,8 @@ def save_command_run(project, command, cli_response):
     data_fields = {
         'command': command,
         'cli_response': cli_response,
+        'done_or_error_response': done_or_error_response,
+        'exit_code': exit_code,
     }
 
     command_run = hash_and_save_step(CommandRuns, project.args['app_id'], unique_data, data_fields, "Saved Command Run")
@@ -334,7 +335,7 @@ def get_saved_command_run(project, command):
     return command_run
 
 
-def save_user_input(project, query, user_input):
+def save_user_input(project, query, user_input, hint):
     if project.current_step != 'coding':
         return
 
@@ -346,6 +347,7 @@ def save_user_input(project, query, user_input):
     data_fields = {
         'query': query,
         'user_input': user_input,
+        'hint': hint,
     }
     user_input = hash_and_save_step(UserInputs, project.args['app_id'], unique_data, data_fields, "Saved User Input")
     project.checkpoints['last_user_input'] = user_input

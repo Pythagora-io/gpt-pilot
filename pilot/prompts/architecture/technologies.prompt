@@ -34,7 +34,9 @@ Here are user tasks that specify what users need to do to interact with "{{ name
 
 {% endif %}
 Now, based on the app's description, user stories and user tasks, think step by step and list the names of the technologies that will be used by your development team to create the app "{{ name }}". Do not write any explanations behind your choices but only a list of technologies that will be used.
+Do not give any subjective thoughts or options, give exact technologies, for example:
+Instead of ["D3.js or other suitable charting library", "axios or other http client library"] answer with ["D3.js", "axios"].
 
-You do not need to list any technologies related to automated tests like Jest, Cypress, Mocha, Selenium, etc.
+You do not need to list any technologies related to automated tests (like Jest, Cypress, Mocha, Selenium, etc) or  any technologies related to deployment (like Heroku).
 
 {{no_microservices}}

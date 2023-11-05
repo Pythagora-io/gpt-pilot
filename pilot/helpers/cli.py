@@ -149,7 +149,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
         else:
             question += '?'
 
-        answer = ask_user(project, question, False, hint='If yes, just press ENTER')
+        answer = ask_user(project, 'If yes, just press ENTER', False, hint=question)
         # TODO can we use .confirm(question, default='yes').ask()  https://questionary.readthedocs.io/en/stable/pages/types.html#confirmation
         print('answer: ' + answer)
         if answer.lower() in ['no', 'skip']:
@@ -168,10 +168,9 @@ def execute_command(project, command, timeout=None, success_message=None, comman
     project.command_runs_count += 1
     command_run = get_saved_command_run(project, command)
     if command_run is not None and project.skip_steps:
-        # if we do, use it
         project.checkpoints['last_command_run'] = command_run
         print(color_yellow(f'Restoring command run response id {command_run.id}:\n```\n{command_run.cli_response}```'))
-        return command_run.cli_response, None, None
+        return command_run.cli_response, command_run.done_or_error_response, command_run.exit_code
 
     return_value = None
     done_or_error_response = None
@@ -197,6 +196,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
     try:
         while True:
             elapsed_time = time.time() - start_time
+            time.sleep(0.1)  # TODO this shouldn't be used
             # if timeout is not None:
             #     # TODO: print to IPC using a different message type so VS Code can ignore it or update the previous value
             #     print(color_white_bold(f'\rt: {round(elapsed_time * 1000)}ms : '), end='', flush=True)
@@ -207,7 +207,6 @@ def execute_command(project, command, timeout=None, success_message=None, comman
                 if command_id is not None:
                     del running_processes[command_id]
                 # Get remaining lines from the queue
-                time.sleep(0.1)  # TODO this shouldn't be used
                 while not q.empty():
                     output_line = q.get_nowait()
                     if output_line not in output:
@@ -284,7 +283,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
             return_value = 'stderr:\n```\n' + stderr_output[0:MAX_COMMAND_OUTPUT_LENGTH] + '\n```\n'
         return_value += 'stdout:\n```\n' + output[-MAX_COMMAND_OUTPUT_LENGTH:] + '\n```'
 
-    save_command_run(project, command, return_value)
+    save_command_run(project, command, return_value, done_or_error_response, process.returncode)
 
     return return_value, done_or_error_response, process.returncode
 
@@ -482,7 +481,7 @@ def run_command_until_success(convo, command,
                     'timeout': timeout,
                     'command_id': command_id,
                     'success_message': success_message,
-                }, user_input=cli_response)
+                }, user_input=cli_response, is_root_task=is_root_task)
                 return {'success': success, 'cli_response': cli_response}
             except TooDeepRecursionError as e:
                 # this is only to put appropriate message in the response after TooDeepRecursionError is raised

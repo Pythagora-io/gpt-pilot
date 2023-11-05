@@ -12,6 +12,7 @@ class Theme(Enum):
     """
     DARK = 'dark'
     LIGHT = 'light'
+    YELLOW = 'yellow'
 
 
 class ColorName(Enum):
@@ -27,27 +28,36 @@ class ColorName(Enum):
     WHITE = (Fore.WHITE, Fore.LIGHTWHITE_EX)
 
 
-class ThemeStyle:
-    """
-    Class that provides style configurations for DARK and LIGHT themes.
-    """
+THEME_STYLES = {
     # Style configurations for DARK theme
-    DARK_STYLE = Style.from_dict({
+    Theme.DARK: Style.from_dict({
         'question': '#FFFFFF bold',  # the color and style of the question - White
         'answer': '#FF910A bold',  # the color and style of the answer - Dark Orange / Pumpkin
         'pointer': '#FF4500 bold',  # the color and style of the pointer - Orange Red
         'highlighted': '#63CD91 bold',  # the color and style of the highlighted option - Medium Aquamarine
         'instruction': '#FFFF00 bold'  # the color and style of the instruction - Yellow
-    })
-
+    }),
     # Style configurations for LIGHT theme
-    LIGHT_STYLE = Style.from_dict({
+    Theme.LIGHT: Style.from_dict({
         'question': '#000000 bold',  # the color and style of the question - Black
         'answer': '#FFB74D bold',  # the color and style of the answer - Light Orange
         'pointer': '#FF7043 bold',  # the color and style of the pointer - Light Red
         'highlighted': '#AED581 bold',  # the color and style of the highlighted option - Light Green
         'instruction': '#757575 bold'  # the color and style of the instruction - Grey
+    }),
+    # Style configurations for LIGHT theme
+    Theme.YELLOW: Style.from_dict({
+        'question': '#FFFF00 bold',  # the color and style of the question - Black
+        'answer': '#FFB74D bold',  # the color and style of the answer - Light Orange
+        'pointer': '#FF7043 bold',  # the color and style of the pointer - Light Red
     })
+}
+
+
+class ThemeStyle:
+    """
+    Class that provides style configurations for DARK and LIGHT themes.
+    """
 
     def __init__(self, theme):
         """
@@ -65,13 +75,14 @@ class ThemeStyle:
         Returns:
             questionary.Style: The Style instance for the current theme.
         """
-        return self.DARK_STYLE if self.theme == Theme.DARK else self.LIGHT_STYLE
+        return THEME_STYLES[self.theme]
 
 
 class StyleConfig:
     """
     Class to manage the application's style and color configurations.
     """
+
     def __init__(self, theme: Theme = Theme.DARK):
         """
         Initializes a StyleConfig instance.
@@ -125,6 +136,7 @@ def get_color_function(color_name: ColorName, bold: bool = False):
     Returns:
         Callable[[str], str]: A function that takes a string and returns it colorized.
     """
+
     def color_func(text: str) -> str:
         """
         Colorizes the input text using the color and boldness provided when `get_color_function` was called.

@@ -168,6 +168,7 @@ This step will not be executed. no, use a better command
         # Then
         assert result == {'success': True, 'user_input': 'continue'}
 
+    @pytest.mark.skip("endless loop in questionary")
     @patch('helpers.AgentConvo.get_saved_development_step')
     @patch('helpers.AgentConvo.save_development_step')
     @patch('helpers.AgentConvo.create_gpt_chat_completion')

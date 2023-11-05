@@ -1,5 +1,7 @@
 import platform
 import uuid
+
+from const.messages import WHEN_USER_DONE
 from utils.style import (
     color_green,
     color_green_bold,
@@ -175,7 +177,7 @@ class Developer(Agent):
         while True:
             human_intervention_description = step['human_intervention_description']
 
-            if self.run_command is not None:
+            if self.run_command:
                 if (self.project.ipc_client_instance is None or self.project.ipc_client_instance.client is None):
                     human_intervention_description += color_yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
                 else:
@@ -207,6 +209,7 @@ class Developer(Agent):
                 response['success'] = self.debugger.debug(convo,
                                                    user_input=response['user_input'],
                                                    issue_description=step['human_intervention_description'])
+                # TODO add review
 
             return response
 
@@ -301,13 +304,14 @@ class Developer(Agent):
         # TODO end
 
         answer = ''
-        while answer != 'continue':
+        while answer.lower() != 'continue':
             print(color_red_bold('\n----------------------------- I need your help ------------------------------'))
             print(extract_substring(str(help_description)))
             print(color_red_bold('\n-----------------------------------------------------------------------------'))
+            print('continue', type='button')
             answer = styled_text(
                 self.project,
-                'Once you\'re done, type "continue"?'
+                WHEN_USER_DONE
             )
             logger.info("help needed: %s", answer)
 
@@ -342,9 +346,11 @@ class Developer(Agent):
                     elif step['type'] == 'human_intervention':
                         result = self.step_human_intervention(convo, step)
 
-                    elif step['type'] == 'kill_process':
-                        terminate_named_process(step['kill_process'])
-                        result = {'success': True}
+                    # TODO background_command - if we run commands in background we should have way to kill processes
+                    #  and that should be added to function_calls.py DEBUG_STEPS_BREAKDOWN and IMPLEMENT_TASK
+                    # elif step['type'] == 'kill_process':
+                    #     terminate_named_process(step['kill_process'])
+                    #     result = {'success': True}
 
                     logger.info('  step result: %s', result)
 
@@ -391,10 +397,11 @@ class Developer(Agent):
                                 if continue_description != '' else ''
             user_description = 'Can you check if the app works please? ' + user_description
 
-            if self.project.ipc_client_instance is None or self.project.ipc_client_instance.client is None:
-                user_description += color_yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
-            else:
-                print(self.run_command, type="run_command")
+            if self.run_command:
+                if self.project.ipc_client_instance is None or self.project.ipc_client_instance.client is None:
+                    user_description += color_yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
+                else:
+                    print(self.run_command, type="run_command")
 
             # continue_description = ''
             # TODO: Wait for a specific string in the output or timeout?
@@ -459,6 +466,7 @@ class Developer(Agent):
 
         user_input = ''
         while user_input.lower() != 'done':
+            print('done', type='button')
             user_input = styled_text(self.project, 'Please set up your local environment so that the technologies listed can be utilized. When you\'re done, write "DONE"')
         save_progress(self.project.args['app_id'], self.project.current_step, {
             "os_specific_technologies": [], "newly_installed_technologies": [], "app_data": generate_app_data(self.project.args)
@@ -550,18 +558,22 @@ class Developer(Agent):
             pass
         elif test_type == 'manual_test':
             # TODO make the message better
-            description = llm_response['manual_test_description']
-            response = self.project.ask_for_human_intervention(
-                'I need your help. Can you please test if this was successful?',
-                description,
-            )
+            return_value = {'success': False}
+            while not return_value['success']:
+                description = llm_response['manual_test_description']
+                response = self.project.ask_for_human_intervention(
+                    'I need your help. Can you please test if this was successful?',
+                    description,
+                )
 
-            user_feedback = response['user_input']
-            if user_feedback is not None and user_feedback != 'continue':
-                debug_success = self.debugger.debug(convo, user_input=user_feedback, issue_description=description)
-                return {'success': debug_success, 'user_input': user_feedback}
-            else:
-                return {'success': True, 'user_input': user_feedback}
+                user_feedback = response['user_input']
+                if user_feedback is not None and user_feedback != 'continue':
+                    debug_success = self.debugger.debug(convo, user_input=user_feedback, issue_description=description)  # noqa
+                    # return_value = {'success': debug_success, 'user_input': user_feedback}
+                else:
+                    return_value = {'success': True, 'user_input': user_feedback}
+
+            return return_value
 
     def implement_step(self, convo, step_index, type, description):
         logger.info('Implementing %s step #%d: %s', type, step_index, description)
