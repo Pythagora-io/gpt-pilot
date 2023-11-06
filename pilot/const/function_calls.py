@@ -205,7 +205,7 @@ IMPLEMENT_TASK = {
                                         },
                                         'content': {
                                             'type': 'string',
-                                            'description': 'Full content of the file that needs to be implemented.',
+                                            'description': 'Full content of the file that needs to be implemented. It is mandatory that no parts of file content are skipped or assumed to be there. It must be full content.',
                                         },
                                     },
                                     'required': ['name', 'path', 'content'],
@@ -465,7 +465,7 @@ IMPLEMENT_CHANGES = {
                             },
                             'content': {
                                 'type': 'string',
-                                'description': 'Full content of the file that needs to be saved on the disk.',
+                                'description': 'Full content of the file that needs to be saved on the disk. It is mandatory that no parts of file content are skipped or assumed to be there. It must be full content.',
                             },
                             'description': {
                                 'type': 'string',

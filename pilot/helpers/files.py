@@ -53,7 +53,7 @@ def clear_directory(dir_path, ignore=[]):
         dirs[:] = [d for d in dirs if d not in ignore]
 
         for file in files:
-            if file in ignore:
+            if file in ignore or os.path.join(root, file) in ignore:
                 continue
 
             path = os.path.join(root, file)

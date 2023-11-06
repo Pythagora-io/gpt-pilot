@@ -392,7 +392,8 @@ class Developer(Agent):
     def continue_development(self, iteration_convo, last_branch_name, continue_description='', development_task=None):
         while True:
             logger.info('Continue development, last_branch_name: %s', last_branch_name)
-            iteration_convo.load_branch(last_branch_name)
+            if last_branch_name in iteration_convo.branches.keys():  # if user_feedback is not None we create new convo
+                iteration_convo.load_branch(last_branch_name)
             user_description = ('Here is a description of what should be working: \n\n' + color_blue_bold(continue_description) + '\n') \
                                 if continue_description != '' else ''
             user_description = 'Can you check if the app works please? ' + user_description
@@ -451,7 +452,7 @@ class Developer(Agent):
                 iteration_convo.remove_last_x_messages(2)
 
                 task_steps = llm_response['tasks']
-                return self.execute_task(iteration_convo, task_steps, is_root_task=True)
+                self.execute_task(iteration_convo, task_steps, is_root_task=True)
 
 
     def set_up_environment(self):

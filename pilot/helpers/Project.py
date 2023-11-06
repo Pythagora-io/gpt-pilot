@@ -56,6 +56,7 @@ class Project:
         self.skip_until_dev_step = None
         self.skip_steps = None
         self.main_prompt = None
+        self.files = []
 
         self.ipc_client_instance = ipc_client_instance
 
@@ -238,6 +239,8 @@ class Project:
 
         path, full_path = self.get_full_file_path(path, name)
         update_file(full_path, data['content'])
+        if full_path not in self.files:
+            self.files.append(full_path)
 
         (File.insert(app=self.app, path=path, name=name, full_path=full_path)
          .on_conflict(
@@ -302,9 +305,11 @@ class Project:
         development_step = DevelopmentSteps.get(DevelopmentSteps.id == development_step_id)
         file_snapshots = FileSnapshot.select().where(FileSnapshot.development_step == development_step)
 
-        clear_directory(self.root_path, IGNORE_FOLDERS)
+        clear_directory(self.root_path, IGNORE_FOLDERS + self.files)
         for file_snapshot in file_snapshots:
             update_file(file_snapshot.file.full_path, file_snapshot.content)
+            if file_snapshot.file.full_path not in self.files:
+                self.files.append(file_snapshot.file.full_path)
 
     def delete_all_steps_except_current_branch(self):
         delete_unconnected_steps_from(self.checkpoints['last_development_step'], 'previous_step')

@@ -149,6 +149,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
         else:
             question += '?'
 
+        logger.info('--------- EXECUTE COMMAND ---------- : %s', question)
         answer = ask_user(project, 'If yes, just press ENTER', False, hint=question)
         # TODO can we use .confirm(question, default='yes').ask()  https://questionary.readthedocs.io/en/stable/pages/types.html#confirmation
         print('answer: ' + answer)
