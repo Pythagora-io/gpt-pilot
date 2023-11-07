@@ -112,6 +112,35 @@ def terminate_process(pid: int, name=None) -> None:
            del running_processes[command_id]
 
 
+def read_queue_line(q, stdout=True):
+    try:
+        line = q.get_nowait()
+    except queue.Empty:
+        line = None
+
+    if line and stdout:
+        print(color_green('CLI OUTPUT:') + line, end='')
+        logger.info('CLI OUTPUT: ' + line)
+        # if success_message is not None and success_message in line:
+        #     logger.info('Success message found: %s', success_message)
+        #     # break # TODO background_command - this is if we want to leave command running in background but sometimes processes keep hanging and terminal gets bugged, also if we do that we have to change user messages to make it clear that there is command running in background
+        #     raise CommandFinishedEarly()
+
+    if line and not stdout:  # stderr
+        print(color_red('CLI ERROR:') + line, end='')
+        logger.error('CLI ERROR: ' + line)
+
+    return line if line else ''
+
+
+def read_remaining_queue(q, stdout=True):
+    output = ''
+    while not q.empty():
+        output += read_queue_line(q, stdout)
+
+    return output
+
+
 def execute_command(project, command, timeout=None, success_message=None, command_id: str = None, force=False) \
         -> (str, str, int):
     """
@@ -209,47 +238,18 @@ def execute_command(project, command, timeout=None, success_message=None, comman
                     break
 
                 raise TimeoutError("Command exceeded the specified timeout.")
-                # os.killpg(process.pid, signal.SIGKILL)
-                # break
 
-            try:
-                line = q.get_nowait()
-            except queue.Empty:
-                line = None
-
-            if line:
-                output += line
-                print(color_green('CLI OUTPUT:') + line, end='')
-                logger.info('CLI OUTPUT: ' + line)
-                # if success_message is not None and success_message in line:
-                #     logger.info('Success message found: %s', success_message)
-                #     # break # TODO background_command - this is if we want to leave command running in background but sometimes processes keep hanging and terminal gets bugged, also if we do that we have to change user messages to make it clear that there is command running in background
-                #     raise CommandFinishedEarly()
-
-            # Read stderr
-            while not q_stderr.empty():
-                try:
-                    stderr_line = q_stderr.get_nowait()
-                except queue.Empty:
-                    stderr_line = None
-
-                if stderr_line:
-                    stderr_output += stderr_line
-                    print(color_red('CLI ERROR:') + stderr_line, end='')  # Print with different color for distinction
-                    logger.error('CLI ERROR: ' + stderr_line)
+            output += read_queue_line(q)
+            stderr_output += read_queue_line(q_stderr, False)
 
             # Check if process has finished
             if process.poll() is not None:
                 logger.info('process exited with return code: %d', process.returncode)
                 if command_id is not None:
                     del running_processes[command_id]
-                # Get remaining lines from the queue
-                while not q.empty():
-                    output_line = q.get_nowait()
-                    if output_line not in output:
-                        print(color_green('CLI OUTPUT:') + output_line, end='')
-                        logger.info('CLI OUTPUT: ' + output_line)
-                        output += output_line
+
+                output += read_remaining_queue(q)
+                stderr_output += read_remaining_queue(q_stderr, False)
                 break
 
     except (KeyboardInterrupt, TimeoutError, CommandFinishedEarly) as e:
