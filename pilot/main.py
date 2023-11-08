@@ -37,6 +37,7 @@ def init():
 if __name__ == "__main__":
     ask_feedback = True
     project = None
+    run_exit_fn = True
     try:
         # Override the built-in 'open' with our version
         builtins.open = get_custom_open
@@ -59,9 +60,11 @@ if __name__ == "__main__":
                 print('\n'.join(f"{app['id']}: {app['status']:20}      "
                                 f"{'' if len(app['development_steps']) == 0 else app['development_steps'][-1]['id']:3}"
                                 f"  {app['name']}" for app in get_created_apps_with_steps()))
+                run_exit_fn = False
         elif '--ux-test' in args:
             from test.ux_tests import run_test
             run_test(args['--ux-test'], args)
+            run_exit_fn = False
         else:
             # TODO get checkpoint from database and fill the project with it
             project = Project(args, ipc_client_instance=ipc_client_instance)
@@ -73,5 +76,6 @@ if __name__ == "__main__":
         print(color_red('--------------------------------------------------'))
         ask_feedback = False
     finally:
-        exit_gpt_pilot(project, ask_feedback)
+        if run_exit_fn:
+            exit_gpt_pilot(project, ask_feedback)
         sys.exit(0)
