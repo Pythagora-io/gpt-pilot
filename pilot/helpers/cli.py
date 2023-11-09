@@ -116,9 +116,9 @@ def read_queue_line(q, stdout=True):
     try:
         line = q.get_nowait()
     except queue.Empty:
-        line = None
+        return ''
 
-    if line and stdout:
+    if stdout:
         print(color_green('CLI OUTPUT:') + line, end='')
         logger.info('CLI OUTPUT: ' + line)
         # if success_message is not None and success_message in line:
@@ -126,11 +126,11 @@ def read_queue_line(q, stdout=True):
         #     # break # TODO background_command - this is if we want to leave command running in background but sometimes processes keep hanging and terminal gets bugged, also if we do that we have to change user messages to make it clear that there is command running in background
         #     raise CommandFinishedEarly()
 
-    if line and not stdout:  # stderr
+    if not stdout:  # stderr
         print(color_red('CLI ERROR:') + line, end='')
         logger.error('CLI ERROR: ' + line)
 
-    return line if line else ''
+    return line
 
 
 def read_remaining_queue(q, stdout=True):
