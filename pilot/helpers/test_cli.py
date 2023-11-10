@@ -34,10 +34,7 @@ def test_execute_command_timeout_exit_code(mock_terminate_process, mock_run, moc
     assert cli_response is not None
     assert llm_response == 'took longer than 100.0ms so I killed it'
     assert exit_code is not None
-    mock_terminate_process.assert_has_calls([
-        call(1234),
-        call(1234),
-    ])
+    mock_terminate_process.assert_called_once_with(1234)
 
 
 def mock_run_command(command, path, q, q_stderr):

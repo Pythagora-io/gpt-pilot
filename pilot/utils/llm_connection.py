@@ -291,7 +291,7 @@ def stream_gpt_completion(data, req_type, project):
             lines_printed += count_lines_based_on_width(buffer, terminal_width)
         logger.debug(f'lines printed: {lines_printed} - {terminal_width}')
 
-        delete_last_n_lines(lines_printed)
+        # delete_last_n_lines(lines_printed)  # TODO fix and test count_lines_based_on_width()
         return result_data
 
     # spinner = spinner_start(yellow("Waiting for OpenAI API response..."))
