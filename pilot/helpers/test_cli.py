@@ -8,10 +8,9 @@ from helpers.test_Project import create_project
 @patch("helpers.cli.subprocess")
 def test_terminate_process_not_running(mock_subprocess, mock_os):
     terminate_process(1234, 'not running')
-    if platform.system() == 'Windows':
-        mock_subprocess.run.assert_called_once_with(["taskkill", "/F", "/T", "/PID", "1234"])
-    else:
-        mock_os.killpg.assert_called_once_with(1234, 9)
+
+    mock_subprocess.run.assert_not_called()
+    mock_os.killpg.assert_not_called()
 
 @patch("helpers.cli.MIN_COMMAND_RUN_TIME", create=True, new=100)
 @patch('helpers.cli.get_saved_command_run')

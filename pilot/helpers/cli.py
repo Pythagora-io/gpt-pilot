@@ -1,3 +1,4 @@
+import psutil
 import subprocess
 import os
 import signal
@@ -84,32 +85,50 @@ def terminate_running_processes():
 
 
 def term_proc_windows(pid: int):
-   try:
-       subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)])
-   except subprocess.CalledProcessError as e:
-       logger.error(f'Error while terminating process: {e}')
+    try:
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)])
+    except subprocess.CalledProcessError as e:
+        logger.error(f'Error while terminating process: {e}')
 
 
 def term_proc_unix_like(pid: int):
-   try:
-       os.killpg(pid, signal.SIGKILL)
-   except OSError as e:
-       logger.error(f'Error while terminating process: {e}')
+    try:
+        os.killpg(pid, signal.SIGKILL)
+    except OSError as e:
+        logger.error(f'Error while terminating process: {e}')
+
+
+def is_process_running(pid: int) -> bool:
+    """Check if there is a running process with the given PID."""
+    try:
+        # psutil.NoSuchProcess will be raised if the process doesn't exist
+        process = psutil.Process(pid)
+        return process.is_running()
+    except psutil.NoSuchProcess:
+        return False
 
 
 def terminate_process(pid: int, name=None) -> None:
-   if name is None:
-       name = ''
-   logger.info('Terminating process "%s" (pid: %s)', name, pid)
+    if name is None:
+        name = ''
 
-   if platform.system() == "Windows":
-       term_proc_windows(pid)
-   else:  # Unix-like systems
-       term_proc_unix_like(pid)
+    if not is_process_running(pid):
+        logger.info('Process "%s" (pid: %s) is not running. Skipping termination.', name, pid)
+        # Also remove from running_processes if not running
+        for command_id, process_info in list(running_processes.items()):
+            if process_info[1] == pid:
+                del running_processes[command_id]
+        return
 
-   for command_id in list(running_processes.keys()):
-       if running_processes[command_id][1] == pid:
-           del running_processes[command_id]
+    logger.info('Terminating process "%s" (pid: %s)', name, pid)
+    if platform.system() == "Windows":
+        term_proc_windows(pid)
+    else:  # Unix-like systems
+        term_proc_unix_like(pid)
+
+    for command_id in list(running_processes.keys()):
+        if running_processes[command_id][1] == pid:
+            del running_processes[command_id]
 
 
 def read_queue_line(q, stdout=True):
@@ -332,11 +351,11 @@ def build_directory_tree(path, prefix='', is_root=True, ignore=None):
 
 
 def res_for_build_directory_tree(path, files=None):
-   return ' - ' + files[os.path.basename(path)].description + ' ' if files and os.path.basename(path) in files else ''
+    return ' - ' + files[os.path.basename(path)].description + ' ' if files and os.path.basename(path) in files else ''
 
 
 def build_directory_tree_with_descriptions(path, prefix="", ignore=None, is_last=False, files=None):
-   """Build the directory tree structure in tree-like format.
+    """Build the directory tree structure in tree-like format.
    Args:
    - path: The starting directory path.
    - prefix: Prefix for the current item, used for recursion.
@@ -345,20 +364,20 @@ def build_directory_tree_with_descriptions(path, prefix="", ignore=None, is_last
    Returns:
    - A string representation of the directory tree.
    """
-   ignore |= []
-   if os.path.basename(path) in ignore:
-       return ""
-   output = ""
-   indent = '|   ' if not is_last else '    '
-   # It's a directory, add its name to the output and then recurse into it
-   output += prefix + "|-- " + os.path.basename(path) + res_for_build_directory_tree(path, files) + "/\n"
-   if os.path.isdir(path):
-       # List items in the directory
-       items = os.listdir(path)
-       for index, item in enumerate(items):
-           item_path = os.path.join(path, item)
-           output += build_directory_tree(item_path, prefix + indent, ignore, index == len(items) - 1, files)
-   return output
+    ignore |= []
+    if os.path.basename(path) in ignore:
+        return ""
+    output = ""
+    indent = '|   ' if not is_last else '    '
+    # It's a directory, add its name to the output and then recurse into it
+    output += prefix + "|-- " + os.path.basename(path) + res_for_build_directory_tree(path, files) + "/\n"
+    if os.path.isdir(path):
+        # List items in the directory
+        items = os.listdir(path)
+        for index, item in enumerate(items):
+            item_path = os.path.join(path, item)
+            output += build_directory_tree(item_path, prefix + indent, ignore, index == len(items) - 1, files)
+    return output
 
 
 def execute_command_and_check_cli_response(convo, command: dict):
@@ -381,9 +400,9 @@ def execute_command_and_check_cli_response(convo, command: dict):
     # TODO: Prompt mentions `command` could be `INSTALLED` or `NOT_INSTALLED`, where is this handled?
     command_id = command['command_id'] if 'command_id' in command else None
     cli_response, response, exit_code = execute_command(convo.agent.project,
-                                                            command['command'],
-                                                            timeout=command['timeout'],
-                                                            command_id=command_id)
+                                                        command['command'],
+                                                        timeout=command['timeout'],
+                                                        command_id=command_id)
     if cli_response is not None:
         if exit_code is None:
             response = 'DONE'
@@ -391,12 +410,12 @@ def execute_command_and_check_cli_response(convo, command: dict):
             # "I ran the command `{{command}}` -> {{ exit_code }}, {{ error_response }}, output: {{ cli_response }
             # respond with 'DONE' or 'NEEDS_DEBUGGING'"
             response = convo.send_message('dev_ops/ran_command.prompt',
-                {
-                    'cli_response': cli_response,
-                    'error_response': response,
-                    'command': command['command'],
-                    'exit_code': exit_code,
-                })
+                                          {
+                                              'cli_response': cli_response,
+                                              'error_response': response,
+                                              'command': command['command'],
+                                              'exit_code': exit_code,
+                                          })
     return cli_response, response
 
 
@@ -452,13 +471,13 @@ def run_command_until_success(convo, command,
         elif response != 'DONE':
             # "I ran the command and the output was... respond with 'DONE' or 'NEEDS_DEBUGGING'"
             response = convo.send_message('dev_ops/ran_command.prompt',
-                {
-                    'cli_response': cli_response,
-                    'error_response': response,
-                    'command': command,
-                    'additional_message': additional_message,
-                    'exit_code': exit_code,
-                })
+                                          {
+                                              'cli_response': cli_response,
+                                              'error_response': response,
+                                              'command': command,
+                                              'additional_message': additional_message,
+                                              'exit_code': exit_code,
+                                          })
             logger.debug(f'LLM response: {response}')
 
     if response != 'DONE':
