@@ -127,6 +127,19 @@ COMMANDS_TO_RUN = {
     },
 }
 
+COMMAND_TO_RUN = {
+    'definitions': [
+        {
+            'name': 'command_to_run',
+            'description': 'Command that starts the app.',
+            'parameters': command_definition("Command that starts the app. If app can't be started for some reason, return command as empty string ''."),
+        },
+    ],
+    'functions': {
+        'process_commands': run_commands
+    },
+}
+
 DEV_TASKS_BREAKDOWN = {
     'definitions': [
         {
