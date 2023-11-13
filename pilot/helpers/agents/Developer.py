@@ -22,8 +22,8 @@ from logger.logger import logger
 from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
-from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes, terminate_named_process
-from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK
+from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes
+from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN
 from database.database import save_progress, get_progress_steps, update_app_status
 from utils.utils import get_os_info
 
@@ -177,6 +177,9 @@ class Developer(Agent):
         while True:
             human_intervention_description = step['human_intervention_description']
 
+            if not self.run_command:
+                self.get_run_command(convo)
+
             if self.run_command:
                 if (self.project.ipc_client_instance is None or self.project.ipc_client_instance.client is None):
                     human_intervention_description += color_yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
@@ -234,15 +237,16 @@ class Developer(Agent):
                 result['llm_response'] = llm_response
             return result
 
+    def get_run_command(self, convo):
+        llm_response = convo.send_message('development/get_run_command.prompt', {}, COMMAND_TO_RUN)
+        self.run_command = llm_response['command'].strip('`')
+        self.run_command = self.run_command.strip('\n')
+
     def task_postprocessing(self, convo, development_task, continue_development, task_result, last_branch_name):
         # TODO: why does `run_command` belong to the Developer class, rather than just being passed?
         #       ...It's set by execute_task() -> task_postprocessing(), but that is called by various sources.
         #       What is it at step_human_intervention()?
-        self.run_command = convo.send_message('development/get_run_command.prompt', {})
-        if self.run_command.startswith('`'):
-            self.run_command = self.run_command[1:]
-        if self.run_command.endswith('`'):
-            self.run_command = self.run_command[:-1]
+        self.get_run_command(convo)
 
         if development_task is not None:
             convo.remove_last_x_messages(2)
