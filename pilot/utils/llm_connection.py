@@ -236,7 +236,7 @@ def retry_on_exception(func):
                 project = args[2]
                 user_message = styled_text(
                     project,
-                    "Do you want to try make the same request again? If yes, just press ENTER. Otherwise, type 'no'.",
+                    'Do you want to try make the same request again? If yes, just press ENTER. Otherwise, type "no".',
                     style=Style.from_dict({
                         'question': '#FF0000 bold',
                         'answer': '#FF910A bold'

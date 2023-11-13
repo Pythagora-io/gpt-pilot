@@ -198,12 +198,13 @@ def execute_command(project, command, timeout=None, success_message=None, comman
             question += '?'
 
         logger.info('--------- EXECUTE COMMAND ---------- : %s', question)
-        answer = ask_user(project, 'If yes, just press ENTER', False, hint=question)
+        answer = ask_user(project, 'If yes, just press ENTER. Otherwise, type "no" but it will be processed as '
+                                   'successfully executed.', False, hint=question)
         # TODO can we use .confirm(question, default='yes').ask()  https://questionary.readthedocs.io/en/stable/pages/types.html#confirmation
         print('answer: ' + answer)
-        if answer.lower() in ['no', 'skip']:
+        if answer.lower() in ['n', 'no', 'skip']:
             return None, 'DONE', None
-        elif answer.lower() not in ['', 'yes', 'ok', 'okay', 'sure']:
+        elif answer.lower() not in ['', 'y', 'yes', 'ok', 'okay', 'sure']:
             # "That's not going to work, let's do X instead"
             #       https://github.com/Pythagora-io/gpt-pilot/issues/198
             #       https://github.com/Pythagora-io/gpt-pilot/issues/43#issuecomment-1756352056
