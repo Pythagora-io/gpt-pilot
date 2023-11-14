@@ -11,6 +11,13 @@ The telemetry data we collect includes:
 - **Development Steps**: The number of development steps that were performed.
 - **LLM Requests**: The number of LLM requests made.
 - **User Inputs**: The number of times you provide input to the tool.
+- **Operating System**: The operating system you are using (and Linux distro if applicable).
+- **Python Version**: The version of Python you are using.
+- **GPT Pilot Version**: The version of GPT Pilot you are using.
+- **LLM Model**: LLM model used for the session.
+- **Time**: How long it took to generate a project.
+
+All the data points are listed in [pilot.utils.telemetry:Telemetry.clear_data()](../pilot/utils/telemetry.py).
 
 ### How We Use This Data
 
@@ -27,13 +34,9 @@ Your privacy is important to us. The data collected is purely for internal analy
 
 ### Opting Out
 
-We believe in transparency and control. If you prefer not to send telemetry data, you can opt-out at any time by running the following command:
+We believe in transparency and control. If you prefer not to send telemetry data, you can opt-out at any time by setting `telemetry.enabled` to `false` in your `~/.gpt-pilot/config.json` configuration file.
 
-```bash
-gpt-pilot telemetry disable
-```
-
-After you run this command, GPT Pilot will no longer collect telemetry data from your machine.
+After you update this setting, GPT Pilot will no longer collect telemetry data from your machine.
 
 ### Questions and Feedback
 If you have questions about our telemetry practices or would like to provide feedback, please open an issue in our repository, and we will be happy to engage with you.
