@@ -79,11 +79,13 @@ if __name__ == "__main__":
             project = Project(args, ipc_client_instance=ipc_client_instance)
             project.start()
             project.finish()
+            telemetry.set("end_result", "success")
     except Exception:
         print(color_red('---------- GPT PILOT EXITING WITH ERROR ----------'))
         traceback.print_exc()
         print(color_red('--------------------------------------------------'))
         ask_feedback = False
+        telemetry.set("end_result", "failure")
     finally:
         if run_exit_fn:
             exit_gpt_pilot(project, ask_feedback)

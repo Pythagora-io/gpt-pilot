@@ -101,13 +101,12 @@ def exit_gpt_pilot(project, ask_feedback=True):
 
     ask_to_store_prompt(project, path_id)
 
-    # Ask user for contact email. If they choose not to provide it, ask for direct
-    # feedback. Both are optional.
-    if not ask_user_email(project, path_id, ask_feedback):
-        ask_user_feedback(project, path_id, ask_feedback)
+    ask_user_email(project, path_id, ask_feedback)
 
-    # We can figure out if we're done, but can't distinguish between crash and interrupted, yet
-    telemetry.set("end_result", "success" if (project is not None and project.finished) else None)
+    # TODO: Turned off for now because we're asking for email, and we don't want to
+    # annoy people.
+    # ask_user_feedback(project, path_id, ask_feedback)
+
     telemetry.set("num_commands", project.command_runs_count if project is not None else 0)
     telemetry.set("num_inputs", project.user_inputs_count if project is not None else 0)
 
