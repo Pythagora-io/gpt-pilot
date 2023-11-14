@@ -5,7 +5,7 @@ from os import getenv
 from pathlib import Path
 from subprocess import check_output
 import sys
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -84,14 +84,36 @@ def test_loader_load_config_file(_mock_from_env, mock_open, expected_config_loca
     )
     mock_open.return_value.__enter__.return_value = StringIO(fake_config)
 
-    Loader(settings).load()
+    loader = Loader(settings)
+    assert loader.config_path == Path(expected_config_location)
 
-    mock_open.assert_called_once_with(
-        Path(expected_config_location), "r", encoding="utf-8"
-    )
+    loader.config_path = MagicMock()
+    loader.load()
+
+    loader.config_path.exists.assert_called_once_with()
+    mock_open.assert_called_once_with(loader.config_path, "r", encoding="utf-8")
+
     assert settings.openai_api_key == "test_key"
     assert settings.telemetry["id"] == "fake-id"
     assert settings.telemetry["endpoint"] == "https://example.com"
+
+
+@patch("utils.settings.open")
+@patch("utils.settings.Loader.update_settings_from_env")
+def test_loader_load_no_config_file(_mock_from_env, mock_open, expected_config_location):
+    settings = Settings()
+    loader = Loader(settings)
+    assert loader.config_path == Path(expected_config_location)
+
+    loader.config_path = MagicMock()
+    loader.config_path.exists.return_value = False
+    loader.load()
+
+    loader.config_path.exists.assert_called_once_with()
+    mock_open.assert_not_called()
+
+    assert settings.openai_api_key is None
+    assert settings.telemetry is None
 
 
 @patch("utils.settings.getenv")
