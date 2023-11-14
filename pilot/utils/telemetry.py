@@ -76,6 +76,8 @@ class Telemetry:
             "pilot_version": version,
             # LLM used
             "model": None,
+            # Initial prompt
+            "initial_prompt": None,
             # Number of LLM requests made
             "num_llm_requests": 0,
             # Number of tokens used for LLM requests
@@ -97,6 +99,13 @@ class Telemetry:
             # Optional user contact email
             "user_contact": None,
         }
+        if sys.platform == "linux":
+            try:
+                import distro
+                self.data["linux_distro"] = distro.name(pretty=True)
+            except Exception as err:
+                log.debug(f"Error getting Linux distribution info: {err}", exc_info=True)
+
         self.start_time = None
         self.end_time = None
 
@@ -187,7 +196,7 @@ class Telemetry:
         self.end_time = time.time()
         self.data["elapsed_time"] = self.end_time - self.start_time
 
-    def send(self):
+    def send(self, event:str = "pilot-telemetry"):
         """
         Send telemetry data to the phone-home endpoint.
 
@@ -200,11 +209,20 @@ class Telemetry:
             log.error("Telemetry.send(): cannot send telemetry, no endpoint configured")
             return
 
+        if self.start_time is not None and self.end_time is None:
+            self.stop()
+
+        payload = {
+            "pathId": self.telemetry_id,
+            "event": event,
+            "data": self.data,
+        }
+
         log.debug(
             f"Telemetry.send(): sending anonymous telemetry data to {self.endpoint}"
         )
         try:
-            requests.post(self.endpoint, json=self.data)
+            requests.post(self.endpoint, json=payload)
         except Exception as e:
             log.error(
                 f"Telemetry.send(): failed to send telemetry data: {e}", exc_info=True

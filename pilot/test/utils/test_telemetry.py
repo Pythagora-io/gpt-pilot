@@ -249,7 +249,12 @@ def test_send_enabled_and_successful(mock_settings, mock_post, caplog):
     telemetry = Telemetry()
     telemetry.send()
 
-    mock_post.assert_called_once_with("test-endpoint", json=telemetry.data)
+    expected = {
+        "pathId": "test-id",
+        "event": "pilot-telemetry",
+        "data": telemetry.data,
+    }
+    mock_post.assert_called_once_with("test-endpoint", json=expected)
     assert "sending anonymous telemetry data to test-endpoint" in caplog.text
 
 
@@ -266,7 +271,12 @@ def test_send_enabled_but_post_fails(mock_settings, mock_post):
     telemetry = Telemetry()
     telemetry.send()
 
-    mock_post.assert_called_once_with(telemetry.endpoint, json=telemetry.data)
+    expected = {
+        "pathId": "test-id",
+        "event": "pilot-telemetry",
+        "data": telemetry.data,
+    }
+    mock_post.assert_called_once_with(telemetry.endpoint, json=expected)
 
 
 @patch("utils.telemetry.requests.post")

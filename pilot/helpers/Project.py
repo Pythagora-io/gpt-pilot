@@ -24,6 +24,7 @@ from database.models.files import File
 from logger.logger import logger
 from utils.dot_gpt_pilot import DotGptPilot
 
+from utils.telemetry import telemetry
 
 class Project:
     def __init__(self, args, name=None, project_description=None, clarifications=None, user_stories=None,
@@ -81,6 +82,7 @@ class Project:
         """
         Start the project.
         """
+        telemetry.start()
         self.project_manager = ProductOwner(self)
         self.project_manager.get_project_description()
 
