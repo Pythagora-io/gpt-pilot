@@ -17,6 +17,8 @@ from utils.utils import fix_json, get_prompt
 from utils.function_calling import add_function_calls_to_request, FunctionCallSet, FunctionType
 from utils.questionary import styled_text
 
+from .telemetry import telemetry
+
 def get_tokens_in_messages(messages: List[str]) -> int:
     tokenizer = tiktoken.get_encoding("cl100k_base")  # GPT-4 tokenizer
     tokenized_messages = [tokenizer.encode(message['content']) for message in messages]
@@ -300,6 +302,10 @@ def stream_gpt_completion(data, req_type, project):
     # Configure for the selected ENDPOINT
     model = os.getenv('MODEL_NAME', 'gpt-4')
     endpoint = os.getenv('ENDPOINT')
+
+    # This will be set many times but we don't care, as there are no side-effects to it.
+    telemetry.set("model", model)
+    telemetry.inc("num_llm_requests")
 
     logger.info(f'> Request model: {model}')
     if logger.isEnabledFor(logging.DEBUG):

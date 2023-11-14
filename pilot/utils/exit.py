@@ -6,8 +6,10 @@ import requests
 from helpers.cli import terminate_running_processes
 from utils.questionary import styled_text
 
+from utils.telemetry import telemetry
 
 def send_telemetry(path_id):
+
     # Prepare the telemetry data
     telemetry_data = {
         "pathId": path_id,
@@ -60,6 +62,7 @@ def ask_to_store_prompt(project, path_id):
     try:
         answer = styled_text(project, question, ignore_user_input_count=True)
         if answer == '':
+            telemetry.set("initial_prompt", init_prompt)
             response = requests.post("https://api.pythagora.io/telemetry", json=telemetry_data)
             response.raise_for_status()
     except requests.RequestException as err:
@@ -67,14 +70,28 @@ def ask_to_store_prompt(project, path_id):
 
 
 def ask_user_feedback(project, path_id, ask_feedback):
-    question = ('How did GPT Pilot do? Were you able to create any app that works? Please write any feedback you have '
-                'or just press ENTER to exit:')
+    question = ('Were you able to create any app that works? Please write any feedback you have or just press ENTER to exit:')
     feedback = None
     if ask_feedback:
         feedback = styled_text(project, question, ignore_user_input_count=True)
     if feedback:  # only send if user provided feedback
+        telemetry.set("user_feedback", feedback)
         send_feedback(feedback, path_id)
 
+
+def ask_user_email(project, path_id, ask_feedback):
+    if not ask_feedback:
+        return False
+
+    question = (
+        "How did GPT Pilot do? We'd love to talk with you and hear your thoughts. "
+        "If you'd like to be contacted by us, please provide your email address, or just press ENTER to exit:"
+    )
+    feedback = styled_text(project, question, ignore_user_input_count=True)
+    if feedback:  # only send if user provided feedback
+        telemetry.set("user_contact", feedback)
+        return True
+    return False
 
 def exit_gpt_pilot(project, ask_feedback=True):
     terminate_running_processes()
@@ -84,6 +101,15 @@ def exit_gpt_pilot(project, ask_feedback=True):
 
     ask_to_store_prompt(project, path_id)
 
-    ask_user_feedback(project, path_id, ask_feedback)
+    ask_user_email(project, path_id, ask_feedback)
+
+    # TODO: Turned off for now because we're asking for email, and we don't want to
+    # annoy people.
+    # ask_user_feedback(project, path_id, ask_feedback)
+
+    telemetry.set("num_commands", project.command_runs_count if project is not None else 0)
+    telemetry.set("num_inputs", project.user_inputs_count if project is not None else 0)
+
+    telemetry.send()
 
     print('Exit', type='exit')

@@ -264,6 +264,9 @@ Since this is a research project, there are many areas that need to be researche
 ## 🖥 Development
 Other than the research, GPT Pilot needs to be debugged to work in different scenarios. For example, we realized that the quality of the code generated is very sensitive to the size of the development task. When the task is too broad, the code has too many bugs that are hard to fix, but when the development task is too narrow, GPT also seems to struggle in getting the task implemented into the existing code.
 
+## 📊 Telemetry
+To improve GPT Pilot, we are tracking some events from which you can opt out at any time. You can read more about it [here](./docs/TELEMETRY.md).
+
 # 🔗 Connect with us
 🌟 As an open-source tool, it would mean the world to us if you starred the GPT-pilot repo 🌟
 
