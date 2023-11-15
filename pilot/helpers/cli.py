@@ -318,6 +318,27 @@ def execute_command(project, command, timeout=None, success_message=None, comman
     return return_value, done_or_error_response, process.returncode
 
 
+def check_if_command_successful(convo, command, cli_response, response, exit_code, additional_message=None):
+    if cli_response is not None:
+        logger.info(f'`{command}` ended with exit code: {exit_code}')
+        if exit_code is None:
+            # todo this should never happen! process is still running, see why and now we want to handle it
+            print(color_red(f'Process for command {command} still running.'))
+            response = 'DONE'
+        else:
+            response = convo.send_message('dev_ops/ran_command.prompt',
+                                          {
+                                              'cli_response': cli_response,
+                                              'error_response': response,
+                                              'command': command,
+                                              'additional_message': additional_message,
+                                              'exit_code': exit_code,
+                                          })
+            logger.debug(f'LLM response to ran_command.prompt: {response}')
+
+    return response
+
+
 def build_directory_tree(path, prefix='', is_root=True, ignore=None):
     """Build the directory tree structure in a simplified format.
 
@@ -417,19 +438,8 @@ def execute_command_and_check_cli_response(convo, command: dict):
                                                         command['command'],
                                                         timeout=command['timeout'],
                                                         command_id=command_id)
-    if cli_response is not None:
-        if exit_code is None:
-            response = 'DONE'
-        elif response != 'DONE':
-            # "I ran the command `{{command}}` -> {{ exit_code }}, {{ error_response }}, output: {{ cli_response }
-            # respond with 'DONE' or 'NEEDS_DEBUGGING'"
-            response = convo.send_message('dev_ops/ran_command.prompt',
-                                          {
-                                              'cli_response': cli_response,
-                                              'error_response': response,
-                                              'command': command['command'],
-                                              'exit_code': exit_code,
-                                          })
+
+    response = check_if_command_successful(convo, command['command'], cli_response, response, exit_code)
     return cli_response, response
 
 
@@ -477,22 +487,7 @@ def run_command_until_success(convo, command,
     if cli_response is None and response != 'DONE':
         return {'success': False, 'user_input': response}
 
-    if cli_response is not None:
-        logger.info(f'`{command}` ("{command_id}") exit code: {exit_code}')
-        if exit_code is None and command_id is not None:
-            # process is still running
-            response = 'DONE'
-        elif response != 'DONE':
-            # "I ran the command and the output was... respond with 'DONE' or 'NEEDS_DEBUGGING'"
-            response = convo.send_message('dev_ops/ran_command.prompt',
-                                          {
-                                              'cli_response': cli_response,
-                                              'error_response': response,
-                                              'command': command,
-                                              'additional_message': additional_message,
-                                              'exit_code': exit_code,
-                                          })
-            logger.debug(f'LLM response: {response}')
+    response = check_if_command_successful(convo, command, cli_response, response, exit_code, additional_message)
 
     if response != 'DONE':
         # 'NEEDS_DEBUGGING'
