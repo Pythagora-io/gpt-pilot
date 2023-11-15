@@ -109,6 +109,7 @@ def is_process_running(pid: int) -> bool:
 
 
 def terminate_process(pid: int, name=None) -> None:
+    # todo refactor terminate_process() using psutil for all OS. Check/terminate child processes and test on all OS
     if name is None:
         name = ''
 
@@ -125,6 +126,17 @@ def terminate_process(pid: int, name=None) -> None:
         term_proc_windows(pid)
     else:  # Unix-like systems
         term_proc_unix_like(pid)
+
+    try:
+        # Wait for the process to terminate
+        process = psutil.Process(pid)
+        process.wait(timeout=10)  # Adjust the timeout as necessary
+    except psutil.NoSuchProcess:
+        logger.info("Process already terminated.")
+    except psutil.TimeoutExpired:
+        logger.warning("Timeout expired while waiting for process to terminate.")
+    except Exception as e:
+        logger.error(f"Error waiting for process termination: {e}")
 
     for command_id in list(running_processes.keys()):
         if running_processes[command_id][1] == pid:
@@ -286,10 +298,11 @@ def execute_command(project, command, timeout=None, success_message=None, comman
             logger.info('Command finished before timeout. Handling early completion...')
             done_or_error_response = 'DONE'
 
-        # update the returncode
-        process.poll()
     finally:
+        done_or_error_response = 'DONE'  # Todo remove if we want to have different responses
         terminate_process(process.pid)  # TODO: background_command - remove this is if we want to leave command running in background, look todo above
+        # update the return code
+        process.poll()
 
     elapsed_time = time.time() - start_time
     logger.info(f'`{command}` took {round(elapsed_time * 1000)}ms to execute.')
