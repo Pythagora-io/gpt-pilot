@@ -109,6 +109,7 @@ def is_process_running(pid: int) -> bool:
 
 
 def terminate_process(pid: int, name=None) -> None:
+    # todo refactor terminate_process() using psutil for all OS. Check/terminate child processes and test on all OS
     if name is None:
         name = ''
 
@@ -125,6 +126,17 @@ def terminate_process(pid: int, name=None) -> None:
         term_proc_windows(pid)
     else:  # Unix-like systems
         term_proc_unix_like(pid)
+
+    try:
+        # Wait for the process to terminate
+        process = psutil.Process(pid)
+        process.wait(timeout=10)  # Adjust the timeout as necessary
+    except psutil.NoSuchProcess:
+        logger.info("Process already terminated.")
+    except psutil.TimeoutExpired:
+        logger.warning("Timeout expired while waiting for process to terminate.")
+    except Exception as e:
+        logger.error(f"Error waiting for process termination: {e}")
 
     for command_id in list(running_processes.keys()):
         if running_processes[command_id][1] == pid:
@@ -286,10 +298,11 @@ def execute_command(project, command, timeout=None, success_message=None, comman
             logger.info('Command finished before timeout. Handling early completion...')
             done_or_error_response = 'DONE'
 
-        # update the returncode
-        process.poll()
     finally:
+        done_or_error_response = 'DONE'  # Todo remove if we want to have different responses
         terminate_process(process.pid)  # TODO: background_command - remove this is if we want to leave command running in background, look todo above
+        # update the return code
+        process.poll()
 
     elapsed_time = time.time() - start_time
     logger.info(f'`{command}` took {round(elapsed_time * 1000)}ms to execute.')
@@ -303,6 +316,27 @@ def execute_command(project, command, timeout=None, success_message=None, comman
     save_command_run(project, command, return_value, done_or_error_response, process.returncode)
 
     return return_value, done_or_error_response, process.returncode
+
+
+def check_if_command_successful(convo, command, cli_response, response, exit_code, additional_message=None):
+    if cli_response is not None:
+        logger.info(f'`{command}` ended with exit code: {exit_code}')
+        if exit_code is None:
+            # todo this should never happen! process is still running, see why and now we want to handle it
+            print(color_red(f'Process for command {command} still running.'))
+            response = 'DONE'
+        else:
+            response = convo.send_message('dev_ops/ran_command.prompt',
+                                          {
+                                              'cli_response': cli_response,
+                                              'error_response': response,
+                                              'command': command,
+                                              'additional_message': additional_message,
+                                              'exit_code': exit_code,
+                                          })
+            logger.debug(f'LLM response to ran_command.prompt: {response}')
+
+    return response
 
 
 def build_directory_tree(path, prefix='', is_root=True, ignore=None):
@@ -404,19 +438,8 @@ def execute_command_and_check_cli_response(convo, command: dict):
                                                         command['command'],
                                                         timeout=command['timeout'],
                                                         command_id=command_id)
-    if cli_response is not None:
-        if exit_code is None:
-            response = 'DONE'
-        elif response != 'DONE':
-            # "I ran the command `{{command}}` -> {{ exit_code }}, {{ error_response }}, output: {{ cli_response }
-            # respond with 'DONE' or 'NEEDS_DEBUGGING'"
-            response = convo.send_message('dev_ops/ran_command.prompt',
-                                          {
-                                              'cli_response': cli_response,
-                                              'error_response': response,
-                                              'command': command['command'],
-                                              'exit_code': exit_code,
-                                          })
+
+    response = check_if_command_successful(convo, command['command'], cli_response, response, exit_code)
     return cli_response, response
 
 
@@ -464,22 +487,7 @@ def run_command_until_success(convo, command,
     if cli_response is None and response != 'DONE':
         return {'success': False, 'user_input': response}
 
-    if cli_response is not None:
-        logger.info(f'`{command}` ("{command_id}") exit code: {exit_code}')
-        if exit_code is None and command_id is not None:
-            # process is still running
-            response = 'DONE'
-        elif response != 'DONE':
-            # "I ran the command and the output was... respond with 'DONE' or 'NEEDS_DEBUGGING'"
-            response = convo.send_message('dev_ops/ran_command.prompt',
-                                          {
-                                              'cli_response': cli_response,
-                                              'error_response': response,
-                                              'command': command,
-                                              'additional_message': additional_message,
-                                              'exit_code': exit_code,
-                                          })
-            logger.debug(f'LLM response: {response}')
+    response = check_if_command_successful(convo, command, cli_response, response, exit_code, additional_message)
 
     if response != 'DONE':
         # 'NEEDS_DEBUGGING'

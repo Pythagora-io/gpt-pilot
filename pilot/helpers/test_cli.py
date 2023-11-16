@@ -31,7 +31,7 @@ def test_execute_command_timeout_exit_code(mock_terminate_process, mock_run, moc
 
     # Then
     assert cli_response is not None
-    assert llm_response == 'took longer than 100.0ms so I killed it'
+    assert llm_response == 'DONE'
     assert exit_code is not None
     mock_terminate_process.assert_called_once_with(1234)
 
@@ -60,7 +60,7 @@ def test_execute_command_enter(mock_terminate_process, mock_run, mock_ask, mock_
 
     # Then
     assert 'hello' in cli_response
-    assert llm_response is None
+    assert llm_response == 'DONE'
     assert exit_code == 0
     mock_terminate_process.assert_called_once_with(1234)
 
@@ -81,7 +81,7 @@ def test_execute_command_yes(mock_terminate_process, mock_run, mock_ask, mock_ge
 
     # Then
     assert 'hello' in cli_response
-    assert llm_response is None
+    assert llm_response == 'DONE'
     assert exit_code == 0
     mock_terminate_process.assert_called_once_with(1234)
 
