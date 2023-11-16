@@ -8,6 +8,10 @@ You specify what kind of app you want to build. Then, GPT Pilot asks clarifying 
 
 ---
 
+If you would like to get updates on future releases or just get in touch, you [can add your email here](http://eepurl.com/iD6Mpo).
+
+---
+
 <!-- TOC -->
 * [🔌 Requirements](#-requirements)
 * [🚦How to start using gpt-pilot?](#how-to-start-using-gpt-pilot)
