@@ -1,5 +1,6 @@
 import platform
 import uuid
+import re
 
 from const.messages import WHEN_USER_DONE
 from utils.style import (
@@ -239,8 +240,19 @@ class Developer(Agent):
 
     def get_run_command(self, convo):
         llm_response = convo.send_message('development/get_run_command.prompt', {}, COMMAND_TO_RUN)
-        self.run_command = llm_response['command'].strip('`')
-        self.run_command = self.run_command.strip('\n')
+        self.run_command = llm_response['command']
+
+        # Pattern for triple backtick code block with optional language
+        triple_backtick_pattern = r"```(?:\w+\n)?(.*?)```"
+        triple_match = re.search(triple_backtick_pattern, self.run_command, re.DOTALL)
+        # Pattern for single backtick
+        single_backtick_pattern = r"`(.*?)`"
+        single_match = re.search(single_backtick_pattern, self.run_command, re.DOTALL)
+
+        if triple_match:
+            self.run_command = triple_match.group(1).strip()
+        elif single_match:
+            self.run_command = single_match.group(1).strip()
 
     def task_postprocessing(self, convo, development_task, continue_development, task_result, last_branch_name):
         # TODO: why does `run_command` belong to the Developer class, rather than just being passed?
