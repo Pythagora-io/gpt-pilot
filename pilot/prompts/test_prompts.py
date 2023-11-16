@@ -12,6 +12,8 @@ def test_prompt_ran_command_None_exit():
 
     # Then
     assert prompt == '''
+Some additional message
+
 I ran the command `./scripts/run_tests`. The output was:
 
 stdout:
@@ -36,6 +38,8 @@ def test_prompt_ran_command_0_exit():
 
     # Then
     assert prompt == '''
+Some additional message
+
 I ran the command `./scripts/run_tests`. The output was:
 
 stdout:
