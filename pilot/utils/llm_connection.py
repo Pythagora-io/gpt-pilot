@@ -238,7 +238,7 @@ def retry_on_exception(func):
                 project = args[2]
                 user_message = styled_text(
                     project,
-                    "Do you want to try make the same request again? If yes, just press ENTER. Otherwise, type 'no'.",
+                    'Do you want to try make the same request again? If yes, just press ENTER. Otherwise, type "no".',
                     style=Style.from_dict({
                         'question': '#FF0000 bold',
                         'answer': '#FF910A bold'
@@ -293,7 +293,7 @@ def stream_gpt_completion(data, req_type, project):
             lines_printed += count_lines_based_on_width(buffer, terminal_width)
         logger.debug(f'lines printed: {lines_printed} - {terminal_width}')
 
-        delete_last_n_lines(lines_printed)
+        # delete_last_n_lines(lines_printed)  # TODO fix and test count_lines_based_on_width()
         return result_data
 
     # spinner = spinner_start(yellow("Waiting for OpenAI API response..."))

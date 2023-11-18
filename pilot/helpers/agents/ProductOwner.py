@@ -87,7 +87,7 @@ class ProductOwner(Agent):
         return convo_project_description.send_message('utils/summary.prompt',
                                                       {'conversation': '\n'.join(
                                                           [f"{msg['role']}: {msg['content']}" for msg in
-                                                           high_level_messages])})
+                                                           high_level_messages])}, should_log_message=False)
 
     def get_user_stories(self):
         if not self.project.args.get('advanced', False):

@@ -8,10 +8,9 @@ from helpers.test_Project import create_project
 @patch("helpers.cli.subprocess")
 def test_terminate_process_not_running(mock_subprocess, mock_os):
     terminate_process(1234, 'not running')
-    if platform.system() == 'Windows':
-        mock_subprocess.run.assert_called_once_with(["taskkill", "/F", "/T", "/PID", "1234"])
-    else:
-        mock_os.killpg.assert_called_once_with(1234, 9)
+
+    mock_subprocess.run.assert_not_called()
+    mock_os.killpg.assert_not_called()
 
 @patch("helpers.cli.MIN_COMMAND_RUN_TIME", create=True, new=100)
 @patch('helpers.cli.get_saved_command_run')
@@ -32,12 +31,9 @@ def test_execute_command_timeout_exit_code(mock_terminate_process, mock_run, moc
 
     # Then
     assert cli_response is not None
-    assert llm_response == 'took longer than 100.0ms so I killed it'
+    assert llm_response == 'DONE'
     assert exit_code is not None
-    mock_terminate_process.assert_has_calls([
-        call(1234),
-        call(1234),
-    ])
+    mock_terminate_process.assert_called_once_with(1234)
 
 
 def mock_run_command(command, path, q, q_stderr):
@@ -64,7 +60,7 @@ def test_execute_command_enter(mock_terminate_process, mock_run, mock_ask, mock_
 
     # Then
     assert 'hello' in cli_response
-    assert llm_response is None
+    assert llm_response == 'DONE'
     assert exit_code == 0
     mock_terminate_process.assert_called_once_with(1234)
 
@@ -85,7 +81,7 @@ def test_execute_command_yes(mock_terminate_process, mock_run, mock_ask, mock_ge
 
     # Then
     assert 'hello' in cli_response
-    assert llm_response is None
+    assert llm_response == 'DONE'
     assert exit_code == 0
     mock_terminate_process.assert_called_once_with(1234)
 

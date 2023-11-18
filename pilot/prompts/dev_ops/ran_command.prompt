@@ -1,7 +1,8 @@
-{{ additional_info }}I ran the command `{{ command }}`
-{%- if exit_code is number %}, the exit code was {{ exit_code }}{% endif %}
-{%- if error_response %}, it {{ error_response }}{% endif %}. The output was:
-
+{%- if additional_message %}{{ additional_message }}{% endif %}
+I ran the command `{{ command }}`. The output was:
+{#%- if error_response %}, it {{ error_response }}{% endif %#}
 {{ cli_response }}
 
 If the command was successfully executed, respond with `DONE`. If it wasn't, respond with `NEEDS_DEBUGGING`.
+
+Do not respond with anything other than these two keywords.

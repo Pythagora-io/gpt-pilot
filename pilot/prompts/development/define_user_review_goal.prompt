@@ -5,4 +5,4 @@ In case the task can be tested by making an API request, do not suggest how can 
 !IMPORTANT!
 Do not require any code writing form the user for testing this task.
 
-If it is difficult to test the task, you can just write that there is nothing specific to test and that the best thing is to move on to another task. If this is the case, answer with only this sentence - `There is nothing specific to test for this task so you can write "continue" and we'll move on to the next task.`
+Try your best to avoid this if possible, but if it is very difficult to test the task, you can just answer with only this sentence - `There is nothing specific to test for this task so you can write "continue" and we'll move on to the next task.`

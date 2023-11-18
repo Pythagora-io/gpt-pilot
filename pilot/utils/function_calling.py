@@ -50,10 +50,8 @@ def add_function_calls_to_request(gpt_data, function_calls: Union[FunctionCallSe
     else:
         function_call = function_calls['definitions'][0]['name']
 
-    role = 'user' if '/' in model else 'system'
-
     gpt_data['messages'].append({
-        'role': role,
+        'role': 'user',
         'content': prompter.prompt('', function_calls['definitions'], function_call)
     })
 

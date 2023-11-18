@@ -1,5 +1,6 @@
 import platform
 import uuid
+import re
 
 from const.messages import WHEN_USER_DONE
 from utils.style import (
@@ -22,8 +23,8 @@ from logger.logger import logger
 from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
-from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes, terminate_named_process
-from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK
+from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes
+from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN
 from database.database import save_progress, get_progress_steps, update_app_status
 from utils.utils import get_os_info
 
@@ -149,7 +150,7 @@ class Developer(Agent):
         else:
             data = step['command']
         # TODO END
-        additional_message = 'Let\'s start with the step #0:\n\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i+1)) } are finished so let\'s do step #{i + 1} now.\n\n'
+        additional_message = 'Let\'s start with the step #0:\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i+1)) } are finished so let\'s do step #{i + 1} now.\n'
 
         command_id = data['command_id'] if 'command_id' in data else None
         success_message = data['success_message'] if 'success_message' in data else None
@@ -176,6 +177,9 @@ class Developer(Agent):
 
         while True:
             human_intervention_description = step['human_intervention_description']
+
+            if not self.run_command:
+                self.get_run_command(convo)
 
             if self.run_command:
                 if (self.project.ipc_client_instance is None or self.project.ipc_client_instance.client is None):
@@ -234,15 +238,27 @@ class Developer(Agent):
                 result['llm_response'] = llm_response
             return result
 
+    def get_run_command(self, convo):
+        llm_response = convo.send_message('development/get_run_command.prompt', {}, COMMAND_TO_RUN)
+        self.run_command = llm_response['command']
+
+        # Pattern for triple backtick code block with optional language
+        triple_backtick_pattern = r"```(?:\w+\n)?(.*?)```"
+        triple_match = re.search(triple_backtick_pattern, self.run_command, re.DOTALL)
+        # Pattern for single backtick
+        single_backtick_pattern = r"`(.*?)`"
+        single_match = re.search(single_backtick_pattern, self.run_command, re.DOTALL)
+
+        if triple_match:
+            self.run_command = triple_match.group(1).strip()
+        elif single_match:
+            self.run_command = single_match.group(1).strip()
+
     def task_postprocessing(self, convo, development_task, continue_development, task_result, last_branch_name):
         # TODO: why does `run_command` belong to the Developer class, rather than just being passed?
         #       ...It's set by execute_task() -> task_postprocessing(), but that is called by various sources.
         #       What is it at step_human_intervention()?
-        self.run_command = convo.send_message('development/get_run_command.prompt', {})
-        if self.run_command.startswith('`'):
-            self.run_command = self.run_command[1:]
-        if self.run_command.endswith('`'):
-            self.run_command = self.run_command[:-1]
+        self.get_run_command(convo)
 
         if development_task is not None:
             convo.remove_last_x_messages(2)
@@ -569,8 +585,7 @@ class Developer(Agent):
 
                 user_feedback = response['user_input']
                 if user_feedback is not None and user_feedback != 'continue':
-                    debug_success = self.debugger.debug(convo, user_input=user_feedback, issue_description=description)  # noqa
-                    # return_value = {'success': debug_success, 'user_input': user_feedback}
+                    self.debugger.debug(convo, user_input=user_feedback, issue_description=description)
                 else:
                     return_value = {'success': True, 'user_input': user_feedback}
 

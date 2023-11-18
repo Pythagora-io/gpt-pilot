@@ -334,12 +334,12 @@ class Project:
                               hint=question)
 
             try:
-                if answer in cbs:
-                    return cbs[answer](convo)
+                if answer.lower() in cbs:
+                    return cbs[answer.lower()](convo)
                 elif answer != '':
                     return {'user_input': answer}
             except TokenLimitError as e:
-                if is_root_task and answer not in cbs and answer != '':
+                if is_root_task and answer.lower() not in cbs and answer != '':
                     convo.load_branch(reset_branch_id)
                     return {'user_input': answer}
                 else:

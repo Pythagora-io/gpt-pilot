@@ -57,6 +57,5 @@ Now, tell me all the code that needs to be written to implement ONLY this task a
 Remember, I created an empty folder where I will start writing files that you tell me and that are needed for this app.
 You do not need to make any automated tests work.
 {% endif %}
-Tell me how can I test this task to see if it's working or not.
 DO NOT specify commands to create any folders or files, they will be created automatically - just specify the relative path to each file that needs to be written.
 Never use the port 5000 to run the app, it's reserved.
