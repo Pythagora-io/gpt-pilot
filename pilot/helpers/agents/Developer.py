@@ -112,6 +112,7 @@ class Developer(Agent):
                 result['completed_steps'] = task_steps[:step_index]
                 result['current_step'] = task_steps[step_index]
                 result['next_steps'] = task_steps[step_index + 1:]
+                result['current_step_index'] = step_index
 
                 convo_dev_task.remove_last_x_messages(1)
                 response = convo_dev_task.send_message('development/task/update_task.prompt', result, IMPLEMENT_TASK)
