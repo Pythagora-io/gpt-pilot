@@ -2,7 +2,7 @@
 Here is a list of completed steps:
 ```
 {% for step in completed_steps %}
-step #{{ loop.index }}:
+step #{{ loop.index - 1 }}:
 step_type: {{ step.type }}{% if 'command' in step -%}
 command_to_run: `{{ step.command.command }}`{% elif step.type == 'code_change' %}
 code_change_description: `{{ step.code_change_description }}`{% endif -%}
@@ -25,7 +25,7 @@ We've run the command `{{ current_step.command.command }}` and we got the follow
 # Next Task Steps:
 ```
 {% for step in next_steps %}
-step #{{ loop.index + current_step_index + 1 }}:
+step #{{ loop.index + current_step_index }}:
 step_type: {{ step.type }}{% if 'command' in step -%}
 command_to_run: `{{ step.command.command }}`{% endif -%}
 

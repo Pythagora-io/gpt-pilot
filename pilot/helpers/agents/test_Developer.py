@@ -105,34 +105,7 @@ class TestDeveloper:
         # Then we include the user input in the conversation to update the task list
         assert mock_completion.call_count == 3
         prompt = mock_completion.call_args_list[2].args[0][2]['content']
-        assert prompt.startswith('''Here is a list of completed steps:
-```
-
-step #1:
-step_type: command_to_run: ``
-step #2:
-step_type: command_to_run: ``
-```
-Right now, we're working on the step #2:
-```
-step_type: 
-command_to_run: ``
-```
-
-We've run the command `` and we got the following output:
-
-
-# Next Task Steps:
-```
-
-step #4:
-step_type: command_to_run: ``
-```
-
-Now, think step by step and create a new list of task steps to complete this task based on the output we got from running ``. It will either be the same as it is now or any of the Next Task Steps may or may not be needed anymore.
-
-
-'''.lstrip())
+        assert prompt.startswith('{"tasks": [{"command": "ls -al"}, {"command": "ls -al src"}, {"command": "ls -al test"}, {"command": "ls -al build"}]}'.lstrip())
         # and call `execute_task()` again
         assert developer.execute_task.call_count == 2
 
