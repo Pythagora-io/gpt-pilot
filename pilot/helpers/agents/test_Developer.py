@@ -115,7 +115,7 @@ step_type: command_to_run: ``
 ```
 Right now, we're working on the step #2:
 ```
-step_type:
+step_type: 
 command_to_run: ``
 ```
 
