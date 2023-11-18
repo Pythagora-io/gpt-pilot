@@ -103,7 +103,7 @@ def test_create_tables(database):
 def test_file_snapshot(content, expected_content):
     user = User.create(email="", password="")
     app = App.create(user=user)
-    step = DevelopmentSteps.create(app=app, llm_response={}, dev_step_number=1)
+    step = DevelopmentSteps.create(app=app, llm_response={})
     file = File.create(app=app, name="test", path="test", full_path="test")
 
     fs = FileSnapshot.create(

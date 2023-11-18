@@ -59,7 +59,7 @@ class AgentConvo:
         development_step = get_saved_development_step(self.agent.project)
         if development_step is not None and self.agent.project.skip_steps:
             # if we do, use it
-            print(color_yellow(f'Restoring development step with id {development_step.dev_step_number}'))
+            print(color_yellow(f'Restoring development step with id {development_step.id}'))
             self.agent.project.checkpoints['last_development_step'] = development_step
             self.agent.project.restore_files(development_step.id)
             response = development_step.llm_response
@@ -240,7 +240,7 @@ class AgentConvo:
         print_msg = capitalize_first_word_with_underscores(self.high_level_step)
         if self.log_to_user:
             if self.agent.project.checkpoints['last_development_step'] is not None:
-                dev_step_msg = f'\nDev step {str(self.agent.project.checkpoints["last_development_step"].dev_step_number)}\n'
+                dev_step_msg = f'\nDev step {str(self.agent.project.checkpoints["last_development_step"])}\n'
                 print(color_yellow_bold(dev_step_msg), end='')
                 logger.info(dev_step_msg)
             print(f"\n{content}\n", type='local')

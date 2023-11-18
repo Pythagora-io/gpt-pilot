@@ -7,8 +7,6 @@ from playhouse.postgres_ext import BinaryJSONField
 
 
 class DevelopmentSteps(BaseModel):
-    # todo this needs refactoring. previous_step is self-referential foreign key and id is auto-incrementing primary
-    #  key for all apps because of that dev_step_number is added to keep track of dev steps for each app individually
     id = AutoField()  # This will serve as the primary key
     app = ForeignKeyField(App, on_delete='CASCADE')
     prompt_path = TextField(null=True)
@@ -25,7 +23,6 @@ class DevelopmentSteps(BaseModel):
         prompt_data = JSONField(null=True)
 
     previous_step = ForeignKeyField('self', null=True, column_name='previous_step')
-    dev_step_number = IntegerField()
     high_level_step = CharField(null=True)
 
     class Meta:

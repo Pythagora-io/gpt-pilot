@@ -1,6 +1,6 @@
 from playhouse.shortcuts import model_to_dict
 from utils.style import color_yellow, color_red
-from peewee import DoesNotExist, IntegrityError, fn
+from peewee import DoesNotExist, IntegrityError
 from functools import reduce
 import operator
 import psycopg2
@@ -272,12 +272,6 @@ def hash_and_save_step(Model, app_id, unique_data_fields, data_fields, message):
 
 
 def save_development_step(project, prompt_path, prompt_data, messages, llm_response, exception=None):
-    last_step_record = (DevelopmentSteps
-                        .select(fn.MAX(DevelopmentSteps.dev_step_number))
-                        .where(DevelopmentSteps.app == project.args['app_id'])
-                        .scalar() or 0)
-    dev_step_number = last_step_record + 1
-
     data_fields = {
         'messages': messages,
         'llm_response': llm_response,
@@ -285,8 +279,7 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
         'prompt_data': {} if prompt_data is None else {k: v for k, v in prompt_data.items() if
                                                        k not in PROMPT_DATA_TO_IGNORE and not callable(v)},
         'llm_req_num': project.llm_req_num,
-        'token_limit_exception_raised': exception,
-        'dev_step_number': dev_step_number
+        'token_limit_exception_raised': exception
     }
 
     unique_data = {
