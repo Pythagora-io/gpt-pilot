@@ -75,11 +75,12 @@ class Debugger:
                         result['completed_steps'] = steps[:step_index]
                         result['current_step'] = steps[step_index]
                         result['next_steps'] = steps[step_index + 1:]
+                        result['current_step_index'] = step_index
 
                         # Remove the previous debug plan and build a new one
-                        convo.remove_last_x_messages(1)
+                        convo.remove_last_x_messages(2)
                         llm_response = convo.send_message('development/task/update_task.prompt', result,
-                                                               DEBUG_STEPS_BREAKDOWN)
+                            DEBUG_STEPS_BREAKDOWN)
                     else:
                         success = result['success']
                         break
