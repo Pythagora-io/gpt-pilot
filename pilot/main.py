@@ -17,6 +17,8 @@ from utils.exit import exit_gpt_pilot
 from logger.logger import logger
 from database.database import database_exists, create_database, tables_exist, create_tables, get_created_apps_with_steps
 
+from utils.settings import settings, loader
+from utils.telemetry import telemetry
 
 def init():
     # Check if the "euclid" database exists, if not, create it
@@ -42,9 +44,9 @@ if __name__ == "__main__":
         # Override the built-in 'open' with our version
         builtins.open = get_custom_open
         # sys.argv.append('--ux-test=' + 'continue_development')
-        
+
         args = init()
-        
+
         builtins.print, ipc_client_instance = get_custom_print(args)
 
 
@@ -66,15 +68,24 @@ if __name__ == "__main__":
             run_test(args['--ux-test'], args)
             run_exit_fn = False
         else:
+            if settings.telemetry is None:
+                telemetry.setup()
+                loader.save("telemetry")
+
+            if args.get("app_id"):
+                telemetry.set("is_continuation", True)
+
             # TODO get checkpoint from database and fill the project with it
             project = Project(args, ipc_client_instance=ipc_client_instance)
             project.start()
             project.finish()
+            telemetry.set("end_result", "success")
     except Exception:
         print(color_red('---------- GPT PILOT EXITING WITH ERROR ----------'))
         traceback.print_exc()
         print(color_red('--------------------------------------------------'))
         ask_feedback = False
+        telemetry.set("end_result", "failure")
     finally:
         if run_exit_fn:
             exit_gpt_pilot(project, ask_feedback)
