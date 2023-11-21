@@ -53,6 +53,8 @@ class Debugger:
                 },
                 DEBUG_STEPS_BREAKDOWN)
 
+            completed_steps = []
+
             try:
                 while True:
                     logger.info('Thoughts: ' + llm_response['thoughts'])
@@ -66,19 +68,22 @@ class Debugger:
                         test_command=command,
                         test_after_code_changes=True,
                         continue_development=False,
-                        is_root_task=is_root_task)
+                        is_root_task=is_root_task,
+                        continue_from_step=len(completed_steps)
+                    )
 
                     if 'step_index' in result:
-                        # result['running_processes'] = running_processes
                         result['os'] = platform.system()
                         step_index = result['step_index']
-                        result['completed_steps'] = steps[:step_index]
+                        completed_steps = steps[:step_index+1]
+                        result['completed_steps'] = completed_steps
                         result['current_step'] = steps[step_index]
                         result['next_steps'] = steps[step_index + 1:]
-                        result['current_step_index'] = step_index
+                        result['current_step_index'] = step_index + len(completed_steps)
 
                         # Remove the previous debug plan and build a new one
                         convo.remove_last_x_messages(2)
+                        # todo before updating task first check if update is needed
                         llm_response = convo.send_message('development/task/update_task.prompt', result,
                             DEBUG_STEPS_BREAKDOWN)
                     else:

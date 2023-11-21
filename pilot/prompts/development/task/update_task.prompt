@@ -1,15 +1,12 @@
 {% if completed_steps -%}
 Here is a list of completed steps:
-```
-{% for step in completed_steps %}
+```{% for step in completed_steps %}
 step #{{ loop.index - 1 }}:
-step_type: {{ step.type }}{% if 'command' in step -%}
+step_type: {{ step.type }}{% if 'command' in step %}
 command_to_run: `{{ step.command.command }}`{% elif step.type == 'code_change' %}
-code_change_description: `{{ step.code_change_description }}`{% endif -%}
-
-{% endfor %}
+code_change_description: `{{ step.code_change_description }}`{% endif %}{% endfor %}
 ```
-{% endif -%}
+{% endif %}
 
 Right now, we're working on the step #{{ current_step_index }}:
 ```
@@ -20,16 +17,13 @@ command_to_run: `{{ current_step.command.command }}`
 We've run the command `{{ current_step.command.command }}` and we got the following output:
 {{ cli_response }}
 
-{%- if next_steps %}
-
-# Next Task Steps:
-```
-{% for step in next_steps %}
+{% if next_steps %}
+Here is a list of steps that will be executed after current step:
+```{% for step in next_steps %}
 step #{{ loop.index + current_step_index }}:
-step_type: {{ step.type }}{% if 'command' in step -%}
-command_to_run: `{{ step.command.command }}`{% endif -%}
-
-{% endfor %}
+step_type: {{ step.type }}{% if 'command' in step %}
+command_to_run: `{{ step.command.command }}`{% elif step.type == 'code_change' %}
+code_change_description: `{{ step.code_change_description }}`{% endif %}{% endfor %}
 ```
 
 Now, think step by step and create a new list of task steps to complete this task based on the output we got from running `{{ current_step.command.command }}`. It will either be the same as it is now or any of the Next Task Steps may or may not be needed anymore.
