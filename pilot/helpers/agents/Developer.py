@@ -119,7 +119,7 @@ class Developer(Agent):
                 convo_dev_task.remove_last_x_messages(2)
                 # todo before updating task first check if update is needed
                 response = convo_dev_task.send_message('development/task/update_task.prompt', result, IMPLEMENT_TASK)
-                steps = response['tasks']
+                steps = completed_steps + response['tasks']
 
             else:
                 logger.warning('Testing at end of task failed')

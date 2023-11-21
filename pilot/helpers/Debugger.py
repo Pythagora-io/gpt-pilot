@@ -59,7 +59,7 @@ class Debugger:
                 while True:
                     logger.info('Thoughts: ' + llm_response['thoughts'])
                     logger.info('Reasoning: ' + llm_response['reasoning'])
-                    steps = llm_response['steps']
+                    steps = completed_steps + llm_response['steps']
 
                     # TODO refactor to nicely get the developer agent
                     result = self.agent.project.developer.execute_task(

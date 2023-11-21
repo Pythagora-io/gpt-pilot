@@ -47,6 +47,7 @@ class TestCodeMonkey:
     def test_implement_code_changes(self, mock_get_dev, mock_save_dev, mock_file_insert):
         # Given
         code_changes_description = "Write the word 'Washington' to a .txt file"
+        self.project.get_all_coded_files = lambda: []
 
         if SEND_TO_LLM:
             convo = AgentConvo(self.codeMonkey)
@@ -87,6 +88,7 @@ class TestCodeMonkey:
         code_changes_description = "Read the file called file_to_read.txt and write its content to a file called output.txt"
         workspace = self.project.root_path
         update_file(os.path.join(workspace, 'file_to_read.txt'), 'Hello World!\n')
+        self.project.get_all_coded_files = lambda: []
 
         if SEND_TO_LLM:
             convo = AgentConvo(self.codeMonkey)
