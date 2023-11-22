@@ -66,7 +66,6 @@ class Developer(Agent):
             logger.info(message)
             print(color_green_bold(message))
 
-
     def implement_task(self, i, development_task=None):
         print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'))
         self.project.dot_pilot_gpt.chat_log_folder(i + 1)
@@ -92,38 +91,42 @@ class Developer(Agent):
             'running_processes': running_processes,
             'os': platform.system(),
         }, IMPLEMENT_TASK)
-        task_steps = response['tasks']
+        steps = response['tasks']
         convo_dev_task.remove_last_x_messages(2)
+
+        completed_steps = []
 
         while True:
             result = self.execute_task(convo_dev_task,
-                                     task_steps,
+                                     steps,
                                      development_task=development_task,
                                      continue_development=True,
-                                     is_root_task=True)
+                                     is_root_task=True,
+                                     continue_from_step=len(completed_steps))
 
             if result['success']:
                 break
 
             if 'step_index' in result:
-                result['running_processes'] = running_processes
                 result['os'] = platform.system()
                 step_index = result['step_index']
-                result['completed_steps'] = task_steps[:step_index]
-                result['current_step'] = task_steps[step_index]
-                result['next_steps'] = task_steps[step_index + 1:]
+                completed_steps = steps[:step_index+1]
+                result['completed_steps'] = completed_steps
+                result['current_step'] = steps[step_index]
+                result['next_steps'] = steps[step_index + 1:]
                 result['current_step_index'] = step_index
 
                 convo_dev_task.remove_last_x_messages(2)
+                # todo before updating task first check if update is needed
                 response = convo_dev_task.send_message('development/task/update_task.prompt', result, IMPLEMENT_TASK)
-                task_steps = response['tasks']
+                steps = completed_steps + response['tasks']
 
             else:
                 logger.warning('Testing at end of task failed')
                 break
 
     def step_code_change(self, convo, step, i, test_after_code_changes):
-        if step['type'] == 'code_change' and 'code_change_description' in step:
+        if 'code_change_description' in step:
             # TODO this should be refactored so it always uses the same function call
             print(f'Implementing code changes for `{step["code_change_description"]}`')
             code_monkey = CodeMonkey(self.project, self)
@@ -133,15 +136,14 @@ class Developer(Agent):
             else:
                 return { "success": True }
 
-        elif step['type'] == 'code_change':
-            # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
-            if 'code_change' not in step:
-                data = step
-            else:
-                data = step['code_change']
-            self.project.save_file(data)
-            # TODO end
-            return {"success": True}
+        # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
+        if 'code_change' not in step:
+            data = step
+        else:
+            data = step['code_change']
+        self.project.save_file(data)
+        # TODO end
+        return {"success": True}
 
     def step_command_run(self, convo, step, i, success_with_cli_response=False):
         logger.info('Running command: %s', step['command'])
@@ -336,11 +338,14 @@ class Developer(Agent):
 
     def execute_task(self, convo, task_steps, test_command=None, reset_convo=True,
                      test_after_code_changes=True, continue_development=False,
-                     development_task=None, is_root_task=False):
+                     development_task=None, is_root_task=False, continue_from_step=0):
         function_uuid = str(uuid.uuid4())
         convo.save_branch(function_uuid)
 
         for (i, step) in enumerate(task_steps):
+            # Skip steps before continue_from_step
+            if i < continue_from_step:
+                continue
             logger.info('---------- execute_task() step #%d: %s', i, step)
 
             result = None
