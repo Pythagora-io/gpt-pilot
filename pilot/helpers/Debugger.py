@@ -79,7 +79,7 @@ class Debugger:
                         result['completed_steps'] = completed_steps
                         result['current_step'] = steps[step_index]
                         result['next_steps'] = steps[step_index + 1:]
-                        result['current_step_index'] = step_index + len(completed_steps)
+                        result['current_step_index'] = step_index
 
                         # Remove the previous debug plan and build a new one
                         convo.remove_last_x_messages(2)
