@@ -99,7 +99,7 @@ def test_execute_command_rejected_with_no(mock_ask, mock_get_saved_command):
 
     # Then
     assert cli_response is None
-    assert llm_response == 'DONE'
+    assert llm_response == 'SKIP'
     assert exit_code is None
 
 
