@@ -234,7 +234,10 @@ class Developer(Agent):
                 print(cli_response)
                 print(color_red('-------------------'))
 
-            result = {'success': llm_response == 'DONE' or llm_response == 'SKIP', 'cli_response': cli_response}
+            result = {
+                'success': llm_response in ["DONE", "SKIP"],
+                'cli_response': cli_response
+            }
             if cli_response is None:
                 result['user_input'] = llm_response
             else:
@@ -376,7 +379,7 @@ class Developer(Agent):
 
                     logger.info('  step result: %s', result)
 
-                    if (not result['success']) or (need_to_see_output and not ('user_input' in result and result['user_input'] == 'SKIP')):
+                    if (not result['success']) or (need_to_see_output and result.get("user_input") != "SKIP"):
                         result['step'] = step
                         result['step_index'] = i
                         return result
