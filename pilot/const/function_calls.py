@@ -510,13 +510,13 @@ GET_TEST_TYPE = {
                 'type': {
                     'type': 'string',
                     'description': 'Type of a test that needs to be run. If this is just an intermediate step in getting a task done, put `no_test` as the type and we\'ll just go onto the next task without testing.',
-                    'enum': ['automated_test', 'command_test', 'manual_test', 'no_test']
+                    'enum': ['command_test', 'manual_test', 'no_test']
                 },
                 'command': command_definition('Command that needs to be run to test the changes.', 'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`'),
-                'automated_test_description': {
-                    'type': 'string',
-                    'description': 'Description of an automated test that needs to be run to test the changes. This should be used only if the test type is "automated_test" and it should thoroughly describe what needs to be done to implement the automated test so that when someone looks at this test can know exactly what needs to be done to implement this automated test.',
-                },
+                # 'automated_test_description': {
+                #     'type': 'string',
+                #     'description': 'Description of an automated test that needs to be run to test the changes. This should be used only if the test type is "automated_test" and it should thoroughly describe what needs to be done to implement the automated test so that when someone looks at this test can know exactly what needs to be done to implement this automated test.',
+                # },
                 'manual_test_description': {
                     'type': 'string',
                     'description': 'Description of a manual test that needs to be run to test the changes. This should be used only if the test type is "manual_test".',
