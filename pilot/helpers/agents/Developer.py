@@ -24,7 +24,8 @@ from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
 from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes
-from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN
+from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, \
+    COMMAND_TO_RUN, GET_MISSING_SNIPPETS
 from database.database import save_progress, get_progress_steps, update_app_status
 from utils.utils import get_os_info
 
@@ -122,12 +123,31 @@ class Developer(Agent):
                 logger.warning('Testing at end of task failed')
                 break
 
+    def replace_old_code_comments(self, files_with_changes):
+        files_with_comments = [{**file, 'comments': [line for line in file['content'].split('\n') if '[OLD CODE]' in line]} for file in files_with_changes]
+
+        if any(len(file['comments']) > 0 for file in files_with_comments):
+            # TODO we're starting AgentConvo as a Developer agent because only that way a dev step can be saved - this needs to be fixed
+            get_snippets_convo = AgentConvo(self)
+            snippets_response = get_snippets_convo.send_message('development/get_snippet_from_comment.prompt', {
+                'files_with_comments': files_with_comments,
+                'previously_coded_files': self.project.get_files([file['path'] for file in files_with_comments]),
+            }, GET_MISSING_SNIPPETS)
+
+            for change in files_with_changes:
+                for snippet in snippets_response['snippets']:
+                    if snippet['file_path'] == change['path']:
+                        pattern = f"^(.*\n)?(.*{re.escape(snippet['comment_label'])}.*)\n"
+                        change['content'] = re.sub(pattern, r"\1{}\n".format(snippet['snippet']), change['content'], flags=re.MULTILINE)
+
+        return files_with_changes
+
     def step_code_change(self, convo, step, i, test_after_code_changes):
         if step['type'] == 'code_change' and 'code_change_description' in step:
             # TODO this should be refactored so it always uses the same function call
             print(f'Implementing code changes for `{step["code_change_description"]}`')
             code_monkey = CodeMonkey(self.project, self)
-            updated_convo = code_monkey.implement_code_changes(convo, step['code_change_description'], i)
+            updated_convo = code_monkey.implement_code_changes(convo, step['code_change_description'], step, i)
             if test_after_code_changes:
                 return self.test_code_changes(code_monkey, updated_convo)
             else:
@@ -139,6 +159,9 @@ class Developer(Agent):
                 data = step
             else:
                 data = step['code_change']
+
+            data = self.replace_old_code_comments([data])[0]
+
             self.project.save_file(data)
             # TODO end
             return {"success": True}

@@ -590,3 +590,38 @@ DEBUG_STEPS_BREAKDOWN = {
         'start_debugging': lambda steps: steps
     },
 }
+
+GET_MISSING_SNIPPETS = {
+    'definitions': [{
+        'name': 'get_missing_snippets',
+        'description': 'Gets the list of snippets that are missing from the code.',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'snippets': {
+                    'type': 'array',
+                    'description': 'List of snippets that are missing from the code.',
+                    'items': {
+                        'type': 'object',
+                        'properties': {
+                            'comment_label': {
+                                'type': 'string',
+                                'description': 'Comment label that identifies the snippet that needs to be inserted.',
+                            },
+                            'snippet': {
+                                'type': 'string',
+                                'description': 'The code from earlier in this conversation that needs to be inserted instead of the comment. **IMPORTANT** You always need to write the entire snippet, and under no circumstances should you ever leave any part of the code snippet unwritten. **IMPORTANT** Every single line of code that exists in the place where the comment lives right now should be replaced. **IMPORTANT** Do not include any code that is above or below the comment but only the code that should be in the position of the comment. **IMPORTANT** Make sure that you write the entire snippet that should be inserted in the place of the comment_label, including all control structures, error handling, and any other relevant logic that was in the original code.',
+                            },
+                            'file_path': {
+                                'type': 'string',
+                                'description': 'Path to the file where the snippet needs to be inserted.',
+                            }
+                        },
+                        'required': ['comment_label', 'snippet'],
+                    }
+                }
+            },
+            'required': ['snippets'],
+        },
+    }],
+}
