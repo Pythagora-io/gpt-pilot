@@ -65,12 +65,12 @@ class TestCodeMonkey:
             convo.send_message.side_effect = mock_responses
 
         if WRITE_TO_FILE:
-            self.codeMonkey.implement_code_changes(convo, code_changes_description)
+            self.codeMonkey.implement_code_changes(convo, code_changes_description, {})
         else:
             # don't write the file, just
             with patch.object(Project, 'save_file') as mock_save_file:
                 # When
-                self.codeMonkey.implement_code_changes(convo, code_changes_description)
+                self.codeMonkey.implement_code_changes(convo, code_changes_description, {})
 
                 # Then
                 mock_save_file.assert_called_once()
@@ -106,11 +106,11 @@ class TestCodeMonkey:
             convo.send_message.side_effect = mock_responses
 
         if WRITE_TO_FILE:
-            self.codeMonkey.implement_code_changes(convo, code_changes_description)
+            self.codeMonkey.implement_code_changes(convo, code_changes_description, {})
         else:
             with patch.object(Project, 'save_file') as mock_save_file:
                 # When
-                self.codeMonkey.implement_code_changes(convo, code_changes_description)
+                self.codeMonkey.implement_code_changes(convo, code_changes_description, {})
 
                 # Then
                 clear_directory(workspace)

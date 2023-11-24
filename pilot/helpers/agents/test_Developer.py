@@ -237,5 +237,5 @@ class TestDeveloper:
         assert result == {'success': True, 'cli_response': 'stdout:\n```\n\n```'}
         assert mock_requests_post.call_count == 3
         assert "The JSON is invalid at $.type - 'command' is not one of " \
-               "['automated_test', 'command_test', 'manual_test', 'no_test']" in json_received[1][3]
+               "['command_test', 'manual_test', 'no_test']" in json_received[1][3]
         assert mock_execute.call_count == 1
