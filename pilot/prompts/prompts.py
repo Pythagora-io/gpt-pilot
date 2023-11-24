@@ -35,9 +35,11 @@ def ask_for_app_type():
 
 
 def ask_for_main_app_definition(project):
+    question = 'Describe your app in as much detail as possible.'
+    print(question, type='ipc')
     description = styled_text(
         project,
-        "Describe your app in as much detail as possible."
+        question
     )
 
     if description is None:
