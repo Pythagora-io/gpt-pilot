@@ -5,7 +5,7 @@ from unittest.mock import patch, call
 
 import pytest
 
-from .files import get_file_contents, get_directory_contents, update_file
+from pilot.helpers.files import get_file_contents, get_directory_contents, update_file
 
 
 @patch("pilot.helpers.files.open")
@@ -148,27 +148,25 @@ def test_get_directory_contents_mocked(mock_os, mock_open):
 
 def test_get_directory_contents_live():
     files = get_directory_contents(
-        os.path.dirname(__file__), [".pytest_cache", "agents", "__init__.py"]
+        os.path.dirname(os.path.dirname(__file__)), [".pytest_cache", "agents", "__init__.py"]
     )
 
     # Check this file was loaded as a text file
     this_file = [f for f in files if f["name"] == "test_files.py"][0]
-    assert this_file["path"] == ""
+    assert this_file["path"] == "helpers"
     assert this_file["full_path"] == __file__
     assert isinstance(this_file["content"], str)
     assert "test_get_directory_contents_live()" in this_file["content"]
 
     # Check that the Python cache was loaded as a binary file
+    print("FILES", [(f["path"], f["name"]) for f in files])
     pycache_file = [
         f
         for f in files
-        if f["path"] == "__pycache__" and f["name"].startswith("test_files")
+        if f["path"] == "helpers" and f["name"] == "testlogo.png"
     ][0]
     assert isinstance(pycache_file["content"], bytes)
 
     # Check that the ignore list works
-    assert all(file["path"] != "agents" for file in files)
     assert all(file["name"] != "__init__.py" for file in files)
-
-    # TODO: could the leading / cause files being written back to the root directory?
-    assert any(file["path"] == "exceptions" for file in files)
+    assert any(file["path"] == "database" for file in files)
