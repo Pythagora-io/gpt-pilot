@@ -42,7 +42,9 @@ class ProductOwner(Agent):
         if 'app_type' not in self.project.args:
             self.project.args['app_type'] = ask_for_app_type()
         if 'name' not in self.project.args:
-            self.project.args['name'] = clean_filename(ask_user(self.project, 'What is the project name?'))
+            question = 'What is the project name?'
+            print(question, type='ipc')
+            self.project.args['name'] = clean_filename(ask_user(self.project, question))
 
         self.project.app = save_app(self.project)
 

@@ -215,7 +215,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
         # TODO can we use .confirm(question, default='yes').ask()  https://questionary.readthedocs.io/en/stable/pages/types.html#confirmation
         print('answer: ' + answer)
         if answer.lower() in ['n', 'no', 'skip']:
-            return None, 'DONE', None
+            return None, 'SKIP', None
         elif answer.lower() not in ['', 'y', 'yes', 'ok', 'okay', 'sure']:
             # "That's not going to work, let's do X instead"
             #       https://github.com/Pythagora-io/gpt-pilot/issues/198
@@ -291,7 +291,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
             done_or_error_response = 'was interrupted by user'
         elif isinstance(e, TimeoutError):
             print('\nTimeout detected. Stopping command execution...')
-            logger.warn('Timeout detected. Stopping command execution...')
+            logger.warning('Timeout detected. Stopping command execution...')
             done_or_error_response = f'took longer than {timeout}ms so I killed it'
         elif isinstance(e, CommandFinishedEarly):
             print('\nCommand finished before timeout. Handling early completion...')
@@ -483,6 +483,9 @@ def run_command_until_success(convo, command,
 
     if success_with_cli_response and cli_response is not None:
         return {'success': True, 'cli_response': cli_response}
+
+    if response == 'SKIP':
+        return {'success': True, 'user_input': response}
 
     if cli_response is None and response != 'DONE':
         return {'success': False, 'user_input': response}

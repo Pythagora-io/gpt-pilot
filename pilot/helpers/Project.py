@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 import re
 from typing import Tuple
 
@@ -11,7 +12,7 @@ from const.ipc import MESSAGE_TYPE
 from prompts.prompts import ask_user
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from utils.questionary import styled_text
-from helpers.files import get_files_content, clear_directory, update_file
+from helpers.files import get_directory_contents, get_file_contents, clear_directory, update_file
 from helpers.cli import build_directory_tree
 from helpers.agents.TechLead import TechLead
 from helpers.agents.Developer import Developer
@@ -24,6 +25,7 @@ from database.models.files import File
 from logger.logger import logger
 from utils.dot_gpt_pilot import DotGptPilot
 
+from utils.telemetry import telemetry
 
 class Project:
     def __init__(self, args, name=None, project_description=None, clarifications=None, user_stories=None,
@@ -81,6 +83,7 @@ class Project:
         """
         Start the project.
         """
+        telemetry.start()
         self.project_manager = ProductOwner(self)
         self.project_manager.get_project_description()
 
@@ -213,18 +216,12 @@ class Project:
         """
         files_with_content = []
         for file_path in files:
-            # TODO this is a hack, fix it
             try:
-                name = os.path.basename(file_path)
-                relative_path, full_path = self.get_full_file_path(file_path, name)
-                file_content = open(full_path, 'r').read()
-            except OSError:
-                file_content = ''
+                file_data = get_file_contents(file_path, self.root_path)
+            except ValueError:
+                file_data = {"path": file_path, "content": ''}
 
-            files_with_content.append({
-                "path": file_path,
-                "content": file_content
-            })
+            files_with_content.append(file_data)
         return files_with_content
 
     def save_file(self, data):
@@ -250,40 +247,107 @@ class Project:
          .execute())
 
     def get_full_file_path(self, file_path: str, file_name: str) -> Tuple[str, str]:
-        file_name = os.path.basename(file_name)
+        """
+        Combine file path and name into a full file path.
 
-        if file_path.startswith(self.root_path):
-            file_path = file_path.replace(self.root_path, '')
+        :param file_path: File path.
+        :param file_name: File name.
+        :return: (file_path, absolute_path) pair.
 
-        if file_path == file_name:
-            file_path = ''
-        else:
-            are_windows_paths = '\\' in file_path or '\\' in file_name or '\\' in self.root_path
-            if are_windows_paths:
-                file_path = file_path.replace('\\', '/')
+        Tries to combine the two in a way that makes most sense, even if the given path
+        have some shared components.
+        """
+        def normalize_path(path: str) -> Tuple[str, str]:
+            """
+            Normalizes a path (see rules in comments) and returns (directory, basename) pair.
 
-            # Force all paths to be relative to the workspace
-            file_path = re.sub(r'^(\w+:/|[/~.]+)', '', file_path, 1)
+            :param path: Path to normalize.
+            :return: (directory, basename) pair.
 
-            # file_path should not include the file name
-            if file_path == file_name:
-                file_path = ''
-            elif file_path.endswith('/' + file_name):
-                file_path = file_path.replace('/' + file_name, '')
-            elif file_path.endswith('/'):
-                file_path = file_path[:-1]
+            Directory component may be empty if the path is considered to be a
+            file name. Basename component may be empty if the path is considered
+            to be a directory name.
+            """
 
-        absolute_path = self.root_path + '/' + file_name if file_path == '' \
-            else self.root_path + '/' + file_path + '/' + file_name
+            # Normalize path to use os-specific separator (as GPT may output paths
+            # with / even if we're on Windows)
+            path = str(Path(path))
 
-        return file_path, absolute_path
+            # If a path references user's home directory (~), we only care about
+            # the relative part within it (assume ~ is meant to be the project path).
+            # Examples:
+            # - /Users/zvonimirsabljic/Development/~/pilot/server.js -> /pilot/server.js
+            # - ~/pilot/server.js -> /pilot/server.js
+            if "~" in path:
+                path = path.split("~")[-1]
+
+            # If the path explicitly references the current directory, remove it so we
+            # can nicely use it for joins later.
+            if path == "." or path.startswith(f".{os.path.sep}"):
+                path = path[1:]
+
+            # If the path is absolute, we only care about the relative part within
+            # the project directory (assume the project directory is the root).
+            # Examples:
+            # - /Users/zvonimirsabljic/Development/copilot/pilot/server.js -> /pilot/server.js
+            # - /pilot/server.js -> /pilot/server.js
+            # - C:\Users\zvonimirsabljic\Development\copilot\pilot\server.js -> \pilot\server.js
+            path = path.replace(self.root_path, '')
+
+            # If the final component of the path doesn't have a file extension,
+            # assume it's a directory and add a final (back)slash.
+            # Examples:
+            # - /pilot/server.js -> /pilot/server.js
+            # - /pilot -> /pilot/
+            # - \pilot\server.js -> \pilot\server.js
+            # - \pilot -> \pilot\
+            base = os.path.basename(path)
+            if base and "." not in base:
+                path += os.path.sep
+
+            # In case we're in Windows and dealing with full paths, remove the drive letter.
+            _, path = os.path.splitdrive(path)
+
+            # We want all paths to start with / (or \\ in Windows)
+            if not path.startswith(os.path.sep):
+                path = os.path.sep + path
+
+            return os.path.split(path)
+
+        head_path, tail_path = normalize_path(file_path)
+        head_name, tail_name = normalize_path(file_name)
+
+        # Prefer directory path from the first argument (file_path), and
+        # prefer the file name from the second argument (file_name).
+        final_file_path = head_path if head_path != '' else head_name
+        final_file_name = tail_name if tail_name != '' else tail_path
+
+        # If the directory is contained in the second argument (file_name),
+        # use that (as it might include additional subdirectories).
+        if head_path in head_name:
+            final_file_path = head_name
+
+        # Try to combine the directory and file name from the two arguments
+        # in the way that makes the most sensible output.
+        if final_file_path != head_name and head_name not in head_path:
+            if '.' in tail_path:
+                final_file_path = head_name + head_path
+            else:
+                final_file_path = head_path + head_name
+
+        if final_file_path == '':
+            final_file_path = os.path.sep
+
+        final_absolute_path = os.path.join(self.root_path, final_file_path[1:], final_file_name)
+        return final_file_path, final_absolute_path
+
 
     def save_files_snapshot(self, development_step_id):
-        files = get_files_content(self.root_path, ignore=IGNORE_FOLDERS)
+        files = get_directory_contents(self.root_path, ignore=IGNORE_FOLDERS)
         development_step, created = DevelopmentSteps.get_or_create(id=development_step_id)
 
         for file in files:
-            print(color_cyan(f'Saving file {(file["path"])}/{file["name"]}'))
+            print(color_cyan(f'Saving file {file["full_path"]}'))
             # TODO this can be optimized so we don't go to the db each time
             file_in_db, created = File.get_or_create(
                 app=self.app,

@@ -9,6 +9,7 @@ MESSAGE_TYPE = {
     'project_folder_name': 'project_folder_name',  # Project folder name for extension only
     'button': 'button',                    # Button text for extension only
     'exit': 'exit',                        # Exit message to let extension know we are done
+    'ipc': 'ipc',                          # Regular print message that is for extension only
 }
 
 LOCAL_IGNORE_MESSAGE_TYPES = [
@@ -16,4 +17,5 @@ LOCAL_IGNORE_MESSAGE_TYPES = [
     'project_folder_name',
     'button',
     'exit',
+    'ipc',
 ]
