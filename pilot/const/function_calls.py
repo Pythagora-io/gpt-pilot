@@ -617,7 +617,7 @@ GET_MISSING_SNIPPETS = {
                                 'description': 'Path to the file where the snippet needs to be inserted.',
                             }
                         },
-                        'required': ['comment_label', 'snippet'],
+                        'required': ['comment_label', 'snippet', 'file_path'],
                     }
                 }
             },
