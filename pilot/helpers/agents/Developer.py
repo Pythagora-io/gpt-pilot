@@ -9,7 +9,7 @@ from utils.style import (
     color_red,
     color_red_bold,
     color_yellow_bold,
-    color_blue_bold,
+    color_cyan_bold,
     color_white_bold
 )
 from helpers.exceptions.TokenLimitError import TokenLimitError
@@ -419,7 +419,7 @@ class Developer(Agent):
             logger.info('Continue development, last_branch_name: %s', last_branch_name)
             if last_branch_name in iteration_convo.branches.keys():  # if user_feedback is not None we create new convo
                 iteration_convo.load_branch(last_branch_name)
-            user_description = ('Here is a description of what should be working: \n\n' + color_blue_bold(continue_description) + '\n') \
+            user_description = ('Here is a description of what should be working: \n\n' + color_cyan_bold(continue_description) + '\n') \
                                 if continue_description != '' else ''
             user_description = 'Can you check if the app works please? ' + user_description
 
