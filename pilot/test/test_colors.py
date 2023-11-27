@@ -24,6 +24,7 @@ class TestColorStyle(unittest.TestCase):
             ColorName.GREEN: "\x1b[92m",
             # ... other colors
         }
+        reset = "\x1b[0m"
 
         # Test DARK theme
         print("\n[INFO] Testing DARK Theme Colors...")
@@ -32,12 +33,12 @@ class TestColorStyle(unittest.TestCase):
             with self.subTest(color=color_name):
                 color_func = get_color_function(color_name, bold=False)
                 print(f"[INFO] Testing color: {color_name}, Expect: {code}Test, Got: {color_func('Test')}")
-                self.assertEqual(color_func("Test"), f"{code}Test")
+                self.assertEqual(color_func("Test"), f"{code}Test{reset}")
 
                 color_func = get_color_function(color_name, bold=True)
                 print(
                     f"[INFO] Testing color (bold): {color_name}, Expect: {code}\x1b[1mTest, Got: {color_func('Test')}")
-                self.assertEqual(color_func("Test"), f"{code}\x1b[1mTest")
+                self.assertEqual(color_func("Test"), f"{code}\x1b[1mTest{reset}")
 
         # Test LIGHT theme
         print("\n[INFO] Testing LIGHT Theme Colors...")
@@ -46,9 +47,9 @@ class TestColorStyle(unittest.TestCase):
             with self.subTest(color=color_name):
                 color_func = get_color_function(color_name, bold=False)
                 print(f"[INFO] Testing color: {color_name}, Expect: {code}Test, Got: {color_func('Test')}")
-                self.assertEqual(color_func("Test"), f"{code}Test")
+                self.assertEqual(color_func("Test"), f"{code}Test{reset}")
 
                 color_func = get_color_function(color_name, bold=True)
                 print(
                     f"[INFO] Testing color (bold): {color_name}, Expect: {code}\x1b[1mTest, Got: {color_func('Test')}")
-                self.assertEqual(color_func("Test"), f"{code}\x1b[1mTest")
+                self.assertEqual(color_func("Test"), f"{code}\x1b[1mTest{reset}")
