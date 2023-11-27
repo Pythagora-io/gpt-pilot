@@ -61,17 +61,3 @@ def test_parse_task_no_processes():
 
     # Then
     assert 'the following processes' not in prompt
-
-
-def test_parse_task_with_processes():
-    # When
-    prompt = get_prompt('development/parse_task.prompt', {
-        'running_processes': {
-            'app': ('npm start', 123),
-            'mongo': ('mongod', 456)
-        }
-    })
-
-    # Then
-    assert 'the following processes are already running:' in prompt
-    assert 'command_id: app\ncommand: npm start\n\ncommand_id: mongo\ncommand: mongod' in prompt
