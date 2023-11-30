@@ -71,7 +71,7 @@ def test_json_prompter():
 
     # Then
     assert prompt == '''Help choose the appropriate function to call to answer the user's question.
-The response must contain ONLY the JSON object, with NO additional text or explanation.
+You must respond with ONLY the JSON object, with NO additional text or explanation.
 
 Available functions:
 - process_technologies - Print the list of technologies that are created.
@@ -89,7 +89,7 @@ def test_llama_json_prompter():
     # Then
     assert prompt == '''[INST] <<SYS>>
 Help choose the appropriate function to call to answer the user's question.
-The response must contain ONLY the JSON object, with NO additional text or explanation.
+You must respond with ONLY the JSON object, with NO additional text or explanation.
 
 Available functions:
 - process_technologies - Print the list of technologies that are created.
@@ -106,10 +106,9 @@ def test_json_prompter_named():
     prompt = prompter.prompt('Create a web-based chat app', ARCHITECTURE['definitions'], 'process_technologies')
 
     # Then
-    assert prompt == '''Please provide a JSON object that defines the arguments for the `process_technologies` function to answer the user's question.
-The response must contain ONLY the JSON object, with NO additional text or explanation.
+    assert prompt == '''**IMPORTANT**
+You must respond with ONLY the JSON object, with NO additional text or explanation.
 
-# process_technologies: Print the list of technologies that are created.
 Here is the schema for the expected JSON object:
 ```json
 {
@@ -136,10 +135,9 @@ def test_llama_json_prompter_named():
 
     # Then
     assert prompt == '''[INST] <<SYS>>
-Please provide a JSON object that defines the arguments for the `process_technologies` function to answer the user's question.
-The response must contain ONLY the JSON object, with NO additional text or explanation.
+**IMPORTANT**
+You must respond with ONLY the JSON object, with NO additional text or explanation.
 
-# process_technologies: Print the list of technologies that are created.
 Here is the schema for the expected JSON object:
 ```json
 {
