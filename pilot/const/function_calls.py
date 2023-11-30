@@ -625,3 +625,23 @@ GET_MISSING_SNIPPETS = {
         },
     }],
 }
+
+GET_FULLY_CODED_FILE = {
+    'definitions': [{
+        'name': 'get_fully_coded_file',
+        'description': 'Gets the fully coded file.',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'file_content': {
+                    'type': 'string',
+                    'description': 'Fully coded file. This contains only the lines of code and no other text.',
+                }
+            },
+            'required': ['file_content'],
+        },
+    }],
+    'functions': {
+        'get_fully_coded_file': lambda file: file
+    },
+}
