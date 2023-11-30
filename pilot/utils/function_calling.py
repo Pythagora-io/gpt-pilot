@@ -130,8 +130,7 @@ class JsonPrompter:
             str: The data necessary to generate the arguments for the function
         """
         return "\n".join(
-            self.function_descriptions(functions, function_to_call)
-            + [
+            [
                 "Here is the schema for the expected JSON object:",
                 "```json",
                 self.function_parameters(functions, function_to_call),
@@ -186,8 +185,8 @@ class JsonPrompter:
         system = (
             "Help choose the appropriate function to call to answer the user's question."
             if function_to_call is None
-            else f"Please provide a JSON object that defines the arguments for the `{function_to_call}` function to answer the user's question."
-        ) + "\nThe response must contain ONLY the JSON object, with NO additional text or explanation."
+            else "**IMPORTANT**"
+        ) + "\nYou must respond with ONLY the JSON object, with NO additional text or explanation."
 
         data = (
             self.function_data(functions, function_to_call)
