@@ -149,7 +149,8 @@ def get_color_function(color_name: ColorName, bold: bool = False):
         """
         color = style_config.get_color(color_name)
         style = ColoramaStyle.BRIGHT if bold else ""
-        return f'{color}{style}{text}'
+        reset = ColoramaStyle.RESET_ALL  # Reset code to reset the color
+        return f'{color}{style}{text}{reset}'
 
     return color_func
 

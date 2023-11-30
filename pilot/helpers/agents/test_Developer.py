@@ -105,23 +105,7 @@ class TestDeveloper:
         # Then we include the user input in the conversation to update the task list
         assert mock_completion.call_count == 3
         prompt = mock_completion.call_args_list[2].args[0][2]['content']
-        assert prompt.startswith('''
-# Completed Task Steps:
-```
-[{'command': 'ls -al'}, {'command': 'ls -al src'}]
-```
-
-# Current Step:
-This step will not be executed. no, use a better command
-```
-{'command': 'ls -al test'}
-```
-
-# Next Task Steps:
-```
-[{'command': 'ls -al build'}]
-```'''.lstrip())
-        assert 'no, use a better command' in prompt
+        assert prompt.startswith('{"tasks": [{"command": "ls -al"}, {"command": "ls -al src"}, {"command": "ls -al test"}, {"command": "ls -al build"}]}'.lstrip())
         # and call `execute_task()` again
         assert developer.execute_task.call_count == 2
 
@@ -253,5 +237,5 @@ This step will not be executed. no, use a better command
         assert result == {'success': True, 'cli_response': 'stdout:\n```\n\n```'}
         assert mock_requests_post.call_count == 3
         assert "The JSON is invalid at $.type - 'command' is not one of " \
-               "['automated_test', 'command_test', 'manual_test', 'no_test']" in json_received[1][3]
+               "['command_test', 'manual_test', 'no_test']" in json_received[1][3]
         assert mock_execute.call_count == 1

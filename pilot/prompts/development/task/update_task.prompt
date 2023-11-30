@@ -1,37 +1,43 @@
 {% if completed_steps -%}
-# Completed Task Steps:
+Here is a list of completed steps:
+```{% for step in completed_steps %}
+step #{{ loop.index - 1 }}:
+step_type: {{ step.type }}{% if 'command' in step %}
+command_to_run: `{{ step.command.command }}`{% elif step.type == 'code_change' %}
+code_change_description: `{{ step.code_change_description }}`{% endif %}{% endfor %}
 ```
-{{ completed_steps }}
-```
-
-{% endif -%}
-
-# Current Step:
-{% if success %}This step was executed successfully.
-{%- elif user_input -%}
-This step will not be executed. {{ user_input }}
-{%- else -%}
-This step was not executed successfully.
-{%- endif %}
-```
-{{ current_step }}
-```
-
-{%- if cli_response %}
-
-{{ cli_response }}
-{%- endif %}
-
-{%- if next_steps %}
-
-# Next Task Steps:
-```
-{{ next_steps }}
-```
-
-Based on the Next Task Steps and my comments above for the Current Step, please create a new list of task steps to complete this task. The Current Step will need to be modified, and based on that any of the Next Task Steps may or may not still be valid.
-{% else -%}
-Based on my comments above for the Current Step, please create a new list of task steps to complete this task.
 {% endif %}
-Any commands must be able to run on a {{ os }} machine.
-{{ list_running_processes }}
+
+Right now, we're working on the step #{{ current_step_index }}:
+```
+step_type: {{ current_step.type }}
+command_to_run: `{{ current_step.command.command }}`
+```
+
+We've run the command `{{ current_step.command.command }}` and we got the following output:
+{{ cli_response }}
+
+{% if next_steps %}
+Here is a list of steps that will be executed after current step:
+```{% for step in next_steps %}
+step #{{ loop.index + current_step_index }}:
+step_type: {{ step.type }}{% if 'command' in step %}
+command_to_run: `{{ step.command.command }}`{% elif step.type == 'code_change' %}
+code_change_description: `{{ step.code_change_description }}`{% endif %}{% endfor %}
+```
+
+Now, think step by step and create a new list of task steps to complete this task based on the output we got from running `{{ current_step.command.command }}`. It will either be the same as it is now or any of the Next Task Steps may or may not be needed anymore.
+{% endif %}
+
+**IMPORTANT**
+When you think about in which file should the new code go to, always try to make files as small as possible and put code in more smaller files rather than in one big file. Whenever a file becomes too large (more than 50 lines of code) split it into smaller files.
+
+{#
+{% if len(next_steps) > 0 -%}
+Now, think step by step and tell me if the next command `{{ next_steps[0] }}` should be executed or not. If it should be executed, respond with `RUN`. If it shouldn't be executed, respond with `SKIP`.
+{% else -%}
+When you look at the output of the command run, is there anything else that should be done to complete this task. If the command was successfully executed, respond with `DONE`. If it wasn't, respond with `NEEDS_DEBUGGING`.
+
+Do not respond with anything other than these two keywords.
+{% endif -%}
+#}

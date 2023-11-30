@@ -9,7 +9,7 @@ from utils.style import (
     color_red,
     color_red_bold,
     color_yellow_bold,
-    color_blue_bold,
+    color_cyan_bold,
     color_white_bold
 )
 from helpers.exceptions.TokenLimitError import TokenLimitError
@@ -24,7 +24,8 @@ from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
 from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes
-from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN
+from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, \
+    COMMAND_TO_RUN, GET_MISSING_SNIPPETS, GET_FULLY_CODED_FILE
 from database.database import save_progress, get_progress_steps, update_app_status
 from utils.utils import get_os_info
 
@@ -66,7 +67,6 @@ class Developer(Agent):
             logger.info(message)
             print(color_green_bold(message))
 
-
     def implement_task(self, i, development_task=None):
         print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'))
         self.project.dot_pilot_gpt.chat_log_folder(i + 1)
@@ -92,55 +92,77 @@ class Developer(Agent):
             'running_processes': running_processes,
             'os': platform.system(),
         }, IMPLEMENT_TASK)
-        task_steps = response['tasks']
+        steps = response['tasks']
         convo_dev_task.remove_last_x_messages(2)
+
+        completed_steps = []
 
         while True:
             result = self.execute_task(convo_dev_task,
-                                     task_steps,
+                                     steps,
                                      development_task=development_task,
                                      continue_development=True,
-                                     is_root_task=True)
+                                     is_root_task=True,
+                                     continue_from_step=len(completed_steps))
 
             if result['success']:
                 break
 
             if 'step_index' in result:
-                result['running_processes'] = running_processes
                 result['os'] = platform.system()
                 step_index = result['step_index']
-                result['completed_steps'] = task_steps[:step_index]
-                result['current_step'] = task_steps[step_index]
-                result['next_steps'] = task_steps[step_index + 1:]
+                completed_steps = steps[:step_index+1]
+                result['completed_steps'] = completed_steps
+                result['current_step'] = steps[step_index]
+                result['next_steps'] = steps[step_index + 1:]
+                result['current_step_index'] = step_index
 
-                convo_dev_task.remove_last_x_messages(1)
+                convo_dev_task.remove_last_x_messages(2)
+                # todo before updating task first check if update is needed
                 response = convo_dev_task.send_message('development/task/update_task.prompt', result, IMPLEMENT_TASK)
-                task_steps = response['tasks']
+                steps = completed_steps + response['tasks']
 
             else:
                 logger.warning('Testing at end of task failed')
                 break
 
+    def replace_old_code_comments(self, files_with_changes):
+        files_with_comments = [{**file, 'comments': [line for line in file['content'].split('\n') if '[OLD CODE]' in line]} for file in files_with_changes]
+
+        for file in files_with_comments:
+            if len(file['comments']) > 0:
+                fully_coded_file_convo = AgentConvo(self)
+                fully_coded_file_response = fully_coded_file_convo.send_message('development/get_fully_coded_file.prompt', {
+                    'file': self.project.get_files([file['path']])[0],
+                    'new_file': file,
+                }, GET_FULLY_CODED_FILE)
+
+                file['content'] = fully_coded_file_response['file_content']
+
+        return files_with_comments
+
     def step_code_change(self, convo, step, i, test_after_code_changes):
-        if step['type'] == 'code_change' and 'code_change_description' in step:
+        if 'code_change_description' in step:
             # TODO this should be refactored so it always uses the same function call
             print(f'Implementing code changes for `{step["code_change_description"]}`')
             code_monkey = CodeMonkey(self.project, self)
-            updated_convo = code_monkey.implement_code_changes(convo, step['code_change_description'], i)
+            updated_convo = code_monkey.implement_code_changes(convo, step['code_change_description'], step, i)
             if test_after_code_changes:
                 return self.test_code_changes(code_monkey, updated_convo)
             else:
                 return { "success": True }
 
-        elif step['type'] == 'code_change':
-            # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
-            if 'code_change' not in step:
-                data = step
-            else:
-                data = step['code_change']
-            self.project.save_file(data)
-            # TODO end
-            return {"success": True}
+        # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
+        if 'code_change' not in step:
+            data = step
+        else:
+            data = step['code_change']
+
+        data = self.replace_old_code_comments([data])[0]
+
+        self.project.save_file(data)
+        # TODO end
+        return {"success": True}
 
     def step_command_run(self, convo, step, i, success_with_cli_response=False):
         logger.info('Running command: %s', step['command'])
@@ -231,7 +253,10 @@ class Developer(Agent):
                 print(cli_response)
                 print(color_red('-------------------'))
 
-            result = {'success': llm_response == 'DONE', 'cli_response': cli_response}
+            result = {
+                'success': llm_response in ["DONE", "SKIP"],
+                'cli_response': cli_response
+            }
             if cli_response is None:
                 result['user_input'] = llm_response
             else:
@@ -335,11 +360,14 @@ class Developer(Agent):
 
     def execute_task(self, convo, task_steps, test_command=None, reset_convo=True,
                      test_after_code_changes=True, continue_development=False,
-                     development_task=None, is_root_task=False):
+                     development_task=None, is_root_task=False, continue_from_step=0):
         function_uuid = str(uuid.uuid4())
         convo.save_branch(function_uuid)
 
         for (i, step) in enumerate(task_steps):
+            # Skip steps before continue_from_step
+            if i < continue_from_step:
+                continue
             logger.info('---------- execute_task() step #%d: %s', i, step)
 
             result = None
@@ -370,7 +398,7 @@ class Developer(Agent):
 
                     logger.info('  step result: %s', result)
 
-                    if (not result['success']) or need_to_see_output:
+                    if (not result['success']) or (need_to_see_output and result.get("user_input") != "SKIP"):
                         result['step'] = step
                         result['step_index'] = i
                         return result
@@ -410,7 +438,7 @@ class Developer(Agent):
             logger.info('Continue development, last_branch_name: %s', last_branch_name)
             if last_branch_name in iteration_convo.branches.keys():  # if user_feedback is not None we create new convo
                 iteration_convo.load_branch(last_branch_name)
-            user_description = ('Here is a description of what should be working: \n\n' + color_blue_bold(continue_description) + '\n') \
+            user_description = ('Here is a description of what should be working: \n\n' + color_cyan_bold(continue_description) + '\n') \
                                 if continue_description != '' else ''
             user_description = 'Can you check if the app works please? ' + user_description
 

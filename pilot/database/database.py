@@ -379,6 +379,8 @@ def delete_subsequent_steps(Model, app, step):
         if subsequent_step:
             delete_subsequent_steps(Model, app, subsequent_step)
             subsequent_step.delete_instance()
+            if Model == DevelopmentSteps:
+                FileSnapshot.delete().where(FileSnapshot.development_step == subsequent_step).execute()
 
 
 def get_all_connected_steps(step, previous_step_field_name):

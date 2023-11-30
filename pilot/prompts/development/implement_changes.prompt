@@ -8,3 +8,16 @@
 {% endfor %}{% endif %}Now, think step by step and apply the needed changes for step #{{ step_index }} - `{{ step_description }}`.
 
 Within the file modifications, anything needs to be written by the user, add the comment in the same line as the code that starts with `// INPUT_REQUIRED {input_description}` where `input_description` is a description of what needs to be added here by the user. Finally, you can save the modified files on the disk by calling `save_files` function.
+
+**IMPORTANT**
+When you think about in which file should the new code go to, always try to make files as small as possible and put code in more smaller files rather than in one big file. Whenever a file becomes too large (more than 50 lines of code) split it into smaller files.
+
+**IMPORTANT**
+When you want to add a comment that tells the user to add the previous implementation at that place, make sure that the comment starts with `[OLD CODE]` and add a description of what old code should be inserted here. For example, `[OLD CODE] Login route`.
+
+{% if 'code_change' in step %}
+{% for file in step['code_change'] %}
+**IMPORTANT**
+Implement changes only for the file `{{ step['code_change']['path'] }}` and no other files.
+{% endfor %}
+{% endif %}

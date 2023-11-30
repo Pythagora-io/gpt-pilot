@@ -50,7 +50,7 @@ class DotGptPilot:
             return
         if self.log_chat_completions:
             time = datetime.now().strftime('%Y-%m-%d_%H_%M_%S')
-            with open(os.path.join(self.chat_log_path, f'{time}-{req_type}.yaml'), 'w') as file:
+            with open(os.path.join(self.chat_log_path, f'{time}-{req_type}.yaml'), 'w', encoding="utf-8") as file:
                 data = {
                     'endpoint': endpoint,
                     'model': model,
@@ -66,7 +66,7 @@ class DotGptPilot:
         if self.log_chat_completions:
             time = datetime.now().strftime('%Y-%m-%d_%H_%M_%S')
 
-            with open(os.path.join(self.chat_log_path, f'{time}-{req_type}.json'), 'w') as file:
+            with open(os.path.join(self.chat_log_path, f'{time}-{req_type}.json'), 'w', encoding="utf-8") as file:
                 data = {
                     'endpoint': endpoint,
                     'model': model,

@@ -80,7 +80,7 @@ def get_email():
     gitconfig_path = os.path.expanduser('~/.gitconfig')
 
     if os.path.exists(gitconfig_path):
-        with open(gitconfig_path, 'r') as file:
+        with open(gitconfig_path, 'r', encoding="utf-8") as file:
             content = file.read()
 
             # Use regex to search for email address

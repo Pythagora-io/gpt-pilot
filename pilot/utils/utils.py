@@ -116,7 +116,7 @@ def get_os_info():
     }
 
     if os_info["OS"] == "Linux":
-        os_info["Distribution"] = ' '.join(distro.linux_distribution(full_distribution_name=True))
+        os_info["Distribution"] = distro.name(pretty=True)
     elif os_info["OS"] == "Windows":
         os_info["Win32 Version"] = ' '.join(platform.win32_ver())
     elif os_info["OS"] == "Mac":

@@ -23,12 +23,14 @@ STEPS = [
 
 additional_ignore_folders = os.environ.get('IGNORE_FOLDERS', '').split(',')
 
+# TODO: rename to IGNORE_PATHS as it also contains files
 IGNORE_FOLDERS = [
     '.git',
     '.gpt-pilot',
     '.idea',
     '.vscode',
     '.DS_Store',
+    '.env',
     '__pycache__',
     'node_modules',
     'package-lock.json',

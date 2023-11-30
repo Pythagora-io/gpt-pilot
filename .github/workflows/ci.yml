@@ -57,8 +57,6 @@ jobs:
         ruff --output-format=github --target-version=py37 --ignore=F401,E402,E501 ./pilot
 
     - name: Run tests
-      env:
-        PYTHONPATH: .
       run: |
         pip install pytest
         cd pilot

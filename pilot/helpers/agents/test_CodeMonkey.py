@@ -47,6 +47,7 @@ class TestCodeMonkey:
     def test_implement_code_changes(self, mock_get_dev, mock_save_dev, mock_file_insert):
         # Given
         code_changes_description = "Write the word 'Washington' to a .txt file"
+        self.project.get_all_coded_files = lambda: []
 
         if SEND_TO_LLM:
             convo = AgentConvo(self.codeMonkey)
@@ -64,12 +65,12 @@ class TestCodeMonkey:
             convo.send_message.side_effect = mock_responses
 
         if WRITE_TO_FILE:
-            self.codeMonkey.implement_code_changes(convo, code_changes_description)
+            self.codeMonkey.implement_code_changes(convo, code_changes_description, {})
         else:
             # don't write the file, just
             with patch.object(Project, 'save_file') as mock_save_file:
                 # When
-                self.codeMonkey.implement_code_changes(convo, code_changes_description)
+                self.codeMonkey.implement_code_changes(convo, code_changes_description, {})
 
                 # Then
                 mock_save_file.assert_called_once()
@@ -87,6 +88,7 @@ class TestCodeMonkey:
         code_changes_description = "Read the file called file_to_read.txt and write its content to a file called output.txt"
         workspace = self.project.root_path
         update_file(os.path.join(workspace, 'file_to_read.txt'), 'Hello World!\n')
+        self.project.get_all_coded_files = lambda: []
 
         if SEND_TO_LLM:
             convo = AgentConvo(self.codeMonkey)
@@ -104,11 +106,11 @@ class TestCodeMonkey:
             convo.send_message.side_effect = mock_responses
 
         if WRITE_TO_FILE:
-            self.codeMonkey.implement_code_changes(convo, code_changes_description)
+            self.codeMonkey.implement_code_changes(convo, code_changes_description, {})
         else:
             with patch.object(Project, 'save_file') as mock_save_file:
                 # When
-                self.codeMonkey.implement_code_changes(convo, code_changes_description)
+                self.codeMonkey.implement_code_changes(convo, code_changes_description, {})
 
                 # Then
                 clear_directory(workspace)
