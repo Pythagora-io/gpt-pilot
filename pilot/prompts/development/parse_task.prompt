@@ -2,3 +2,6 @@ Ok, now, take your previous message and convert it to actionable items. An item 
 
 **IMPORTANT**
 When you want to add a comment that tells the user to add the previous implementation at that place, make sure that the comment starts with `[OLD CODE]` and add a description of what old code should be inserted here. For example, `[OLD CODE] Login route`.
+
+**IMPORTANT**
+When you think about in which file should the new code go to, always try to make files as small as possible and put code in more smaller files rather than in one big file. Whenever a file becomes too large (more than 50 lines of code) split it into smaller files.

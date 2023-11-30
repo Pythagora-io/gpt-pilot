@@ -36,6 +36,10 @@ Can you debug this issue or implement changes to comply with the additional user
 
 Tell me all the new code that needs to be written or modified to implement current task and have it fully working. You can count that the environment is set up previously and packages listed in files are installed so tell me only commands needed for installation of new dependencies, if there are any.
 
+
+**IMPORTANT**
+When you think about in which file should the new code go to, always try to make files as small as possible and put code in more smaller files rather than in one big file. Whenever a file becomes too large (more than 50 lines of code) split it into smaller files.
+
 {# Do not leave any parts of the code to be written afterwards. Make sure that all the code you provide is working and does as outlined in the description area above.
 #}
 You do not need to make any automated tests work.
