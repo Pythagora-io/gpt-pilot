@@ -21,7 +21,7 @@ You are currently working on task "{{ current_task.description }}" and you have 
 {% endif %}
 A part of the app is already finished.Here are files that are currently implemented:
 {% for file in files %}
-**{{ file.path }}**:
+**{{ file.path }}/{{ file.name }}**:
 ```
 {{ file.content }}
 ```

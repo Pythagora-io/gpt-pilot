@@ -1,7 +1,7 @@
 {{ if files|length > 0}}
 Here are the requested files:
 {% for file in files %}
-**{{ file.name }}**
+**{{ file.name }}/{{ file.name }}**
 ```{# file.language #}
 {{ file.content }}
 ```

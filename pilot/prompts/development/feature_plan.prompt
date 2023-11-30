@@ -59,7 +59,7 @@ Here is directory tree that shows current folder structure of project:
 
 App and all its features are already finished and working. Here are files that are currently implemented:
 {% for file in files %}
-**{{ file.path }}**:
+**{{ file.path }}/{{ file.name }}**:
 ```
 {{ file.content }}
 ```

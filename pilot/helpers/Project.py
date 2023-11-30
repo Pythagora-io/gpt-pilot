@@ -217,7 +217,9 @@ class Project:
         files_with_content = []
         for file_path in files:
             try:
-                file_data = get_file_contents(file_path, self.root_path)
+                # TODO path is sometimes relative and sometimes absolute - fix at one point
+                _, full_path = self.get_full_file_path(file_path, file_path)
+                file_data = get_file_contents(full_path, self.root_path)
             except ValueError:
                 file_data = {"path": file_path, "content": ''}
 

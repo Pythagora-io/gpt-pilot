@@ -1,6 +1,6 @@
 {% if files|length > 0 %}Here is how files look now:
 {% for file in files %}
-**{{ file.path }}**
+**{{ file.path }}/{{ file.name }}**
 ```{# file.language #}
 {{ file.content }}
 ```
