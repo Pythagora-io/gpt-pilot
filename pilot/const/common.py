@@ -30,7 +30,6 @@ IGNORE_FOLDERS = [
     '.idea',
     '.vscode',
     '.DS_Store',
-    '.env',
     '__pycache__',
     'node_modules',
     'package-lock.json',

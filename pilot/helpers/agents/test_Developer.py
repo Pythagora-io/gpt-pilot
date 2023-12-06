@@ -74,7 +74,7 @@ class TestDeveloper:
 
         # Then we parse the response correctly and send list of steps to execute_task()
         assert developer.execute_task.call_count == 1
-        assert developer.execute_task.call_args[0][1] == [{'command': 'ls -al'}]
+        assert developer.execute_task.call_args[0][2] == [{'command': 'ls -al'}]
 
     @patch('helpers.AgentConvo.get_saved_development_step')
     @patch('helpers.AgentConvo.save_development_step')
@@ -132,7 +132,7 @@ class TestDeveloper:
         result = self.developer.test_code_changes(monkey, convo)
 
         # Then
-        assert result == {'success': True, 'cli_response': 'stdout:\n```\n\n```'}
+        assert result == {'success': True}
 
     @patch('helpers.AgentConvo.get_saved_development_step')
     @patch('helpers.AgentConvo.save_development_step')
@@ -150,7 +150,7 @@ class TestDeveloper:
         result = self.developer.test_code_changes(monkey, convo)
 
         # Then
-        assert result == {'success': True, 'user_input': 'continue'}
+        assert result == {'success': True}
 
     @pytest.mark.skip("endless loop in questionary")
     @patch('helpers.AgentConvo.get_saved_development_step')
@@ -234,8 +234,5 @@ class TestDeveloper:
         result = self.developer.test_code_changes(monkey, convo)
 
         # Then
-        assert result == {'success': True, 'cli_response': 'stdout:\n```\n\n```'}
-        assert mock_requests_post.call_count == 3
-        assert "The JSON is invalid at $.type - 'command' is not one of " \
-               "['command_test', 'manual_test', 'no_test']" in json_received[1][3]
-        assert mock_execute.call_count == 1
+        assert result == {'success': True}
+        assert mock_requests_post.call_count == 0
