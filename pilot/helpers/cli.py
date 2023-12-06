@@ -209,6 +209,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
         else:
             question += '?'
 
+        print('yes/no', type='button')
         logger.info('--------- EXECUTE COMMAND ---------- : %s', question)
         answer = ask_user(project, 'If yes, just press ENTER. Otherwise, type "no" but it will be processed as '
                                    'successfully executed.', False, hint=question)
