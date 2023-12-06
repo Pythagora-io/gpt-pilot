@@ -226,6 +226,23 @@ class Project:
             files_with_content.append(file_data)
         return files_with_content
 
+    def find_input_required_lines(self, file_content):
+        """
+        Parses the provided string (representing file content) and returns a list of tuples containing
+        the line number and line content for lines that contain the text 'INPUT_REQUIRED'.
+
+        :param file_content: The string content of the file.
+        :return: A list of tuples (line number, line content).
+        """
+        lines_with_input_required = []
+        lines = file_content.split('\n')
+
+        for line_number, line in enumerate(lines, start=1):
+            if 'INPUT_REQUIRED' in line:
+                lines_with_input_required.append((line_number, line.strip()))
+
+        return lines_with_input_required
+
     def save_file(self, data):
         """
         Save a file.
@@ -233,6 +250,7 @@ class Project:
         Args:
             data: { name: 'hello.py', path: 'path/to/hello.py', content: 'print("Hello!")' }
         """
+
         name = data['name'] if 'name' in data and data['name'] != '' else os.path.basename(data['path'])
         path = data['path'] if 'path' in data else name
 
@@ -247,6 +265,18 @@ class Project:
             preserve=[],
             update={'name': name, 'path': path, 'full_path': full_path})
          .execute())
+
+        if not self.skip_steps:
+            inputs_required = self.find_input_required_lines(data['content'])
+            for line_number, line_content in inputs_required:
+                user_input = ''
+                print(color_yellow_bold(f'Input required on line {line_number}:\n{line_content}') + '\n')
+                while user_input.lower() not in ['y']:
+                    user_input = styled_text(
+                        self,
+                        f'Please open the file {data["path"]} on the line {line_number} and add the required input. Once you\'re done, type "y" to continue.',
+                        ignore_user_input_count=True
+                    )
 
     def get_full_file_path(self, file_path: str, file_name: str) -> Tuple[str, str]:
         """
