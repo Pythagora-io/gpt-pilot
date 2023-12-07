@@ -218,7 +218,7 @@ IMPLEMENT_TASK = {
                                         },
                                         'content': {
                                             'type': 'string',
-                                            'description': 'Full content of the file that needs to be implemented. It is mandatory that no parts of file content are skipped or assumed to be there. It must be full content.',
+                                            'description': 'Full content of the file that needs to be implemented. **IMPORTANT**When you want to add a comment that tells the user to add the previous implementation at that place, make sure that the comment starts with `[OLD CODE]` and add a description of what old code should be inserted here. For example, `[OLD CODE] Login route`.',
                                         },
                                     },
                                     'required': ['name', 'path', 'content'],
@@ -478,7 +478,7 @@ IMPLEMENT_CHANGES = {
                             },
                             'content': {
                                 'type': 'string',
-                                'description': 'Full content of the file that needs to be saved on the disk. It is mandatory that no parts of file content are skipped or assumed to be there. It must be full content.',
+                                'description': 'Full content of the file that needs to be saved on the disk. **IMPORTANT**When you want to add a comment that tells the user to add the previous implementation at that place, make sure that the comment starts with `[OLD CODE]` and add a description of what old code should be inserted here. For example, `[OLD CODE] Login route`.',
                             },
                             'description': {
                                 'type': 'string',
