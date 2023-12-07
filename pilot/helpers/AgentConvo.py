@@ -187,7 +187,7 @@ class AgentConvo:
         for msg in self.messages:
             if msg['role'] == 'user':
                 for file in files:
-                    self.replace_file_content(msg['content'], file['path'], file['content'])
+                    msg['content'] = self.replace_file_content(msg['content'], file['path'], file['content'])
 
     def escape_specials(self, s):
         s = s.replace("\\", "\\\\")
@@ -213,12 +213,12 @@ class AgentConvo:
     def replace_file_content(self, message, file_path, new_content):
         escaped_file_path = re.escape(file_path)
 
-        pattern = rf'\*\*{{ {escaped_file_path} }}\*\*\n```\n(.*?)\n```'
+        pattern = rf'\*\*{escaped_file_path}\*\*\n```\n(.*?)\n```'
 
         # Escape special characters in new_content for the sake of regex replacement
         new_content_escaped = self.escape_specials(new_content)
 
-        new_section_content = f'**{{ {file_path} }}**\n```\n{new_content_escaped}\n```'
+        new_section_content = f'**{file_path}**\n```\n{new_content_escaped}\n```'
 
         updated_message, num_replacements = re.subn(pattern, new_section_content, message, flags=re.DOTALL)
 

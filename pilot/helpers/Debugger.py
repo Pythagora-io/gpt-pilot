@@ -1,5 +1,6 @@
 import platform
 import uuid
+import re
 
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_RECUSION_LAYER
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
@@ -41,8 +42,6 @@ class Debugger:
             if success:
                 break
 
-            convo.load_branch(function_uuid)
-
             llm_response = convo.send_message('dev_ops/debug.prompt',
                 {
                     'command': command['command'] if command is not None else None,
@@ -64,6 +63,7 @@ class Debugger:
                     # TODO refactor to nicely get the developer agent
                     result = self.agent.project.developer.execute_task(
                         convo,
+                        f"Thoughts: {llm_response['thoughts']}\n\nReasoning: {llm_response['reasoning']}",
                         steps,
                         test_command=command,
                         test_after_code_changes=True,
@@ -72,6 +72,7 @@ class Debugger:
                         continue_from_step=len(completed_steps)
                     )
 
+                    # in case one step failed or llm wants to see the output to determine the next steps
                     if 'step_index' in result:
                         result['os'] = platform.system()
                         step_index = result['step_index']
@@ -88,6 +89,16 @@ class Debugger:
                             DEBUG_STEPS_BREAKDOWN)
                     else:
                         success = result['success']
+                        if not success:
+                            convo.load_branch(function_uuid)
+                            if 'cli_response' in result:
+                                user_input = result['cli_response']
+                                convo.messages[-2]['content'] = re.sub(
+                                    r'(?<=The output was:\n\n).*?(?=\n\nThink about this output)',
+                                    result['cli_response'],
+                                    convo.messages[-2]['content'],
+                                    flags=re.DOTALL
+                                )
                         break
 
             except TokenLimitError as e:
@@ -95,8 +106,10 @@ class Debugger:
                     self.recursion_layer -= 1
                     raise e
                 else:
+                    if not success:
+                        convo.load_branch(function_uuid)
                     continue
-            
+
             # if not success:
             #     # TODO explain better how should the user approach debugging
             #     # we can copy the entire convo to clipboard so they can paste it in the playground

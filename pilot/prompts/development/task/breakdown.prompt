@@ -46,7 +46,7 @@ You are currently working on task {{ current_task_index + 1 }} with the followin
 {{ development_tasks[current_task_index]['description'] }}
 ```
 {% if current_task_index != 0 %}All previous tasks are finished and you don't have to work on them.{% endif %}
-After all the code is finished, a human developer will check it works this way - {{ development_tasks[current_task_index]['user_review_goal'] }}
+After all the code is finished, a human developer will check if the app works this way - `{{ development_tasks[current_task_index]['user_review_goal'] }}`
 
 Now, tell me all the code that needs to be written to implement ONLY this task and have it fully working and all commands that need to be run to implement this task.
 
