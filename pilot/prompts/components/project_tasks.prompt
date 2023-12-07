@@ -2,11 +2,15 @@ Before we go into the coding part, I want you to split the development process o
 
 Each task needs to be related only to the development of this {{ task_type }} and nothing else - once the {{ task_type }} is fully working, that is it. There shouldn't be a task for researching, deployment, writing documentation, or anything that is not writing the actual code.
 
-Now, based on the project details provided{% if task_type  == 'feature' %} and new feature description{% endif %}, think task by task and create the entire development plan{% if task_type  == 'feature' %} for new feature{% endif %}.{% if task_type  == 'app' %} Start from the project setup and specify each task until the moment when the entire app should be fully working.{% endif %} For each task, write a description and a user-review goal.
+Now, based on the project details provided{% if task_type  == 'feature' %} and new feature description{% endif %}, think task by task and create the entire development plan{% if task_type  == 'feature' %} for new feature{% endif %}.{% if task_type  == 'app' %} Start from the project setup and specify each task until the moment when the entire app should be fully working.{% endif %}
 
 **IMPORTANT**
-Dividing project into tasks is extremely important job and has to be done carefully.
+Dividing project into tasks is extremely important job and has to be done carefully while always strictly following all rules listed bellow.
+
+Rule #1
 There should never be a task that is only testing or ensuring something works, every task must have coding involved. Have this in mind for every task, but it is extremely important for last task of project. Testing if {{ task_type }} works will be done as part of each task.
+
+Rule #2
 You have to make sure the project is not split into tasks that are too small or simple for no reason but also not too big or complex so that they are hard to develop, debug and review. Here are examples of poorly created tasks:
 
 **too simple tasks**
@@ -22,6 +26,7 @@ You must to avoid creating tasks that are too simple or too complex. You have to
 - Set up a Node.js project, install all necessary dependencies and set up an express server with a simple route to `/ping` that returns the status 200.
 - Establish a MongoDB database connection and implement the message schema using Mongoose for persistent storage of messages.
 
+Rule #3
 Every {{ task_type }} should have different number of tasks depending on complexity. Think task by task and create the minimum number of tasks that are relevant for this specific {{ task_type }}.{% if task_type  == 'feature' %} If the feature is small, it is ok to have only 1 task.{% endif %} Here are some examples of apps with different complexity that can give you guidance on how many tasks you should create:
 
 Example #1:
