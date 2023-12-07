@@ -31,13 +31,6 @@ class Debugger:
         Returns:
             bool: True if debugging was successful, False otherwise.
         """
-        if ask_before_debug:
-            answer = ask_user(self.agent.project, 'Can I start debugging this issue?', require_some_input=False)
-            if answer in NEGATIVE_ANSWERS:
-                return True
-            if answer and answer not in AFFIRMATIVE_ANSWERS:
-                user_input = answer
-
         logger.info('Debugging %s', command)
         self.recursion_layer += 1
         if self.recursion_layer > MAX_RECUSION_LAYER:
@@ -51,6 +44,13 @@ class Debugger:
         for i in range(MAX_COMMAND_DEBUG_TRIES):
             if success:
                 break
+
+            if ask_before_debug or i > 0:
+                answer = ask_user(self.agent.project, 'Can I start debugging this issue?', require_some_input=False)
+                if answer in NEGATIVE_ANSWERS:
+                    return True
+                if answer and answer not in AFFIRMATIVE_ANSWERS:
+                    user_input = answer
 
             llm_response = convo.send_message('dev_ops/debug.prompt',
                 {
