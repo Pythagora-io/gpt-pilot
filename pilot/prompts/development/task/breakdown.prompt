@@ -37,11 +37,11 @@ So far, this code has been implemented:
 
 We've broken the development of this {{ task_type }} down to these tasks:
 ```{% for task in development_tasks %}
-- {{ loop.index }}. {{ task['description'] }}
+{{ loop.index }}. {{ task['description'] }}
 {% endfor %}
 ```
 
-You are currently working on task {{ current_task_index + 1 }} with the following description:
+You are currently working on task #{{ current_task_index + 1 }} with the following description:
 ```
 {{ development_tasks[current_task_index]['description'] }}
 ```
@@ -54,9 +54,10 @@ Now, tell me all the code that needs to be written to implement ONLY this task a
 When you think about in which file should the new code go to, always try to make files as small as possible and put code in more smaller files rather than in one big file. Whenever a file becomes too large (more than 50 lines of code) split it into smaller files.
 
 **IMPORTANT**
-{% if task_type == 'app' %}
+{%- if task_type == 'app' %}
 Remember, I created an empty folder where I will start writing files that you tell me and that are needed for this app.
 You do not need to make any automated tests work.
 {% endif %}
 DO NOT specify commands to create any folders or files, they will be created automatically - just specify the relative path to each file that needs to be written.
+
 Never use the port 5000 to run the app, it's reserved.
