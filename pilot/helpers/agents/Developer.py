@@ -488,8 +488,6 @@ class Developer(Agent):
                     "user_input": user_feedback,
                 })
 
-                # self.debugger.debug(iteration_convo, user_input=user_feedback)
-
                 llm_response = iteration_convo.send_message('development/parse_task.prompt', {
                     'running_processes': running_processes,
                     'os': platform.system(),
