@@ -27,7 +27,7 @@ Here are the technologies that {% if task_type == 'app' %}you need to use{% else
 {% if current_task_index != 0 or task_type == 'feature' %}
 So far, this code has been implemented:
 {% for file in files %}
-**{{ file.path }}/{{ file.name }}**
+**{{ file.path }}/{{ file.name }}**:
 ```{# file.language #}
 {{ file.content }}
 ```

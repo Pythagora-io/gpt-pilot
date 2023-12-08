@@ -1,6 +1,6 @@
 Here are previously coded files:
 {% for file in previously_coded_files %}
-**{{ file.path }}**:
+**{{ file.path }}/{{ file.name }}**:
 ```
 {{ file.content }}
 ```
@@ -8,7 +8,7 @@ Here are previously coded files:
 
 And here are the new implementations of these same files:
 {% for file in files_with_comments -%}
-**{{ file.path }}**:
+**{{ file.path }}/{{ file.name }}**:
 ```
 {{ file.content }}
 ```
@@ -18,7 +18,7 @@ Look at the following lines of code:
 {% for file in files_with_comments -%}
 {% if file.comments|length > 0 -%}
 {%- for comment in file['comments'] -%}
-`{{ comment }}` inside `{{ file['path'] }}`
+`{{ comment }}` inside `{{ file['path'] }}/{{ file['name'] }}`
 {% endfor %}
 {%- endif -%}
 {%- endfor %}
