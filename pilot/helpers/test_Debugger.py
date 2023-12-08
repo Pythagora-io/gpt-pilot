@@ -112,6 +112,7 @@ def test_debug_need_to_see_output(mock_save_step, mock_get_completion, mock_get_
     debugger = Debugger(developer)
     convo = AgentConvo(developer)
     convo.load_branch = MagicMock()
+    convo.replace_files = MagicMock()
     # hard-wired LLM responses, 1st response asks to see output
     mock_get_completion.side_effect = [{'text': json.dumps(response)} for response in [{
         'thoughts': 'Hmmm, testing',
