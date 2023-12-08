@@ -511,8 +511,7 @@ def run_command_until_success(convo, command,
                     'timeout': timeout,
                     'command_id': command_id,
                     'success_message': success_message,
-                    'ask_before_debug': True,
-                }, user_input=cli_response, is_root_task=is_root_task)
+                },user_input=cli_response, is_root_task=is_root_task, ask_before_debug=True)
                 return {'success': success, 'cli_response': cli_response}
             except TooDeepRecursionError as e:
                 # this is only to put appropriate message in the response after TooDeepRecursionError is raised

@@ -10,7 +10,8 @@ from prompt_toolkit.styles import Style
 from jsonschema import validate, ValidationError
 from utils.style import color_red
 from typing import List
-from const.llm import MIN_TOKENS_FOR_GPT_RESPONSE, MAX_GPT_MODEL_TOKENS
+from const.llm import MAX_GPT_MODEL_TOKENS
+from const.messages import AFFIRMATIVE_ANSWERS
 from logger.logger import logger, logging
 from helpers.exceptions import TokenLimitError, ApiKeyNotDefinedError
 from utils.utils import fix_json, get_prompt
@@ -236,6 +237,7 @@ def retry_on_exception(func):
                 logger.error(f'There was a problem with request to openai API: {err_str}')
 
                 project = args[2]
+                print('yes/no', type='button')
                 user_message = styled_text(
                     project,
                     'Do you want to try make the same request again? If yes, just press ENTER. Otherwise, type "no".',
@@ -247,7 +249,7 @@ def retry_on_exception(func):
 
                 # TODO: take user's input into consideration - send to LLM?
                 # https://github.com/Pythagora-io/gpt-pilot/issues/122
-                if user_message != '':
+                if user_message.lower() not in AFFIRMATIVE_ANSWERS:
                     return {}
 
     return wrapper
