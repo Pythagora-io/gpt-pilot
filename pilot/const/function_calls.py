@@ -645,3 +645,29 @@ GET_FULLY_CODED_FILE = {
         'get_fully_coded_file': lambda file: file
     },
 }
+
+
+GET_DOCUMENTATION_FILE = {
+    'definitions': [{
+        'name': 'get_documentation_file',
+        'description': 'Gets the full content of requested documentation file.',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'type': 'string',
+                    'description': 'Name of the documentation file that needs to be saved on the disk.',
+                },
+                'path': {
+                    'type': 'string',
+                    'description': 'Full path of the documentation file with the file name that needs to be saved.',
+                },
+                'content': {
+                    'type': 'string',
+                    'description': 'Full content of the documentation file that needs to be saved on the disk.',
+                },
+            },
+            'required': ['name', 'path', 'content'],
+        },
+    }],
+}

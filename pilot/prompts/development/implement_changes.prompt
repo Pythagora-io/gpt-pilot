@@ -1,11 +1,5 @@
-{% if files|length > 0 %}Here is how files look now:
-{% for file in files %}
-**{{ file.path }}/{{ file.name }}**
-```{# file.language #}
-{{ file.content }}
-```
+{{ files_list }}
 
-{% endfor %}{% endif -%}
 Here is a description of changes for a task you're currently working on:
 ```
 {{ task_description }}

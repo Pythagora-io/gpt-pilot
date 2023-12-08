@@ -1,0 +1,7 @@
+{% if files|length > 0 %}Here are files that are currently implemented:
+{% for file in files %}
+**{{ file.path }}/{{ file.name }}**:
+```
+{{ file.content }}
+```
+{% endfor %}{% endif -%}

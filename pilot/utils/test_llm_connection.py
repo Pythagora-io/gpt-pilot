@@ -459,7 +459,7 @@ class TestLlmConnection:
         convo.construct_and_add_message_from_prompt('architecture/technologies.prompt',
                                                         {
                                                             'name': 'Test App',
-                                                            'prompt': '''
+                                                            'app_summary': '''
 The project involves the development of a web-based chat application named "Test_App". 
 In this application, users can send direct messages to each other. 
 However, it does not include a group chat functionality. 
@@ -560,7 +560,7 @@ The development process will include the creation of user stories and tasks, bas
     #     # convo.construct_and_add_message_from_prompt('architecture/technologies.prompt',
     #     #                                             {
     #     #                                                 'name': 'Test App',
-    #     #                                                 'prompt': '''
+    #     #                                                 'app_summary': '''
     #
     #     function_calls = DEV_STEPS
     #

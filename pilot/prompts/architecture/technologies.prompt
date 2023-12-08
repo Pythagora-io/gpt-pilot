@@ -1,38 +1,7 @@
 You are working in a software development agency and a project manager approached you telling you that you're assigned to work on a new project. You  are working on a {{app_type}} called "{{ name }}" and you need to create specifications on what technologies should be used in this project.
 
-Here is a high level description of "{{ name }}":
-```
-{{ prompt }}
-```
+{{ project_details }}
 
-{% if clarifications %}
-Here are some additional questions and answers to clarify the apps description:
-```
-{% for clarification in clarifications %}
-Q: {{ clarification.question }}
-A: {{ clarification.answer }}
-{% endfor %}
-```
-
-{% endif %}
-{% if user_stories %}
-Here are user stories that specify how users use "{{ name }}":
-```
-{% for story in user_stories %}
-- {{ story }}
-{% endfor %}
-```
-
-{% endif %}
-{% if user_tasks %}
-Here are user tasks that specify what users need to do to interact with "{{ name }}":
-```
-{% for task in user_tasks %}
-- {{ task }}
-{% endfor %}
-```
-
-{% endif %}
 Now, based on the app's description, user stories and user tasks, think step by step and list the names of the technologies that will be used by your development team to create the app "{{ name }}". Do not write any explanations behind your choices but only a list of technologies that will be used.
 Do not give any subjective thoughts or options, give exact technologies, for example:
 Instead of ["D3.js or other suitable charting library", "axios or other http client library"] answer with ["D3.js", "axios"].

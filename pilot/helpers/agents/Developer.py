@@ -68,6 +68,8 @@ class Developer(Agent):
             print(color_green_bold(message))
 
     def implement_task(self, i, development_task=None):
+        if i == 2:
+            self.project.technical_writer.create_documentation()
         print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'))
         self.project.dot_pilot_gpt.chat_log_folder(i + 1)
 

@@ -41,3 +41,17 @@ def create_directory(parent_directory, new_directory):
     os.makedirs(new_directory_path, exist_ok=True)
 
     return new_directory_path
+
+
+def count_lines_of_code(files):
+    total_lines = 0
+
+    for file in files:
+        # Split the content into lines
+        lines = file['content'].split('\n')
+
+        # Count the lines, skipping empty lines and comments if desired
+        line_count = sum(1 for line in lines if line.strip() and not line.strip().startswith('//'))
+        total_lines += line_count
+
+    return total_lines
