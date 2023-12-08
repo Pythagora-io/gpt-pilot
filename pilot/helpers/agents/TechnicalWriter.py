@@ -8,7 +8,7 @@ class TechnicalWriter(Agent):
     def __init__(self, project):
         super().__init__('technical_writer', project)
 
-    def create_documentation(self, percent):
+    def document_project(self, percent):
         files = self.project.get_all_coded_files()
         print(f'Congratulations, you reached {percent}% of your project generation!'
               f'For now, you have created:'
