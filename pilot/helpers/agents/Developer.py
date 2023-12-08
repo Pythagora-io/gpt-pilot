@@ -173,7 +173,7 @@ class Developer(Agent):
         else:
             data = step['command']
         # TODO END
-        additional_message = 'Let\'s start with the step #0:\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i+1)) } are finished so let\'s do step #{i + 1} now.\n'
+        additional_message = '' #'Let\'s start with the step #0:\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i+1)) } are finished so let\'s do step #{i + 1} now.\n'
 
         command_id = data['command_id'] if 'command_id' in data else None
         success_message = data['success_message'] if 'success_message' in data else None
@@ -487,8 +487,6 @@ class Developer(Agent):
                     "files": self.project.get_all_coded_files(),
                     "user_input": user_feedback,
                 })
-
-                # self.debugger.debug(iteration_convo, user_input=user_feedback)
 
                 llm_response = iteration_convo.send_message('development/parse_task.prompt', {
                     'running_processes': running_processes,

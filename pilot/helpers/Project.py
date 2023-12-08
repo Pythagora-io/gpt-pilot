@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 from typing import Tuple
 
-from const.messages import CHECK_AND_CONTINUE
+from const.messages import CHECK_AND_CONTINUE, AFFIRMATIVE_ANSWERS
 from utils.style import color_yellow_bold, color_cyan, color_white_bold, color_green
 from const.common import IGNORE_FOLDERS, STEPS
 from database.database import delete_unconnected_steps_from, delete_all_app_development_data, update_app_status
@@ -271,7 +271,8 @@ class Project:
             for line_number, line_content in inputs_required:
                 user_input = ''
                 print(color_yellow_bold(f'Input required on line {line_number}:\n{line_content}') + '\n')
-                while user_input.lower() not in ['y']:
+                while user_input.lower() not in AFFIRMATIVE_ANSWERS:
+                    print('yes', type='button')
                     user_input = styled_text(
                         self,
                         f'Please open the file {data["path"]} on the line {line_number} and add the required input. Once you\'re done, type "y" to continue.',

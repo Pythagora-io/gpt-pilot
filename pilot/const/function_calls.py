@@ -394,7 +394,7 @@ DEVELOPMENT_PLAN = {
                             },
                             'user_review_goal': {
                                 'type': 'string',
-                                'description': 'user-review goal that will determine if a task is done or not but from a user perspective since it will be reviewed by a human',
+                                'description': 'User review goal that will determine if a task is done or not, but from a user perspective since it will be reviewed by a human.',
                             }
                         },
                         'required': ['description', 'programmatic_goal', 'user_review_goal'],

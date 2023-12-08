@@ -4,9 +4,11 @@ import re
 
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_RECUSION_LAYER
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
+from const.messages import AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
 from logger.logger import logger
+from prompts.prompts import ask_user
 
 
 class Debugger:
@@ -14,7 +16,7 @@ class Debugger:
         self.agent = agent
         self.recursion_layer = 0
 
-    def debug(self, convo, command=None, user_input=None, issue_description=None, is_root_task=False):
+    def debug(self, convo, command=None, user_input=None, issue_description=None, is_root_task=False, ask_before_debug=False):
         """
         Debug a conversation.
 
@@ -24,6 +26,7 @@ class Debugger:
             user_input (str, optional): User input for debugging. Default is None.
                 Should provide `command` or `user_input`.
             issue_description (str, optional): Description of the issue to debug. Default is None.
+            ask_before_debug (bool, optional): True if we have to ask user for permission to start debugging.
 
         Returns:
             bool: True if debugging was successful, False otherwise.
@@ -41,6 +44,14 @@ class Debugger:
         for i in range(MAX_COMMAND_DEBUG_TRIES):
             if success:
                 break
+
+            if ask_before_debug or i > 0:
+                print('yes/no', type='button')
+                answer = ask_user(self.agent.project, 'Can I start debugging this issue?', require_some_input=False)
+                if answer.lower() in NEGATIVE_ANSWERS:
+                    return True
+                if answer and answer.lower() not in AFFIRMATIVE_ANSWERS:
+                    user_input = answer
 
             llm_response = convo.send_message('dev_ops/debug.prompt',
                 {

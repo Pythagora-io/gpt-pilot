@@ -13,7 +13,7 @@ Here are the technologies that you need to use for this project:
 {% if development_tasks and current_task %}
 Development process of this app was split into smaller tasks. Here is the list of all tasks:
 ```{% for task in development_tasks %}
-- {{ loop.index }}. {{ task['description'] }}
+{{ loop.index }}. {{ task['description'] }}
 {% endfor %}
 ```
 You are currently working on task "{{ current_task.description }}" and you have to focus only on that task.
