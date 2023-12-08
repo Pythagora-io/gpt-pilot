@@ -46,10 +46,11 @@ class Debugger:
                 break
 
             if ask_before_debug or i > 0:
+                print('yes/no', type='button')
                 answer = ask_user(self.agent.project, 'Can I start debugging this issue?', require_some_input=False)
-                if answer in NEGATIVE_ANSWERS:
+                if answer.lower() in NEGATIVE_ANSWERS:
                     return True
-                if answer and answer not in AFFIRMATIVE_ANSWERS:
+                if answer and answer.lower() not in AFFIRMATIVE_ANSWERS:
                     user_input = answer
 
             llm_response = convo.send_message('dev_ops/debug.prompt',
