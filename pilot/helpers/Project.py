@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 from typing import Tuple
 
-from const.messages import CHECK_AND_CONTINUE, AFFIRMATIVE_ANSWERS
+from const.messages import CHECK_AND_CONTINUE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS
 from utils.style import color_yellow_bold, color_cyan, color_white_bold, color_green
 from const.common import IGNORE_FOLDERS, STEPS
 from database.database import delete_unconnected_steps_from, delete_all_app_development_data, update_app_status
@@ -116,8 +116,9 @@ class Project:
                 delete_all_app_development_data(self.args['app_id'])
                 self.skip_steps = False
             elif self.skip_until_dev_step is not None:
-                should_overwrite_files = ''
-                while should_overwrite_files.lower() not in ['y', 'n']:
+                should_overwrite_files = None
+                while should_overwrite_files is None or should_overwrite_files.lower() not in AFFIRMATIVE_ANSWERS + NEGATIVE_ANSWERS:
+                    print('yes/no', type='button')
                     should_overwrite_files = styled_text(
                         self,
                         f'Do you want to overwrite the dev step {self.args["skip_until_dev_step"]} code with system changes? Type y/n',
@@ -125,9 +126,9 @@ class Project:
                     )
 
                     logger.info('should_overwrite_files: %s', should_overwrite_files)
-                    if should_overwrite_files == 'n':
+                    if should_overwrite_files in NEGATIVE_ANSWERS:
                         break
-                    elif should_overwrite_files == 'y':
+                    elif should_overwrite_files in AFFIRMATIVE_ANSWERS:
                         FileSnapshot.delete().where(
                             FileSnapshot.app == self.app and FileSnapshot.development_step == self.skip_until_dev_step).execute()
                         self.save_files_snapshot(self.skip_until_dev_step)
