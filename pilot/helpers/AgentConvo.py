@@ -212,14 +212,13 @@ class AgentConvo:
         return s
 
     def replace_file_content(self, message, file_path, new_content):
-        escaped_file_path = re.escape(file_path)
-
-        pattern = rf'\*\*{escaped_file_path}\*\*:\n```\n(.*?)\n```'
+        pattern = rf'\*\*{re.escape(file_path)}\*\*:\n```\n(.*?)\n```'
 
         # Escape special characters in new_content for the sake of regex replacement
         new_content_escaped = self.escape_specials(new_content)
+        file_path_escaped = self.escape_specials(file_path)
 
-        new_section_content = f'**{file_path}**\n```\n{new_content_escaped}\n```'
+        new_section_content = f'**{file_path_escaped}**\n```\n{new_content_escaped}\n```'
 
         updated_message, num_replacements = re.subn(pattern, new_section_content, message, flags=re.DOTALL)
 
