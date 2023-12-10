@@ -660,11 +660,11 @@ GET_DOCUMENTATION_FILE = {
                 },
                 'path': {
                     'type': 'string',
-                    'description': 'Full path of the documentation file with the file name that needs to be saved.',
+                    'description': 'Relative path of the documentation file with the file name that needs to be saved.',
                 },
                 'content': {
                     'type': 'string',
-                    'description': 'Full content of the documentation file that needs to be saved on the disk.',
+                    'description': 'Full content of the documentation file that needs to be saved on the disk. **IMPORTANT**When you want to add a comment that tells the user to add the previous implementation at that place, make sure that the comment starts with `[OLD CODE]` and add a description of what old code should be inserted here. For example, `[OLD CODE] Login route`.',
                 },
             },
             'required': ['name', 'path', 'content'],
