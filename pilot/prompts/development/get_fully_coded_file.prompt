@@ -1,4 +1,4 @@
-Here is how the file `{{ file.path }}` looks like right now:
+Here is how the file `{{ file.path }}/{{ file.name }}` looks like right now:
 ```
 {{ file.content }}
 ```

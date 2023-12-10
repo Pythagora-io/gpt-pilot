@@ -16,6 +16,7 @@ from helpers.exceptions.TokenLimitError import TokenLimitError
 from helpers.exceptions.CommandFinishedEarly import CommandFinishedEarly
 from prompts.prompts import ask_user
 from const.code_execution import MIN_COMMAND_RUN_TIME, MAX_COMMAND_RUN_TIME, MAX_COMMAND_OUTPUT_LENGTH
+from const.messages import AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS
 
 interrupted = False
 
@@ -215,9 +216,9 @@ def execute_command(project, command, timeout=None, success_message=None, comman
                                    'successfully executed.', False, hint=question)
         # TODO can we use .confirm(question, default='yes').ask()  https://questionary.readthedocs.io/en/stable/pages/types.html#confirmation
         print('answer: ' + answer)
-        if answer.lower() in ['n', 'no', 'skip']:
+        if answer.lower() in NEGATIVE_ANSWERS:
             return None, 'SKIP', None
-        elif answer.lower() not in ['', 'y', 'yes', 'ok', 'okay', 'sure']:
+        elif answer.lower() not in AFFIRMATIVE_ANSWERS:
             # "That's not going to work, let's do X instead"
             #       https://github.com/Pythagora-io/gpt-pilot/issues/198
             #       https://github.com/Pythagora-io/gpt-pilot/issues/43#issuecomment-1756352056
@@ -510,7 +511,7 @@ def run_command_until_success(convo, command,
                     'timeout': timeout,
                     'command_id': command_id,
                     'success_message': success_message,
-                }, user_input=cli_response, is_root_task=is_root_task)
+                },user_input=cli_response, is_root_task=is_root_task, ask_before_debug=True)
                 return {'success': success, 'cli_response': cli_response}
             except TooDeepRecursionError as e:
                 # this is only to put appropriate message in the response after TooDeepRecursionError is raised

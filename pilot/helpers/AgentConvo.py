@@ -81,6 +81,7 @@ class AgentConvo:
         else:
             # if we don't, get the response from LLM
             try:
+                self.replace_files()
                 response = create_gpt_chat_completion(self.messages, self.high_level_step, self.agent.project,
                                                       function_calls=function_calls)
             except TokenLimitError as e:
@@ -187,7 +188,7 @@ class AgentConvo:
         for msg in self.messages:
             if msg['role'] == 'user':
                 for file in files:
-                    msg['content'] = self.replace_file_content(msg['content'], file['path'], file['content'])
+                    msg['content'] = self.replace_file_content(msg['content'], f"{file['path']}/{file['name']}", file['content'])
 
     def escape_specials(self, s):
         s = s.replace("\\", "\\\\")
@@ -213,7 +214,7 @@ class AgentConvo:
     def replace_file_content(self, message, file_path, new_content):
         escaped_file_path = re.escape(file_path)
 
-        pattern = rf'\*\*{escaped_file_path}\*\*\n```\n(.*?)\n```'
+        pattern = rf'\*\*{escaped_file_path}\*\*:\n```\n(.*?)\n```'
 
         # Escape special characters in new_content for the sake of regex replacement
         new_content_escaped = self.escape_specials(new_content)
