@@ -121,7 +121,7 @@ class Project:
                     print('yes/no', type='button')
                     should_overwrite_files = styled_text(
                         self,
-                        f'Do you want to overwrite the dev step {self.args["skip_until_dev_step"]} code with system changes? Type y/n',
+                        "Can I overwrite any changes that you might have made to the project since last running GPT Pilot (y/n)?",
                         ignore_user_input_count=True
                     )
 
