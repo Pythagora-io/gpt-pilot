@@ -60,7 +60,7 @@ class Project:
         self.skip_steps = None
         self.main_prompt = None
         self.files = []
-        self.continuing_project = args['continuing_project']
+        self.continuing_project = args.get('continuing_project', False)
 
         self.ipc_client_instance = ipc_client_instance
 
