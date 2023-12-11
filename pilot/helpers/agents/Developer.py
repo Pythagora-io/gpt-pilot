@@ -65,7 +65,7 @@ class Developer(Agent):
             self.implement_task(i, dev_task)
 
         # DEVELOPMENT END
-        self.project.technical_writer.document_project('100')
+        self.project.technical_writer.document_project(100)
         self.project.dot_pilot_gpt.chat_log_folder(None)
         if not self.project.finished:
             self.project.current_step = 'finished'
