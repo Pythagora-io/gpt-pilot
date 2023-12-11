@@ -25,7 +25,7 @@ from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
 from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes
 from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, \
-    COMMAND_TO_RUN, GET_MISSING_SNIPPETS, GET_FULLY_CODED_FILE
+    COMMAND_TO_RUN, GET_FULLY_CODED_FILE
 from database.database import save_progress, get_progress_steps, update_app_status
 from utils.utils import get_os_info
 
@@ -44,7 +44,7 @@ class Developer(Agent):
             update_app_status(self.project.args['app_id'], self.project.current_step)
 
             if self.project.skip_steps is None:
-                self.project.skip_steps = False if ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0') else True
+                self.project.skip_steps = False if (not self.project.continuing_project or ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0')) else True
 
         # DEVELOPMENT
         print(color_green_bold("🚀 Now for the actual development...\n"))
@@ -110,12 +110,12 @@ class Developer(Agent):
 
         while True:
             result = self.execute_task(convo_dev_task,
-                                     development_task['description'],
-                                     steps,
-                                     development_task=development_task,
-                                     continue_development=True,
-                                     is_root_task=True,
-                                     continue_from_step=len(completed_steps))
+                                       development_task['description'],
+                                       steps,
+                                       development_task=development_task,
+                                       continue_development=True,
+                                       is_root_task=True,
+                                       continue_from_step=len(completed_steps))
 
             if result['success']:
                 break
@@ -123,7 +123,7 @@ class Developer(Agent):
             if 'step_index' in result:
                 result['os'] = platform.system()
                 step_index = result['step_index']
-                completed_steps = steps[:step_index+1]
+                completed_steps = steps[:step_index + 1]
                 result['completed_steps'] = completed_steps
                 result['current_step'] = steps[step_index]
                 result['next_steps'] = steps[step_index + 1:]
@@ -144,10 +144,11 @@ class Developer(Agent):
         for file in files_with_comments:
             if len(file['comments']) > 0:
                 fully_coded_file_convo = AgentConvo(self)
-                fully_coded_file_response = fully_coded_file_convo.send_message('development/get_fully_coded_file.prompt', {
-                    'file': self.project.get_files([file['path']])[0],
-                    'new_file': file,
-                }, GET_FULLY_CODED_FILE)
+                fully_coded_file_response = fully_coded_file_convo.send_message(
+                    'development/get_fully_coded_file.prompt', {
+                        'file': self.project.get_files([file['path']])[0],
+                        'new_file': file,
+                    }, GET_FULLY_CODED_FILE)
 
                 file['content'] = fully_coded_file_response['file_content']
 
@@ -158,11 +159,12 @@ class Developer(Agent):
             # TODO this should be refactored so it always uses the same function call
             print(f'Implementing code changes for `{step["code_change_description"]}`')
             code_monkey = CodeMonkey(self.project, self)
-            updated_convo = code_monkey.implement_code_changes(convo, task_description, step['code_change_description'], step, i)
+            updated_convo = code_monkey.implement_code_changes(convo, task_description, step['code_change_description'],
+                                                               step, i)
             if test_after_code_changes:
                 return self.test_code_changes(code_monkey, updated_convo)
             else:
-                return { "success": True }
+                return {"success": True}
 
         # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
         if 'code_change' not in step:
@@ -184,7 +186,7 @@ class Developer(Agent):
         else:
             data = step['command']
         # TODO END
-        additional_message = '' #'Let\'s start with the step #0:\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i+1)) } are finished so let\'s do step #{i + 1} now.\n'
+        additional_message = ''  # 'Let\'s start with the step #0:\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i+1)) } are finished so let\'s do step #{i + 1} now.\n'
 
         command_id = data['command_id'] if 'command_id' in data else None
         success_message = data['success_message'] if 'success_message' in data else None
@@ -245,8 +247,8 @@ class Developer(Agent):
                 response['success'] = True
             else:
                 response['success'] = self.debugger.debug(convo,
-                                                   user_input=response['user_input'],
-                                                   issue_description=step['human_intervention_description'])
+                                                          user_input=response['user_input'],
+                                                          issue_description=step['human_intervention_description'])
                 # TODO add review
 
             return response
@@ -255,7 +257,7 @@ class Developer(Agent):
         # TODO: don't re-run if it's already running
         should_rerun_command = convo.send_message('dev_ops/should_rerun_command.prompt', test_command)
         if should_rerun_command == 'NO':
-            return { 'success': True }
+            return {'success': True}
         elif should_rerun_command == 'YES':
             logger.info('Re-running test command: %s', test_command)
             cli_response, llm_response = execute_command_and_check_cli_response(convo, test_command)
@@ -332,14 +334,15 @@ class Developer(Agent):
             if answer == 'n':
                 return self.dev_help_needed(step)
 
-        return { "success": False, "retry": True }
+        return {"success": False, "retry": True}
 
     def dev_help_needed(self, step):
 
         if step['type'] == 'command':
-            help_description = (color_red_bold('I tried running the following command but it doesn\'t seem to work:\n\n') +
-                color_white_bold(step['command']['command']) +
-                color_red_bold('\n\nCan you please make it work?'))
+            help_description = (
+                        color_red_bold('I tried running the following command but it doesn\'t seem to work:\n\n') +
+                        color_white_bold(step['command']['command']) +
+                        color_red_bold('\n\nCan you please make it work?'))
         elif step['type'] == 'code_change':
             help_description = step['code_change_description']
         elif step['type'] == 'human_intervention':
@@ -354,6 +357,7 @@ class Developer(Agent):
                 return s[start_idx + 3:end_idx]
             else:
                 return s
+
         # TODO end
 
         answer = ''
@@ -368,7 +372,7 @@ class Developer(Agent):
             )
             logger.info("help needed: %s", answer)
 
-        return { "success": True, "user_input": answer }
+        return {"success": True, "user_input": answer}
 
     def execute_task(self, convo, task_description, task_steps, test_command=None, reset_convo=True,
                      test_after_code_changes=True, continue_development=False,
@@ -441,7 +445,7 @@ class Developer(Agent):
                     else:
                         raise e
 
-        result = { "success": True } # if all steps are finished, the task has been successfully implemented
+        result = {"success": True}  # if all steps are finished, the task has been successfully implemented
         convo.load_branch(function_uuid)
         return self.task_postprocessing(convo, development_task, continue_development, result, function_uuid)
 
@@ -450,13 +454,15 @@ class Developer(Agent):
             logger.info('Continue development, last_branch_name: %s', last_branch_name)
             if last_branch_name in iteration_convo.branches.keys():  # if user_feedback is not None we create new convo
                 iteration_convo.load_branch(last_branch_name)
-            user_description = ('Here is a description of what should be working: \n\n' + color_cyan_bold(continue_description) + '\n') \
-                                if continue_description != '' else ''
+            user_description = ('Here is a description of what should be working: \n\n' + color_cyan_bold(
+                continue_description) + '\n') \
+                if continue_description != '' else ''
             user_description = 'Can you check if the app works please? ' + user_description
 
             if self.run_command:
                 if self.project.ipc_client_instance is None or self.project.ipc_client_instance.client is None:
-                    user_description += color_yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
+                    user_description += color_yellow_bold(
+                        '\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
                 else:
                     print(self.run_command, type='run_command')
 
@@ -479,7 +485,7 @@ class Developer(Agent):
             logger.info('response: %s', response)
             user_feedback = response['user_input'] if 'user_input' in response else None
             if user_feedback == 'continue':
-                return { "success": True, "user_input": user_feedback }
+                return {"success": True, "user_input": user_feedback}
 
             if user_feedback is not None:
                 iteration_convo = AgentConvo(self)
@@ -508,7 +514,6 @@ class Developer(Agent):
                 task_steps = llm_response['tasks']
                 self.execute_task(iteration_convo, iteration_description, task_steps, is_root_task=True)
 
-
     def set_up_environment(self):
         self.project.current_step = ENVIRONMENT_SETUP_STEP
         self.convo_os_specific_tech = AgentConvo(self)
@@ -524,7 +529,9 @@ class Developer(Agent):
             print('done', type='button')
             user_input = styled_text(self.project, 'Please set up your local environment so that the technologies listed can be utilized. When you\'re done, write "DONE"')
         save_progress(self.project.args['app_id'], self.project.current_step, {
-            "os_specific_technologies": [], "newly_installed_technologies": [], "app_data": generate_app_data(self.project.args)
+            "os_specific_technologies": [],
+            "newly_installed_technologies": [],
+            "app_data": generate_app_data(self.project.args)
         })
         return
         # ENVIRONMENT SETUP
@@ -533,12 +540,12 @@ class Developer(Agent):
 
         os_info = get_os_info()
         llm_response = self.convo_os_specific_tech.send_message('development/env_setup/specs.prompt',
-            {
-                "name": self.project.args['name'],
-                "app_type": self.project.args['app_type'],
-                "os_info": os_info,
-                "technologies": self.project.architecture
-            }, FILTER_OS_TECHNOLOGIES)
+                                                                {
+                                                                    "name": self.project.args['name'],
+                                                                    "app_type": self.project.args['app_type'],
+                                                                    "os_info": os_info,
+                                                                    "technologies": self.project.architecture
+                                                                }, FILTER_OS_TECHNOLOGIES)
 
         os_specific_technologies = llm_response['technologies']
         for technology in os_specific_technologies:
@@ -601,7 +608,7 @@ class Developer(Agent):
         return llm_response
 
     def test_code_changes(self, code_monkey, convo):
-        return { "success": True }
+        return {"success": True}
         logger.info('Testing code changes...')
         llm_response = convo.send_message('development/task/step_check.prompt', {}, GET_TEST_TYPE)
         test_type = llm_response['type']
