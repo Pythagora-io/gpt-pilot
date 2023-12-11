@@ -64,7 +64,7 @@ class Project:
 
         # self.restore_files({dev_step_id_to_start_from})
 
-        self.finished = args.get('status') == 'finished'
+        self.finished = False
         self.current_step = current_step
         self.name = name
         self.project_description = project_description
@@ -98,10 +98,6 @@ class Project:
 
         self.tech_lead = TechLead(self)
         self.tech_lead.create_development_plan()
-
-        if self.finished:  # once project is finished no need to load all development steps
-            print(color_green("✅  Coding"))
-            return
 
         # TODO move to constructor eventually
         if self.args['step'] is not None and STEPS.index(self.args['step']) < STEPS.index('coding'):
@@ -273,6 +269,7 @@ class Project:
                 user_input = ''
                 print(color_yellow_bold(f'Input required on line {line_number}:\n{line_content}') + '\n')
                 while user_input.lower() not in AFFIRMATIVE_ANSWERS:
+                    print({'path': data['path'], 'line': line_number}, type='openFile')
                     print('yes', type='button')
                     user_input = styled_text(
                         self,

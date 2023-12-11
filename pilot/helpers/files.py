@@ -28,6 +28,7 @@ def update_file(path: str, new_content: Union[str, bytes]):
 
     with open(path, file_mode, encoding=encoding) as file:
         file.write(new_content)
+        print({'path': path, 'line': None}, type='openFile')
         print(color_green(f"Updated file {path}"))
 
 
