@@ -89,7 +89,7 @@ class AgentConvo:
                 raise e
 
             # TODO: move this code to Developer agent - https://github.com/Pythagora-io/gpt-pilot/issues/91#issuecomment-1751964079
-            if self.agent.__class__.__name__ == 'Developer':
+            if self.agent.__class__.__name__ == 'Developer' or self.agent.__class__.__name__ == 'TechnicalWriter':
                 save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, response)
 
         # TODO handle errors from OpenAI

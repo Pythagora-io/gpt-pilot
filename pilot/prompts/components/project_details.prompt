@@ -1,0 +1,39 @@
+Here is a high level description of "{{ name }}":
+```
+{{ app_summary }}
+```
+
+{% if clarifications %}
+Here are some additional questions and answers to clarify the apps description:
+```
+{% for clarification in clarifications %}
+Q: {{ clarification.question }}
+A: {{ clarification.answer }}
+{% endfor %}
+```
+
+{% endif %}{% if user_stories %}
+Here are user stories that specify how users use "{{ name }}":
+```
+{% for story in user_stories %}
+- {{ story }}
+{% endfor %}
+```
+
+{% endif %}{% if user_tasks %}
+Here are user tasks that specify what users need to do to interact with "{{ name }}":
+```
+{% for task in user_tasks %}
+- {{ task }}
+{% endfor %}
+```
+
+{% endif %}{% if technologies %}
+Here are the technologies that {% if task_type == 'feature' %}that were used{% else %}you need to use{% endif %} for this project:
+```
+{% for tech in technologies %}
+- {{ tech }}
+{% endfor %}
+```
+
+{% endif %}
