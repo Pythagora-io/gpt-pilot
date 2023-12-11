@@ -41,3 +41,7 @@ def create_directory(parent_directory, new_directory):
     os.makedirs(new_directory_path, exist_ok=True)
 
     return new_directory_path
+
+
+def count_lines_of_code(files):
+    return sum(len(file['content'].splitlines()) for file in files)

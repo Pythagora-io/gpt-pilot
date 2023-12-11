@@ -1,0 +1,9 @@
+You are working on a {{ app_type }} called "{{ name }}" and you need to create a detailed documentation for current state of project. Your first task is to create README.md file.
+
+{{ project_details }}
+
+{{ files_list }}
+
+DO NOT specify commands to create any folders or files, they will be created automatically - just specify the relative path to file that needs to be written.
+
+Now, based on the project details provided, think step by step and create README.md file for this project.

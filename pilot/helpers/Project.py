@@ -18,6 +18,7 @@ from helpers.agents.TechLead import TechLead
 from helpers.agents.Developer import Developer
 from helpers.agents.Architect import Architect
 from helpers.agents.ProductOwner import ProductOwner
+from helpers.agents.TechnicalWriter import TechnicalWriter
 
 from database.models.development_steps import DevelopmentSteps
 from database.models.file_snapshot import FileSnapshot
@@ -95,6 +96,7 @@ class Project:
 
         self.developer = Developer(self)
         self.developer.set_up_environment()
+        self.technical_writer = TechnicalWriter(self)
 
         self.tech_lead = TechLead(self)
         self.tech_lead.create_development_plan()

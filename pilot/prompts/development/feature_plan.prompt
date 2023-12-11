@@ -1,44 +1,6 @@
 You are working in a software development agency and a project manager and software architect approach you telling you that you're assigned to add new feature to an existing project. You are working on a {{ app_type }} called "{{ name }}" and you need to create a detailed development plan so that developers can start developing the new feature.
 
-Here is a high level description of "{{ name }}":
-```
-{{ app_summary }}
-```
-
-{% if clarifications %}
-Here are some additional questions and answers to clarify the apps description:
-```
-{% for clarification in clarifications %}
-Q: {{ clarification.question }}
-A: {{ clarification.answer }}
-{% endfor %}
-```
-
-{% endif %}
-{% if user_stories %}
-Here are user stories that specify how users use "{{ name }}":
-```
-{% for story in user_stories %}
-- {{ story }}
-{% endfor %}
-```
-
-{% endif %}
-{% if user_tasks %}
-Here are user tasks that specify what users need to do to interact with "{{ name }}":
-```
-{% for task in user_tasks %}
-- {{ task }}
-{% endfor %}
-```
-
-{% endif %}
-Here are the technologies that you need to use for this project:
-```
-{% for tech in technologies %}
-- {{ tech }}
-{% endfor %}
-```
+{{ project_details }}
 
 Here are development tasks that specify what was already coded:
 ```

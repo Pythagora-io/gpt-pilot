@@ -50,10 +50,22 @@ class Developer(Agent):
         print(color_green_bold("🚀 Now for the actual development...\n"))
         logger.info("Starting to create the actual code...")
 
+        total_tasks = len(self.project.development_plan)
+        progress_thresholds = [33, 66]  # Percentages when documentation is created
+        documented_thresholds = set()
+
         for i, dev_task in enumerate(self.project.development_plan):
+            current_progress_percent = round((i / total_tasks) * 100, 2)
+
+            for threshold in progress_thresholds:
+                if current_progress_percent > threshold and threshold not in documented_thresholds:
+                    self.project.technical_writer.document_project(current_progress_percent)
+                    documented_thresholds.add(threshold)
+
             self.implement_task(i, dev_task)
 
         # DEVELOPMENT END
+        self.project.technical_writer.document_project(100)
         self.project.dot_pilot_gpt.chat_log_folder(None)
         if not self.project.finished:
             self.project.current_step = 'finished'
