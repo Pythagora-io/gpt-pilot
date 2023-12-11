@@ -60,6 +60,7 @@ class Project:
         self.skip_steps = None
         self.main_prompt = None
         self.files = []
+        self.continuing_project = args.get('continuing_project', False)
 
         self.ipc_client_instance = ipc_client_instance
 
@@ -268,11 +269,11 @@ class Project:
         if not self.skip_steps:
             inputs_required = self.find_input_required_lines(data['content'])
             for line_number, line_content in inputs_required:
-                user_input = ''
+                user_input = None
                 print(color_yellow_bold(f'Input required on line {line_number}:\n{line_content}') + '\n')
-                while user_input.lower() not in AFFIRMATIVE_ANSWERS:
-                    print({'path': data['path'], 'line': line_number}, type='openFile')
-                    print('yes', type='button')
+                while user_input is None or user_input.lower() not in AFFIRMATIVE_ANSWERS + ['continue']:
+                    print({'path': full_path, 'line': line_number}, type='openFile')
+                    print('continue', type='button')
                     user_input = styled_text(
                         self,
                         f'Please open the file {data["path"]} on the line {line_number} and add the required input. Once you\'re done, type "y" to continue.',
