@@ -16,7 +16,9 @@ def get_arguments():
     args = sys.argv[1:]
 
     # Create an empty dictionary to store the key-value pairs.
-    arguments = {}
+    arguments = {
+        'continuing_project': False
+    }
 
     # Loop through the arguments and parse them as key-value pairs.
     for arg in args:
@@ -39,6 +41,7 @@ def get_arguments():
         app = get_app_by_user_workspace(arguments['user_id'], arguments['workspace'])
         if app is not None:
             arguments['app_id'] = str(app.id)
+            arguments['continuing_project'] = True
     else:
         arguments['workspace'] = None
 
@@ -49,6 +52,7 @@ def get_arguments():
         arguments['app_type'] = app.app_type
         arguments['name'] = app.name
         arguments['status'] = app.status
+        arguments['continuing_project'] = True
         if 'step' not in arguments or ('step' in arguments and not should_execute_step(arguments['step'], app.status)):
             arguments['step'] = 'finished' if app.status == 'finished' else STEPS[STEPS.index(app.status) + 1]
 
