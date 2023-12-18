@@ -94,6 +94,11 @@ class TechLead(Agent):
 
         self.project.feature_summary = llm_response
 
-        save_feature(self.project.args['app_id'], self.project.feature_summary, self.convo_feature_plan.messages)
+        if not self.project.skip_steps:
+            save_feature(self.project.args['app_id'],
+                         self.project.feature_summary,
+                         self.convo_feature_plan.messages,
+                         self.project.checkpoints['last_development_step'])
+
         logger.info('Summary for new feature is created.')
         return
