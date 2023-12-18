@@ -198,6 +198,11 @@ class Project:
 
         files = self.get_files([file.path + '/' + file.name for file in files])
 
+        # Don't send contents of binary files
+        for file in files:
+            if not isinstance(file["content"], str):
+                file["content"] = f"<<binary file, {len(file['content'])} bytes>>"
+
         # TODO temoprary fix to eliminate files that are not in the project
         files = [file for file in files if file['content'] != '']
         # TODO END
