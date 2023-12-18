@@ -8,6 +8,7 @@ from utils.style import color_green_bold, color_green
 class TechnicalWriter(Agent):
     def __init__(self, project):
         super().__init__('technical_writer', project)
+        self.save_dev_steps = True
 
     def document_project(self, percent):
         files = self.project.get_all_coded_files()

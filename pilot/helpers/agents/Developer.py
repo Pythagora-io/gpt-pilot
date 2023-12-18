@@ -36,6 +36,7 @@ class Developer(Agent):
     def __init__(self, project):
         super().__init__('full_stack_developer', project)
         self.run_command = None
+        self.save_dev_steps = True
         self.debugger = Debugger(self)
 
     def start_coding(self):
