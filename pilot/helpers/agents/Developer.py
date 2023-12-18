@@ -52,7 +52,7 @@ class Developer(Agent):
         logger.info("Starting to create the actual code...")
 
         total_tasks = len(self.project.development_plan)
-        progress_thresholds = [33, 66]  # Percentages when documentation is created
+        progress_thresholds = [50]  # Percentages of progress when documentation is created
         documented_thresholds = set()
 
         for i, dev_task in enumerate(self.project.development_plan):
