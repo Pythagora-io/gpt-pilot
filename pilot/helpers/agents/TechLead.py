@@ -14,6 +14,7 @@ DEVELOPMENT_PLANNING_STEP = 'development_planning'
 class TechLead(Agent):
     def __init__(self, project):
         super().__init__('tech_lead', project)
+        self.save_dev_steps = False
 
     def create_development_plan(self):
         self.project.current_step = DEVELOPMENT_PLANNING_STEP
@@ -53,6 +54,7 @@ class TechLead(Agent):
         return
 
     def create_feature_plan(self, feature_description):
+        self.save_dev_steps = True
         self.convo_feature_plan = AgentConvo(self)
         previous_features = get_features_by_app_id(self.project.args['app_id'])
 
@@ -92,6 +94,11 @@ class TechLead(Agent):
 
         self.project.feature_summary = llm_response
 
-        save_feature(self.project.args['app_id'], self.project.feature_summary, self.convo_feature_plan.messages)
+        if not self.project.skip_steps:
+            save_feature(self.project.args['app_id'],
+                         self.project.feature_summary,
+                         self.convo_feature_plan.messages,
+                         self.project.checkpoints['last_development_step'])
+
         logger.info('Summary for new feature is created.')
         return

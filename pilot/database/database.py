@@ -381,6 +381,7 @@ def delete_subsequent_steps(Model, app, step):
             subsequent_step.delete_instance()
             if Model == DevelopmentSteps:
                 FileSnapshot.delete().where(FileSnapshot.development_step == subsequent_step).execute()
+                Feature.delete().where(Feature.previous_step == subsequent_step).execute()
 
 
 def get_all_connected_steps(step, previous_step_field_name):
@@ -424,10 +425,10 @@ def save_file_description(project, path, name, description):
      .execute())
 
 
-def save_feature(app_id, summary, messages):
+def save_feature(app_id, summary, messages, previous_step):
     try:
         app = get_app(app_id)
-        feature = Feature.create(app=app, summary=summary, messages=messages)
+        feature = Feature.create(app=app, summary=summary, messages=messages, previous_step=previous_step)
         return feature
     except DoesNotExist:
         raise ValueError(f"No app with id: {app_id}")
@@ -437,7 +438,10 @@ def get_features_by_app_id(app_id):
     try:
         app = get_app(app_id)
         features = Feature.select().where(Feature.app == app).order_by(Feature.created_at)
-        return [model_to_dict(feature) for feature in features]
+        features_dict = [model_to_dict(feature) for feature in features]
+
+        # return only 'summary' because we store all prompt_data to DB
+        return [{'summary': feature['summary']} for feature in features_dict]
     except DoesNotExist:
         raise ValueError(f"No app with id: {app_id}")
 
