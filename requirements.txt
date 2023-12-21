@@ -21,7 +21,7 @@ regex==2023.10.3
 requests==2.31.0
 six==1.16.0
 termcolor==2.3.0
-tiktoken==0.5.1
+tiktoken==0.5.2
 urllib3==1.26.7
 wcwidth==0.2.8
 yaspin==2.5.0
