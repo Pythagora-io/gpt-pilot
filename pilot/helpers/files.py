@@ -1,6 +1,6 @@
 from pathlib import Path
 import os
-from typing import Optional, Union
+from typing import Optional, Union, Dict
 
 from utils.style import color_green
 
@@ -34,7 +34,7 @@ def update_file(path: str, new_content: Union[str, bytes]):
 
 def get_file_contents(
     path: str, project_root_path: str
-) -> dict[str, Union[str, bytes]]:
+) -> Dict[str, Union[str, bytes]]:
     """
     Get file content and metadata.
 
@@ -50,26 +50,35 @@ def get_file_contents(
     will be a Python string. If that fails, it will be treated as a
     binary file and `content` will be a Python bytes object.
     """
+    # Normalize the path to avoid issues with different path separators
+    full_path = os.path.normpath(os.path.join(project_root_path, path))
+
+    # Check if the path is a file
+    if not os.path.isfile(full_path):
+        raise ValueError(f"The path provided is not a file: {full_path}")
+
     try:
         # Assume it's a text file using UTF-8 encoding
-        file_content = open(path, "r", encoding="utf-8").read()
+        with open(full_path, "r", encoding="utf-8") as file:
+            file_content = file.read()
     except UnicodeDecodeError:
         # If that fails, we'll treat it as a binary file
-        file_content = open(path, "rb").read()
+        with open(full_path, "rb") as file:
+            file_content = file.read()
     except FileNotFoundError:
-        raise ValueError(f"File not found: {path}")
+        raise ValueError(f"File not found: {full_path}")
 
-    file_name = os.path.basename(path)
-    relative_path = str(Path(path).parent.relative_to(project_root_path))
+    file_name = os.path.basename(full_path)
+    relative_path = os.path.relpath(os.path.dirname(full_path), project_root_path)
 
-    if relative_path == ".":
-        relative_path = ""
+    if relative_path == '.':
+        relative_path = ''
 
     return {
         "name": file_name,
         "path": relative_path,
         "content": file_content,
-        "full_path": path,
+        "full_path": full_path,
     }
 
 
