@@ -227,7 +227,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
 
     # TODO when a shell built-in commands (like cd or source) is executed, the output is not captured properly - this will need to be changed at some point
     if platform.system() != 'Windows' and ("cd " in command or "source " in command):
-        command = "bash -c '" + command + "'"
+        command = f"bash -c '{command}'"
 
     project.command_runs_count += 1
     command_run = get_saved_command_run(project, command)
@@ -407,7 +407,7 @@ def build_directory_tree_with_descriptions(path, prefix="", ignore=None, is_last
     output = ""
     indent = '|   ' if not is_last else '    '
     # It's a directory, add its name to the output and then recurse into it
-    output += prefix + "|-- " + os.path.basename(path) + res_for_build_directory_tree(path, files) + "/\n"
+    output += prefix + f"|-- {os.path.basename(path)}{res_for_build_directory_tree(path, files)}/\n"
     if os.path.isdir(path):
         # List items in the directory
         items = os.listdir(path)
