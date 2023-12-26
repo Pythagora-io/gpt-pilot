@@ -28,7 +28,7 @@ def update_file(path: str, new_content: Union[str, bytes]):
 
     with open(path, file_mode, encoding=encoding) as file:
         file.write(new_content)
-        print({'path': path, 'line': None}, type='openFile')
+        print({"path": path, "line": None}, type="openFile")
         print(color_green(f"Updated file {path}"))
 
 
@@ -61,6 +61,8 @@ def get_file_contents(
         # If that fails, we'll treat it as a binary file
         with open(full_path, "rb") as file:
             file_content = file.read()
+    except NotADirectoryError:
+        raise ValueError(f"Path is not a directory: {path}")
     except FileNotFoundError:
         raise ValueError(f"File not found: {full_path}")
     except Exception as e:
