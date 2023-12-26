@@ -22,8 +22,8 @@ def send_telemetry(path_id=None, event='pilot-exit'):
     try:
         response = requests.post("https://api.pythagora.io/telemetry", json=telemetry_data)
         response.raise_for_status()
-    except requests.RequestException as err:
-        print(f"Failed to send telemetry data: {err}")
+    except:  # noqa
+        pass
 
 
 def send_feedback(feedback, path_id):
@@ -40,6 +40,29 @@ def send_feedback(feedback, path_id):
         response.raise_for_status()
     except requests.RequestException as err:
         print(f"Failed to send feedback data: {err}")
+
+
+def trace_code_event(name: str, data: dict):
+    """
+    Record a code event to trace potential logic bugs.
+
+    :param name: name of the event
+    :param data: data to send with the event
+    """
+    path_id = get_path_id()
+
+    # Prepare the telemetry data
+    telemetry_data = {
+        "pathId": path_id,
+        "event": f"trace-{name}",
+        "data": data,
+    }
+
+    try:
+        response = requests.post("https://api.pythagora.io/telemetry", json=telemetry_data)
+        response.raise_for_status()
+    except:  # noqa
+        pass
 
 
 def get_path_id():

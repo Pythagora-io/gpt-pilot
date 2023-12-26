@@ -1,26 +1,115 @@
-{{ files_list }}
-
-Here is a description of changes for a task you're currently working on:
+I need to modify file `{{ file_name }}` that currently looks like this:
 ```
-{{ task_description }}
+{{ file_content }}
 ```
-
-This task is broken down into steps. Please tell me the changes needed to implement the step #{{ step_index }} that is described like this:
+This file needs to be modified by these instructions:
+---------------------instructions------------------------------
+{{ code_changes_description }}
+----------------------end_of_instructions-----------------------------
+{% if full_output %}
+I want you to implement the instructions and show me the COMPLETE NEW VERSION of this file.
+**IMPORTANT**: Your reply should not omit any code in the new implementation or substitute anything with comments like `// .. rest of the code goes here ..`, because I will overwrite the existing file with the content you provide. Output ONLY the content for this file, without additional explanation.
+{% else %}
+I want you to implement the instructions and show me the exact changes (`diff`) in the file `{{ file_name }}`. Reply only with the modifications (`diff`) in the following format:
+-----------------------format----------------------------
+CURRENT_CODE:
 ```
-{{ step_description }}
+(All lines of code from specific code block in the current file that will be replaced by the code under NEW_CODE.)
 ```
-
-Within the file modifications, anything needs to be written by the user, add the comment in the same line as the code that starts with `// INPUT_REQUIRED {input_description}` where `input_description` is a description of what needs to be added here by the user. Just make sure that you put comments only inside files that support comments (e.g. not in JSON files)..
-
+NEW_CODE:
+```
+(All lines of code that will replace the code under CURRENT_CODE. That includes new lines of code and old lines of code that are not being changed but are part of that code block.)
+```
+END
+------------------------end_of_format---------------------------
 **IMPORTANT**
-When you think about in which file should the new code go to, always try to make files as small as possible and put code in more smaller files rather than in one big file. Whenever a file becomes too large (more than 50 lines of code) split it into smaller files.
+Here are rules how to give good response. You have to strictly follow all rules at all times:
 
-**IMPORTANT**
-When you want to add a comment that tells the user to add the previous implementation at that place, make sure that the comment starts with `[OLD CODE]` and add a description of what old code should be inserted here. For example, `[OLD CODE] Login route`.
+Rule #1:
+This is most important rule and there must never be reason to break this rule!
+When the instructions contain hints such as `# .. insert existing code here ...`, it is imperative to interpret and insert the relevant code from the original. Never omit any code that belongs in the new block, and never replace any code with comments such as `// the rest of the code goes here`, '# existing code from another file', or similar, even if the instructions explicitly request it!
+If the instruction examples reference existing code to be pasted in place, always use the specified code from the previous messages in this conversation instead of copying the comment, as illustrated in the following example:
+------------------------example_1---------------------------
+Instructions: "Rename function increase() { // ... existing code } to function inc() { // ... existing code } and increase counter by 10 instead of 1."
+------------------------BAD response for example_1:---------------------------
+CURRENT_CODE:
+```
+function increase() {
+   // ... existing code
+}
+```
+NEW_CODE:
+```
+function inc() {
+   // ... existing code
+  return value + 10;
+}
+```
+------------------------GOOD response for example_1:---------------------------
 
-{% if 'code_change' in step %}
-{% for file in step['code_change'] %}
-**IMPORTANT**
-Implement changes only for the file `{{ step['code_change']['path'] }}` and no other files.
-{% endfor %}
+CURRENT_CODE:
+```
+function increase(value) {
+  if (typeof value !== 'number') {
+    throw new Error('Argument must be number');
+  }
+  return value + 1;
+}
+```
+NEW_CODE:
+```
+function inc(value) {
+  if (typeof value !== 'number') {
+    throw new Error('Argument must be number');
+  }
+  return value + 10;
+}
+END
+```
+------------------------end_of_example_1---------------------------
+
+Rule #2:
+For each change that needs to be done, you must show exactly one CURRENT_CODE code block and one NEW_CODE code block. You can think of this as difference (`diff`) between the current implementation and the new implementation.
+If there are no lines of code that need to be replaced by the NEW_CODE (if the NEW_CODE needs to be added into the CURRENT_CODE), show a couple of lines of code in the CURRENT_CODE before the place where NEW_CODE needs to be added.
+Here is an example of how to add one line `i--;` in the for loop:
+------------------------example_2---------------------------
+CURRENT_CODE:
+```
+let i = 0;
+i++;
+for (let j = 0; j < 100; j++) {
+```
+NEW_CODE:
+```
+let i = 0;
+i++;
+for (let j = 0; j < 100; j++) {
+    i--;
+```
+END
+------------------------end_of_example_2---------------------------
+
+Here's an example how to add code to the beginning of the file:
+------------------------example_3---------------------------
+CURRENT_CODE:
+```
+const app = express();
+const bodyParser = require('body-parser');
+```
+NEW_CODE:
+```
+const express = require('express');
+const app = express();
+const bodyParser = require('body-parser');
+```
+END
+------------------------end_of_example_3---------------------------
+
+Rule #3:
+Do not show the entire file under CURRENT_CODE and NEW_CODE but only the lines that need to be replaced. If any lines should be left as they are in CURRENT_CODE, do not write them.
+
+Rule #4:
+You must output the CURRENT_CODE exactly as it is in the original file, including the indentation from the original code, as it will be used for search-replace, and it should only match the original file in ONE place.
+In the NEW_CODE, remember to follow the same coding style that is used in the rest of the file. Pay special attention to the indentation of the new code and make sure to include all the required old and new code, without omitting anything.
+Pay very close attention to parenthesis and make sure that when CURRENT_CODE is replaced with NEW_CODE there are no extra parenthesis or any parenthesis missing.
 {% endif %}

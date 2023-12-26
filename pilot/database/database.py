@@ -194,7 +194,7 @@ def get_app(app_id, error_if_not_found=True):
         return app
     except DoesNotExist:
         if error_if_not_found:
-            raise ValueError(f"No app with id: {app_id}")
+            raise ValueError(f"No app with id: {app_id}; use python main.py --get-created-apps-with-steps to see created apps")
         return None
 
 

@@ -1,10 +1,49 @@
-Ok, now, take your previous message and convert it to actionable items. An item might be a code change or a command run. When you need to change code, make sure that you put the entire content of the file in the value of `content` key even though you will likely copy and paste the most of the previous message. The commands must be able to run on a {{ os }} machine.
+Ok, now, take your previous message that starts with `{{ instructions_prefix }}` and ends with `{{ instructions_postfix }}` and convert it to a list of actionable steps that will be executed by a machine. Analyze the entire message, think step by step and make sure that you don't omit any information when converting this message to steps.
 
-**IMPORTANT**
-Within the file modifications, anything needs to be written by the user, add the comment in the same line as the code that starts with `// INPUT_REQUIRED {input_description}` where `input_description` is a description of what needs to be added here by the user. Just make sure that you put comments only inside files that support comments (e.g. not in JSON files).
+Each step can be either:
 
-**IMPORTANT**
-When you want to add a comment that tells the user to add the previous implementation at that place, make sure that the comment starts with `[OLD CODE]` and add a description of what old code should be inserted here. For example, `[OLD CODE] Login route`.
+* `command` - command to run (must be able to run on a {{ os }} machine, assume current working directory is project root folder)
+* `save_file` -  create new or update ONE existing file; use this if the existing file is smaller than 20 lines or if many lines need to be changed
+* `modify_file` - update ONE existing file; use this if the existing file is larger than 20 lines and only a few lines need to be updated
 
-**IMPORTANT**
-When you think about in which file should the new code go to, always try to make files as small as possible and put code in more smaller files rather than in one big file. Whenever a file becomes too large (more than 50 lines of code) split it into smaller files.
+If the step is of type `save_file` or `modify_file`, it needs to contain instructions on how to change only ONE file.
+
+**IMPORTANT**: In `code_change_description` field of `modify_file` step, you must provide full information (including code samples, if any) from the previous message, so that the developer can correctly implement the change.  For `save_file`, you MUST include FULL file contents, without omitting anything or adding comments like `// rest of the code goes here`.
+
+Examples:
+------------------------example_1---------------------------
+```
+{
+  "tasks": [
+    {
+      "type": "modify_file",
+      "modify_file": {
+        "name": "server.js",
+        "path": "/server.ejs",
+        "code_change_description": "Update code to use port from environment instead of hardcoding it.\nReplace this line:\nconst port = 3001;\nwith\nconst port = process.env.PORT || 3001;\n",
+      },
+    },
+    {
+      "type": "modify_file",
+      "modify_file": {
+        "name": "server.js",
+        "path": "/server.ejs",
+        "code_change_description": "Within findByEmail() method of User model, replace `return await User.find({email});` with a try/catch block:\ntry\n{  return await User.find({email});\n} catch (err)\n{ return null; }\n",
+      },
+    },
+    {
+      "type": "save_file",
+      "save_file": {
+        "name": "README.md",
+        "path": "/README.md",
+        "content": "# Example Readme\n\nThis is an example readme for the example project.\n\nThanks to everyone who contributes to this repository!\n"
+      }
+    }
+  ]
+}
+```
+------------------------end_of_example_1---------------------------
+
+Within the file modifications, mark any settings that the user must configure manually with `// INPUT_REQUIRED {input_description}` comment,  where `input_description` is a description of what needs to be added here by the user. Use appropriate syntax for comments in the file you're saving. If the file type doesn't support comments (eg JSON), don't add any.
+
+Remember: you must provide all the information (context) for file modification steps that you thought of in the previous message, so that the developer can correctly implement your changes. This is very important!

@@ -54,7 +54,7 @@ class AgentConvo:
 
         # TODO: move this if block (and the other below) to Developer agent - https://github.com/Pythagora-io/gpt-pilot/issues/91#issuecomment-1751964079
         # check if we already have the LLM response saved
-        if self.agent.__class__.__name__ == 'Developer':
+        if hasattr(self.agent, 'save_dev_steps') and self.agent.save_dev_steps:
             self.agent.project.llm_req_num += 1
         development_step = get_saved_development_step(self.agent.project)
         if development_step is not None and self.agent.project.skip_steps:
