@@ -1,0 +1,45 @@
+name: Bug Report
+description: File a bug report
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to fill out this bug report!
+        
+        If you haven't already, please also check [currently open issues](https://github.com/Pythagora-io/gpt-pilot/issues/) to see if the problem you have is already mentioned. If so, please comment on the the existing issue instead of creating a new one.
+        
+        We also have an [active community on Discord](https://discord.gg/HaqXugmxr9). If the issue is more about how to do something with GPT Pilot and not about a bug or problem, consider joining our Discord and discussing there, as it's possible other community members could help you!
+  - type: dropdown
+    id: client
+    attributes:
+      label: Version
+      description: Which version of GPT Pilot are you using?
+      options:
+        - VisualStudio Code extension
+        - Command-line (Python) version
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: Which operating system are you using?
+      options:
+        - Windows 10
+        - Windows 11
+        - MacOS
+        - Ubuntu Linux
+        - Linux (other)
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Please describe the problem in as much detail as possible. If you have screenshots or screen recordings, please add them - they will help us figure out what's going on.
+      placeholder: "When I do [something], [a strange thing or a bug] happens instead of [what I expected]."
+    validations:
+      required: true

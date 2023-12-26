@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest a feature or improvement
+title: "[Enhancement]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to suggest improvement to GPT Pilot!
+        
+        If you haven't already, please also check [currently open issues](https://github.com/Pythagora-io/gpt-pilot/issues/) to see if this is a commonly-asked feature. If so, please comment on the the existing issue instead of creating a new one.
+        
+        We also have an [active community on Discord](https://discord.gg/HaqXugmxr9), so please consider joining and sharing your idea with the rest of the community.
+  - type: dropdown
+    id: client
+    attributes:
+      label: Version
+      description: Which version of GPT Pilot does this apply?
+      options:
+        - VisualStudio Code extension
+        - Command-line (Python) version
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Suggestion
+      description: Please describe your suggestion for the improvement or new feature here.
+      placeholder: "It would be cool if GPT Pilot could do [something]."
+    validations:
+      required: true

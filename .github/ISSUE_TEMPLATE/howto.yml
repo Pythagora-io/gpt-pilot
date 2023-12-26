@@ -1,0 +1,45 @@
+name: How do I...?
+description: Ask for help if you're stuck
+title: "[Howto]: "
+labels:
+  - question
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for trying out GPT Pilot!        
+        
+        In general, it's best to ask the question [in our community Discord](https://discord.gg/HaqXugmxr9). We have an active and friendly community and you will likely get an answer quicker than if you post here. You can also check our [open issues](https://github.com/Pythagora-io/gpt-pilot/issues/) and see if what you're asking about was already discussed there.
+
+        BTW: If you're wondering how to use GPT Pilot with a local LLM, please check our tutorial here: [Using GPT Pilot with Local LLMs](https://github.com/Pythagora-io/gpt-pilot/wiki/Using-GPT%E2%80%90Pilot-with-Local-LLMs).
+  - type: dropdown
+    id: client
+    attributes:
+      label: Version
+      description: Which version of GPT Pilot are you using?
+      options:
+        - VisualStudio Code extension
+        - Command-line (Python) version
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: Which operating system are you using?
+      options:
+        - Windows 10
+        - Windows 11
+        - MacOS
+        - Ubuntu Linux
+        - Linux (other)
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: Please describe your question in as much detail as possible.
+      placeholder: "How can I do [something] with GPT Pilot? I've checked the open issues and Discord and there doesn't seem to be an answer to this."
+    validations:
+      required: true
