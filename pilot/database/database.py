@@ -300,6 +300,9 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
 def get_saved_development_step(project):
     development_step = get_db_model_from_hash_id(DevelopmentSteps, project.args['app_id'],
                                                  project.checkpoints['last_development_step'], project.current_step)
+
+    if development_step is None and project.skip_steps:
+        project.finish_loading()
     return development_step
 
 
@@ -332,6 +335,9 @@ def get_saved_command_run(project, command):
     # }
     command_run = get_db_model_from_hash_id(CommandRuns, project.args['app_id'],
                                             project.checkpoints['last_command_run'], project.current_step)
+
+    if command_run is None and project.skip_steps:
+        project.finish_loading()
     return command_run
 
 
@@ -361,6 +367,9 @@ def get_saved_user_input(project, query):
     # }
     user_input = get_db_model_from_hash_id(UserInputs, project.args['app_id'], project.checkpoints['last_user_input'],
                                            project.current_step)
+
+    if user_input is None and project.skip_steps:
+        project.finish_loading()
     return user_input
 
 

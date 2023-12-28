@@ -227,7 +227,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
 
     # TODO when a shell built-in commands (like cd or source) is executed, the output is not captured properly - this will need to be changed at some point
     if platform.system() != 'Windows' and ("cd " in command or "source " in command):
-        command = "bash -c '" + command + "'"
+        command = f"bash -c '{command}'"
 
     project.command_runs_count += 1
     command_run = get_saved_command_run(project, command)
@@ -340,7 +340,6 @@ def check_if_command_successful(convo, command, cli_response, response, exit_cod
 
     return response
 
-
 def build_directory_tree(path, prefix='', is_root=True, ignore=None):
     """Build the directory tree structure in a simplified format.
 
@@ -357,10 +356,10 @@ def build_directory_tree(path, prefix='', is_root=True, ignore=None):
     indent = '  '
 
     if os.path.isdir(path):
-        dir_name = os.path.basename(path)
         if is_root:
             output += '/'
         else:
+            dir_name = os.path.basename(path)
             output += f'{prefix}/{dir_name}'
 
         # List items in the directory
@@ -374,7 +373,8 @@ def build_directory_tree(path, prefix='', is_root=True, ignore=None):
             output += '\n'
             for index, dir_item in enumerate(dirs):
                 item_path = os.path.join(path, dir_item)
-                output += build_directory_tree(item_path, prefix + indent, is_root=False, ignore=ignore)
+                new_prefix = prefix + indent  # Updated prefix for recursion
+                output += build_directory_tree(item_path, new_prefix, is_root=False, ignore=ignore)
 
             if files:
                 output += f"{prefix}  {', '.join(files)}\n"
@@ -407,7 +407,7 @@ def build_directory_tree_with_descriptions(path, prefix="", ignore=None, is_last
     output = ""
     indent = '|   ' if not is_last else '    '
     # It's a directory, add its name to the output and then recurse into it
-    output += prefix + "|-- " + os.path.basename(path) + res_for_build_directory_tree(path, files) + "/\n"
+    output += prefix + f"|-- {os.path.basename(path)}{res_for_build_directory_tree(path, files)}/\n"
     if os.path.isdir(path):
         # List items in the directory
         items = os.listdir(path)

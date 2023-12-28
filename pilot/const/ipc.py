@@ -11,6 +11,7 @@ MESSAGE_TYPE = {
     'exit': 'exit',                        # Exit message to let extension know we are done
     'ipc': 'ipc',                          # Regular print message that is for extension only
     'openFile': 'openFile',                # Open a file in extension
+    'loadingFinished': 'loadingFinished',  # Marks end of loading project
 }
 
 LOCAL_IGNORE_MESSAGE_TYPES = [
@@ -20,4 +21,5 @@ LOCAL_IGNORE_MESSAGE_TYPES = [
     'exit',
     'ipc',
     'openFile',
+    'loadingFinished',
 ]
