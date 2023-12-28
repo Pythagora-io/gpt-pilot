@@ -45,7 +45,11 @@ class Developer(Agent):
             update_app_status(self.project.args['app_id'], self.project.current_step)
 
             if self.project.skip_steps is None:
-                self.project.skip_steps = False if (not self.project.continuing_project or ('skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0')) else True
+                if (not self.project.continuing_project or (
+                        'skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0')):
+                    self.project.finish_loading()
+                else:
+                    self.project.skip_steps = True
 
         # DEVELOPMENT
         print(color_green_bold("🚀 Now for the actual development...\n"))

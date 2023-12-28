@@ -106,14 +106,14 @@ class Project:
         if self.args['step'] is not None and STEPS.index(self.args['step']) < STEPS.index('coding'):
             clear_directory(self.root_path)
             delete_all_app_development_data(self.args['app_id'])
-            self.skip_steps = False
+            self.finish_loading()
 
         if 'skip_until_dev_step' in self.args:
             self.skip_until_dev_step = self.args['skip_until_dev_step']
             if self.args['skip_until_dev_step'] == '0':
                 clear_directory(self.root_path)
                 delete_all_app_development_data(self.args['app_id'])
-                self.skip_steps = False
+                self.finish_loading()
             elif self.skip_until_dev_step is not None:
                 should_overwrite_files = None
                 while should_overwrite_files is None or should_overwrite_files.lower() not in AFFIRMATIVE_ANSWERS + NEGATIVE_ANSWERS:
@@ -456,3 +456,7 @@ class Project:
             })
             if message_type == MESSAGE_TYPE['user_input_request']:
                 return self.ipc_client_instance.listen()
+
+    def finish_loading(self):
+        print('', type='loadingFinished')
+        self.skip_steps = False

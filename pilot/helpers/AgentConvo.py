@@ -67,7 +67,7 @@ class AgentConvo:
 
             if self.agent.project.skip_until_dev_step and str(
                     development_step.id) == self.agent.project.skip_until_dev_step:
-                self.agent.project.skip_steps = False
+                self.agent.project.finish_loading()
                 delete_all_subsequent_steps(self.agent.project)
 
                 if 'delete_unrelated_steps' in self.agent.project.args and self.agent.project.args[
@@ -81,7 +81,6 @@ class AgentConvo:
         else:
             # if we don't, get the response from LLM
             try:
-                self.agent.project.skip_steps = False  # todo this is quick fix for flag that shows if we fully loaded project, should be implemented properly
                 self.replace_files()
                 response = create_gpt_chat_completion(self.messages, self.high_level_step, self.agent.project,
                                                       function_calls=function_calls)
