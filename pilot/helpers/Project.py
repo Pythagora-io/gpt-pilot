@@ -260,7 +260,7 @@ class Project:
         path = data['path'] if 'path' in data else name
 
         path, full_path = self.get_full_file_path(path, name)
-        update_file(full_path, data['content'])
+        update_file(full_path, data['content'], project=self)
         if full_path not in self.files:
             self.files.append(full_path)
 
@@ -410,7 +410,7 @@ class Project:
 
         clear_directory(self.root_path, IGNORE_FOLDERS + self.files)
         for file_snapshot in file_snapshots:
-            update_file(file_snapshot.file.full_path, file_snapshot.content)
+            update_file(file_snapshot.file.full_path, file_snapshot.content, project=self)
             if file_snapshot.file.full_path not in self.files:
                 self.files.append(file_snapshot.file.full_path)
 

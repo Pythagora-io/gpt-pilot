@@ -343,7 +343,7 @@ class TestProject:
 
         # Then assert that update_file with the correct path
         expected_saved_to = str(Path(test_data['saved_to']))
-        mock_update_file.assert_called_once_with(expected_saved_to, 'Hello World!')
+        mock_update_file.assert_called_once_with(expected_saved_to, 'Hello World!', project=project)
 
         # Also assert that File.insert was called with the expected arguments
         # expected_file_data = {'app': project.app, 'path': test_data['path'], 'name': test_data['name'],
