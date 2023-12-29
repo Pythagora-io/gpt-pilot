@@ -29,9 +29,11 @@ def update_file(path: str, new_content: Union[str, bytes], project=None):
 
     with open(path, file_mode, encoding=encoding) as file:
         file.write(new_content)
-        if project is not None and not project.skip_steps:
-            print({"path": path, "line": None}, type='openFile')
-        print(color_green(f"Updated file {path}"))
+        if project is not None:  # project can be None only in tests
+            if not project.skip_steps:
+                print({"path": path, "line": None}, type='openFile')
+            if not project.check_ipc():
+                print(color_green(f"Updated file {path}"))
 
 
 def get_file_contents(

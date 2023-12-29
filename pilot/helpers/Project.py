@@ -386,7 +386,8 @@ class Project:
         development_step, created = DevelopmentSteps.get_or_create(id=development_step_id)
 
         for file in files:
-            print(color_cyan(f'Saving file {file["full_path"]}'))
+            if not self.check_ipc():
+                print(color_cyan(f'Saving file {file["full_path"]}'))
             # TODO this can be optimized so we don't go to the db each time
             file_in_db, created = File.get_or_create(
                 app=self.app,
@@ -447,15 +448,18 @@ class Project:
                     raise e
 
     def log(self, text, message_type):
-        if self.ipc_client_instance is None or self.ipc_client_instance.client is None:
-            print(text)
-        else:
+        if self.check_ipc():
             self.ipc_client_instance.send({
                 'type': MESSAGE_TYPE[message_type],
                 'content': str(text),
             })
             if message_type == MESSAGE_TYPE['user_input_request']:
                 return self.ipc_client_instance.listen()
+        else:
+            print(text)
+
+    def check_ipc(self):
+        return self.ipc_client_instance is not None and self.ipc_client_instance.client is not None
 
     def finish_loading(self):
         print('', type='loadingFinished')
