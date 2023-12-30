@@ -28,14 +28,14 @@ def styled_text(project, question, ignore_user_input_count=False, style=None, hi
             print(color_yellow_bold(f'{user_input.user_input}'))
             return user_input.user_input
 
-    if project.ipc_client_instance is None or project.ipc_client_instance.client is None:
+    if project.check_ipc():
+        response = print(question, type='user_input_request')
+        print(response)
+    else:
         used_style = style if style is not None else style_config.get_style()
         question = remove_ansi_codes(question)  # Colorama and questionary are not compatible and styling doesn't work
         flush_input()
         response = questionary.text(question, style=used_style).unsafe_ask()  # .ask() is included here
-    else:
-        response = print(question, type='user_input_request')
-        print(response)
 
     if not ignore_user_input_count:
         save_user_input(project, question, response, hint)
