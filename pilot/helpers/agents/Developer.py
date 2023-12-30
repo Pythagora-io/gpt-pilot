@@ -223,10 +223,10 @@ class Developer(Agent):
                 self.get_run_command(convo)
 
             if self.run_command:
-                if (self.project.ipc_client_instance is None or self.project.ipc_client_instance.client is None):
-                    human_intervention_description += color_yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
-                else:
+                if self.project.check_ipc():
                     print(self.run_command, type='run_command')
+                else:
+                    human_intervention_description += color_yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
 
             response = self.project.ask_for_human_intervention('I need human intervention:',
                 human_intervention_description,
@@ -465,11 +465,11 @@ class Developer(Agent):
             user_description = 'Can you check if the app works please? ' + user_description
 
             if self.run_command:
-                if self.project.ipc_client_instance is None or self.project.ipc_client_instance.client is None:
+                if self.project.check_ipc():
+                    print(self.run_command, type='run_command')
+                else:
                     user_description += color_yellow_bold(
                         '\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
-                else:
-                    print(self.run_command, type='run_command')
 
             # continue_description = ''
             # TODO: Wait for a specific string in the output or timeout?

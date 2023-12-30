@@ -5,12 +5,13 @@ from typing import Optional, Union
 from utils.style import color_green
 
 
-def update_file(path: str, new_content: Union[str, bytes]):
+def update_file(path: str, new_content: Union[str, bytes], project=None):
     """
     Update file with the new content.
 
     :param path: Full path to the file
     :param new_content: New content to write to the file
+    :param project: Optional; a Project object related to the file update. Default is None.
 
     Any intermediate directories will be created if they don't exist.
     If file is text, it will be written using UTF-8 encoding.
@@ -28,8 +29,11 @@ def update_file(path: str, new_content: Union[str, bytes]):
 
     with open(path, file_mode, encoding=encoding) as file:
         file.write(new_content)
-        print({"path": path, "line": None}, type="openFile")
-        print(color_green(f"Updated file {path}"))
+        if project is not None:  # project can be None only in tests
+            if not project.skip_steps:
+                print({"path": path, "line": None}, type='openFile')
+            if not project.check_ipc():
+                print(color_green(f"Updated file {path}"))
 
 
 def get_file_contents(
