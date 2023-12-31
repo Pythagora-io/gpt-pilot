@@ -117,7 +117,7 @@ class Project:
             elif self.skip_until_dev_step is not None:
                 should_overwrite_files = None
                 while should_overwrite_files is None or should_overwrite_files.lower() not in AFFIRMATIVE_ANSWERS + NEGATIVE_ANSWERS:
-                    print('yes/no', type='button')
+                    print('yes/no', type='buttons-only')
                     should_overwrite_files = styled_text(
                         self,
                         "Can I overwrite any changes that you might have made to the project since last running GPT Pilot (y/n)?",
@@ -278,7 +278,7 @@ class Project:
                 print(color_yellow_bold(f'Input required on line {line_number}:\n{line_content}') + '\n')
                 while user_input is None or user_input.lower() not in AFFIRMATIVE_ANSWERS + ['continue']:
                     print({'path': full_path, 'line': line_number}, type='openFile')
-                    print('continue', type='button')
+                    print('continue', type='buttons-only')
                     user_input = styled_text(
                         self,
                         f'Please open the file {data["path"]} on the line {line_number} and add the required input. Once you\'re done, type "y" to continue.',

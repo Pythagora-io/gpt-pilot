@@ -8,6 +8,7 @@ MESSAGE_TYPE = {
     'run_command': 'run_command',          # Command to run server needed for extension only
     'project_folder_name': 'project_folder_name',  # Project folder name for extension only
     'button': 'button',                    # Button text for extension only
+    'buttons-only': 'buttons-only',        # Button text for extension only but input field is disabled
     'exit': 'exit',                        # Exit message to let extension know we are done
     'ipc': 'ipc',                          # Regular print message that is for extension only
     'openFile': 'openFile',                # Open a file in extension
@@ -18,6 +19,7 @@ LOCAL_IGNORE_MESSAGE_TYPES = [
     'info',
     'project_folder_name',
     'button',
+    'buttons-only',
     'exit',
     'ipc',
     'openFile',
