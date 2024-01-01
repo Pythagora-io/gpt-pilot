@@ -28,6 +28,21 @@ We use this data to:
 - Identify common workflows and improve the user experience.
 - Ensure the scalability and efficiency of our language model interactions.
 
+### How is this differentr from Dev-tools 
+
+GPT Pilot : 
+
+Type: Code completion tool using GPT or similar language model.
+Functionality: Provides context-aware code suggestions using natural language understanding during coding.
+Integration: Integrated into code editors or development environments.
+Usage: Primarily used in the coding phase to speed up development.
+
+Traditional Development Tools (e.g., Git, Jenkins, JIRA, etc.):
+
+Type: Varied tools for different purposes in the software development lifecycle.
+Functionality: Focus on collaboration, automation, project management, and quality assurance.
+Integration: Used across the entire development lifecycle, from planning and coding to testing and deployment.
+
 ### Your Privacy
 
 Your privacy is important to us. The data collected is purely for internal analysis and will not be shared with third parties. No personal information is collected, and telemetry data is completely anonymized. We adhere to best practices in data security to protect this information.
