@@ -3,13 +3,14 @@ from utils.style import color_yellow, color_red
 from peewee import DoesNotExist, IntegrityError
 from functools import reduce
 import operator
-import psycopg2
-from psycopg2.extensions import quote_ident
+from database.config import DB_NAME, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DATABASE_TYPE
+if DATABASE_TYPE == "postgres":
+    import psycopg2
+    from psycopg2.extensions import quote_ident
 
 import os
 from const.common import PROMPT_DATA_TO_IGNORE, STEPS
 from logger.logger import logger
-from database.config import DB_NAME, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DATABASE_TYPE
 from database.models.components.base_models import database
 from database.models.user import User
 from database.models.app import App

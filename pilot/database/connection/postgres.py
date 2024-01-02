@@ -1,7 +1,8 @@
-import psycopg2
 from peewee import PostgresqlDatabase
-from psycopg2.extensions import quote_ident
-from database.config import DB_NAME, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD
+from database.config import DB_NAME, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DATABASE_TYPE
+if DATABASE_TYPE == "postgres":
+    import psycopg2
+    from psycopg2.extensions import quote_ident
 
 def get_postgres_database():
     return PostgresqlDatabase(DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
