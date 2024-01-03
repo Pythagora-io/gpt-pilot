@@ -237,7 +237,7 @@ def retry_on_exception(func):
                 logger.error(f'There was a problem with request to openai API: {err_str}')
 
                 project = args[2]
-                print('yes/no', type='button')
+                print('yes/no', type='buttons-only')
                 user_message = styled_text(
                     project,
                     'Do you want to try make the same request again? If yes, just press ENTER. Otherwise, type "no".',

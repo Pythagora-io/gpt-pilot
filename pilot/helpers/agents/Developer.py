@@ -370,7 +370,7 @@ class Developer(Agent):
             print(color_red_bold('\n----------------------------- I need your help ------------------------------'))
             print(extract_substring(str(help_description)))
             print(color_red_bold('\n-----------------------------------------------------------------------------'))
-            print('continue', type='button')
+            print('continue', type='buttons-only')
             answer = styled_text(
                 self.project,
                 WHEN_USER_DONE
@@ -531,7 +531,7 @@ class Developer(Agent):
 
         user_input = ''
         while user_input.lower() != 'done':
-            print('done', type='button')
+            print('done', type='buttons-only')
             user_input = styled_text(self.project, 'Please set up your local environment so that the technologies listed can be utilized. When you\'re done, write "DONE"')
         save_progress(self.project.args['app_id'], self.project.current_step, {
             "os_specific_technologies": [],
