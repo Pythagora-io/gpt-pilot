@@ -50,6 +50,8 @@ if __name__ == "__main__":
         if '--api-key' in args:
             os.environ["OPENAI_API_KEY"] = args['--api-key']
         if '--get-created-apps-with-steps' in args:
+            run_exit_fn = False
+
             if ipc_client_instance is not None:
                 print({ 'db_data': get_created_apps_with_steps() }, type='info')
             else:
@@ -60,7 +62,6 @@ if __name__ == "__main__":
                                 f"{'' if len(app['development_steps']) == 0 else app['development_steps'][-1]['id']:3}"
                                 f"  {app['name']}" for app in get_created_apps_with_steps()))
 
-            run_exit_fn = False
         elif '--ux-test' in args:
             from test.ux_tests import run_test
             run_test(args['--ux-test'], args)
