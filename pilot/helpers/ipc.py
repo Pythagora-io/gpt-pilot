@@ -28,7 +28,7 @@ class IPCClient:
             return
 
         while True:
-            data = self.client.recv(4096)
+            data = self.client.recv(65536)
             message = json.loads(data)
 
             if message['type'] == 'response':
