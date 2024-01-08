@@ -1,3 +1,4 @@
+import os
 import builtins
 import pytest
 from unittest.mock import patch
@@ -58,4 +59,3 @@ def test_end_to_end(endpoint, model, monkeypatch):
     # When
     with patch('utils.questionary.questionary', mock_questionary):
         project.start()
-

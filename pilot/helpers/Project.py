@@ -226,7 +226,7 @@ class Project:
                 _, full_path = self.get_full_file_path(file_path, file_path)
                 file_data = get_file_contents(full_path, self.root_path)
             except ValueError:
-                file_data = {"path": file_path, "content": ''}
+                file_data = {"path": file_path, "name": os.path.basename(file_path), "content": ''}
 
             files_with_content.append(file_data)
         return files_with_content

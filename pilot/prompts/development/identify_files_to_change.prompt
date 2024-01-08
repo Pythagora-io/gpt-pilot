@@ -1,0 +1,22 @@
+You're a senior software developer implementing changes in one file in the project.
+Based on the provided instructions and full file list, identify the file
+that needs to be modified.
+
+All files in the project:
+{% for file in files %}
+
+### {{ file['path'] }}/{{ file['name'] }}
+
+```
+{{ file['content'] }}
+```
+{% endfor %}
+
+Instructions:
+{{ code_changes_description }}
+
+Output *ONLY* the file path, relative to project root, in a single Markdown code block,
+without any comments or explanation, like this:
+```
+path/to/file
+```

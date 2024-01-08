@@ -24,8 +24,7 @@ from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
 from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes
-from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, \
-    COMMAND_TO_RUN, GET_FULLY_CODED_FILE
+from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN
 from database.database import save_progress, get_progress_steps, update_app_status
 from utils.utils import get_os_info
 
@@ -88,7 +87,7 @@ class Developer(Agent):
         self.project.dot_pilot_gpt.chat_log_folder(i + 1)
 
         convo_dev_task = AgentConvo(self)
-        convo_dev_task.send_message('development/task/breakdown.prompt', {
+        instructions = convo_dev_task.send_message('development/task/breakdown.prompt', {
             "name": self.project.args['name'],
             "app_type": self.project.args['app_type'],
             "app_summary": self.project.project_description,
@@ -104,9 +103,13 @@ class Developer(Agent):
             "task_type": 'feature' if self.project.finished else 'app'
         })
 
+        instructions_prefix = " ".join(instructions.split()[:5])
+        instructions_postfix = " ".join(instructions.split()[-5:])
         response = convo_dev_task.send_message('development/parse_task.prompt', {
             'running_processes': running_processes,
             'os': platform.system(),
+            'instructions_prefix': instructions_prefix,
+            'instructions_postfix': instructions_postfix,
         }, IMPLEMENT_TASK)
         steps = response['tasks']
         convo_dev_task.remove_last_x_messages(2)
@@ -143,44 +146,36 @@ class Developer(Agent):
                 logger.warning('Testing at end of task failed')
                 break
 
-    def replace_old_code_comments(self, files_with_changes):
-        files_with_comments = [{**file, 'comments': [line for line in file['content'].split('\n') if '[OLD CODE]' in line]} for file in files_with_changes]
-
-        for file in files_with_comments:
-            if len(file['comments']) > 0:
-                fully_coded_file_convo = AgentConvo(self)
-                fully_coded_file_response = fully_coded_file_convo.send_message(
-                    'development/get_fully_coded_file.prompt', {
-                        'file': self.project.get_files([file['path']])[0],
-                        'new_file': file,
-                    }, GET_FULLY_CODED_FILE)
-
-                file['content'] = fully_coded_file_response['file_content']
-
-        return files_with_comments
-
     def step_code_change(self, convo, task_description, step, i, test_after_code_changes):
         if 'code_change_description' in step:
-            # TODO this should be refactored so it always uses the same function call
             print(f'Implementing code changes for `{step["code_change_description"]}`')
             code_monkey = CodeMonkey(self.project, self)
-            updated_convo = code_monkey.implement_code_changes(convo, task_description, step['code_change_description'],
-                                                               step, i)
+            updated_convo = code_monkey.implement_code_changes(convo, task_description, step['code_change_description'], step, i)
             if test_after_code_changes:
                 return self.test_code_changes(code_monkey, updated_convo)
             else:
                 return {"success": True}
 
         # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
-        if 'code_change' not in step:
+        if 'save_file' not in step:
             data = step
         else:
-            data = step['code_change']
-
-        data = self.replace_old_code_comments([data])[0]
+            data = step['save_file']
 
         self.project.save_file(data)
         # TODO end
+        return {"success": True}
+
+    def step_modify_file(self, convo, task_description, step, i, test_after_code_changes):
+        # TODO fix this - the problem is in GPT response that sometimes doesn't return the correct JSON structure
+        if 'modify_file' not in step:
+            data = step
+        else:
+            data = step['modify_file']
+
+        print(f'Updating existing file {data["name"]}: {data["code_change_description"].splitlines()[0]}')
+        code_monkey = CodeMonkey(self.project, self)
+        code_monkey.implement_code_changes(convo, task_description, data['code_change_description'], data, i)
         return {"success": True}
 
     def step_command_run(self, convo, step, i, success_with_cli_response=False):
@@ -405,8 +400,11 @@ class Developer(Agent):
                         # if need_to_see_output and 'cli_response' in result:
                         #     result['user_input'] = result['cli_response']
 
-                    elif step['type'] == 'code_change':
+                    elif step['type'] in ['save_file', 'code_change']:
                         result = self.step_code_change(convo, task_description, step, i, test_after_code_changes)
+
+                    elif step['type'] == 'modify_file':
+                        result = self.step_modify_file(convo, task_description, step, i, test_after_code_changes)
 
                     elif step['type'] == 'human_intervention':
                         result = self.step_human_intervention(convo, step)
@@ -510,9 +508,14 @@ class Developer(Agent):
                     "user_input": user_feedback,
                 })
 
+                instructions_prefix = " ".join(iteration_description.split()[:5])
+                instructions_postfix = " ".join(iteration_description.split()[-5:])
+
                 llm_response = iteration_convo.send_message('development/parse_task.prompt', {
                     'running_processes': running_processes,
                     'os': platform.system(),
+                    'instructions_prefix': instructions_prefix,
+                    'instructions_postfix': instructions_postfix,
                 }, IMPLEMENT_TASK)
                 iteration_convo.remove_last_x_messages(2)
 

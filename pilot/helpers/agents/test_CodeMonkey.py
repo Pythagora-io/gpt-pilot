@@ -1,123 +1,345 @@
-import re
-import os
-from unittest.mock import patch, MagicMock
-from dotenv import load_dotenv
-load_dotenv()
-
-from .CodeMonkey import CodeMonkey
-from .Developer import Developer
-from database.models.files import File
-from database.models.development_steps import DevelopmentSteps
-from helpers.Project import Project, update_file, clear_directory
-from helpers.AgentConvo import AgentConvo
-from test.test_utils import mock_terminal_size
-
-SEND_TO_LLM = False
-WRITE_TO_FILE = False
+from unittest.mock import patch, MagicMock, call
+from os.path import normpath, sep
+import pytest
 
 
-class TestCodeMonkey:
-    def setup_method(self):
-        name = 'TestDeveloper'
-        self.project = Project({
-                'app_id': 'test-developer',
-                'name': name,
-                'app_type': ''
-            },
-            name=name,
-            architecture=[],
-            user_stories=[],
-            current_step='coding',
+from helpers.agents.CodeMonkey import CodeMonkey
+
+
+@pytest.mark.parametrize(
+    ("content", "expected_blocks"),
+    [
+        ("", []),
+        ("no code blocks here", []),
+        ("one\n```\ncode block\n```\nwithout a language tag", ["code block"]),
+        ("one\n```python\ncode block\n```\nwith a language tag", ["code block"]),
+        ("two\n```python\ncode\n```\n```\nblocks\n```", ["code", "blocks"]),
+    ]
+)
+def test_get_code_blocks(content, expected_blocks):
+    code_monkey = CodeMonkey(None, None)
+    assert code_monkey.get_code_blocks(content) == expected_blocks
+
+
+@pytest.mark.parametrize(
+    ("haystack", "needle", "result", "error"),
+    [
+        ### Oneliner old blocks ###
+        # Simple match
+        ("first\nsecond\nthird", "second", "first\n@@NEW@@\nthird", None),
+        # No match
+        ("first\nsecond\nthird", "fourth", None, "not found"),
+        # Too many matches on the same indentation level
+        ("line\nline", "line", None, "found more than once"),
+        # Match, replacement should be indented
+        ("first\n    second\nthird", "second", "first\n    @@NEW@@\nthird", None),
+        # Too many matches, on different indentation levels
+        ("line\n  line", "line", None, "found more than once"),
+
+        ### Multiline old blocks ###
+        # Simple match
+        ("first\nsecond\nthird", "second\nthird", "first\n@@NEW@@", None),
+        # No match
+        ("first\nsecond\nthird", "second\n  third", None, "not found"),
+        # Too many matches on the same indentation level
+        ("a\nb\nc\nd\na\nb", "a\nb", None, "found more than once"),
+        # Too many matches on different indentation levels
+        ("a\nb\nc\nd\n  a\n  b", "a\nb", None, "found more than once"),
+        # Match, replacement should be indented
+        ("first\n  second\n  third", "second\nthird", "first\n  @@NEW@@", None),
+
+        ### Multiline with empty lines ###
+        # Simple match
+        ("first\nsecond\n\nthird", "second\n\nthird", "first\n@@NEW@@", None),
+        # Indented match with empty lines also indentend
+        ("first\n  second\n  \n  third", "second\n\nthird", "first\n  @@NEW@@", None),
+        # Indented match with empty lines not indentend
+        ("first\n  second\n\n  third", "second\n\nthird", "first\n  @@NEW@@", None),
+    ]
+)
+def test_replace(haystack, needle, result, error):
+    code_monkey = CodeMonkey(None, None)
+    if error:
+        with pytest.raises(ValueError, match=error):
+            code_monkey.replace(haystack, needle, "@@NEW@@")
+    else:
+        assert code_monkey.replace(haystack, needle, "@@NEW@@") == result
+
+
+@pytest.mark.parametrize(
+    ("llm_response", "expected"),
+    [
+        ("", []),
+        ("no code block", []),
+        ("```\nfile1.py\nfile2.py\n```\n", ["file1.py", "file2.py"]),
+        ("files:\n```\nfile1.py\nfile2.py\n```\nthat's all folks!", ["file1.py", "file2.py"]),
+    ]
+)
+@patch("helpers.agents.CodeMonkey.AgentConvo")
+def test_identify_files_to_change(MockAgentConvo, llm_response, expected):
+    mock_convo = MockAgentConvo.return_value
+    mock_convo.send_message.return_value = llm_response
+    files = CodeMonkey(None, None).identify_files_to_change("some description", [])
+    assert files == expected
+
+
+def test_codemonkey_simple():
+    mock_project = MagicMock()
+    mock_project.get_all_coded_files.return_value = [
+        {
+            "path": "",
+            "name": "main.py",
+            "content": "one to the\nfoo\nto the three to the four"
+        },
+    ]
+    mock_project.get_full_file_path.return_value = ("", normpath("/path/to/main.py"))
+    mock_convo = MagicMock()
+    mock_convo.send_message.return_value = "## Change\nOld:\n```\nfoo\n```\nNew:\n```\nbar\n```\n"
+
+    cm = CodeMonkey(mock_project, None)
+    cm.implement_code_changes(
+        mock_convo,
+        "test",
+        "Modify all references from `foo` to `bar`",
+        {
+            "path": sep,
+            "name": "main.py",
+        }
+    )
+
+    mock_project.get_all_coded_files.assert_called_once()
+    mock_project.get_full_file_path.assert_called_once_with(sep, "main.py")
+    mock_convo.send_message.assert_called_once_with(
+        "development/implement_changes.prompt", {
+        "full_output": False,
+        "standalone": False,
+        "code_changes_description": "Modify all references from `foo` to `bar`",
+        "file_content": "one to the\nfoo\nto the three to the four",
+        "file_name": "main.py",
+        "files": mock_project.get_all_coded_files.return_value,
+    })
+    mock_project.save_file.assert_called_once_with({
+        "path": sep,
+        "name": "main.py",
+        "content": "one to the\nbar\nto the three to the four"
+    })
+
+
+def test_codemonkey_retry():
+    mock_project = MagicMock()
+    mock_project.get_all_coded_files.return_value = [
+        {
+            "path": "",
+            "name": "main.py",
+            "content": "one to the\nfoo\nto the three to the four"
+        },
+    ]
+    mock_project.get_full_file_path.return_value = ("", normpath("/path/to/main.py"))
+    mock_convo = MagicMock()
+    mock_convo.send_message.side_effect = [
+        # Incorrect match
+        "## Change\nOld:\n```\ntwo\n```\nNew:\n```\nbar\n```\n",
+        # Corrected match on retry
+        "Apologies, here is the corrected version. ## Change\nOld:\n```\nfoo\n```\nNew:\n```\nbar\n```\n",
+    ]
+
+    cm = CodeMonkey(mock_project, None)
+    cm.implement_code_changes(
+        mock_convo,
+        "test",
+        "Modify all references from `foo` to `bar`",
+        {
+            "path": sep,
+            "name": "main.py",
+        }
+    )
+
+    mock_project.get_all_coded_files.assert_called_once()
+    mock_project.get_full_file_path.assert_called_once_with(sep, "main.py")
+    mock_convo.send_message.assert_has_calls([
+        call(
+            "development/implement_changes.prompt", {
+                "full_output": False,
+                "standalone": False,
+                "code_changes_description": "Modify all references from `foo` to `bar`",
+                "file_content": "one to the\nfoo\nto the three to the four",
+                "file_name": "main.py",
+                "files": mock_project.get_all_coded_files.return_value,
+            }
+        ),
+        call(
+            "utils/llm_response_error.prompt", {
+                "error": (
+                    "Old code block not found in the original file:\n```\ntwo\n```\n"
+                    "Old block *MUST* contain the exact same text (including indentation, empty lines, etc.) "
+                    "as the original file in order to match."
+                ),
+            }
+        )
+    ])
+    mock_project.save_file.assert_called_once_with({
+        "path": sep,
+        "name": "main.py",
+        "content": "one to the\nbar\nto the three to the four"
+    })
+
+
+def test_codemonkey_fallback():
+    mock_project = MagicMock()
+    mock_project.get_all_coded_files.return_value = [
+        {
+            "path": "",
+            "name": "main.py",
+            "content": "one to the\nfoo\nto the three to the four"
+        },
+    ]
+    mock_project.get_full_file_path.return_value = ("", normpath("/path/to/main.py"))
+    mock_convo = MagicMock()
+    mock_convo.send_message.side_effect = [
+        # 6 incorrect matches
+        "1 ## Change\nOld:\n```\ntwo\n```\nNew:\n```\nbar\n```\n",
+        "2 ## Change\nOld:\n```\ntwo\n```\nNew:\n```\nbar\n```\n",
+        "3 ## Change\nOld:\n```\ntwo\n```\nNew:\n```\nbar\n```\n",
+        "4 ## Change\nOld:\n```\ntwo\n```\nNew:\n```\nbar\n```\n",
+        "5 ## Change\nOld:\n```\ntwo\n```\nNew:\n```\nbar\n```\n",
+        "6 ## Change\nOld:\n```\ntwo\n```\nNew:\n```\nbar\n```\n",
+        # Fallback returns entire new file
+        "```\none to the\nbar\nto the three to the four\n```\n",
+    ]
+
+    cm = CodeMonkey(mock_project, None)
+    cm.implement_code_changes(
+        mock_convo,
+        "test",
+        "Modify all references from `foo` to `bar`",
+        {
+            "path": sep,
+            "name": "main.py",
+        }
+    )
+
+    mock_project.get_all_coded_files.assert_called_once()
+    mock_project.get_full_file_path.assert_called_once_with(sep, "main.py")
+    mock_convo.send_message.assert_has_calls([
+        call(
+            "development/implement_changes.prompt", {
+                "full_output": False,
+                "standalone": False,
+                "code_changes_description": "Modify all references from `foo` to `bar`",
+                "file_content": "one to the\nfoo\nto the three to the four",
+                "file_name": "main.py",
+                "files": mock_project.get_all_coded_files.return_value,
+            }
+        ),
+        call(
+            "utils/llm_response_error.prompt", {
+                "error": (
+                    "Old code block not found in the original file:\n```\ntwo\n```\n"
+                    "Old block *MUST* contain the exact same text (including indentation, empty lines, etc.) "
+                    "as the original file in order to match."
+                ),
+            }
+        ),
+        call(
+            "utils/llm_response_error.prompt", {
+                "error": (
+                    "Old code block not found in the original file:\n```\ntwo\n```\n"
+                    "Old block *MUST* contain the exact same text (including indentation, empty lines, etc.) "
+                    "as the original file in order to match."
+                ),
+            }
+        ),
+        call(
+            "utils/llm_response_error.prompt", {
+                "error": (
+                    "Old code block not found in the original file:\n```\ntwo\n```\n"
+                    "Old block *MUST* contain the exact same text (including indentation, empty lines, etc.) "
+                    "as the original file in order to match."
+                ),
+            }
+        ),
+        call(
+            "utils/llm_response_error.prompt", {
+                "error": (
+                    "Old code block not found in the original file:\n```\ntwo\n```\n"
+                    "Old block *MUST* contain the exact same text (including indentation, empty lines, etc.) "
+                    "as the original file in order to match."
+                ),
+            }
+        ),
+        call(
+            "utils/llm_response_error.prompt", {
+                "error": (
+                    "Old code block not found in the original file:\n```\ntwo\n```\n"
+                    "Old block *MUST* contain the exact same text (including indentation, empty lines, etc.) "
+                    "as the original file in order to match."
+                ),
+            }
+        ),
+        call(
+            'development/implement_changes.prompt', {
+                "full_output": True,
+                "standalone": False,
+                "code_changes_description": "Modify all references from `foo` to `bar`",
+                "file_content": "one to the\nfoo\nto the three to the four",
+                "file_name": "main.py",
+                "files": mock_project.get_all_coded_files.return_value,
+            }
+        )
+    ])
+    mock_project.save_file.assert_called_once_with({
+        "path": sep,
+        "name": "main.py",
+        "content": "one to the\nbar\nto the three to the four"
+    })
+
+
+@patch("helpers.agents.CodeMonkey.get_file_contents")
+@patch("helpers.agents.CodeMonkey.AgentConvo")
+def test_codemonkey_implement_changes_after_debugging(MockAgentConvo, mock_get_file_contents):
+    """
+    Test that the flow to figure out files that need to be changed
+    (which happens after debugging where we only have a description of the
+    changes needed, not file name).
+
+    Also test standalone conversation (though that's not happening after debugging).
+    """
+    mock_project = MagicMock()
+    mock_project.get_all_coded_files.return_value = []
+    mock_project.get_full_file_path.return_value = ("", "/path/to/main.py")
+    mock_convo = MockAgentConvo.return_value
+    mock_convo.send_message.return_value = "## Change\nOld:\n```\nfoo\n```\nNew:\n```\nbar\n```\n"
+    mock_get_file_contents.return_value = {
+        "name": "main.py",
+        "path": "",
+        "content": "one to the\nfoo\nto the three to the four",
+        "full_path": "/path/to/main.py",
+    }
+
+    cm = CodeMonkey(mock_project, None)
+    with patch.object(cm, "identify_files_to_change") as mock_identify_files_to_change:
+        mock_identify_files_to_change.return_value = ["/main.py"]
+        cm.implement_code_changes(
+            None,
+            "test",
+            "Modify all references from `foo` to `bar`",
+            {},
         )
 
-        self.project.set_root_path(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                                              '../../../workspace/TestDeveloper')))
-        self.project.technologies = []
-        last_step = DevelopmentSteps()
-        last_step.id = 1
-        self.project.checkpoints = {'last_development_step': last_step}
-        self.project.app = None
-        self.developer = Developer(self.project)
-        self.codeMonkey = CodeMonkey(self.project, developer=self.developer)
-
-    @patch('helpers.AgentConvo.get_saved_development_step', return_value=None)
-    @patch('helpers.AgentConvo.save_development_step')
-    @patch('os.get_terminal_size', mock_terminal_size)
-    @patch.object(File, 'insert')
-    def test_implement_code_changes(self, mock_get_dev, mock_save_dev, mock_file_insert):
-        # Given
-        task_description = "High level description of the task"
-        code_changes_description = "Write the word 'Washington' to a .txt file"
-        self.project.get_all_coded_files = lambda: []
-
-        if SEND_TO_LLM:
-            convo = AgentConvo(self.codeMonkey)
-        else:
-            convo = MagicMock()
-            mock_responses = [
-                # [],
-                {'files': [{
-                    'content': 'Washington',
-                    'description': "A new .txt file with the word 'Washington' in it.",
-                    'name': 'washington.txt',
-                    'path': 'washington.txt'
-                }]}
-            ]
-            convo.send_message.side_effect = mock_responses
-
-        if WRITE_TO_FILE:
-            self.codeMonkey.implement_code_changes(convo, task_description, code_changes_description, {})
-        else:
-            # don't write the file, just
-            with patch.object(Project, 'save_file') as mock_save_file:
-                # When
-                self.codeMonkey.implement_code_changes(convo, task_description, code_changes_description, {})
-
-                # Then
-                mock_save_file.assert_called_once()
-                called_data = mock_save_file.call_args[0][0]
-                assert re.match(r'\w+\.txt$', called_data['name'])
-                assert (called_data['path'] == '/' or called_data['path'] == called_data['name'])
-                assert called_data['content'] == 'Washington'
-
-    @patch('helpers.AgentConvo.get_saved_development_step')
-    @patch('helpers.AgentConvo.save_development_step')
-    @patch('os.get_terminal_size', mock_terminal_size)
-    @patch.object(File, 'insert')
-    def test_implement_code_changes_with_read(self, mock_get_dev, mock_save_dev, mock_file_insert):
-        # Given
-        task_description = "High level description of the task"
-        code_changes_description = "Read the file called file_to_read.txt and write its content to a file called output.txt"
-        workspace = self.project.root_path
-        update_file(os.path.join(workspace, 'file_to_read.txt'), 'Hello World!\n')
-        self.project.get_all_coded_files = lambda: []
-
-        if SEND_TO_LLM:
-            convo = AgentConvo(self.codeMonkey)
-        else:
-            convo = MagicMock()
-            mock_responses = [
-                # ['file_to_read.txt', 'output.txt'],
-                {'files': [{
-                    'content': 'Hello World!\n',
-                    'description': 'This file is the output file. The content of file_to_read.txt is copied into this file.',
-                    'name': 'output.txt',
-                    'path': 'output.txt'
-                }]}
-            ]
-            convo.send_message.side_effect = mock_responses
-
-        if WRITE_TO_FILE:
-            self.codeMonkey.implement_code_changes(convo, task_description, code_changes_description, {})
-        else:
-            with patch.object(Project, 'save_file') as mock_save_file:
-                # When
-                self.codeMonkey.implement_code_changes(convo, task_description, code_changes_description, {})
-
-                # Then
-                clear_directory(workspace)
-                mock_save_file.assert_called_once()
-                called_data = mock_save_file.call_args[0][0]
-                assert called_data['name'] == 'output.txt'
-                assert (called_data['path'] == '/' or called_data['path'] == called_data['name'])
-                assert called_data['content'] == 'Hello World!\n'
+    MockAgentConvo.assert_called_once_with(cm)
+    mock_project.get_all_coded_files.assert_called_once()
+    mock_project.get_full_file_path.assert_called_once_with("/", "main.py")
+    mock_convo.send_message.assert_called_once_with(
+        "development/implement_changes.prompt", {
+        "full_output": False,
+        "standalone": True,
+        "code_changes_description": "Modify all references from `foo` to `bar`",
+        "file_content": "one to the\nfoo\nto the three to the four",
+        "file_name": "main.py",
+        "files": mock_project.get_all_coded_files.return_value,
+    })
+    mock_project.save_file.assert_called_once_with({
+        "path": "/",
+        "name": "main.py",
+        "content": "one to the\nbar\nto the three to the four"
+    })
