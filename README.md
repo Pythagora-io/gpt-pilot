@@ -204,6 +204,29 @@ python main.py theme=dark
 ## `update_files_before_start`
 
 
+# Use Anthropic,Huggingface,Palm,Ollama, etc.[Full List](https://docs.litellm.ai/docs/providers)
+
+## Create OpenAI-proxy
+We'll use [LiteLLM](https://docs.litellm.ai/docs/) to create an OpenAI-compatible endpoint, that translates OpenAI calls to any of the [supported providers](https://docs.litellm.ai/docs/providers).
+
+```python
+pip install litellm
+```
+```python
+$ litellm --model ollama/codellama
+
+#INFO: Ollama running on http://0.0.0.0:8000
+```
+
+[Docs](https://docs.litellm.ai/docs/proxy_server)
+
+## Update GPT-Pilot
+In your .env set the openai endpoint to your local server. 
+
+```
+OPENAI_ENDPOINT=http://0.0.0.0:8000
+OPENAI_API_KEY=my-fake-key
+```
 
 # 🔎 Examples
 
