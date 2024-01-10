@@ -17,7 +17,7 @@ from helpers.exceptions import TokenLimitError, ApiKeyNotDefinedError
 from utils.utils import fix_json, get_prompt
 from utils.function_calling import add_function_calls_to_request, FunctionCallSet, FunctionType
 from utils.questionary import styled_text
-
+from utils.env import get_api_key_or_throw
 from .telemetry import telemetry
 
 def get_tokens_in_messages(messages: List[str]) -> int:
@@ -331,6 +331,49 @@ def stream_gpt_completion(data, req_type, project):
         }
         data['max_tokens'] = MAX_GPT_MODEL_TOKENS
         data['model'] = model
+    elif endpoint == 'GEMINI':
+        endpoint_url = os.getenv('GEMINI_ENDPOINT', f'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={get_api_key_or_throw("GEMINI_API_KEY")}')
+        headers = {
+            'Content-Type': 'application/json',
+        }
+
+        def convert_role_to_gemini(role):
+            converter = {'system': 'user', 'assistant': 'model', 'user': 'user'}
+            return converter[role]
+        
+        def convert_data_to_gemini(data):
+            res = []
+            last_role = ''
+            for msg in data["messages"]:
+                converted_role = convert_role_to_gemini(msg['role'])
+                if converted_role == last_role:
+                    res[-1]['parts'][0]['text'] += f'\n\n{msg["content"]}'
+                else:
+                    res.append({'role': converted_role, 'parts': [{'text': msg["content"]}]})
+                last_role = converted_role
+            
+            return {'contents': res}
+
+        new_data = convert_data_to_gemini(data)
+        response = requests.post(
+            endpoint_url,
+            headers=headers,
+            json=new_data,
+        ).json()
+
+        try:
+            gpt_response = response['candidates'][0]['content']['parts'][0]['text']
+        except:
+            response = requests.post(
+                endpoint_url,
+                headers=headers,
+                json=new_data,
+            ).json()
+            gpt_response = response['candidates'][0]['content']['parts'][0]['text']
+
+        new_code = postprocessing(gpt_response, req_type)  # TODO add type dynamically
+        return return_result({'text': new_code}, lines_printed)
+       
     else:
         # If not, send the request to the OpenAI endpoint
         endpoint_url = os.getenv('OPENAI_ENDPOINT', 'https://api.openai.com/v1/chat/completions')
@@ -353,7 +396,6 @@ def stream_gpt_completion(data, req_type, project):
         raise Exception(f"API responded with status code: {response.status_code}. Response text: {response.text}")
 
     # function_calls = {'name': '', 'arguments': ''}
-
     for line in response.iter_lines():
         # Ignore keep-alive new lines
         if line and line != b': OPENROUTER PROCESSING':
@@ -433,14 +475,6 @@ def stream_gpt_completion(data, req_type, project):
     new_code = postprocessing(gpt_response, req_type)  # TODO add type dynamically
     return return_result({'text': new_code}, lines_printed)
 
-
-def get_api_key_or_throw(env_key: str):
-    api_key = os.getenv(env_key)
-    if api_key is None:
-        raise ApiKeyNotDefinedError(env_key)
-    return api_key
-
-
 def assert_json_response(response: str, or_fail=True) -> bool:
     if re.match(r'.*(```(json)?|{|\[)', response):
         return True
@@ -472,3 +506,18 @@ def postprocessing(gpt_response: str, req_type) -> str:
 
 def load_data_to_json(string):
     return json.loads(fix_json(string))
+
+
+def fix_json_response_from_gemini(text, error):
+    endpoint_url = os.getenv('GEMINI_ENDPOINT', f'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={get_api_key_or_throw("GEMINI_API_KEY")}')
+    headers = {
+        'Content-Type': 'application/json',
+    }
+    response = requests.post(
+        endpoint_url,
+        headers=headers,
+        json={
+            "contents": [{"parts": [{"text": f"fix the following json file to a valid format:\n\n{text}\n\n Here is the error:\n{error}"}]}]
+        },
+    ).json()
+    return response

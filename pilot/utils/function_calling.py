@@ -4,7 +4,9 @@ from typing import Union, TypeVar, List, Dict, Literal, Optional, TypedDict, Cal
 
 JsonTypeBase = Union[str, int, float, bool, None, List["JsonType"], Dict[str, "JsonType"]]
 JsonType = TypeVar("JsonType", bound=JsonTypeBase)
-
+import os
+from utils.env import get_api_key_or_throw
+import requests
 
 class FunctionParameters(TypedDict):
     """Function parameters"""
@@ -67,8 +69,25 @@ def parse_agent_response(response, function_calls: Union[FunctionCallSet, None])
     Returns: The post-processed response.
     """
     if function_calls:
-        text = response['text']
-        return json.loads(text)
+        text = response['text'].replace('```', '').replace('json\n', '')
+        if os.getenv("ENDPOINT") == "GEMINI":
+            try:
+                res = json.loads(text)
+            except Exception as e:
+                endpoint_url = os.getenv('GEMINI_ENDPOINT', f'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={get_api_key_or_throw("GEMINI_API_KEY")}')
+                headers = {
+                    'Content-Type': 'application/json',
+                }
+                response = requests.post(
+                    endpoint_url,
+                    headers=headers,
+                    json={
+                        "contents": [{"parts": [{"text": f"fix the following json file to a valid format:\n\n{text}\n\n Here is the error:\n{e}"}]}]
+                    },
+                    # stream=True
+                ).json()
+                return parse_agent_response(response['candidates'][0]['content']['parts'][0], function_calls)
+        return res
 
     return response['text']
 
