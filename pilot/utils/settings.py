@@ -97,7 +97,7 @@ class Loader:
     * If the APPDATA environment variable is set (Windows), use that.
     * Otherwise, use the POSIX default ~/.<app-name> (MacOS, server Linux).
 
-    Settings from the config file can be overriden by environment variables
+    Settings from the config file can be overridden by environment variables
     (all caps) or command line arguments.
 
     This is a singleton object, use it by importing the instance directly
