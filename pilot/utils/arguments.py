@@ -1,3 +1,4 @@
+import argparse
 import hashlib
 import os
 import re
@@ -5,86 +6,74 @@ import sys
 import uuid
 from getpass import getuser
 from database.database import get_app, get_app_by_user_workspace
-from utils.style import color_green_bold, style_config
-from utils.utils import should_execute_step
-from const.common import STEPS
+from utils.style import green_bold
 
 
 def get_arguments():
-    # The first element in sys.argv is the name of the script itself.
-    # Any additional elements are the arguments passed from the command line.
-    args = sys.argv[1:]
 
-    # Create an empty dictionary to store the key-value pairs.
-    arguments = {
-        'continuing_project': False
-    }
+    # Create an ArgumentParser object
+    parser = argparse.ArgumentParser()
 
-    # Loop through the arguments and parse them as key-value pairs.
-    for arg in args:
-        if '=' in arg:
-            key, value = arg.split('=', 1)
-            arguments[key] = value
-        else:
-            arguments[arg] = True
+    # Add command-line arguments with their types and default values
+    parser.add_argument('--user_id', type=str, default=username_to_uuid(getuser()))
+    parser.add_argument('--workspace', type=str, default=None)
+    parser.add_argument('--app_id', type=str, default=str(uuid.uuid4()))
+    parser.add_argument('--email', type=str, default=get_email())
+    parser.add_argument('--password', type=str, default='password')
+    parser.add_argument('--step', type=str, default=None)
 
-    theme_mapping = {'light': style_config.theme.LIGHT, 'dark': style_config.theme.DARK}
-    theme_value = arguments.get('theme', 'dark')
-    style_config.set_theme(theme=theme_mapping.get(theme_value, style_config.theme.DARK))
+    # Parse the command-line arguments
+    arguments = parser.parse_args()
 
-    if 'user_id' not in arguments:
-        arguments['user_id'] = username_to_uuid(getuser())
-
+    # Initialize app as None
     app = None
-    if 'workspace' in arguments:
-        arguments['workspace'] = os.path.abspath(arguments['workspace'])
-        app = get_app_by_user_workspace(arguments['user_id'], arguments['workspace'])
+
+    # If workspace is provided, get the corresponding app
+    if arguments.workspace:
+        app = get_app_by_user_workspace(arguments.user_id, arguments.workspace)
         if app is not None:
-            arguments['app_id'] = str(app.id)
-            arguments['continuing_project'] = True
+            arguments.app_id = app.id
     else:
-        arguments['workspace'] = None
+        arguments.workspace = None
 
-    if 'app_id' in arguments:
-        if app is None:
-            app = get_app(arguments['app_id'])
+    # If app_id is provided, get the app details and print them
+    if arguments.app_id:
+        try:
+            if app is None:
+                app = get_app(arguments.app_id)
 
-        arguments['app_type'] = app.app_type
-        arguments['name'] = app.name
-        arguments['status'] = app.status
-        arguments['continuing_project'] = True
-        if 'step' not in arguments or ('step' in arguments and not should_execute_step(arguments['step'], app.status)):
-            arguments['step'] = 'finished' if app.status == 'finished' else STEPS[STEPS.index(app.status) + 1]
+            arguments.app_type = app.app_type
+            arguments.name = app.name
+            arguments.step = app.status
+            # Add any other fields from the App model you wish to include
 
-        print(color_green_bold('\n------------------ LOADING PROJECT ----------------------'))
-        print(color_green_bold(f'{app.name} (app_id={arguments["app_id"]})'))
-        print(color_green_bold('--------------------------------------------------------------\n'))
-
-    elif '--get-created-apps-with-steps' not in args:
-        arguments['app_id'] = str(uuid.uuid4())
-        print(color_green_bold('\n------------------ STARTING NEW PROJECT ----------------------'))
+            print(green_bold('\n------------------ LOADING PROJECT ----------------------'))
+            print(green_bold(f'{app.name} (app_id={arguments.app_id})'))
+            print(green_bold('--------------------------------------------------------------\n'))
+        except ValueError as e:
+            print(e)
+            # Handle the error as needed, possibly exiting the script
+    else:
+        # If app_id is not provided, print details for starting a new project
+        print(green_bold('\n------------------ STARTING NEW PROJECT ----------------------'))
         print("If you wish to continue with this project in future run:")
-        print(color_green_bold(f'python {sys.argv[0]} app_id={arguments["app_id"]}'))
-        print(color_green_bold('--------------------------------------------------------------\n'))
+        print(green_bold(f'python {sys.argv[0]} app_id={arguments.app_id}'))
+        print(green_bold('--------------------------------------------------------------\n'))
 
-    if 'email' not in arguments:
-        arguments['email'] = get_email()
-
-    if 'password' not in arguments:
-        arguments['password'] = 'password'
-
-    if 'step' not in arguments:
-        arguments['step'] = None
-
+    # Return the parsed arguments
+            
     return arguments
 
+def get_email():
+    # Attempt to get email from .gitconfig
+    gitconfig_path = os.path.expanduser('~/.gitconfig')
 
 def get_email():
     # Attempt to get email from .gitconfig
     gitconfig_path = os.path.expanduser('~/.gitconfig')
 
     if os.path.exists(gitconfig_path):
-        with open(gitconfig_path, 'r', encoding="utf-8") as file:
+        with open(gitconfig_path, 'r') as file:
             content = file.read()
 
             # Use regex to search for email address

@@ -103,16 +103,16 @@ class Project:
         self.tech_lead.create_development_plan()
 
         # TODO move to constructor eventually
-        if self.args['step'] is not None and STEPS.index(self.args['step']) < STEPS.index('coding'):
+        if self.args['step'] is not None and STEPS.index(self.args.step) < STEPS.index('coding'):
             clear_directory(self.root_path)
-            delete_all_app_development_data(self.args['app_id'])
+            delete_all_app_development_data(self.args.app_id)
             self.finish_loading()
 
         if 'skip_until_dev_step' in self.args:
-            self.skip_until_dev_step = self.args['skip_until_dev_step']
-            if self.args['skip_until_dev_step'] == '0':
+            self.skip_until_dev_step = self.args.skip_until_dev_step
+            if self.args.skip_until_dev_step == '0':
                 clear_directory(self.root_path)
-                delete_all_app_development_data(self.args['app_id'])
+                delete_all_app_development_data(self.args.app_id)
                 self.finish_loading()
             elif self.skip_until_dev_step is not None:
                 should_overwrite_files = None
@@ -168,7 +168,7 @@ class Project:
         """
         # files = {}
         # if with_descriptions and False:
-        #     files = File.select().where(File.app_id == self.args['app_id'])
+        #     files = File.select().where(File.app_id == self.args.app_id)
         #     files = {snapshot.name: snapshot for snapshot in files}
         # return build_directory_tree_with_descriptions(self.root_path, ignore=IGNORE_FOLDERS, files=files, add_descriptions=False)
         return build_directory_tree(self.root_path, ignore=IGNORE_FOLDERS)
@@ -190,7 +190,7 @@ class Project:
         Returns:
             list: A list of coded files.
         """
-        files = File.select().where(File.app_id == self.args['app_id'])
+        files = File.select().where(File.app_id == self.args.app_id)
 
         # TODO temoprary fix to eliminate files that are not in the project
         files = [file for file in files if len(FileSnapshot.select().where(FileSnapshot.file_id == file.id)) > 0]
