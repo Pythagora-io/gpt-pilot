@@ -34,6 +34,7 @@ def get_arguments():
         app = get_app_by_user_workspace(arguments.user_id, arguments.workspace)
         if app is not None:
             arguments.app_id = app.id
+            arguments.continuing_project = True
     else:
         arguments.workspace = None
 
@@ -45,21 +46,29 @@ def get_arguments():
 
             arguments.app_type = app.app_type
             arguments.name = app.name
-            arguments.step = app.status
+            arguments.status = app.status
+            arguments.continuing_project = True
             # Add any other fields from the App model you wish to include
-
-            print(green_bold('\n------------------ LOADING PROJECT ----------------------'))
-            print(green_bold(f'{app.name} (app_id={arguments.app_id})'))
-            print(green_bold('--------------------------------------------------------------\n'))
+            if arguments.steps == None or (arguments.step and not should_execute_step(arguments.step, app.status)):
+                arguments.step = 'finished' if app.status == 'finished' else STEPS[STEPS.index(app.status) + 1]
+            print(color_green_bold('\n------------------ LOADING PROJECT ----------------------'))
+            print(color_green_bold(f'{app.name} (app_id={arguments.app_id})'))
+            print(color_green_bold('--------------------------------------------------------------\n'))
         except ValueError as e:
             print(e)
             # Handle the error as needed, possibly exiting the script
-    else:
-        # If app_id is not provided, print details for starting a new project
-        print(green_bold('\n------------------ STARTING NEW PROJECT ----------------------'))
+    elif not arguments.get_created_apps_with_steps:
+        arguments['app_id'] = str(uuid.uuid4())
+        print(color_green_bold('\n------------------ STARTING NEW PROJECT ----------------------'))
         print("If you wish to continue with this project in future run:")
-        print(green_bold(f'python {sys.argv[0]} app_id={arguments.app_id}'))
-        print(green_bold('--------------------------------------------------------------\n'))
+        print(color_green_bold(f'python {sys.argv[0]} app_id={arguments["app_id"]}'))
+        print(color_green_bold('--------------------------------------------------------------\n'))
+    # else:
+    #     # If app_id is not provided, print details for starting a new project
+    #     print(color_green_bold('\n------------------ STARTING NEW PROJECT ----------------------'))
+    #     print("If you wish to continue with this project in future run:")
+    #     print(color_green_bold(f'python {sys.argv[0]} app_id={arguments.app_id}'))
+    #     print(color_green_bold('--------------------------------------------------------------\n'))
 
     # Return the parsed arguments
 
