@@ -60,7 +60,7 @@ class Project:
         self.skip_steps = None
         self.main_prompt = None
         self.files = []
-        self.continuing_project = args.get('continuing_project', False)
+        self.continuing_project = args.continuing_project #if continuing_project is not present in args, it will default to False.
 
         self.ipc_client_instance = ipc_client_instance
 
@@ -103,7 +103,7 @@ class Project:
         self.tech_lead.create_development_plan()
 
         # TODO move to constructor eventually
-        if self.args['step'] is not None and STEPS.index(self.args.step) < STEPS.index('coding'):
+        if self.args.step is not None and STEPS.index(self.args.step) < STEPS.index('coding'):
             clear_directory(self.root_path)
             delete_all_app_development_data(self.args.app_id)
             self.finish_loading()
