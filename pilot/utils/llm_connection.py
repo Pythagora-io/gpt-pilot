@@ -344,7 +344,8 @@ def stream_gpt_completion(data, req_type, project):
         endpoint_url,
         headers=headers,
         json=data,
-        stream=True
+        stream=True,
+        timeout=120
     )
 
     if response.status_code != 200:
