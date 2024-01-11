@@ -6,8 +6,9 @@ import sys
 import uuid
 from getpass import getuser
 from database.database import get_app, get_app_by_user_workspace
-from utils.style import green_bold
-
+from utils.style import color_green_bold, style_config
+from utils.utils import should_execute_step
+from const.common import STEPS
 
 def get_arguments():
 
@@ -61,7 +62,7 @@ def get_arguments():
         print(green_bold('--------------------------------------------------------------\n'))
 
     # Return the parsed arguments
-            
+
     return arguments
 
 def get_email():
