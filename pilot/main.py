@@ -19,6 +19,7 @@ from database.database import database_exists, create_database, tables_exist, cr
 from utils.settings import settings, loader
 from utils.telemetry import telemetry
 
+
 def init():
     # Check if the "euclid" database exists, if not, create it
     if not database_exists():
@@ -79,12 +80,20 @@ if __name__ == "__main__":
             project.start()
             project.finish()
             telemetry.set("end_result", "success")
+
+    except KeyboardInterrupt:
+        telemetry.set("end_result", "interrupt")
+        if project.check_ipc():
+            telemetry.send()
+            run_exit_fn = False
+
     except Exception:
         print(color_red('---------- GPT PILOT EXITING WITH ERROR ----------'))
         traceback.print_exc()
         print(color_red('--------------------------------------------------'))
         ask_feedback = False
         telemetry.set("end_result", "failure")
+
     finally:
         if run_exit_fn:
             exit_gpt_pilot(project, ask_feedback)
