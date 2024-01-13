@@ -1,3 +1,4 @@
+import ast
 import json
 from logging import getLogger
 from os import getenv, makedirs
@@ -295,9 +296,29 @@ def get_package_version() -> str:
 
     Note: until we have the packaging set up, this always returns "0.0.0".
 
-    :return: package version as defined in setup.py or pyproject.toml
+    :return: package version as defined in setup.py
     """
-    return "0.0.0"
+    UNKNOWN = "0.0.0"
+
+    setup_file = Path(__file__).parent.parent.parent / "setup.py"
+    if not setup_file.is_file():
+        return UNKNOWN
+
+    try:
+        with open(setup_file, "r", encoding="utf-8") as fp:
+            code = ast.parse(fp.read(), filename="setup.py")
+            for node in code.body:
+                if (
+                    isinstance(node, ast.Assign)
+                    and len(node.targets) == 1
+                    and isinstance(node.targets[0], ast.Name)
+                    and node.targets[0].id == "VERSION"
+                    and isinstance(node.value, ast.Constant)
+                ):
+                    return str(node.value.value)
+    except:  # noqa
+        return UNKNOWN
+
 
 
 def get_version() -> str:
