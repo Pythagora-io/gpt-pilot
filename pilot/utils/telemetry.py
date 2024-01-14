@@ -234,7 +234,8 @@ class Telemetry:
                 "file": file_path,
                 "line": tb.tb_lineno
             }
-            frames.append(frame_info)
+            if not file_path.startswith('pilot-env'):
+                frames.append(frame_info)
             tb = tb.tb_next
 
         frames.reverse()
