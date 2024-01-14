@@ -47,7 +47,6 @@ if __name__ == "__main__":
 
         builtins.print, ipc_client_instance = get_custom_print(args)
 
-
         if '--api-key' in args:
             os.environ["OPENAI_API_KEY"] = args['--api-key']
         if '--get-created-apps-with-steps' in args:
@@ -77,6 +76,9 @@ if __name__ == "__main__":
 
             # TODO get checkpoint from database and fill the project with it
             project = Project(args, ipc_client_instance=ipc_client_instance)
+            if project.check_ipc():
+                telemetry.set("is_extension", True)
+
             project.start()
             project.finish()
             telemetry.set("end_result", "success")
@@ -87,7 +89,8 @@ if __name__ == "__main__":
             telemetry.send()
             run_exit_fn = False
 
-    except Exception:
+    except Exception as err:
+        telemetry.record_crash(err)
         print(color_red('---------- GPT PILOT EXITING WITH ERROR ----------'))
         traceback.print_exc()
         print(color_red('--------------------------------------------------'))
