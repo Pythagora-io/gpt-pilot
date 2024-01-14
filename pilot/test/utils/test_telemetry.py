@@ -320,3 +320,24 @@ def test_send_clears_data_after_sending(mock_settings, _mock_post):
     telemetry.send()
 
     assert telemetry.data["model"] is None
+
+
+@patch("utils.telemetry.settings")
+def test_record_crash(mock_settings):
+    mock_settings.telemetry = {
+        "id": "test-id",
+        "endpoint": "test-endpoint",
+        "enabled": True,
+    }
+
+    telemetry = Telemetry()
+    try:
+        raise ValueError("test error")
+    except Exception as err:
+        telemetry.record_crash(err)
+
+    diag = telemetry.data["crash_diagnostics"]
+    assert diag["exception_class"] == "ValueError"
+    assert diag["exception_message"] == "test error"
+    assert diag["frames"][0]["file"] == "pilot/test/utils/test_telemetry.py"
+    assert "ValueError: test error" in diag["stack_trace"]

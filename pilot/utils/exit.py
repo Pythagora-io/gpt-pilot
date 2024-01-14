@@ -67,6 +67,8 @@ def ask_to_store_prompt(project, path_id):
             response.raise_for_status()
     except requests.RequestException as err:
         print(f"Failed to store prompt: {err}")
+    except KeyboardInterrupt:
+        pass
 
 
 def ask_user_feedback(project, path_id, ask_feedback):
@@ -79,18 +81,18 @@ def ask_user_feedback(project, path_id, ask_feedback):
         send_feedback(feedback, path_id)
 
 
-def ask_user_email(project, path_id, ask_feedback):
-    if not ask_feedback:
-        return False
-
+def ask_user_email(project):
     question = (
         "How did GPT Pilot do? We'd love to talk with you and hear your thoughts. "
         "If you'd like to be contacted by us, please provide your email address, or just press ENTER to exit:"
     )
-    feedback = styled_text(project, question, ignore_user_input_count=True)
-    if feedback:  # only send if user provided feedback
-        telemetry.set("user_contact", feedback)
-        return True
+    try:
+        feedback = styled_text(project, question, ignore_user_input_count=True)
+        if feedback:  # only send if user provided feedback
+            telemetry.set("user_contact", feedback)
+            return True
+    except KeyboardInterrupt:
+        pass
     return False
 
 def exit_gpt_pilot(project, ask_feedback=True):
@@ -99,9 +101,9 @@ def exit_gpt_pilot(project, ask_feedback=True):
 
     send_telemetry(path_id)
 
-    ask_to_store_prompt(project, path_id)
-
-    ask_user_email(project, path_id, ask_feedback)
+    if ask_feedback:
+        ask_to_store_prompt(project, path_id)
+        ask_user_email(project)
 
     # TODO: Turned off for now because we're asking for email, and we don't want to
     # annoy people.
