@@ -1,6 +1,8 @@
 from logging import getLogger
+from pathlib import Path
 import sys
 import time
+import traceback
 from typing import Any
 from uuid import uuid4
 
@@ -45,6 +47,7 @@ class Telemetry:
     """
 
     DEFAULT_ENDPOINT = "https://api.pythagora.io/telemetry"
+    MAX_CRASH_FRAMES = 3
 
     def __init__(self):
         self.enabled = False
@@ -74,6 +77,8 @@ class Telemetry:
             "python_version": sys.version,
             # GPT Pilot version
             "pilot_version": version,
+            # Is extension used
+            "is_extension": False,
             # LLM used
             "model": None,
             # Initial prompt
@@ -98,6 +103,8 @@ class Telemetry:
             "user_feedback": None,
             # Optional user contact email
             "user_contact": None,
+            # If GPT Pilot crashes, record diagnostics
+            "crash_diagnostics": None,
         }
         if sys.platform == "linux":
             try:
@@ -194,7 +201,49 @@ class Telemetry:
             return
 
         self.end_time = time.time()
-        self.data["elapsed_time"] = self.end_time - self.start_time
+        self.data["elapsed_time"] = int(self.end_time - self.start_time)
+
+    def record_crash(
+        self,
+        exception: Exception,
+    ):
+        """
+        Record crash diagnostics.
+
+        :param error: exception that caused the crash
+
+        Records the following crash diagnostics data:
+        * full stack trace
+        * exception (class name and message)
+        * file:line for the last (innermost) 3 frames of the stack trace
+        """
+        if not self.enabled:
+            return
+
+        root_dir = Path(__file__).parent.parent.parent
+        stack_trace = traceback.format_exc()
+        exception_class_name = exception.__class__.__name__
+        exception_message = str(exception)
+
+        tb = exception.__traceback__
+        frames = []
+        while tb is not None:
+            frame = tb.tb_frame
+            file_path = Path(frame.f_code.co_filename).absolute().relative_to(root_dir).as_posix()
+            frame_info = {
+                "file": file_path,
+                "line": tb.tb_lineno
+            }
+            frames.append(frame_info)
+            tb = tb.tb_next
+
+        frames.reverse()
+        self.data["crash_diagnostics"] = {
+            "stack_trace": stack_trace,
+            "exception_class": exception_class_name,
+            "exception_message": exception_message,
+            "frames": frames[:self.MAX_CRASH_FRAMES],
+        }
 
     def send(self, event:str = "pilot-telemetry"):
         """
