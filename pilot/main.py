@@ -37,7 +37,6 @@ def init():
 
 
 if __name__ == "__main__":
-    send_telemetry(event='pilot-start')
     ask_feedback = True
     project = None
     run_exit_fn = True
@@ -68,6 +67,7 @@ if __name__ == "__main__":
             run_test(args['--ux-test'], args)
             run_exit_fn = False
         else:
+            send_telemetry(event='pilot-start')
             if settings.telemetry is None:
                 telemetry.setup()
                 loader.save("telemetry")
