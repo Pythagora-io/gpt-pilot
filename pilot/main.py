@@ -91,12 +91,11 @@ if __name__ == "__main__":
             run_exit_fn = False
 
     except Exception as err:
-        telemetry.record_crash(err)
         print(color_red('---------- GPT PILOT EXITING WITH ERROR ----------'))
         traceback.print_exc()
         print(color_red('--------------------------------------------------'))
         ask_feedback = False
-        telemetry.set("end_result", "failure")
+        telemetry.record_crash(err)
 
     finally:
         if run_exit_fn:
