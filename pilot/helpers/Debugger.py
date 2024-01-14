@@ -47,7 +47,7 @@ class Debugger:
 
             if ask_before_debug or i > 0:
                 print('yes/no', type='button')
-                answer = ask_user(self.agent.project, 'Can I start debugging this issue?', require_some_input=False)
+                answer = ask_user(self.agent.project, 'Can I start debugging this issue [Y/n/error details]?', require_some_input=False)
                 if answer.lower() in NEGATIVE_ANSWERS:
                     return True
                 if answer and answer.lower() not in AFFIRMATIVE_ANSWERS:
