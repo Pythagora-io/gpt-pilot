@@ -12,7 +12,7 @@ from utils.style import color_red
 from utils.custom_print import get_custom_print
 from helpers.Project import Project
 from utils.arguments import get_arguments
-from utils.exit import exit_gpt_pilot
+from utils.exit import exit_gpt_pilot, send_telemetry
 from logger.logger import logger
 from database.database import database_exists, create_database, tables_exist, create_tables, get_created_apps_with_steps
 
@@ -37,6 +37,7 @@ def init():
 
 
 if __name__ == "__main__":
+    send_telemetry(event='pilot-start')
     ask_feedback = True
     project = None
     run_exit_fn = True
