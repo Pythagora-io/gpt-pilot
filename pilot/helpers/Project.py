@@ -4,6 +4,8 @@ from pathlib import Path
 import re
 from typing import Tuple
 
+import peewee
+
 from const.messages import CHECK_AND_CONTINUE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS
 from utils.style import color_yellow_bold, color_cyan, color_white_bold, color_green
 from const.common import IGNORE_FOLDERS, STEPS
@@ -190,11 +192,14 @@ class Project:
         Returns:
             list: A list of coded files.
         """
-        files = File.select().where(File.app_id == self.args['app_id'])
-
-        # TODO temoprary fix to eliminate files that are not in the project
-        files = [file for file in files if len(FileSnapshot.select().where(FileSnapshot.file_id == file.id)) > 0]
-        # TODO END
+        files = (
+            File
+                .select()
+                .where(
+                    (File.app_id == self.args['app_id']) &
+                    peewee.fn.EXISTS(FileSnapshot.select().where(FileSnapshot.file_id == File.id))
+                )
+            )
 
         files = self.get_files([file.path + '/' + file.name for file in files])
 
