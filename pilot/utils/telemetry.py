@@ -220,23 +220,29 @@ class Telemetry:
         if not self.enabled:
             return
 
+        self.set("end_result", "failure")
+
         root_dir = Path(__file__).parent.parent.parent
         stack_trace = traceback.format_exc()
         exception_class_name = exception.__class__.__name__
         exception_message = str(exception)
-
-        tb = exception.__traceback__
         frames = []
-        while tb is not None:
-            frame = tb.tb_frame
-            file_path = Path(frame.f_code.co_filename).absolute().relative_to(root_dir).as_posix()
-            frame_info = {
-                "file": file_path,
-                "line": tb.tb_lineno
-            }
-            if not file_path.startswith('pilot-env'):
-                frames.append(frame_info)
-            tb = tb.tb_next
+
+        # Let's not crash if there's something funny in frame or path handling
+        try:
+            tb = exception.__traceback__
+            while tb is not None:
+                frame = tb.tb_frame
+                file_path = Path(frame.f_code.co_filename).absolute().relative_to(root_dir).as_posix()
+                frame_info = {
+                    "file": file_path,
+                    "line": tb.tb_lineno
+                }
+                if not file_path.startswith('pilot-env'):
+                    frames.append(frame_info)
+                tb = tb.tb_next
+        except:  # noqa
+            pass
 
         frames.reverse()
         self.data["crash_diagnostics"] = {
