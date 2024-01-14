@@ -33,8 +33,8 @@ def get_custom_print(args):
         built_in_print(message, **kwargs)
 
     ipc_client_instance = None
-    if '--external-log-process-port' in args:
-        ipc_client_instance = IPCClient(args['--external-log-process-port'])
+    if args.external_log_process_port:
+        ipc_client_instance = IPCClient(args.external_log_process_port)
         return print_to_external_process, ipc_client_instance
     else:
         return local_print, ipc_client_instance
