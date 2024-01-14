@@ -459,6 +459,12 @@ class Project:
             print(text)
 
     def check_ipc(self):
+        """
+        Checks if there is an open Inter-Process Communication (IPC) connection.
+
+        Returns:
+            bool: True if there is an open IPC connection, False otherwise.
+        """
         return self.ipc_client_instance is not None and self.ipc_client_instance.client is not None
 
     def finish_loading(self):
