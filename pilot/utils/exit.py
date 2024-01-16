@@ -43,10 +43,7 @@ def send_feedback(feedback, path_id):
 
 
 def get_path_id():
-    # Calculate the SHA-256 hash of the installation directory
-    installation_directory = os.path.abspath(os.path.join(os.getcwd(), ".."))
-    return hashlib.sha256(installation_directory.encode()).hexdigest()
-
+    return telemetry.telemetry_id
 
 def ask_to_store_prompt(project, path_id):
     init_prompt = project.main_prompt if project is not None and project.main_prompt else None
