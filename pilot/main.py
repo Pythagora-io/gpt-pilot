@@ -101,6 +101,8 @@ if __name__ == "__main__":
         telemetry.record_crash(err)
 
     finally:
+        if project is not None:
+            project.finish_loading()
         if run_exit_fn:
             exit_gpt_pilot(project, ask_feedback)
         sys.exit(0)
