@@ -47,6 +47,9 @@ if __name__ == "__main__":
 
         builtins.print, ipc_client_instance = get_custom_print(args)
 
+        if "email" in args:
+            telemetry.set("user_contact", args["email"])
+
         if '--api-key' in args:
             os.environ["OPENAI_API_KEY"] = args['--api-key']
         if '--get-created-apps-with-steps' in args:
