@@ -47,9 +47,6 @@ if __name__ == "__main__":
 
         builtins.print, ipc_client_instance = get_custom_print(args)
 
-        if "email" in args:
-            telemetry.set("user_contact", args["email"])
-
         if '--api-key' in args:
             os.environ["OPENAI_API_KEY"] = args['--api-key']
         if '--get-created-apps-with-steps' in args:
@@ -70,13 +67,16 @@ if __name__ == "__main__":
             run_test(args['--ux-test'], args)
             run_exit_fn = False
         else:
-            send_telemetry(event='pilot-start')
             if settings.telemetry is None:
                 telemetry.setup()
                 loader.save("telemetry")
+            send_telemetry(event='pilot-start')
 
             if args.get("app_id"):
                 telemetry.set("is_continuation", True)
+
+            if "email" in args:
+                telemetry.set("user_contact", args["email"])
 
             # TODO get checkpoint from database and fill the project with it
             project = Project(args, ipc_client_instance=ipc_client_instance)
