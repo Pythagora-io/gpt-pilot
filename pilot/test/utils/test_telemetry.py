@@ -336,8 +336,27 @@ def test_record_crash(mock_settings):
     except Exception as err:
         telemetry.record_crash(err)
 
+    assert telemetry.data["end_result"] == "failure"
     diag = telemetry.data["crash_diagnostics"]
     assert diag["exception_class"] == "ValueError"
     assert diag["exception_message"] == "test error"
     assert diag["frames"][0]["file"] == "pilot/test/utils/test_telemetry.py"
     assert "ValueError: test error" in diag["stack_trace"]
+
+
+@patch("utils.telemetry.settings")
+def test_record_crash_crashes(mock_settings):
+    mock_settings.telemetry = {
+        "id": "test-id",
+        "endpoint": "test-endpoint",
+        "enabled": True,
+    }
+
+    telemetry = Telemetry()
+    telemetry.record_crash(None)
+
+    assert telemetry.data["end_result"] == "failure"
+    diag = telemetry.data["crash_diagnostics"]
+    assert diag["exception_class"] == "NoneType"
+    assert diag["exception_message"] == "None"
+    assert diag["frames"] == []

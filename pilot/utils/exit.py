@@ -8,12 +8,15 @@ from utils.questionary import styled_text
 
 from utils.telemetry import telemetry
 
-def send_telemetry(path_id):
+
+def send_telemetry(path_id=None, event='pilot-exit'):
+    if path_id is None:
+        path_id = get_path_id()
 
     # Prepare the telemetry data
     telemetry_data = {
         "pathId": path_id,
-        "event": "pilot-exit"
+        "event": event
     }
 
     try:

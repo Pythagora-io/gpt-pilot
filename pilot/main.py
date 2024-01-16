@@ -12,12 +12,13 @@ from utils.style import color_red
 from utils.custom_print import get_custom_print
 from helpers.Project import Project
 from utils.arguments import get_arguments
-from utils.exit import exit_gpt_pilot
+from utils.exit import exit_gpt_pilot, send_telemetry
 from logger.logger import logger
 from database.database import database_exists, create_database, tables_exist, create_tables, get_created_apps_with_steps
 
 from utils.settings import settings, loader
 from utils.telemetry import telemetry
+
 
 def init():
     # Check if the "euclid" database exists, if not, create it
@@ -46,6 +47,9 @@ if __name__ == "__main__":
 
         builtins.print, ipc_client_instance = get_custom_print(args)
 
+        if "email" in args:
+            telemetry.set("user_contact", args["email"])
+
         if '--api-key' in args:
             os.environ["OPENAI_API_KEY"] = args['--api-key']
         if '--get-created-apps-with-steps' in args:
@@ -66,6 +70,7 @@ if __name__ == "__main__":
             run_test(args['--ux-test'], args)
             run_exit_fn = False
         else:
+            send_telemetry(event='pilot-start')
             if settings.telemetry is None:
                 telemetry.setup()
                 loader.save("telemetry")
@@ -81,13 +86,20 @@ if __name__ == "__main__":
             project.start()
             project.finish()
             telemetry.set("end_result", "success")
+
+    except KeyboardInterrupt:
+        telemetry.set("end_result", "interrupt")
+        if project.check_ipc():
+            telemetry.send()
+            run_exit_fn = False
+
     except Exception as err:
-        telemetry.record_crash(err)
         print(color_red('---------- GPT PILOT EXITING WITH ERROR ----------'))
         traceback.print_exc()
         print(color_red('--------------------------------------------------'))
         ask_feedback = False
-        telemetry.set("end_result", "failure")
+        telemetry.record_crash(err)
+
     finally:
         if run_exit_fn:
             exit_gpt_pilot(project, ask_feedback)

@@ -30,7 +30,8 @@ def main():
         "docker-compose.yml",
         "LICENSE",
         "README.md",
-        "requirements.txt"
+        "requirements.txt",
+        "setup.py"
     ]
 
     # Step 2: Package the specified items using Python's zipfile module
