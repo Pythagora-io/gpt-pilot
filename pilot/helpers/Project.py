@@ -27,6 +27,7 @@ from database.models.file_snapshot import FileSnapshot
 from database.models.files import File
 from logger.logger import logger
 from utils.dot_gpt_pilot import DotGptPilot
+from utils.llm_connection import test_api_access
 
 from utils.telemetry import telemetry
 
@@ -87,6 +88,9 @@ class Project:
         """
         Start the project.
         """
+        if not test_api_access(self):
+            return False
+
         telemetry.start()
         self.project_manager = ProductOwner(self)
         self.project_manager.get_project_description()
@@ -141,6 +145,7 @@ class Project:
             "project_stage": "coding"
         }), type='info')
         self.developer.start_coding()
+        return True
 
     def finish(self):
         """
