@@ -58,9 +58,12 @@ class ProductOwner(Agent):
             'name': self.project.args['name'],
         }}), type='info')
 
-        high_level_messages = self.ask_clarifying_questions(self.project.main_prompt)
+        high_level_messages = []
+        high_level_summary = self.project.main_prompt
+        if self.project.args.get('advanced', False):
+            high_level_messages = self.ask_clarifying_questions(self.project.main_prompt)
 
-        high_level_summary = self.generate_project_summary(high_level_messages)
+            high_level_summary = self.generate_project_summary(high_level_messages)
 
         save_progress(self.project.args['app_id'], self.project.current_step, {
             "prompt": self.project.main_prompt,
