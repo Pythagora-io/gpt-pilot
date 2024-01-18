@@ -190,7 +190,8 @@ class AgentConvo:
                 for file in files:
                     msg['content'] = self.replace_file_content(msg['content'], f"{file['path']}/{file['name']}", file['content'])
 
-    def escape_specials(self, s):
+    @staticmethod
+    def escape_specials(s):
         s = s.replace("\\", "\\\\")
 
         # List of sequences to preserve
