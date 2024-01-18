@@ -83,9 +83,14 @@ if __name__ == "__main__":
             if project.check_ipc():
                 telemetry.set("is_extension", True)
 
-            project.start()
-            project.finish()
-            telemetry.set("end_result", "success")
+            started = project.start()
+            if started:
+                project.finish()
+                telemetry.set("end_result", "success")
+            else:
+                run_exit_fn = False
+                telemetry.set("end_result", "api-error")
+                print('Exit', type='exit')
 
     except KeyboardInterrupt:
         telemetry.set("end_result", "interrupt")

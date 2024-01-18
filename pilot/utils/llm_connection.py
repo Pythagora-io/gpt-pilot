@@ -62,6 +62,34 @@ def num_tokens_from_functions(functions):
     return num_tokens
 
 
+def test_api_access(project) -> bool:
+    """
+    Test the API access by sending a request to the API.
+
+    :returns: True if the request was successful, False otherwise.
+    """
+    messages = [
+        {
+            "role": "user",
+            "content": "This is a connection test. If you can see this, please respond only with 'START' and nothing else."
+        }
+    ]
+
+    endpoint = os.getenv('ENDPOINT')
+    model = os.getenv('MODEL_NAME', 'gpt-4')
+    try:
+        response = create_gpt_chat_completion(messages, 'project_description', project)
+        if response is None or response == {}:
+            print(color_red("Error connecting to the API. Please check your API key/endpoint and try again."))
+            logger.error(f"The request to {endpoint} model {model} API failed.")
+            return False
+        return True
+    except Exception as err:
+        print(color_red("Error connecting to the API. Please check your API key/endpoint and try again."))
+        logger.error(f"The request to {endpoint} model {model} API failed: {err}", exc_info=err)
+        return False
+
+
 def create_gpt_chat_completion(messages: List[dict], req_type, project,
                                function_calls: FunctionCallSet = None):
     """
