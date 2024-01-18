@@ -80,6 +80,9 @@ class Project:
         self.development_plan = development_plan
         self.dot_pilot_gpt = DotGptPilot(log_chat_completions=enable_dot_pilot_gpt)
 
+        if os.getenv("AUTOFIX_FILE_PATHS", "").lower() in ["true", "1", "yes"]:
+            File.update_paths()
+
     def set_root_path(self, root_path: str):
         self.root_path = root_path
         self.dot_pilot_gpt.with_root_path(root_path)
