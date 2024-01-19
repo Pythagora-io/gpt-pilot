@@ -395,6 +395,9 @@ class Project:
         files = get_directory_contents(self.root_path, ignore=IGNORE_FOLDERS)
         development_step, created = DevelopmentSteps.get_or_create(id=development_step_id)
 
+        total_files = 0
+        total_lines = 0
+
         for file in files:
             if not self.check_ipc():
                 print(color_cyan(f'Saving file {file["full_path"]}'))
@@ -414,6 +417,12 @@ class Project:
             )
             file_snapshot.content = file['content']
             file_snapshot.save()
+            total_files += 1
+            if isinstance(file['content'], str):
+                total_lines += file['content'].count('\n') + 1
+
+        telemetry.set("num_files", total_files)
+        telemetry.set("num_lines", total_lines)
 
     def restore_files(self, development_step_id):
         development_step = DevelopmentSteps.get(DevelopmentSteps.id == development_step_id)

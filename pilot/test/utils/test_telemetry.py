@@ -247,7 +247,8 @@ def test_send_enabled_and_successful(mock_settings, mock_post, caplog):
     }
 
     telemetry = Telemetry()
-    telemetry.send()
+    with patch.object(telemetry, "calculate_statistics"):
+        telemetry.send()
 
     expected = {
         "pathId": "test-id",
@@ -269,7 +270,8 @@ def test_send_enabled_but_post_fails(mock_settings, mock_post):
     mock_post.side_effect = Exception("Connection error")
 
     telemetry = Telemetry()
-    telemetry.send()
+    with patch.object(telemetry, "calculate_statistics"):
+        telemetry.send()
 
     expected = {
         "pathId": "test-id",
@@ -360,3 +362,59 @@ def test_record_crash_crashes(mock_settings):
     assert diag["exception_class"] == "NoneType"
     assert diag["exception_message"] == "None"
     assert diag["frames"] == []
+
+
+@patch("utils.telemetry.settings")
+def test_record_llm_request(mock_settings):
+    mock_settings.telemetry = {
+        "id": "test-id",
+        "endpoint": "test-endpoint",
+        "enabled": True,
+    }
+
+    telemetry = Telemetry()
+    telemetry.record_llm_request(100000, 3600, True)
+    telemetry.record_llm_request(90000, 1, False)
+    telemetry.record_llm_request(1, 1800, False)
+
+    # All three
+    assert telemetry.data["num_llm_requests"] == 3
+    # Only the last two
+    assert telemetry.data["num_llm_tokens"] == 90001
+    # Only the first one
+    assert telemetry.data["num_llm_errors"] == 1
+
+    # First two
+    assert telemetry.large_requests == [100000, 90000]
+    # FIrst and last
+    assert telemetry.slow_requests == [3600, 1800]
+
+
+
+@patch("utils.telemetry.settings")
+def test_calculate_statistics(mock_settings):
+    mock_settings.telemetry = {
+        "id": "test-id",
+        "endpoint": "test-endpoint",
+        "enabled": True,
+    }
+
+    telemetry = Telemetry()
+    telemetry.large_requests = [10, 10, 20, 40, 100]
+    telemetry.slow_requests = [10, 10, 20, 40, 100]
+
+    telemetry.calculate_statistics()
+    assert telemetry.data["large_requests"] == {
+        "num_requests": 5,
+        "min_tokens": 10,
+        "max_tokens": 100,
+        "avg_tokens": 36,
+        "median_tokens": 20,
+    }
+    assert telemetry.data["slow_requests"] == {
+        "num_requests": 5,
+        "min_time": 10,
+        "max_time": 100,
+        "avg_time": 36,
+        "median_time": 20,
+    }
