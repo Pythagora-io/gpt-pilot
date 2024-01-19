@@ -25,7 +25,6 @@ def main():
     # Items to package
     items_to_package = [
         "pilot",
-        "scripts",
         "Dockerfile",
         "docker-compose.yml",
         "LICENSE",
