@@ -334,11 +334,6 @@ def stream_gpt_completion(data, req_type, project):
     model = os.getenv('MODEL_NAME', 'gpt-4')
     endpoint = os.getenv('ENDPOINT')
 
-    # Model will be set many times but we don't care, as there are no side-effects to it.
-    telemetry.set("model", model)
-    telemetry.inc("num_llm_requests")
-    telemetry.inc("num_llm_tokens", get_tokens_in_messages(data['messages']))
-
     logger.info(f'> Request model: {model}')
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug('\n'.join([f"{message['role']}: {message['content']}" for message in data['messages']]))
@@ -370,6 +365,10 @@ def stream_gpt_completion(data, req_type, project):
         }
         data['model'] = model
 
+    telemetry.set("model", model)
+    token_count = get_tokens_in_messages(data['messages'])
+    request_start_time = time.time()
+
     response = requests.post(
         endpoint_url,
         headers=headers,
@@ -380,6 +379,7 @@ def stream_gpt_completion(data, req_type, project):
     if response.status_code != 200:
         project.dot_pilot_gpt.log_chat_completion(endpoint, model, req_type, data['messages'], response.text)
         logger.info(f'problem with request (status {response.status_code}): {response.text}')
+        telemetry.record_llm_request(token_count, time.time() - request_start_time, is_error=True)
         raise Exception(f"API responded with status code: {response.status_code}. Response text: {response.text}")
 
     # function_calls = {'name': '', 'arguments': ''}
@@ -404,6 +404,7 @@ def stream_gpt_completion(data, req_type, project):
 
                 if 'error' in json_line:
                     logger.error(f'Error in LLM response: {json_line}')
+                    telemetry.record_llm_request(token_count, time.time() - request_start_time, is_error=True)
                     raise ValueError(f'Error in LLM response: {json_line["error"]["message"]}')
 
                 choice = json_line['choices'][0]
@@ -436,8 +437,11 @@ def stream_gpt_completion(data, req_type, project):
                     # If you detect a natural breakpoint (e.g., line break or end of a response object), print & count:
                     if buffer.endswith('\n'):
                         if expecting_json and not received_json:
-                            received_json = assert_json_response(buffer, lines_printed > 2)
-
+                            try:
+                                received_json = assert_json_response(buffer, lines_printed > 2)
+                            except:
+                                telemetry.record_llm_request(token_count, time.time() - request_start_time, is_error=True)
+                                raise
                         # or some other condition that denotes a breakpoint
                         lines_printed += count_lines_based_on_width(buffer, terminal_width)
                         buffer = ""  # reset the buffer
@@ -446,6 +450,12 @@ def stream_gpt_completion(data, req_type, project):
                     print(content, type='stream', end='', flush=True)
 
     print('\n', type='stream')
+
+    telemetry.record_llm_request(
+        token_count + len(tokenizer.encode(gpt_response)),
+        time.time() - request_start_time,
+        is_error=False
+    )
 
     # if function_calls['arguments'] != '':
     #     logger.info(f'Response via function call: {function_calls["arguments"]}')
