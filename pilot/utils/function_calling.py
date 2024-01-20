@@ -67,10 +67,14 @@ def parse_agent_response(response, function_calls: Union[FunctionCallSet, None])
     Returns: The post-processed response.
     """
     if function_calls:
-        text = response['text']
-        return json.loads(text)
-
-    return response['text']
+        text = response.get('text', None)
+        try:
+            return json.loads(text)
+        except Exception as err:
+            print(f"Error parsing JSON response from LLM: {err}")
+            return None
+    else:
+        return response.get('text', '')
 
 
 class JsonPrompter:

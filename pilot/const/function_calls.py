@@ -620,3 +620,59 @@ GET_DOCUMENTATION_FILE = {
         },
     }],
 }
+
+DESCRIBE_FILES = {
+    "definitions": [{
+        "name": "describe_files",
+        "description": "Describes the files in the project.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "array",
+                    "description": "List of files with their description.",
+                    "items": {
+                        "type": "object",
+                        "description": "File description",
+                        "properties": {
+                            "path": {
+                                "type": "string",
+                                "description": "Path to the file that needs to be described, relative to the project root.",
+                            },
+                            "description": {
+                                "type": "string",
+                                "description": "Detailed description (1-2 paragraphs) of the file, including classes, functions, constants, and other functionality defined in the file.",
+                            },
+                        },
+                    },
+                },
+            },
+            "required": ["files"],
+        },
+    }],
+}
+
+# JSON Schema for this structure:
+# {
+#    "task_files": ["path/to/file1.txt", "path/to/file2", ...]
+# }
+TASK_RELEVANT_FILES = {
+    "definitions": [{
+        "name": "relevant_files",
+        "description": "List of files that are relevant for the current task.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "array",
+                    "description": "List of files that are relevant for the current task.",
+                    "items": {
+                        "type": "string",
+                        "description": "Path to the file, relative to the project root.",
+                    },
+                },
+            },
+            "required": ["files"],
+        },
+    }],
+}

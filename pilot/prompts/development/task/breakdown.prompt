@@ -3,7 +3,12 @@ You are working on a {{ app_type }} called "{{ name }}" and you need to write co
 {{ project_details }}
 
 {% if current_task_index != 0 or task_type == 'feature' %}
-So far, this code has been implemented:
+So far, this code has been implemented:{% if file_descriptions %}
+{% for path, desc in file_descriptions.items() %}
+* `{{ path }}`: {{ desc }}
+{% endfor %}{% endif %}
+
+These files are relevant to the current task:
 {% for file in files %}
 **{{ file.path }}/{{ file.name }}**:
 ```{# file.language #}

@@ -24,7 +24,7 @@ from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
 from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes
-from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN
+from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN, DESCRIBE_FILES, TASK_RELEVANT_FILES
 from database.database import save_progress, get_progress_steps, update_app_status
 from utils.utils import get_os_info
 
@@ -82,9 +82,71 @@ class Developer(Agent):
             logger.info(message)
             print(color_green_bold(message))
 
+    def filter_coded_files(self, current_task_index):
+        files = self.project.get_all_coded_files()
+        if current_task_index < 3:
+            return files, None
+
+        convo = AgentConvo(self)
+        described_files = {}
+
+        from os.path import join, sep
+
+        def npath(path):
+            if not path.startswith(sep):
+                path = sep + path
+            return path
+
+        def fpath(file):
+            path = join(file["path"], file["name"])
+            return npath(path)
+
+        file_descriptions = convo.send_message('development/task/describe_files.prompt', {
+            "name": self.project.args['name'],
+            "app_type": self.project.args['app_type'],
+            "app_summary": self.project.project_description,
+            "clarifications": self.project.clarifications,
+            "user_stories": self.project.user_stories,
+            "user_tasks": self.project.user_tasks,
+            "technologies": self.project.architecture,
+            "array_of_objects_to_string": array_of_objects_to_string,  # TODO check why is this here
+            "directory_tree": self.project.get_directory_tree(True),
+            "current_task_index": current_task_index,
+            "development_tasks": self.project.development_plan,
+            "files": files,
+            "task_type": 'feature' if self.project.finished else 'app'
+        }, DESCRIBE_FILES)
+        while True:
+            described_files.update({npath(desc["path"]):desc["description"] for desc in file_descriptions["files"]})
+            files_to_describe = [ fpath(file) for file in files if fpath(file) not in described_files ]
+            if not files_to_describe:
+                break
+            file_descriptions = convo.send_message('utils/llm_response_error.prompt', {
+                "error": (
+                    "You didn't describe all the listed files. Please also describe: " +
+                    ", ".join(files_to_describe) +
+                    "\nOutput using the same JSON format as before."
+                )
+            }, DESCRIBE_FILES)
+
+        llm_response = convo.send_message('development/task/get_relevant_files.prompt', {}, TASK_RELEVANT_FILES)
+        relevant_files = set()
+        for file in llm_response["files"]:
+            path = npath(file)
+            if path in described_files:
+                relevant_files.add(path)
+
+        filtered_files = [f for f in files if fpath(f) in relevant_files]
+        return filtered_files, described_files
+
     def implement_task(self, i, development_task=None):
         print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'))
         self.project.dot_pilot_gpt.chat_log_folder(i + 1)
+
+        try:
+            files, descriptions = self.filter_coded_files(i)
+        except Exception as err:
+            print("Error", err)
 
         convo_dev_task = AgentConvo(self)
         instructions = convo_dev_task.send_message('development/task/breakdown.prompt', {
@@ -99,7 +161,8 @@ class Developer(Agent):
             "directory_tree": self.project.get_directory_tree(True),
             "current_task_index": i,
             "development_tasks": self.project.development_plan,
-            "files": self.project.get_all_coded_files(),
+            "files": files,
+            "file_descriptions": descriptions,
             "task_type": 'feature' if self.project.finished else 'app'
         })
 
