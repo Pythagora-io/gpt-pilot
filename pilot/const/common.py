@@ -21,10 +21,7 @@ STEPS = [
     'finished'
 ]
 
-additional_ignore_folders = os.environ.get('IGNORE_FOLDERS', '').split(',')
-
-# TODO: rename to IGNORE_PATHS as it also contains files
-IGNORE_FOLDERS = [
+DEFAULT_IGNORE_PATHS = [
     '.git',
     '.gpt-pilot',
     '.idea',
@@ -36,7 +33,16 @@ IGNORE_FOLDERS = [
     'venv',
     'dist',
     'build',
-    'target'
-] + [folder for folder in additional_ignore_folders if folder]
-
+    'target',
+    "*.min.js",
+    "*.min.css",
+    "*.svg",
+    "*.csv",
+]
+IGNORE_PATHS = DEFAULT_IGNORE_PATHS + [
+    folder for folder
+    in os.environ.get('IGNORE_PATHS', '').split(',')
+    if folder
+]
+IGNORE_SIZE_THRESHOLD = 102400  # 100K+ files are ignored by default
 PROMPT_DATA_TO_IGNORE = {'directory_tree', 'name'}

@@ -8,7 +8,7 @@ import peewee
 
 from const.messages import CHECK_AND_CONTINUE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS
 from utils.style import color_yellow_bold, color_cyan, color_white_bold, color_green
-from const.common import IGNORE_FOLDERS, STEPS
+from const.common import STEPS
 from database.database import delete_unconnected_steps_from, delete_all_app_development_data, update_app_status
 from const.ipc import MESSAGE_TYPE
 from prompts.prompts import ask_user
@@ -28,6 +28,7 @@ from database.models.files import File
 from logger.logger import logger
 from utils.dot_gpt_pilot import DotGptPilot
 from utils.llm_connection import test_api_access
+from utils.ignore import IgnoreMatcher
 
 from utils.telemetry import telemetry
 
@@ -79,6 +80,9 @@ class Project:
         self.architecture = architecture
         self.development_plan = development_plan
         self.dot_pilot_gpt = DotGptPilot(log_chat_completions=enable_dot_pilot_gpt)
+
+        if os.getenv("AUTOFIX_FILE_PATHS", "").lower() in ["true", "1", "yes"]:
+            File.update_paths()
 
     def set_root_path(self, root_path: str):
         self.root_path = root_path
@@ -173,12 +177,7 @@ class Project:
         Returns:
             dict: The directory tree.
         """
-        # files = {}
-        # if with_descriptions and False:
-        #     files = File.select().where(File.app_id == self.args['app_id'])
-        #     files = {snapshot.name: snapshot for snapshot in files}
-        # return build_directory_tree_with_descriptions(self.root_path, ignore=IGNORE_FOLDERS, files=files, add_descriptions=False)
-        return build_directory_tree(self.root_path, ignore=IGNORE_FOLDERS)
+        return build_directory_tree(self.root_path)
 
     def get_test_directory_tree(self):
         """
@@ -188,7 +187,7 @@ class Project:
             dict: The directory tree of tests.
         """
         # TODO remove hardcoded path
-        return build_directory_tree(self.root_path + '/tests', ignore=IGNORE_FOLDERS)
+        return build_directory_tree(self.root_path + '/tests')
 
     def get_all_coded_files(self):
         """
@@ -206,18 +205,7 @@ class Project:
                 )
             )
 
-        files = self.get_files([file.path + '/' + file.name for file in files])
-
-        # Don't send contents of binary files
-        for file in files:
-            if not isinstance(file["content"], str):
-                file["content"] = f"<<binary file, {len(file['content'])} bytes>>"
-
-        # TODO temoprary fix to eliminate files that are not in the project
-        files = [file for file in files if file['content'] != '']
-        # TODO END
-
-        return files
+        return self.get_files([file.path + '/' + file.name for file in files])
 
     def get_files(self, files):
         """
@@ -229,6 +217,7 @@ class Project:
         Returns:
             list: A list of files with content.
         """
+        matcher = IgnoreMatcher(root_path=self.root_path)
         files_with_content = []
         for file_path in files:
             try:
@@ -236,9 +225,12 @@ class Project:
                 _, full_path = self.get_full_file_path(file_path, file_path)
                 file_data = get_file_contents(full_path, self.root_path)
             except ValueError:
+                full_path = None
                 file_data = {"path": file_path, "name": os.path.basename(file_path), "content": ''}
 
-            files_with_content.append(file_data)
+            if full_path and file_data["content"] != "" and not matcher.ignore(full_path):
+                files_with_content.append(file_data)
+
         return files_with_content
 
     def find_input_required_lines(self, file_content):
@@ -392,7 +384,7 @@ class Project:
 
 
     def save_files_snapshot(self, development_step_id):
-        files = get_directory_contents(self.root_path, ignore=IGNORE_FOLDERS)
+        files = get_directory_contents(self.root_path)
         development_step, created = DevelopmentSteps.get_or_create(id=development_step_id)
 
         total_files = 0
@@ -428,7 +420,7 @@ class Project:
         development_step = DevelopmentSteps.get(DevelopmentSteps.id == development_step_id)
         file_snapshots = FileSnapshot.select().where(FileSnapshot.development_step == development_step)
 
-        clear_directory(self.root_path, IGNORE_FOLDERS + self.files)
+        clear_directory(self.root_path, ignore=self.files)
         for file_snapshot in file_snapshots:
             update_file(file_snapshot.file.full_path, file_snapshot.content, project=self)
             if file_snapshot.file.full_path not in self.files:

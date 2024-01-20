@@ -363,7 +363,7 @@ class TestProjectFileLists:
             'user_review_goal': 'Test User Review Goal',
         }]
 
-        # with directories including common.IGNORE_FOLDERS
+        # with directories including common.IGNORE_PATHS
         src = os.path.join(project.root_path, 'src')
         foo = os.path.join(project.root_path, 'src/foo')
         files_no_folders = os.path.join(foo, 'files_no_folders')
