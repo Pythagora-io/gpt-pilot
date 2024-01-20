@@ -147,14 +147,13 @@ def test_get_directory_contents_live():
     assert isinstance(this_file["content"], str)
     assert "test_get_directory_contents_live()" in this_file["content"]
 
-    # Check that the Python cache was loaded as a binary file
-    print("FILES", [(f["path"], f["name"]) for f in files])
-    pycache_file = [
+    # Check that the binary file was ignored
+    image_files = [
         f
         for f in files
         if f["path"] == "helpers" and f["name"] == "testlogo.png"
-    ][0]
-    assert isinstance(pycache_file["content"], bytes)
+    ]
+    assert image_files == []
 
     # Check that the ignore list works
     assert all(file["name"] != "__init__.py" for file in files)
