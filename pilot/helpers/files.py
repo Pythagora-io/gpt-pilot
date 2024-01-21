@@ -3,7 +3,7 @@ import os
 from typing import Optional, Union
 
 from utils.style import color_green
-
+from utils.ignore import IgnoreMatcher
 
 def update_file(path: str, new_content: Union[str, bytes], project=None):
     """
@@ -87,7 +87,8 @@ def get_file_contents(
 
 
 def get_directory_contents(
-    directory: str, ignore: Optional[list[str]] = None
+    directory: str,
+    ignore: Optional[list[str]] = None,
 ) -> list[dict[str, Union[str, bytes]]]:
     """
     Get the content of all files in the given directory.
@@ -101,19 +102,22 @@ def get_directory_contents(
     """
     return_array = []
 
-    if ignore is None:
-        ignore = []
+    matcher = IgnoreMatcher(ignore, root_path=directory)
 
     # TODO: Convert to use pathlib.Path.walk()
     for dpath, dirs, files in os.walk(directory):
         # In-place update of dirs so that os.walk() doesn't traverse them
-        dirs[:] = [d for d in dirs if d not in ignore]
+        dirs[:] = [
+            d for d in dirs
+            if not matcher.ignore(os.path.join(dpath, d))
+        ]
 
         for file in files:
-            if file in ignore:
+            full_path = os.path.join(dpath, file)
+            if matcher.ignore(full_path):
                 continue
 
-            return_array.append(get_file_contents(os.path.join(dpath, file), directory))
+            return_array.append(get_file_contents(full_path, directory))
 
     return return_array
 
@@ -125,20 +129,22 @@ def clear_directory(directory: str, ignore: Optional[list[str]] = None):
     :param dir_path: Full path to the directory to clear
     :param ignore: List of files or folders to ignore (optional)
     """
-    if ignore is None:
-        ignore = []
+    matcher = IgnoreMatcher(ignore, root_path=directory)
 
     # TODO: Convert to use pathlib.Path.walk()
     for dpath, dirs, files in os.walk(directory, topdown=True):
         # In-place update of dirs so that os.walk() doesn't traverse them
-        dirs[:] = [d for d in dirs if d not in ignore]
+        dirs[:] = [
+            d for d in dirs
+            if not matcher.ignore(os.path.join(dpath, d))
+        ]
 
         for file in files:
-            if file in ignore or os.path.join(directory, file) in ignore:
+            full_path = os.path.join(dpath, file)
+            if matcher.ignore(full_path):
                 continue
 
-            path = os.path.join(dpath, file)
-            os.remove(path)
+            os.remove(full_path)
 
         # Delete empty subdirectories not in ignore list
         for d in dirs:

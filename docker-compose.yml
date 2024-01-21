@@ -18,7 +18,7 @@ services:
             - DB_USER=pilot
             - DB_PASSWORD=pilot
             # Folders which shouldn't be tracked in workspace (useful to ignore folders created by compiler)
-            # IGNORE_FOLDERS=folder1,folder2
+            # IGNORE_PATHS=folder1,folder2
         volumes:
             - ~/gpt-pilot-workspace:/usr/src/app/workspace
         build:
