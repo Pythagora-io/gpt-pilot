@@ -1,6 +1,7 @@
 import platform
 import uuid
 import re
+import json
 
 from const.messages import WHEN_USER_DONE
 from utils.style import (
@@ -25,7 +26,7 @@ from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
 from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes
 from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN
-from database.database import save_progress, get_progress_steps, update_app_status
+from database.database import save_progress, get_progress_steps, update_app_status, get_all_app_development_steps
 from utils.utils import get_os_info
 
 ENVIRONMENT_SETUP_STEP = 'environment_setup'
@@ -45,32 +46,50 @@ class Developer(Agent):
 
             if self.project.skip_steps is None:
                 if (not self.project.continuing_project or (
-                        'skip_until_dev_step' in self.project.args and self.project.args['skip_until_dev_step'] == '0')):
+                        'skip_until_dev_step' in self.project.args and self.project.args[
+                    'skip_until_dev_step'] == '0')):
                     self.project.finish_loading()
                 else:
                     self.project.skip_steps = True
 
         # DEVELOPMENT
-        print(color_green_bold("🚀 Now for the actual development...\n"))
-        logger.info("Starting to create the actual code...")
+        if self.project.skip_steps is None:
+            print(color_green_bold("🚀 Now for the actual development...\n"))
+            logger.info("Starting to create the actual code...")
 
         total_tasks = len(self.project.development_plan)
         progress_thresholds = [50]  # Percentages of progress when documentation is created
         documented_thresholds = set()
 
         for i, dev_task in enumerate(self.project.development_plan):
-            current_progress_percent = round((i / total_tasks) * 100, 2)
+            if not self.project.finished:  # don't create documentation for features
+                current_progress_percent = round((i / total_tasks) * 100, 2)
 
-            for threshold in progress_thresholds:
-                if current_progress_percent > threshold and threshold not in documented_thresholds:
-                    self.project.technical_writer.document_project(current_progress_percent)
-                    documented_thresholds.add(threshold)
+                for threshold in progress_thresholds:
+                    if current_progress_percent > threshold and threshold not in documented_thresholds:
+                        if self.project.skip_steps is not True:
+                            self.project.technical_writer.document_project(current_progress_percent)
+                        documented_thresholds.add(threshold)
+
+            if self.project.tasks_to_load:
+                task = self.project.tasks_to_load.pop(0)
+                self.project.cleanup_list('dev_steps_to_load', task['id'])
+
+                if len(self.project.tasks_to_load):
+                    continue
+                # if it is last task to load, execute it to check if it's finished
+                else:
+                    # if create_readme.prompt is after start of last task, that means task is fully done, so skip it
+                    if len(self.project.development_plan) - 1 == i and any('create_readme.prompt' in el.get('prompt_path', '') for el in self.project.dev_steps_to_load):
+                        continue
 
             self.implement_task(i, dev_task)
 
         # DEVELOPMENT END
-        self.project.technical_writer.document_project(100)
-        self.project.dot_pilot_gpt.chat_log_folder(None)
+        if self.project.skip_steps is not True:
+            self.project.technical_writer.document_project(100)
+            self.project.dot_pilot_gpt.chat_log_folder(None)
+
         if not self.project.finished:
             self.project.finished = True
             update_app_status(self.project.args['app_id'], self.project.current_step)
@@ -87,36 +106,80 @@ class Developer(Agent):
         self.project.dot_pilot_gpt.chat_log_folder(i + 1)
 
         convo_dev_task = AgentConvo(self)
-        instructions = convo_dev_task.send_message('development/task/breakdown.prompt', {
-            "name": self.project.args['name'],
-            "app_type": self.project.args['app_type'],
-            "app_summary": self.project.project_description,
-            "clarifications": self.project.clarifications,
-            "user_stories": self.project.user_stories,
-            "user_tasks": self.project.user_tasks,
-            "technologies": self.project.architecture,
-            "array_of_objects_to_string": array_of_objects_to_string,  # TODO check why is this here
-            "directory_tree": self.project.get_directory_tree(True),
-            "current_task_index": i,
-            "development_tasks": self.project.development_plan,
-            "files": self.project.get_all_coded_files(),
-            "task_type": 'feature' if self.project.finished else 'app'
-        })
+        # we get here only after all tasks but last one are loaded, so this must be final task
+        if self.project.dev_steps_to_load and 'breakdown.prompt' in self.project.dev_steps_to_load[0]['prompt_path']:
+            instructions = self.project.dev_steps_to_load[0]['llm_response']['text']
+            convo_dev_task.messages = self.project.dev_steps_to_load[0]['messages']
+            self.project.dev_steps_to_load.pop(0)
+        else:
+            instructions = convo_dev_task.send_message('development/task/breakdown.prompt', {
+                "name": self.project.args['name'],
+                "app_type": self.project.args['app_type'],
+                "app_summary": self.project.project_description,
+                "clarifications": self.project.clarifications,
+                "user_stories": self.project.user_stories,
+                "user_tasks": self.project.user_tasks,
+                "technologies": self.project.architecture,
+                "array_of_objects_to_string": array_of_objects_to_string,  # TODO check why is this here
+                "directory_tree": self.project.get_directory_tree(True),
+                "current_task_index": i,
+                "development_tasks": self.project.development_plan,
+                "files": self.project.get_all_coded_files(),
+                "task_type": 'feature' if self.project.finished else 'app'
+            })
 
         instructions_prefix = " ".join(instructions.split()[:5])
         instructions_postfix = " ".join(instructions.split()[-5:])
-        response = convo_dev_task.send_message('development/parse_task.prompt', {
-            'running_processes': running_processes,
-            'os': platform.system(),
-            'instructions_prefix': instructions_prefix,
-            'instructions_postfix': instructions_postfix,
-        }, IMPLEMENT_TASK)
+        if self.project.dev_steps_to_load and 'parse_task.prompt' in self.project.dev_steps_to_load[0]['prompt_path']:
+            response = json.loads(self.project.dev_steps_to_load[0]['llm_response']['text'])
+            convo_dev_task.messages = self.project.dev_steps_to_load[0]['messages']
+            remove_last_x_messages = 1  # reason why 1 here is because in db we don't store llm_response in 'messages'
+            self.project.dev_steps_to_load.pop(0)
+        else:
+            response = convo_dev_task.send_message('development/parse_task.prompt', {
+                'running_processes': running_processes,
+                'os': platform.system(),
+                'instructions_prefix': instructions_prefix,
+                'instructions_postfix': instructions_postfix,
+            }, IMPLEMENT_TASK)
+            remove_last_x_messages = 2
+
         steps = response['tasks']
-        convo_dev_task.remove_last_x_messages(2)
+        convo_dev_task.remove_last_x_messages(remove_last_x_messages)
 
         completed_steps = []
 
         while True:
+            # This whole if statement is loading of project.
+            # We want to skip to last iteration that user had in this task (in continue_development function) which is
+            # last iteration.prompt. That prompt must be between current dev step and skip_until_dev_step or last dev
+            # step in db.
+            if self.project.dev_steps_to_load:
+                # get last occurrence of iteration.prompt (used in continue_development)
+                last_iteration = next((el for el in reversed(self.project.dev_steps_to_load) if
+                                       'iteration.prompt' in el.get('prompt_path', '')), None)
+
+                # if no iteration.prompt then finish loading and continue execution normally
+                if last_iteration is None:
+                    self.project.finish_loading()
+                    continue
+
+                # detailed_user_review_goal is explanation for user how to review task (used in continue_development)
+                self.project.last_detailed_user_review_goal = next(
+                    (el for el in reversed(self.project.dev_steps_to_load) if
+                     'define_user_review_goal.prompt' in el.get('prompt_path', '')), None)
+
+                # run_command is command to run app (used in continue_development)
+                if self.run_command is None:
+                    self.run_command = next(
+                        (el for el in reversed(self.project.dev_steps_to_load) if
+                         'get_run_command.prompt' in el.get('prompt_path', '')), None)
+                    if self.run_command is not None:
+                        self.run_command = json.loads(self.run_command['llm_response']['text'])['command']
+
+                self.project.cleanup_list('dev_steps_to_load', last_iteration['id'])
+                self.project.last_iteration = self.project.dev_steps_to_load[0]
+
             result = self.execute_task(convo_dev_task,
                                        development_task['description'],
                                        steps,
@@ -205,7 +268,8 @@ class Developer(Agent):
                 if self.project.check_ipc():
                     print(self.run_command, type='run_command')
                 else:
-                    human_intervention_description += color_yellow_bold('\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
+                    human_intervention_description += color_yellow_bold(
+                        '\n\nIf you want to run the app, just type "r" and press ENTER and that will run `' + self.run_command + '`')
 
             response = self.project.ask_for_human_intervention('I need human intervention:',
                 human_intervention_description,
@@ -281,14 +345,18 @@ class Developer(Agent):
         # TODO: why does `run_command` belong to the Developer class, rather than just being passed?
         #       ...It's set by execute_task() -> task_postprocessing(), but that is called by various sources.
         #       What is it at step_human_intervention()?
-        self.get_run_command(convo)
+        if self.project.last_iteration is None:
+            self.get_run_command(convo)
 
-        if development_task is not None:
-            convo.remove_last_x_messages(2)
-            detailed_user_review_goal = convo.send_message('development/define_user_review_goal.prompt', {
-                'os': platform.system()
-            }, should_log_message=False)
-            convo.remove_last_x_messages(2)
+            if development_task is not None:
+                convo.remove_last_x_messages(2)
+                detailed_user_review_goal = convo.send_message('development/define_user_review_goal.prompt', {
+                    'os': platform.system()
+                }, should_log_message=False)
+                convo.remove_last_x_messages(2)
+        else:
+            detailed_user_review_goal = self.project.last_detailed_user_review_goal['llm_response']['text'] if\
+                self.project.last_detailed_user_review_goal is not None else None
 
         try:
             if continue_development:
@@ -324,9 +392,9 @@ class Developer(Agent):
 
         if step['type'] == 'command':
             help_description = (
-                        color_red_bold('I tried running the following command but it doesn\'t seem to work:\n\n') +
-                        color_white_bold(step['command']['command']) +
-                        color_red_bold('\n\nCan you please make it work?'))
+                    color_red_bold('I tried running the following command but it doesn\'t seem to work:\n\n') +
+                    color_white_bold(step['command']['command']) +
+                    color_red_bold('\n\nCan you please make it work?'))
         elif step['type'] == 'code_change':
             help_description = step['code_change_description']
         elif step['type'] == 'human_intervention':
@@ -365,6 +433,10 @@ class Developer(Agent):
         convo.save_branch(function_uuid)
 
         for (i, step) in enumerate(task_steps):
+            # This means we are still loading the project
+            if self.project.last_iteration is not None:
+                break
+
             # Skip steps before continue_from_step
             if i < continue_from_step:
                 continue
@@ -519,7 +591,8 @@ class Developer(Agent):
         user_input = ''
         while user_input.lower() != 'done':
             print('done', type='buttons-only')
-            user_input = styled_text(self.project, 'Please set up your local environment so that the technologies listed can be utilized. When you\'re done, write "DONE"')
+            user_input = styled_text(self.project,
+                                     'Please set up your local environment so that the technologies listed can be utilized. When you\'re done, write "DONE"')
         save_progress(self.project.args['app_id'], self.project.current_step, {
             "os_specific_technologies": [],
             "newly_installed_technologies": [],

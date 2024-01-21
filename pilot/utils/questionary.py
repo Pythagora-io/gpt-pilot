@@ -18,6 +18,7 @@ def styled_select(*args, **kwargs):
 
 
 def styled_text(project, question, ignore_user_input_count=False, style=None, hint=None):
+    project.finish_loading()
     if not ignore_user_input_count:
         project.user_inputs_count += 1
         user_input = get_saved_user_input(project, question)

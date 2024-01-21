@@ -193,6 +193,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
                             If `cli_response` not None: 'was interrupted by user', 'timed out' or `None` - caller should send `cli_response` to LLM
         exit_code (int): The exit code of the process.
     """
+    project.finish_loading()
     if timeout is not None:
         if timeout < 0:
             timeout = None

@@ -53,6 +53,7 @@ def ask_for_main_app_definition(project):
 
 def ask_user(project, question: str, require_some_input=True, hint: str = None):
     while True:
+        project.finish_loading()
         if hint is not None:
             print(color_white_bold(hint) + '\n', type='hint')
         answer = styled_text(project, question, hint=hint)
