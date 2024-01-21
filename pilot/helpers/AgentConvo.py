@@ -6,7 +6,7 @@ from traceback import format_exc
 from os.path import sep
 
 from utils.style import color_yellow, color_yellow_bold, color_red_bold
-from database.database import get_saved_development_step, save_development_step, delete_all_subsequent_steps
+from database.database import save_development_step
 from helpers.exceptions import TokenLimitError, ApiError
 from utils.function_calling import parse_agent_response, FunctionCallSet
 from utils.llm_connection import create_gpt_chat_completion
@@ -58,41 +58,20 @@ class AgentConvo:
         # check if we already have the LLM response saved
         if hasattr(self.agent, 'save_dev_steps') and self.agent.save_dev_steps:
             self.agent.project.llm_req_num += 1
-        development_step = get_saved_development_step(self.agent.project)
-        if development_step is not None and self.agent.project.skip_steps:
-            # if we do, use it
-            print(color_yellow(f'Restoring development step with id {development_step.id}'))
-            self.agent.project.checkpoints['last_development_step'] = development_step
-            self.agent.project.restore_files(development_step.id)
-            response = development_step.llm_response
-            self.messages = development_step.messages
 
-            if self.agent.project.skip_until_dev_step and str(
-                    development_step.id) == self.agent.project.skip_until_dev_step:
-                self.agent.project.finish_loading()
-                delete_all_subsequent_steps(self.agent.project)
+        self.agent.project.finish_loading()
 
-                if 'delete_unrelated_steps' in self.agent.project.args and self.agent.project.args[
-                    'delete_unrelated_steps']:
-                    self.agent.project.delete_all_steps_except_current_branch()
-            else:
-                should_log_message = True
+        try:
+            self.replace_files()
+            response = create_gpt_chat_completion(self.messages, self.high_level_step, self.agent.project,
+                                                  function_calls=function_calls)
+        except TokenLimitError as e:
+            save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, '', str(e))
+            raise e
 
-            if development_step.token_limit_exception_raised:
-                raise TokenLimitError(development_step.token_limit_exception_raised)
-        else:
-            # if we don't, get the response from LLM
-            try:
-                self.replace_files()
-                response = create_gpt_chat_completion(self.messages, self.high_level_step, self.agent.project,
-                                                      function_calls=function_calls)
-            except TokenLimitError as e:
-                save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, '', str(e))
-                raise e
-
-            # TODO: move this code to Developer agent - https://github.com/Pythagora-io/gpt-pilot/issues/91#issuecomment-1751964079
-            if hasattr(self.agent, 'save_dev_steps') and self.agent.save_dev_steps:
-                save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, response)
+        # TODO: move this code to Developer agent - https://github.com/Pythagora-io/gpt-pilot/issues/91#issuecomment-1751964079
+        if hasattr(self.agent, 'save_dev_steps') and self.agent.save_dev_steps:
+            save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, response)
 
         # TODO handle errors from OpenAI
         # It's complicated because calling functions are expecting different types of responses - string or tuple
@@ -254,7 +233,7 @@ class AgentConvo:
         print_msg = capitalize_first_word_with_underscores(self.high_level_step)
         if self.log_to_user:
             if self.agent.project.checkpoints['last_development_step'] is not None:
-                dev_step_msg = f'\nDev step {str(self.agent.project.checkpoints["last_development_step"])}\n'
+                dev_step_msg = f'\nDev step {str(self.agent.project.checkpoints["last_development_step"]["id"])}\n'
                 print(color_yellow_bold(dev_step_msg), end='')
                 logger.info(dev_step_msg)
             print(f"\n{content}\n", type='local')
