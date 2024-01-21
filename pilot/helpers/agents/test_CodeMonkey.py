@@ -255,6 +255,90 @@ def test_codemonkey_retry(trace_code_event):
 
 
 @patch("helpers.agents.CodeMonkey.trace_code_event")
+def test_codemonkey_partial_retry(trace_code_event):
+    file_content = (
+        "one to the\nfoo\nto the three to the four\n"
+        "the rest of this file is filler so it's big enought not to\n"
+        "trigger\nthe full replace fallback immediately upon the first failure"
+    )
+    mock_project = MagicMock()
+    mock_project.get_all_coded_files.return_value = [
+        {
+            "path": "",
+            "name": "main.py",
+            "content": file_content,
+        },
+    ]
+    mock_project.get_full_file_path.return_value = ("", normpath("/path/to/main.py"))
+    mock_convo = MagicMock()
+    mock_convo.send_message.side_effect = [
+        # Incorrect match
+        (
+            "## Change 1\nCURRENT_CODE:\n```\ntwo\n```\nNEW_CODE:\n```\nbar\n```\nEND\n"
+            "## Change 2\nCURRENT_CODE:\n```\ntrigger\n```\nNEW_CODE:\n```\ncause\n```\nEND\n"
+        ),
+        "Apologies, here is the corrected version. ## Change 1\nCURRENT_CODE:\n```\n  foo\n```\nNEW_CODE:\n```\n  bar\n```\nEND\n",
+    ]
+
+    cm = CodeMonkey(mock_project, None)
+    cm.implement_code_changes(
+        mock_convo,
+        "Modify all references from `foo` to `bar` and `trigger` to `cause`",
+        {
+            "path": sep,
+            "name": "main.py",
+        }
+    )
+
+    mock_project.get_all_coded_files.assert_called_once()
+    mock_project.get_full_file_path.assert_called_once_with(sep, "main.py")
+    mock_convo.send_message.assert_has_calls([
+        call(
+            "development/implement_changes.prompt", {
+                "full_output": False,
+                "standalone": False,
+                "code_changes_description": "Modify all references from `foo` to `bar` and `trigger` to `cause`",
+                "file_content": file_content,
+                "file_name": "main.py",
+                "files": mock_project.get_all_coded_files.return_value,
+            }
+        ),
+        call(
+            "utils/llm_response_error.prompt", {
+                "error": (
+                    "Some changes were applied, but these failed:\n"
+                    "Error in change 1:\n"
+                    "Old code block not found in the original file:\n```\ntwo\n```\n"
+                    "Old block *MUST* contain the exact same text (including indentation, empty lines, etc.) "
+                    "as the original file in order to match.\n"
+                    "Please fix the errors and try again (only output the blocks that failed to update, not all of them)."
+                ),
+            }
+        )
+    ])
+    mock_project.save_file.assert_called_once_with({
+        "path": sep,
+        "name": "main.py",
+        "content": file_content.replace("foo", "bar").replace("trigger", "cause")
+    })
+    trace_code_event.assert_called_once_with(
+        "codemonkey-file-update-error",
+        {
+            "error": "replace-errors",
+            "llm_response": (
+                "## Change 1\nCURRENT_CODE:\n```\ntwo\n```\nNEW_CODE:\n```\nbar\n```\nEND\n"
+                "## Change 2\nCURRENT_CODE:\n```\ntrigger\n```\nNEW_CODE:\n```\ncause\n```\nEND\n"
+            ),
+            "details": [(1, (
+                'Old code block not found in the original file:\n```\ntwo\n```\n'
+                'Old block *MUST* contain the exact same text (including indentation, empty lines, etc.) '
+                'as the original file in order to match.'
+            ))]
+        }
+    )
+
+
+@patch("helpers.agents.CodeMonkey.trace_code_event")
 def test_codemonkey_fallback(trace_code_event):
     mock_project = MagicMock()
     mock_project.get_all_coded_files.return_value = [
