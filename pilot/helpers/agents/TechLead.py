@@ -40,7 +40,6 @@ class TechLead(Agent):
                 "clarifications": self.project.clarifications,
                 "user_stories": self.project.user_stories,
                 "user_tasks": self.project.user_tasks,
-                "technologies": self.project.architecture,
                 "task_type": 'app',
             }, DEVELOPMENT_PLAN)
         self.project.development_plan = llm_response['plan']

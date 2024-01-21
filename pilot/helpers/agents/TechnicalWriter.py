@@ -37,7 +37,6 @@ class TechnicalWriter(Agent):
             "clarifications": self.project.clarifications,
             "user_stories": self.project.user_stories,
             "user_tasks": self.project.user_tasks,
-            "technologies": self.project.architecture,
             "directory_tree": self.project.get_directory_tree(True),
             "files": self.project.get_all_coded_files(),
         }, GET_DOCUMENTATION_FILE)

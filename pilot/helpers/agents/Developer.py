@@ -94,7 +94,6 @@ class Developer(Agent):
             "clarifications": self.project.clarifications,
             "user_stories": self.project.user_stories,
             "user_tasks": self.project.user_tasks,
-            "technologies": self.project.architecture,
             "array_of_objects_to_string": array_of_objects_to_string,  # TODO check why is this here
             "directory_tree": self.project.get_directory_tree(True),
             "current_task_index": i,
@@ -476,6 +475,10 @@ class Developer(Agent):
 
             if user_feedback is not None:
                 iteration_convo = AgentConvo(self)
+                technologies = (
+                    [dep["name"] for dep in self.project.system_dependencies] +
+                    [dep["name"] for dep in self.project.package_dependencies]
+                )
                 iteration_description = iteration_convo.send_message('development/iteration.prompt', {
                     "name": self.project.args['name'],
                     "app_type": self.project.args['app_type'],
@@ -483,7 +486,7 @@ class Developer(Agent):
                     "clarifications": self.project.clarifications,
                     "user_stories": self.project.user_stories,
                     "user_tasks": self.project.user_tasks,
-                    "technologies": self.project.architecture,
+                    "technologies": technologies,
                     "array_of_objects_to_string": array_of_objects_to_string,  # TODO check why is this here
                     "directory_tree": self.project.get_directory_tree(True),
                     "current_task": development_task,
@@ -516,87 +519,50 @@ class Developer(Agent):
             step_already_finished(self.project.args, step)
             return
 
-        user_input = ''
-        while user_input.lower() != 'done':
-            print('done', type='buttons-only')
-            user_input = styled_text(self.project, 'Please set up your local environment so that the technologies listed can be utilized. When you\'re done, write "DONE"')
-        save_progress(self.project.args['app_id'], self.project.current_step, {
-            "os_specific_technologies": [],
-            "newly_installed_technologies": [],
-            "app_data": generate_app_data(self.project.args)
-        })
-        return
-        # ENVIRONMENT SETUP
         print(color_green_bold("Setting up the environment...\n"))
         logger.info("Setting up the environment...")
 
-        os_info = get_os_info()
-        llm_response = self.convo_os_specific_tech.send_message('development/env_setup/specs.prompt',
-                                                                {
-                                                                    "name": self.project.args['name'],
-                                                                    "app_type": self.project.args['app_type'],
-                                                                    "os_info": os_info,
-                                                                    "technologies": self.project.architecture
-                                                                }, FILTER_OS_TECHNOLOGIES)
+        for dependency in self.project.system_dependencies:
+            if 'description' in dependency:
+                dep_text = f"{dependency['name']} ({dependency['description']})"
+            else:
+                dep_text = dependency['name']
 
-        os_specific_technologies = llm_response['technologies']
-        for technology in os_specific_technologies:
-            logger.info('Installing %s', technology)
-            llm_response = self.install_technology(technology)
+            logger.info('Checking %s', dependency)
+            llm_response = self.check_system_dependency(dependency)
 
-            # TODO: I don't think llm_response would ever be 'DONE'?
-            if llm_response != 'DONE':
-                llm_response = self.convo_os_specific_tech.send_message(
-                    'development/env_setup/unsuccessful_installation.prompt',
-                    {'technology': technology},
-                    EXECUTE_COMMANDS)
-                installation_commands = llm_response['commands']
+            if llm_response == 'DONE':
+                print(color_green_bold(f"✅ {dep_text} is available."))
+            else:
+                if dependency["required_locally"]:
+                    remedy_text = "Please install it before proceeding with your app."
+                else:
+                    remedy_text = "If you want to use it locally, you should install it before proceeding."
+                print(color_red_bold(f"❌ {dep_text} is not available. {remedy_text}"))
 
-                if installation_commands is not None:
-                    for cmd in installation_commands:
-                        run_command_until_success(self.convo_os_specific_tech, cmd['command'], timeout=cmd['timeout'])
-
-        logger.info('The entire tech stack is installed and ready to be used.')
+                print('continue', type='buttons-only')
+                styled_text(
+                    self.project,
+                    "When you're ready to proceed, press ENTER to continue."
+                )
 
         save_progress(self.project.args['app_id'], self.project.current_step, {
-            "os_specific_technologies": os_specific_technologies,
+            "os_specific_technologies": self.project.system_dependencies,
             "newly_installed_technologies": [],
             "app_data": generate_app_data(self.project.args)
         })
 
         # ENVIRONMENT SETUP END
 
-    # TODO: This is only called from the unreachable section of set_up_environment()
-    def install_technology(self, technology):
-        # TODO move the functions definitions to function_calls.py
-        llm_response = self.convo_os_specific_tech.send_message(
-            'development/env_setup/install_next_technology.prompt',
-            {'technology': technology}, {
-                'definitions': [{
-                    'name': 'execute_command',
-                    'description': f'Executes a command that should check if {technology} is installed on the machine. ',
-                    'parameters': {
-                        'type': 'object',
-                        'properties': {
-                            'command': {
-                                'type': 'string',
-                                'description': f'Command that needs to be executed to check if {technology} is installed on the machine.',
-                            },
-                            'timeout': {
-                                'type': 'number',
-                                'description': 'Timeout in seconds for the approximate time this command takes to finish.',
-                            }
-                        },
-                        'required': ['command', 'timeout'],
-                    },
-                }],
-                'functions': {
-                    'execute_command': lambda command, timeout: (command, timeout)
-                }
-            })
-
-        cli_response, llm_response = execute_command_and_check_cli_response(self.convo_os_specific_tech, llm_response)
-
+    def check_system_dependency(self, dependency):
+        convo = AgentConvo(self)
+        cli_response, llm_response = execute_command_and_check_cli_response(
+            convo,
+            {
+                "command": dependency["test"],
+                "timeout": 10000,
+            }
+        )
         return llm_response
 
     def test_code_changes(self, code_monkey, convo):

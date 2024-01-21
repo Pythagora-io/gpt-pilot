@@ -33,9 +33,12 @@ from utils.ignore import IgnoreMatcher
 from utils.telemetry import telemetry
 
 class Project:
-    def __init__(self, args, name=None, project_description=None, clarifications=None, user_stories=None,
-                 user_tasks=None, architecture=None, development_plan=None, current_step=None, ipc_client_instance=None,
-                 enable_dot_pilot_gpt=True):
+    def __init__(
+        self,
+        args,
+        *,
+        ipc_client_instance=None,
+    ):
         """
         Initialize a project.
 
@@ -71,15 +74,16 @@ class Project:
         # self.restore_files({dev_step_id_to_start_from})
 
         self.finished = False
-        self.current_step = current_step
-        self.name = name
-        self.project_description = project_description
-        self.clarifications = clarifications
-        self.user_stories = user_stories
-        self.user_tasks = user_tasks
-        self.architecture = architecture
-        self.development_plan = development_plan
-        self.dot_pilot_gpt = DotGptPilot(log_chat_completions=enable_dot_pilot_gpt)
+        self.current_step = None
+        self.name = None
+        self.project_description = None
+        self.clarifications = None
+        self.user_stories = None
+        self.user_tasks = None
+        self.architecture = None
+        self.system_dependencies = None
+        self.development_plan = None
+        self.dot_pilot_gpt = DotGptPilot(log_chat_completions=True)
 
         if os.getenv("AUTOFIX_FILE_PATHS", "").lower() in ["true", "1", "yes"]:
             File.update_paths()

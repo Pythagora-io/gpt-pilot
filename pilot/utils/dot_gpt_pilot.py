@@ -84,6 +84,7 @@ class DotGptPilot:
             'description': project.project_description,
             'user_stories': project.user_stories,
             'architecture': project.architecture,
+            'system_dependencies': project.system_dependencies,
             'development_plan': project.development_plan,
         }
 
