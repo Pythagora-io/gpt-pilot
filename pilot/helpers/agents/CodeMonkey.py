@@ -133,13 +133,10 @@ class CodeMonkey(Agent):
 
         replace_complete_file = False
         exchanged_messages = 2
-        content = None
+        content = file_content
 
         # Allow for up to 2 retries
         while exchanged_messages < 7:
-            # Modify a copy of the content in case we need to retry
-            content = file_content
-
             if re.findall('(old|existing).+code', llm_response, re.IGNORECASE):
                 trace_code_event("codemonkey-file-update-error", {
                     "error": "old-code-comment",
