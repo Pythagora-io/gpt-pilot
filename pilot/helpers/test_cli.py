@@ -16,10 +16,9 @@ def test_terminate_process_not_running(mock_subprocess, mock_os):
     mock_os.killpg.assert_not_called()
 
 @patch("helpers.cli.MIN_COMMAND_RUN_TIME", create=True, new=100)
-@patch('helpers.cli.get_saved_command_run')
 @patch('helpers.cli.run_command')
 @patch("helpers.cli.terminate_process")
-def test_execute_command_timeout_exit_code(mock_terminate_process, mock_run, mock_get_saved_command):
+def test_execute_command_timeout_exit_code(mock_terminate_process, mock_run):
     # Given
     project = create_project()
     command = 'cat'
@@ -47,11 +46,10 @@ def mock_run_command(command, path, q, q_stderr):
     return mock_process
 
 
-@patch('helpers.cli.get_saved_command_run')
 @patch('helpers.cli.ask_user', return_value='')
 @patch('helpers.cli.run_command')
 @patch("helpers.cli.terminate_process")
-def test_execute_command_enter(mock_terminate_process, mock_run, mock_ask, mock_get_saved_command):
+def test_execute_command_enter(mock_terminate_process, mock_run, mock_ask):
     # Given
     project = create_project()
     command = 'echo hello'
@@ -68,11 +66,10 @@ def test_execute_command_enter(mock_terminate_process, mock_run, mock_ask, mock_
     mock_terminate_process.assert_called_once_with(1234)
 
 
-@patch('helpers.cli.get_saved_command_run')
 @patch('helpers.cli.ask_user', return_value='yes')
 @patch('helpers.cli.run_command')
 @patch('helpers.cli.terminate_process')
-def test_execute_command_yes(mock_terminate_process, mock_run, mock_ask, mock_get_saved_command):
+def test_execute_command_yes(mock_terminate_process, mock_run, mock_ask):
     # Given
     project = create_project()
     command = 'echo hello'
@@ -89,9 +86,8 @@ def test_execute_command_yes(mock_terminate_process, mock_run, mock_ask, mock_ge
     mock_terminate_process.assert_called_once_with(1234)
 
 
-@patch('helpers.cli.get_saved_command_run')
 @patch('helpers.cli.ask_user', return_value='no')
-def test_execute_command_rejected_with_no(mock_ask, mock_get_saved_command):
+def test_execute_command_rejected_with_no(mock_ask):
     # Given
     project = create_project()
     command = 'ping www.google.com'
@@ -106,9 +102,8 @@ def test_execute_command_rejected_with_no(mock_ask, mock_get_saved_command):
     assert exit_code is None
 
 
-@patch('helpers.cli.get_saved_command_run')
 @patch('helpers.cli.ask_user', return_value='no, my DNS is not working, ping 8.8.8.8 instead')
-def test_execute_command_rejected_with_message(mock_ask, mock_get_saved_command):
+def test_execute_command_rejected_with_message(mock_ask):
     # Given
     project = create_project()
     command = 'ping www.google.com'
