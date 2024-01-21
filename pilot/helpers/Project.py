@@ -1,15 +1,15 @@
 import json
 import os
 from pathlib import Path
-import re
 from typing import Tuple
 
 import peewee
 
 from const.messages import CHECK_AND_CONTINUE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS
-from utils.style import color_yellow_bold, color_cyan, color_white_bold, color_green
+from utils.style import color_yellow_bold, color_cyan, color_white_bold
 from const.common import STEPS
-from database.database import delete_unconnected_steps_from, delete_all_app_development_data, update_app_status
+from database.database import delete_unconnected_steps_from, delete_all_app_development_data, \
+    get_all_app_development_steps, delete_all_subsequent_steps
 from const.ipc import MESSAGE_TYPE
 from prompts.prompts import ask_user
 from helpers.exceptions.TokenLimitError import TokenLimitError
@@ -31,6 +31,7 @@ from utils.llm_connection import test_api_access
 from utils.ignore import IgnoreMatcher
 
 from utils.telemetry import telemetry
+
 
 class Project:
     def __init__(
@@ -63,7 +64,7 @@ class Project:
         }
         # TODO make flexible
         self.root_path = ''
-        self.skip_until_dev_step = None
+        self.skip_until_dev_step = self.args['skip_until_dev_step'] if 'skip_until_dev_step' in self.args else None
         self.skip_steps = None
         self.main_prompt = None
         self.files = []
@@ -85,6 +86,21 @@ class Project:
         self.package_dependencies = None
         self.development_plan = None
         self.dot_pilot_gpt = DotGptPilot(log_chat_completions=True)
+
+        # start loading of project (since backwards compatibility)
+        self.last_detailed_user_review_goal = None
+        self.last_iteration = None
+        if args['continuing_project']:
+            self.dev_steps_to_load = get_all_app_development_steps(args['app_id'],
+                                                                  prompt=None,
+                                                                  in_range=[0, self.skip_until_dev_step])
+            self.tasks_to_load = [el for el in self.dev_steps_to_load if 'breakdown.prompt' in el.get('prompt_path', '')]
+            self.features_to_load = [el for el in self.dev_steps_to_load if 'feature_plan.prompt' in el.get('prompt_path', '')]
+        else:
+            self.tasks_to_load = []
+            self.features_to_load = []
+            self.dev_steps_to_load = []
+        # end loading of project
 
         if os.getenv("AUTOFIX_FILE_PATHS", "").lower() in ["true", "1", "yes"]:
             File.update_paths()
@@ -132,7 +148,6 @@ class Project:
             self.finish_loading()
 
         if 'skip_until_dev_step' in self.args:
-            self.skip_until_dev_step = self.args['skip_until_dev_step']
             if self.args['skip_until_dev_step'] == '0':
                 clear_directory(self.root_path)
                 delete_all_app_development_data(self.args['app_id'])
@@ -169,14 +184,41 @@ class Project:
         Finish the project.
         """
         while True:
-            feature_description = ask_user(self, "Project is finished! Do you want to add any features or changes? "
-                                                 "If yes, describe it here and if no, just press ENTER",
-                                           require_some_input=False)
+            feature_description = ''
+            if not self.skip_steps:
+                feature_description = ask_user(self, "Project is finished! Do you want to add any features or changes? "
+                                                     "If yes, describe it here and if no, just press ENTER",
+                                               require_some_input=False)
 
-            if feature_description == '':
-                return
+                if feature_description == '':
+                    return
 
-            self.tech_lead.create_feature_plan(feature_description)
+                self.tech_lead.create_feature_plan(feature_description)
+
+            # loading of features
+            if self.features_to_load and self.skip_steps:
+                num_of_features = len(self.features_to_load)
+
+                # last feature is always the one we want to load
+                current_feature = self.features_to_load[-1]
+                target_id = current_feature['id']
+                self.cleanup_list('tasks_to_load', target_id)
+                self.cleanup_list('dev_steps_to_load', target_id)
+
+                # if there is feature_summary.prompt in remaining dev steps it means feature is fully done
+                # finish loading and ask to add another feature or finish project
+                if next((el for el in reversed(self.dev_steps_to_load) if 'feature_summary.prompt' in el.get('prompt_path', '')), None):
+                    self.finish_loading()
+                    print(f'loaded {num_of_features} features')
+                    continue
+
+
+                print(f'Loaded {num_of_features - 1} features!')
+                print(f'Continuing feature #{num_of_features}...')
+                self.development_plan = json.loads(current_feature['llm_response']['text'])['plan']
+                feature_description = current_feature['prompt_data']['feature_description']
+                self.features_to_load = []
+
             self.developer.start_coding()
             self.tech_lead.create_feature_summary(feature_description)
 
@@ -211,12 +253,12 @@ class Project:
         """
         files = (
             File
-                .select()
-                .where(
-                    (File.app_id == self.args['app_id']) &
-                    peewee.fn.EXISTS(FileSnapshot.select().where(FileSnapshot.file_id == File.id))
-                )
+            .select()
+            .where(
+                (File.app_id == self.args['app_id']) &
+                peewee.fn.EXISTS(FileSnapshot.select().where(FileSnapshot.file_id == File.id))
             )
+        )
 
         return self.get_files([file.path + '/' + file.name for file in files])
 
@@ -311,6 +353,7 @@ class Project:
         Tries to combine the two in a way that makes most sense, even if the given path
         have some shared components.
         """
+
         def normalize_path(path: str) -> Tuple[str, str]:
             """
             Normalizes a path (see rules in comments) and returns (directory, basename) pair.
@@ -394,7 +437,6 @@ class Project:
 
         final_absolute_path = os.path.join(self.root_path, final_file_path[1:], final_file_name)
         return final_file_path, final_absolute_path
-
 
     def save_files_snapshot(self, development_step_id):
         files = get_directory_contents(self.root_path)
@@ -492,5 +534,32 @@ class Project:
         return self.ipc_client_instance is not None and self.ipc_client_instance.client is not None
 
     def finish_loading(self):
+        # if already done, don't do it again
+        if self.skip_steps is not True:
+            return
+
         print('', type='loadingFinished')
+        if self.dev_steps_to_load:
+            self.checkpoints['last_development_step'] = self.dev_steps_to_load[0]
+            # todo add check if user agreed to overwrite files then restore files
+            self.restore_files(self.checkpoints['last_development_step']['id'])
+            delete_all_subsequent_steps(self)
+
+        self.tasks_to_load = []
+        self.features_to_load = []
+        self.dev_steps_to_load = []
+        self.last_detailed_user_review_goal = None
+        self.last_iteration = None
         self.skip_steps = False
+
+    def cleanup_list(self, list_name, target_id):
+        if target_id is None or list_name is None:
+            return
+
+        temp_list = getattr(self, list_name, [])
+
+        # Find the index of the first el with 'id' greater than target_id
+        index = next((i for i, el in enumerate(temp_list) if el['id'] >= target_id), len(temp_list))
+
+        # Keep only the elements from that index onwards
+        setattr(self, list_name, temp_list[index:])

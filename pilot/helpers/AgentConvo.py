@@ -56,7 +56,10 @@ class AgentConvo:
         # check if we already have the LLM response saved
         if hasattr(self.agent, 'save_dev_steps') and self.agent.save_dev_steps:
             self.agent.project.llm_req_num += 1
+
+        self.agent.project.finish_loading()
         development_step = get_saved_development_step(self.agent.project)
+        # after implementing backwards compatibility, this is always None
         if development_step is not None and self.agent.project.skip_steps:
             # if we do, use it
             print(color_yellow(f'Restoring development step with id {development_step.id}'))
