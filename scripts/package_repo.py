@@ -1,58 +1,79 @@
 import os
 import shutil
 import zipfile
+from tempfile import TemporaryDirectory
+from subprocess import check_call
+
+# Only these top-level items will be included in the package
+INCLUDE = [
+    "pilot",
+    "Dockerfile",
+    "docker-compose.yml",
+    "LICENSE",
+    "README.md",
+    "requirements.txt",
+    "setup.py"
+]
+
+def find_repo_root() -> str:
+    """
+    Returns the path to the root of the repository, or None if not found.
+    """
+    # Find repository root
+    dir = os.path.dirname(os.path.normpath(os.path.abspath(__file__)))
+
+    # While we haven't reached the root of the filesystem...
+    while dir != os.path.dirname(dir):
+        if os.path.exists(os.path.join(dir, ".git")):
+            break
+        dir = os.path.dirname(dir)
+    else:
+        return None
+
+    # Verify there's a "pilot" subdirectory in the repo root
+    if not os.path.exists(os.path.join(dir, "pilot")):
+        return None
+    return dir
+
 
 def main():
-    # Define the base directory (one level up from /scripts)
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    repo_path = os.path.abspath(base_dir)
+    repo_dir = find_repo_root()
+    if repo_dir is None:
+        print("Could not find GPT Pilot: please run me from the repository root directory.")
 
-    # Files to exclude from the repo temporarily while packaging
-    files_to_exclude = [
-        "pilot/.env",
-        "pilot/gpt-pilot"
-    ]
+    os.chdir(repo_dir)
 
-    # Step 1: Move excluded files to /tmp
-    tmp_excluded_paths = []
-    for file in files_to_exclude:
-        source_path = os.path.join(repo_path, file)
-        if os.path.exists(source_path):
-            tmp_path = os.path.join("/tmp", os.path.basename(file))
-            shutil.move(source_path, tmp_path)
-            tmp_excluded_paths.append((tmp_path, source_path))
+    with TemporaryDirectory() as tmp_dir:
+        # Create a repository archive
+        temp_archive_path = os.path.join(tmp_dir, "repository.zip")
+        check_call(["git", "archive", "-o", temp_archive_path, "main"])
+        check_call(["unzip", "-qq", "-x", temp_archive_path], cwd=tmp_dir)
 
-    # Items to package
-    items_to_package = [
-        "pilot",
-        "Dockerfile",
-        "docker-compose.yml",
-        "LICENSE",
-        "README.md",
-        "requirements.txt",
-        "setup.py"
-    ]
+        # Remove all items from the archive that aren't explictly whitelisted
+        for item in os.listdir(tmp_dir):
+            if item not in INCLUDE:
+                path = os.path.join(tmp_dir, item)
+                if os.path.isfile(path):
+                    os.remove(path)
+                else:
+                    shutil.rmtree(path)
 
-    # Step 2: Package the specified items using Python's zipfile module
-    parent_directory = os.path.dirname(base_dir)
-    archive_path = os.path.join(parent_directory, "gpt-pilot-packaged.zip")
+        archive_path = os.path.abspath(os.path.join("..", "gpt-pilot-packaged.zip"))
+        if os.path.exists(archive_path):
+            os.remove(archive_path)
 
-    with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as archive:
-        for item in items_to_package:
-            item_path = os.path.join(repo_path, item)
-            if os.path.isfile(item_path):
-                archive.write(item_path, item)
-            elif os.path.isdir(item_path):
-                for root, _, files in os.walk(item_path):
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        archive_path = os.path.relpath(file_path, repo_path)
-                        archive.write(file_path, archive_path)
+        with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            for dpath, dirs, files in os.walk(tmp_dir):
+                for file in files:
+                    full_path = os.path.join(dpath, file)
+                    if full_path != temp_archive_path:
+                        rel_path = os.path.relpath(full_path, tmp_dir)
+                        print(rel_path)
+                        zip_file.write(full_path, rel_path)
 
-    # Step 3: Move the excluded files back
-    for tmp_path, orig_path in tmp_excluded_paths:
-        if os.path.exists(tmp_path):
-            shutil.move(tmp_path, orig_path)
+        size = os.path.getsize(archive_path)
+        print(f"\nCreated: {archive_path} ({size // 1024} KB)")
+
 
 if __name__ == "__main__":
     main()
