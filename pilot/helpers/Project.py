@@ -21,7 +21,6 @@ from helpers.agents.Developer import Developer
 from helpers.agents.Architect import Architect
 from helpers.agents.ProductOwner import ProductOwner
 from helpers.agents.TechnicalWriter import TechnicalWriter
-from helpers.AgentConvo import AgentConvo
 
 from database.models.development_steps import DevelopmentSteps
 from database.models.file_snapshot import FileSnapshot
@@ -83,6 +82,9 @@ class Project:
         self.development_plan = development_plan
         self.dot_pilot_gpt = DotGptPilot(log_chat_completions=enable_dot_pilot_gpt)
 
+        if os.getenv("AUTOFIX_FILE_PATHS", "").lower() in ["true", "1", "yes"]:
+            File.update_paths()
+
         # start loading of project (since backwards compatibility)
         self.should_overwrite_files = False
         self.last_detailed_user_review_goal = None
@@ -91,14 +93,12 @@ class Project:
             self.dev_steps_to_load = get_all_app_development_steps(args['app_id'], last_step=self.skip_until_dev_step)
             self.tasks_to_load = [el for el in self.dev_steps_to_load if 'breakdown.prompt' in el.get('prompt_path', '')]
             self.features_to_load = [el for el in self.dev_steps_to_load if 'feature_plan.prompt' in el.get('prompt_path', '')]
+            self.checkpoints['last_development_step'] = self.dev_steps_to_load[-1]
         else:
             self.tasks_to_load = []
             self.features_to_load = []
             self.dev_steps_to_load = []
         # end loading of project
-
-        if os.getenv("AUTOFIX_FILE_PATHS", "").lower() in ["true", "1", "yes"]:
-            File.update_paths()
 
     def set_root_path(self, root_path: str):
         self.root_path = root_path
@@ -191,7 +191,6 @@ class Project:
 
                 # last feature is always the one we want to load
                 current_feature = self.features_to_load[-1]
-                self.tech_lead.convo_feature_plan = AgentConvo(self.tech_lead)
                 self.tech_lead.convo_feature_plan.messages = current_feature['messages'] + [{"role": "assistant", "content": current_feature['llm_response']['text']}]
                 target_id = current_feature['id']
                 self.cleanup_list('tasks_to_load', target_id)
@@ -533,9 +532,9 @@ class Project:
             return
 
         print('', type='loadingFinished')
-        if self.dev_steps_to_load and do_cleanup:
-            self.checkpoints['last_development_step'] = self.dev_steps_to_load[0]
-            # todo add check if user agreed to overwrite files then restore files
+        if do_cleanup:
+            if self.dev_steps_to_load:
+                self.checkpoints['last_development_step'] = self.dev_steps_to_load[0]
             if self.should_overwrite_files:
                 self.restore_files(self.checkpoints['last_development_step']['id'])
             delete_all_subsequent_steps(self)

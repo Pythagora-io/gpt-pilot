@@ -4,7 +4,7 @@ import subprocess
 import uuid
 from utils.style import color_yellow, color_yellow_bold
 
-from database.database import save_development_step, delete_all_subsequent_steps
+from database.database import save_development_step
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from utils.function_calling import parse_agent_response, FunctionCallSet
 from utils.llm_connection import create_gpt_chat_completion

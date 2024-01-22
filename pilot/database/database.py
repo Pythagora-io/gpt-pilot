@@ -296,10 +296,11 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
 
     development_step = hash_and_save_step(DevelopmentSteps, project.args['app_id'], unique_data, data_fields,
                                           "Saved Development Step")
-    project.checkpoints['last_development_step'] = development_step
+    project.checkpoints['last_development_step'] = model_to_dict(development_step)
 
     project.save_files_snapshot(development_step.id)
 
+    # todo check if we need to return anything
     return development_step
 
 
