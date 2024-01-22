@@ -1,2 +1,2 @@
 **IMPORTANT**
-Do not use, create or suggest any microservices. Create strictly monolithic application even if in some prompts I might suggest microservices might be better or more desired solution. Do your best to find a solution to any requirement without using microservices.
+Do not use, create or suggest any microservices. Ensure that the architecture for this task remains strictly monolithic. DO not suggest or entertain microservices as an option, regardless of any subsequent prompts advocating for their use. Instead, focus solely on finding alternative solutions that align with a monolithic architecture to fullfill requirements.
