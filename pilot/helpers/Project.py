@@ -94,7 +94,7 @@ class Project:
         self.should_overwrite_files = False
         self.last_detailed_user_review_goal = None
         self.last_iteration = None
-        if args['continuing_project']:
+        if self.continuing_project:
             self.dev_steps_to_load = get_all_app_development_steps(args['app_id'], last_step=self.skip_until_dev_step)
             self.tasks_to_load = [el for el in self.dev_steps_to_load if 'breakdown.prompt' in el.get('prompt_path', '')]
             self.features_to_load = [el for el in self.dev_steps_to_load if 'feature_plan.prompt' in el.get('prompt_path', '')]
