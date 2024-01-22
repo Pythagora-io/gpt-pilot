@@ -11,7 +11,9 @@ Rule #1
 There should never be a task that is only testing or ensuring something works, every task must have coding involved. Have this in mind for every task, but it is extremely important for last task of project. Testing if {{ task_type }} works will be done as part of each task.
 
 Rule #2
-You have to make sure the project is not split into tasks that are too small or simple for no reason but also not too big or complex so that they are hard to develop, debug and review. Here are examples of poorly created tasks:
+You have to make sure the project is not split into tasks that are too small or simple for no reason but also not too big or complex so that they are hard to develop, debug and review.
+Have in mind that project already has workspace folder created and only system dependencies installed. You don't have to create tasks for that.
+Here are examples of poorly created tasks:
 
 **too simple tasks**
 - Set up a Node.js project and install all necessary dependencies.
@@ -31,12 +33,31 @@ Every {{ task_type }} should have different number of tasks depending on complex
 
 Example #1:
 app description: "I want to create an app that will just say 'Hello World' when I open it on my localhost:3000."
-number of tasks: 1-3
+number of tasks: 1-2
 
 Example #2:
 app description: "Create a node.js app that enables users to register and log into the app. On frontend it should have /home (shows user data), /register and /login. It should use sessions to keep user logged in."
-number of tasks: 2-6
+number of tasks: 2-4
 
 Example #3:
 app description: "A cool online shoe store, with a sleek look. In terms of data models, there are shoes, categories and user profiles. For web pages: product listing, details, shopping cart. It must look cool and jazzy."
 number of tasks: 5-15
+
+Rule #4
+This rule applies to both 'description' and 'programmatic_goal'.
+Every task must have a clear and very detailed (must be minimum of 4 sentences but can be more) 'description' and 'programmatic_goal'. It must be very clear so that even developers who just moved to this project can execute them without additional questions. It is not enough to just write "Create a route for /home". You have to describe what needs to be done in that route, what data needs to be returned, what should be the status code, etc. Give as many details as possible and make sure no information is missing that could be needed for this task.
+Here are some examples of good and bad task descriptions:
+
+**bad task**
+{
+    "description": "Create a route for /dashboard",
+    "programmatic_goal": "In 'route.js', the route is created for /dashboard",
+    "user_review_goal": "Reviewer should confirming the /dashboard endpoint is working correct."
+}
+
+**good task**
+{
+    "description": "Create a route for /dashboard that returns the status 200 and a message "Hello World". Route should be accessible only for logged in users. If user is not logged in, it should redirect to /login. If user is logged in, it should return the user data. User data should be fetched from database using the user id from session.",
+    "programmatic_goal": "In 'route.js' add a route for /dashboard that returns the status 200. In 'middlewares.js' there should be a check if user is logged in using session. If user is not logged in, it should redirect the user to /login. If user is logged in, it should open dashboard with all the user data. First get user data from database 'users' collection, filter only data needed for dashboard and send it to frontend.",
+    "user_review_goal": "Reviewer should be able to navigate to '/dashboard' page without error. If user is logged in it should show user data, if not it should redirect to /login."
+}

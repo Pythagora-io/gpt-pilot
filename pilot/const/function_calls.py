@@ -458,15 +458,15 @@ DEVELOPMENT_PLAN = {
                     "description": 'List of development tasks that need to be done to implement the entire plan.',
                     "items": {
                         "type": "object",
-                        'description': 'Development task that needs to be done to implement the entire plan.',
+                        'description': 'Development task that needs to be done to implement the entire plan. It contains all details that developer who is not familiar with project needs to know to implement the task.',
                         'properties': {
                             'description': {
                                 'type': 'string',
-                                'description': 'Description of the development task that needs to be done to implement the entire plan.',
+                                'description': 'Very detailed description of the development task that needs to be done to implement the entire plan.',
                             },
                             'programmatic_goal': {
                                 'type': 'string',
-                                'description': 'Detailed description of programmatic goal. Programmatic goal that will determine if a task can be marked as done from a programmatic perspective (this will result in an automated test that is run before the task is sent to you for a review). All details previously specified by user that are important for this task must be included in this programmatic goal.',
+                                'description': 'Very detailed description of programmatic goal. Programmatic goal that will determine if a task can be marked as done from a programmatic perspective. All details previously specified by user that are important for this task must be included in this programmatic goal.',
                             },
                             'user_review_goal': {
                                 'type': 'string',
