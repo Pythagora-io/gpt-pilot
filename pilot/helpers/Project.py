@@ -21,6 +21,7 @@ from helpers.agents.Developer import Developer
 from helpers.agents.Architect import Architect
 from helpers.agents.ProductOwner import ProductOwner
 from helpers.agents.TechnicalWriter import TechnicalWriter
+from helpers.AgentConvo import AgentConvo
 
 from database.models.development_steps import DevelopmentSteps
 from database.models.file_snapshot import FileSnapshot
@@ -88,12 +89,11 @@ class Project:
         self.dot_pilot_gpt = DotGptPilot(log_chat_completions=True)
 
         # start loading of project (since backwards compatibility)
+        self.should_overwrite_files = False
         self.last_detailed_user_review_goal = None
         self.last_iteration = None
         if args['continuing_project']:
-            self.dev_steps_to_load = get_all_app_development_steps(args['app_id'],
-                                                                  prompt=None,
-                                                                  in_range=[0, self.skip_until_dev_step])
+            self.dev_steps_to_load = get_all_app_development_steps(args['app_id'], last_step=self.skip_until_dev_step)
             self.tasks_to_load = [el for el in self.dev_steps_to_load if 'breakdown.prompt' in el.get('prompt_path', '')]
             self.features_to_load = [el for el in self.dev_steps_to_load if 'feature_plan.prompt' in el.get('prompt_path', '')]
         else:
@@ -147,29 +147,32 @@ class Project:
             delete_all_app_development_data(self.args['app_id'])
             self.finish_loading()
 
-        if 'skip_until_dev_step' in self.args:
-            if self.args['skip_until_dev_step'] == '0':
-                clear_directory(self.root_path)
-                delete_all_app_development_data(self.args['app_id'])
-                self.finish_loading()
-            elif self.skip_until_dev_step is not None:
-                should_overwrite_files = None
-                while should_overwrite_files is None or should_overwrite_files.lower() not in AFFIRMATIVE_ANSWERS + NEGATIVE_ANSWERS:
-                    print('yes/no', type='buttons-only')
-                    should_overwrite_files = styled_text(
-                        self,
-                        "Can I overwrite any changes that you might have made to the project since last running GPT Pilot (y/n)?",
-                        ignore_user_input_count=True
-                    )
+        if self.continuing_project:
+            should_overwrite_files = None
+            while should_overwrite_files is None or should_overwrite_files.lower() not in AFFIRMATIVE_ANSWERS + NEGATIVE_ANSWERS:
+                print('yes/no', type='buttons-only')
+                should_overwrite_files = styled_text(
+                    self,
+                    "Can I overwrite any changes that you might have made to the project since last running GPT Pilot (y/n)?",
+                    ignore_user_input_count=True
+                )
 
-                    logger.info('should_overwrite_files: %s', should_overwrite_files)
-                    if should_overwrite_files in NEGATIVE_ANSWERS:
-                        break
-                    elif should_overwrite_files in AFFIRMATIVE_ANSWERS:
+                logger.info('should_overwrite_files: %s', should_overwrite_files)
+                if should_overwrite_files in NEGATIVE_ANSWERS:
+                    self.should_overwrite_files = False
+                    break
+                elif should_overwrite_files in AFFIRMATIVE_ANSWERS:
+                    self.should_overwrite_files = True
+                    if self.skip_until_dev_step is not None and self.skip_until_dev_step != '0':
                         FileSnapshot.delete().where(
                             FileSnapshot.app == self.app and FileSnapshot.development_step == self.skip_until_dev_step).execute()
                         self.save_files_snapshot(self.skip_until_dev_step)
-                        break
+                    break
+
+        if self.skip_until_dev_step is not None and self.skip_until_dev_step == '0':
+            clear_directory(self.root_path)
+            delete_all_app_development_data(self.args['app_id'])
+            self.finish_loading()
         # TODO END
 
         self.dot_pilot_gpt.write_project(self)
@@ -196,18 +199,22 @@ class Project:
                 self.tech_lead.create_feature_plan(feature_description)
 
             # loading of features
-            if self.features_to_load and self.skip_steps:
+            elif self.features_to_load:
                 num_of_features = len(self.features_to_load)
 
                 # last feature is always the one we want to load
                 current_feature = self.features_to_load[-1]
+                self.tech_lead.convo_feature_plan = AgentConvo(self.tech_lead)
+                self.tech_lead.convo_feature_plan.messages = current_feature['messages'] + [{"role": "assistant", "content": current_feature['llm_response']['text']}]
                 target_id = current_feature['id']
                 self.cleanup_list('tasks_to_load', target_id)
                 self.cleanup_list('dev_steps_to_load', target_id)
 
                 # if there is feature_summary.prompt in remaining dev steps it means feature is fully done
                 # finish loading and ask to add another feature or finish project
-                if next((el for el in reversed(self.dev_steps_to_load) if 'feature_summary.prompt' in el.get('prompt_path', '')), None):
+                feature_summary_dev_step = next((el for el in reversed(self.dev_steps_to_load) if 'feature_summary.prompt' in el.get('prompt_path', '')), None)
+                if feature_summary_dev_step is not None:
+                    self.cleanup_list('dev_steps_to_load', feature_summary_dev_step['id'])
                     self.finish_loading()
                     print(f'loaded {num_of_features} features')
                     continue
@@ -533,16 +540,17 @@ class Project:
         """
         return self.ipc_client_instance is not None and self.ipc_client_instance.client is not None
 
-    def finish_loading(self):
+    def finish_loading(self, do_cleanup=True):
         # if already done, don't do it again
         if self.skip_steps is not True:
             return
 
         print('', type='loadingFinished')
-        if self.dev_steps_to_load:
+        if self.dev_steps_to_load and do_cleanup:
             self.checkpoints['last_development_step'] = self.dev_steps_to_load[0]
             # todo add check if user agreed to overwrite files then restore files
-            self.restore_files(self.checkpoints['last_development_step']['id'])
+            if self.should_overwrite_files:
+                self.restore_files(self.checkpoints['last_development_step']['id'])
             delete_all_subsequent_steps(self)
 
         self.tasks_to_load = []

@@ -65,17 +65,11 @@ def get_created_apps_with_steps():
     return apps
 
 
-def get_all_app_development_steps(app_id, prompt=None, in_range=[None, None]):
+def get_all_app_development_steps(app_id, last_step=None):
     query = DevelopmentSteps.select().where(DevelopmentSteps.app == app_id)
 
-    if prompt is not None:
-        query = query.where(DevelopmentSteps.prompt_path.contains(prompt))
-
-    if in_range[0] is not None:
-        query = query.where(DevelopmentSteps.id >= in_range[0])
-
-    if in_range[1] is not None:
-        query = query.where(DevelopmentSteps.id <= in_range[1])
+    if last_step is not None:
+        query = query.where(DevelopmentSteps.id <= last_step)
 
     return [model_to_dict(dev_step) for dev_step in query]
 
@@ -296,7 +290,7 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
 
     unique_data = {
         'app': project.args['app_id'],
-        'previous_step': project.checkpoints['last_development_step'],
+        'previous_step': project.checkpoints['last_development_step']['id'],
         'high_level_step': project.current_step,
     }
 
@@ -306,17 +300,6 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
 
     project.save_files_snapshot(development_step.id)
 
-    return development_step
-
-
-def get_saved_development_step(project):
-    # not used at all with implementation of backwards compatibility
-    return None
-    development_step = get_db_model_from_hash_id(DevelopmentSteps, project.args['app_id'],
-                                                 project.checkpoints['last_development_step'], project.current_step)
-
-    if development_step is None and project.skip_steps:
-        project.finish_loading()
     return development_step
 
 
@@ -342,21 +325,6 @@ def save_command_run(project, command, cli_response, done_or_error_response, exi
     return command_run
 
 
-def get_saved_command_run(project, command):
-    # not used at all with implementation of backwards compatibility
-    return None
-    # data_to_hash = {
-    #     'command': command,
-    #     'command_runs_count': project.command_runs_count
-    # }
-    command_run = get_db_model_from_hash_id(CommandRuns, project.args['app_id'],
-                                            project.checkpoints['last_command_run'], project.current_step)
-
-    if command_run is None and project.skip_steps:
-        project.finish_loading()
-    return command_run
-
-
 def save_user_input(project, query, user_input, hint):
     if project.current_step != 'coding':
         return
@@ -376,25 +344,10 @@ def save_user_input(project, query, user_input, hint):
     return user_input
 
 
-def get_saved_user_input(project, query):
-    # not used at all with implementation of backwards compatibility
-    return None
-    # data_to_hash = {
-    #     'query': query,
-    #     'user_inputs_count': project.user_inputs_count
-    # }
-    user_input = get_db_model_from_hash_id(UserInputs, project.args['app_id'], project.checkpoints['last_user_input'],
-                                           project.current_step)
-
-    if user_input is None and project.skip_steps:
-        project.finish_loading()
-    return user_input
-
-
 def delete_all_subsequent_steps(project):
     app = get_app(project.args['app_id'])
     delete_subsequent_steps(DevelopmentSteps, app, project.checkpoints['last_development_step'])
-    # after implementation of backwards compatibility, we don't need to delete subsequent steps
+    # after implementation of backwards compatibility, we don't need to delete subsequent steps for CommandRuns and UserInputs
     # delete_subsequent_steps(CommandRuns, app, project.checkpoints['last_command_run'])
     # delete_subsequent_steps(UserInputs, app, project.checkpoints['last_user_input'])
 

@@ -114,6 +114,6 @@ if __name__ == "__main__":
 
     finally:
         if project is not None:
-            project.finish_loading()
+            project.finish_loading(do_cleanup=False)
         if run_exit_fn:
             exit_gpt_pilot(project, ask_feedback)
