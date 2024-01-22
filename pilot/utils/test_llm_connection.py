@@ -338,22 +338,18 @@ class TestSchemaValidation:
   "plan": [
     {
       "description": "Set up project structure including creation of necessary directories and files. Initialize Node.js and install necessary libraries such as express and socket.io.",
-      "programmatic_goal": "Project structure should be set up and Node.js initialized. Express and socket.io libraries should be installed and reflected in the package.json file.",
       "user_review_goal": "Developer should be able to start an empty express server by running `npm start` command without any errors."
     },
     {
       "description": "Create a simple front-end HTML page with CSS and JavaScript that includes input for typing messages and area for displaying messages.",
-      "programmatic_goal": "There should be an HTML file containing an input box for typing messages and an area for displaying the messages. This HTML page should be served when user navigates to the root URL.",
       "user_review_goal": "Navigating to the root URL (http://localhost:3000) should display the chat front-end with an input box and a message area."
     },
     {
       "description": "Set up socket.io on the back-end to handle websocket connections and broadcasting messages to the clients.",
-      "programmatic_goal": "Server should be able to handle websocket connections using socket.io and broadcast messages to all connected clients.",
       "user_review_goal": "By using two different browsers or browser tabs, when one user sends a message from one tab, it should appear in the other user's browser tab in real-time."
     },
     {
       "description": "Integrate front-end with socket.io client to send messages from the input field to the server and display incoming messages in the message area.",
-      "programmatic_goal": "Front-end should be able to send messages to server and display incoming messages in the message area using socket.io client.",
       "user_review_goal": "Typing a message in the chat input and sending it should then display the message in the chat area."
     }
   ]
@@ -556,5 +552,4 @@ The development process will include the creation of user stories and tasks, bas
         assert response is not None
         response = parse_agent_response(response, function_calls)
         assert_non_empty_string(response['plan'][0]['description'])
-        assert_non_empty_string(response['plan'][0]['programmatic_goal'])
         assert_non_empty_string(response['plan'][0]['user_review_goal'])

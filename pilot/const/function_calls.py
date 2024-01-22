@@ -464,16 +464,12 @@ DEVELOPMENT_PLAN = {
                                 'type': 'string',
                                 'description': 'Very detailed description of the development task that needs to be done to implement the entire plan.',
                             },
-                            'programmatic_goal': {
-                                'type': 'string',
-                                'description': 'Very detailed description of programmatic goal. Programmatic goal that will determine if a task can be marked as done from a programmatic perspective. All details previously specified by user that are important for this task must be included in this programmatic goal.',
-                            },
                             'user_review_goal': {
                                 'type': 'string',
                                 'description': 'User review goal that will determine if a task is done or not, but from a user perspective since it will be reviewed by a human.',
                             }
                         },
-                        'required': ['description', 'programmatic_goal', 'user_review_goal'],
+                        'required': ['description', 'user_review_goal'],
                     },
                 },
             },
