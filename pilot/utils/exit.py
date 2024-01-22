@@ -9,23 +9,6 @@ from utils.questionary import styled_text
 from utils.telemetry import telemetry
 
 
-def send_telemetry(path_id=None, event='pilot-exit'):
-    if path_id is None:
-        path_id = get_path_id()
-
-    # Prepare the telemetry data
-    telemetry_data = {
-        "pathId": path_id,
-        "event": event
-    }
-
-    try:
-        response = requests.post("https://api.pythagora.io/telemetry", json=telemetry_data)
-        response.raise_for_status()
-    except:  # noqa
-        pass
-
-
 def send_feedback(feedback, path_id):
     """Send the collected feedback to the endpoint."""
     # Prepare the feedback data (you can adjust the structure as per your backend needs)
@@ -121,8 +104,6 @@ def ask_user_email(project):
 def exit_gpt_pilot(project, ask_feedback=True):
     terminate_running_processes()
     path_id = get_path_id()
-
-    send_telemetry(path_id)
 
     if ask_feedback:
         ask_to_store_prompt(project, path_id)

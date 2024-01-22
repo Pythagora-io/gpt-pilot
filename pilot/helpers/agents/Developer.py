@@ -27,6 +27,7 @@ from helpers.cli import run_command_until_success, execute_command_and_check_cli
 from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN
 from database.database import save_progress, get_progress_steps, update_app_status
 from utils.utils import get_os_info
+from utils.telemetry import telemetry
 
 ENVIRONMENT_SETUP_STEP = 'environment_setup'
 
@@ -67,6 +68,7 @@ class Developer(Agent):
                     documented_thresholds.add(threshold)
 
             self.implement_task(i, dev_task)
+            telemetry.inc("num_tasks")
 
         # DEVELOPMENT END
         self.project.technical_writer.document_project(100)
@@ -77,10 +79,16 @@ class Developer(Agent):
             message = 'The app is DONE!!! Yay...you can use it now.\n'
             logger.info(message)
             print(color_green_bold(message))
+            if not self.project.skip_steps:
+                telemetry.set("end_result", "success:initial-project")
+                telemetry.send()
         else:
             message = 'Feature complete!\n'
             logger.info(message)
             print(color_green_bold(message))
+            if not self.project.skip_steps:
+                telemetry.set("end_result", "success:feature")
+                telemetry.send()
 
     def implement_task(self, i, development_task=None):
         print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'))

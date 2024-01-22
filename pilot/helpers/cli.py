@@ -473,6 +473,8 @@ def run_command_until_success(convo, command,
         return {'success': False, 'user_input': response}
 
     response = check_if_command_successful(convo, command, cli_response, response, exit_code, additional_message)
+    if response:
+        response = response.strip()
 
     if response != 'DONE':
         # 'NEEDS_DEBUGGING'

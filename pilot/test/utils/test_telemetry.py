@@ -82,6 +82,19 @@ def test_clear_data_resets_times():
     assert telemetry.end_time is None
 
 
+def test_clear_counter_resets_times_but_leaves_data():
+    telemetry = Telemetry()
+    telemetry.data["model"] = "test-model"
+    telemetry.start_time = 1234567890
+    telemetry.end_time = 1234567895
+
+    telemetry.clear_counters()
+
+    assert telemetry.data["model"] == "test-model"
+    assert telemetry.start_time is None
+    assert telemetry.end_time is None
+
+
 @patch("utils.telemetry.settings")
 @patch("utils.telemetry.uuid4")
 def test_telemetry_setup_already_enabled(mock_uuid4, mock_settings):
@@ -310,7 +323,7 @@ def test_send_no_endpoint_configured(mock_settings, mock_post, caplog):
 
 @patch("utils.telemetry.requests.post")
 @patch("utils.telemetry.settings")
-def test_send_clears_data_after_sending(mock_settings, _mock_post):
+def test_send_clears_counters_after_sending(mock_settings, _mock_post):
     mock_settings.telemetry = {
         "id": "test-id",
         "endpoint": "test-endpoint",
@@ -319,9 +332,11 @@ def test_send_clears_data_after_sending(mock_settings, _mock_post):
 
     telemetry = Telemetry()
     telemetry.data["model"] = "test-model"
+    telemetry.data["num_llm_tokens"] = 100
     telemetry.send()
 
-    assert telemetry.data["model"] is None
+    assert telemetry.data["model"] == "test-model"
+    assert telemetry.data["num_llm_tokens"] == 0
 
 
 @patch("utils.telemetry.settings")

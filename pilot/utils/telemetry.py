@@ -84,6 +84,26 @@ class Telemetry:
             "model": None,
             # Initial prompt
             "initial_prompt": None,
+            # Optional user contact email
+            "user_contact": None,
+            # Unique project ID (app_id)
+            "app_id": None,
+            # Project architecture
+            "architecture": None,
+        }
+        if sys.platform == "linux":
+            try:
+                import distro
+                self.data["linux_distro"] = distro.name(pretty=True)
+            except Exception as err:
+                log.debug(f"Error getting Linux distribution info: {err}", exc_info=True)
+        self.clear_counters()
+
+    def clear_counters(self):
+        """
+        Reset telemetry counters while keeping the base data.
+        """
+        self.data.update({
             # Number of LLM requests made
             "num_llm_requests": 0,
             # Number of LLM requests that resulted in an error
@@ -100,30 +120,29 @@ class Telemetry:
             "num_files": 0,
             # Total number of lines in the project
             "num_lines": 0,
+            # Number of tasks started during development
+            "num_tasks": 0,
             # Number of seconds elapsed during development
             "elapsed_time": 0,
-            # End result of development ("success", "failure", or None if interrupted)
+            # End result of development:
+            # - success:initial-project
+            # - success:feature
+            # - success:exit
+            # - failure
+            # - failure:api-error
+            # - interrupt
             "end_result": None,
-            # Whether the project is continuation of a previous project
+            # Whether the project is continuation of a previous session
             "is_continuation": False,
             # Optional user feedback
             "user_feedback": None,
-            # Optional user contact email
-            "user_contact": None,
             # If GPT Pilot crashes, record diagnostics
             "crash_diagnostics": None,
             # Statistics for large requests
             "large_requests": None,
             # Statistics for slow requests
             "slow_requests": None,
-        }
-        if sys.platform == "linux":
-            try:
-                import distro
-                self.data["linux_distro"] = distro.name(pretty=True)
-            except Exception as err:
-                log.debug(f"Error getting Linux distribution info: {err}", exc_info=True)
-
+        })
         self.start_time = None
         self.end_time = None
         self.large_requests = []
@@ -346,12 +365,12 @@ class Telemetry:
         )
         try:
             requests.post(self.endpoint, json=payload)
+            self.clear_counters()
+            self.set("is_continuation", True)
         except Exception as e:
             log.error(
                 f"Telemetry.send(): failed to send telemetry data: {e}", exc_info=True
             )
-        finally:
-            self.clear_data()
 
 
 telemetry = Telemetry()

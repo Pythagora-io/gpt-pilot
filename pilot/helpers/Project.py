@@ -82,6 +82,7 @@ class Project:
         self.user_tasks = None
         self.architecture = None
         self.system_dependencies = None
+        self.package_dependencies = None
         self.development_plan = None
         self.dot_pilot_gpt = DotGptPilot(log_chat_completions=True)
 
@@ -116,6 +117,12 @@ class Project:
         self.tech_lead = TechLead(self)
         self.tech_lead.create_development_plan()
 
+        telemetry.set("app_id", self.args["app_id"])
+        telemetry.set("architecture", {
+            "description": self.architecture,
+            "system_dependencies": self.system_dependencies,
+            "package_dependencies": self.package_dependencies,
+        })
         # TODO move to constructor eventually
         if self.args['step'] is not None and STEPS.index(self.args['step']) < STEPS.index('coding'):
             clear_directory(self.root_path)

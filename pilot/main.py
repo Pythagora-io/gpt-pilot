@@ -16,7 +16,7 @@ from utils.style import color_red
 from utils.custom_print import get_custom_print
 from helpers.Project import Project
 from utils.arguments import get_arguments
-from utils.exit import exit_gpt_pilot, send_telemetry
+from utils.exit import exit_gpt_pilot
 from logger.logger import logger
 from database.database import database_exists, create_database, tables_exist, create_tables, get_created_apps_with_steps
 
@@ -78,7 +78,6 @@ if __name__ == "__main__":
             if settings.telemetry is None:
                 telemetry.setup()
                 loader.save("telemetry")
-            send_telemetry(event='pilot-start')
 
             if args.get("app_id"):
                 telemetry.set("is_continuation", True)
@@ -94,10 +93,10 @@ if __name__ == "__main__":
             started = project.start()
             if started:
                 project.finish()
-                telemetry.set("end_result", "success")
+                telemetry.set("end_result", "success:exit")
             else:
                 run_exit_fn = False
-                telemetry.set("end_result", "api-error")
+                telemetry.set("end_result", "failure:api-error")
                 print('Exit', type='exit')
 
     except KeyboardInterrupt:
