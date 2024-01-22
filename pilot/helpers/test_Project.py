@@ -355,7 +355,6 @@ class TestProjectFileLists:
         project.project_description = 'Test Project'
         project.development_plan = [{
             'description': 'Test User Story',
-            'programmatic_goal': 'Test Programmatic Goal',
             'user_review_goal': 'Test User Review Goal',
         }]
 
