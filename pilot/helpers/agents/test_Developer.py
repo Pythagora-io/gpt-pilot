@@ -43,7 +43,7 @@ class TestDeveloper:
         self.developer.convo_os_specific_tech = AgentConvo(self.developer)
 
         # When
-        llm_response = self.developer.install_technology('python')
+        llm_response = self.developer.check_system_dependency('python')
 
         # Then
         assert llm_response == 'DONE'

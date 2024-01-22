@@ -12,11 +12,7 @@ def create_project():
         'app_id': 'test-project',
         'name': 'TestProject',
         'app_type': ''
-    },
-        name='TestProject',
-        architecture=[],
-        user_stories=[]
-    )
+    })
     project.set_root_path(test_root)
     project.app = 'test'
     project.current_step = 'test'

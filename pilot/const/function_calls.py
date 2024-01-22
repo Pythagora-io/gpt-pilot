@@ -93,7 +93,64 @@ USER_TASKS = {
 
 ARCHITECTURE = {
     'definitions': [
-        return_array_from_prompt('technologies', 'technology', 'technologies')
+        {
+            'name': 'process_architecture',
+            'description': "Get architecture and the list of system dependencies required for the project.",
+            'parameters': {
+                'type': 'object',
+                "properties": {
+                    "architecture": {
+                        "type": "string",
+                        "description": "General description of the app architecture.",
+                    },
+                    "system_dependencies": {
+                        "type": "array",
+                        "description": "List of system dependencies required to build and run the app.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "Name of the system dependency, for example Node.js or Python."
+                                },
+                                "description": {
+                                    "type": "string",
+                                    "description": "One-line description of the dependency.",
+                                },
+                                "test": {
+                                    "type": "string",
+                                    "description": "Command line to test whether the dependency is available on the system.",
+                                },
+                                "required_locally": {
+                                    "type": "boolean",
+                                    "description": "Whether this dependency must be installed locally (as opposed to connecting to cloud or other server)",
+                                }
+                            },
+                            "required": ["name", "description", "test", "required_locally"],
+                        },
+                    },
+                    "package_dependencies": {
+                        "type": "array",
+                        "description": "List of framework/language-specific packages used by the app.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "Name of the package dependency, for example Express or React."
+                                },
+                                "description": {
+                                    "type": "string",
+                                    "description": "One-line description of the dependency.",
+                                }
+                            },
+                            "required": ["name", "description"],
+                        },
+                    },
+                },
+                "required": ["architecture", "system_dependencies", "package_dependencies"],
+            },
+        },
     ],
     'functions': {
         'process_technologies': lambda technologies: technologies
