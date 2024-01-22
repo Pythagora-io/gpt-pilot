@@ -97,10 +97,13 @@ class Project:
         """
         Start the project.
         """
+
+        telemetry.start()
+        telemetry.set("app_id", self.args["app_id"])
+
         if not test_api_access(self):
             return False
 
-        telemetry.start()
         self.project_manager = ProductOwner(self)
         self.project_manager.get_project_description()
 
@@ -117,7 +120,6 @@ class Project:
         self.tech_lead = TechLead(self)
         self.tech_lead.create_development_plan()
 
-        telemetry.set("app_id", self.args["app_id"])
         telemetry.set("architecture", {
             "description": self.architecture,
             "system_dependencies": self.system_dependencies,
