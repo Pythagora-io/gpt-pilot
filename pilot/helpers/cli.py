@@ -9,9 +9,9 @@ import platform
 from typing import Dict, Union
 
 from logger.logger import logger
-from utils.style import color_yellow, color_green, color_red, color_yellow_bold
+from utils.style import color_green, color_red, color_yellow_bold
 from utils.ignore import IgnoreMatcher
-from database.database import get_saved_command_run, save_command_run
+from database.database import save_command_run
 from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
 from helpers.exceptions.TokenLimitError import TokenLimitError
 from helpers.exceptions.CommandFinishedEarly import CommandFinishedEarly
@@ -232,11 +232,6 @@ def execute_command(project, command, timeout=None, success_message=None, comman
         command = f"bash -c '{command}'"
 
     project.command_runs_count += 1
-    command_run = get_saved_command_run(project, command)
-    if command_run is not None and project.skip_steps:
-        project.checkpoints['last_command_run'] = command_run
-        print(color_yellow(f'Restoring command run response id {command_run.id}:\n```\n{command_run.cli_response}```'))
-        return command_run.cli_response, command_run.done_or_error_response, command_run.exit_code
 
     return_value = None
     done_or_error_response = None

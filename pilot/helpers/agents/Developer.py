@@ -26,7 +26,7 @@ from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
 from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes
 from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN
-from database.database import save_progress, get_progress_steps, update_app_status, get_all_app_development_steps
+from database.database import save_progress, get_progress_steps, update_app_status
 from utils.utils import get_os_info
 
 ENVIRONMENT_SETUP_STEP = 'environment_setup'
@@ -80,7 +80,11 @@ class Developer(Agent):
                 # if it is last task to load, execute it to check if it's finished
                 else:
                     # if create_readme.prompt is after start of last task, that means task is fully done, so skip it
-                    if len(self.project.development_plan) - 1 == i and any('create_readme.prompt' in el.get('prompt_path', '') for el in self.project.dev_steps_to_load):
+                    readme_dev_step = next((el for el in self.project.dev_steps_to_load if
+                                                   'create_readme.prompt' in el.get('prompt_path', '')), None)
+
+                    if len(self.project.development_plan) - 1 == i and readme_dev_step is not None:
+                        self.project.cleanup_list('dev_steps_to_load', readme_dev_step['id'])
                         continue
 
             self.implement_task(i, dev_task)
@@ -149,21 +153,19 @@ class Developer(Agent):
 
         completed_steps = []
 
-        while True:
-            # This whole if statement is loading of project.
-            # We want to skip to last iteration that user had in this task (in continue_development function) which is
-            # last iteration.prompt. That prompt must be between current dev step and skip_until_dev_step or last dev
-            # step in db.
-            if self.project.dev_steps_to_load:
-                # get last occurrence of iteration.prompt (used in continue_development)
-                last_iteration = next((el for el in reversed(self.project.dev_steps_to_load) if
-                                       'iteration.prompt' in el.get('prompt_path', '')), None)
+        # This whole if statement is loading of project.
+        # We want to skip to last iteration that user had in this task (in continue_development function) which is
+        # last iteration.prompt. That prompt must be between current dev step and skip_until_dev_step or last dev
+        # step in db.
+        if self.project.dev_steps_to_load:
+            # get last occurrence of iteration.prompt (used in continue_development)
+            last_iteration = next((el for el in reversed(self.project.dev_steps_to_load) if
+                                   'iteration.prompt' in el.get('prompt_path', '')), None)
 
-                # if no iteration.prompt then finish loading and continue execution normally
-                if last_iteration is None:
-                    self.project.finish_loading()
-                    continue
-
+            # if no iteration.prompt then finish loading and continue execution normally
+            if last_iteration is None:
+                self.project.finish_loading()
+            else:
                 # detailed_user_review_goal is explanation for user how to review task (used in continue_development)
                 self.project.last_detailed_user_review_goal = next(
                     (el for el in reversed(self.project.dev_steps_to_load) if
@@ -180,6 +182,7 @@ class Developer(Agent):
                 self.project.cleanup_list('dev_steps_to_load', last_iteration['id'])
                 self.project.last_iteration = self.project.dev_steps_to_load[0]
 
+        while True:
             result = self.execute_task(convo_dev_task,
                                        development_task['description'],
                                        steps,
@@ -433,7 +436,7 @@ class Developer(Agent):
         convo.save_branch(function_uuid)
 
         for (i, step) in enumerate(task_steps):
-            # This means we are still loading the project
+            # This means we are still loading the project and have all the steps until last iteration
             if self.project.last_iteration is not None:
                 break
 
