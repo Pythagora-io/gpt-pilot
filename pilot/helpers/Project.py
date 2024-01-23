@@ -190,6 +190,8 @@ class Project:
         """
         while True:
             feature_description = ''
+            if not any(el for el in self.dev_steps_to_load if 'feature_plan.prompt' in el.get('prompt_path', '')):
+                self.finish_loading()
             if not self.skip_steps:
                 feature_description = ask_user(self, "Project is finished! Do you want to add any features or changes? "
                                                      "If yes, describe it here and if no, just press ENTER",
