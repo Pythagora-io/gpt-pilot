@@ -1,13 +1,12 @@
 import builtins
 from helpers.ipc import IPCClient
 from const.ipc import MESSAGE_TYPE, LOCAL_IGNORE_MESSAGE_TYPES
+from typing import Callable, List, Tuple, Optional
 
-
-def get_custom_print(args):
+def get_custom_print(args) -> Tuple[Callable, Optional[IPCClient]]:
     built_in_print = builtins.print
 
     def print_to_external_process(*args, **kwargs):
-        # message = " ".join(map(str, args))
         message = args[0]
 
         if 'type' not in kwargs:
