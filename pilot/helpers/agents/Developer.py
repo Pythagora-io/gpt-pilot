@@ -29,6 +29,7 @@ from const.function_calls import FILTER_OS_TECHNOLOGIES, EXECUTE_COMMANDS, GET_T
 from database.database import save_progress, get_progress_steps, update_app_status
 from utils.utils import get_os_info
 from utils.telemetry import telemetry
+from prompts.prompts import ask_user
 
 ENVIRONMENT_SETUP_STEP = 'environment_setup'
 
@@ -428,9 +429,9 @@ class Developer(Agent):
             print(extract_substring(str(help_description)))
             print(color_red_bold('\n-----------------------------------------------------------------------------'))
             print('continue', type='buttons-only')
-            answer = styled_text(
+            answer = ask_user(
                 self.project,
-                WHEN_USER_DONE
+                WHEN_USER_DONE,
             )
             logger.info("help needed: %s", answer)
 
@@ -624,9 +625,10 @@ class Developer(Agent):
                 print(color_red_bold(f"❌ {dep_text} is not available. {remedy_text}"))
 
                 print('continue', type='buttons-only')
-                styled_text(
+                ask_user(
                     self.project,
-                    "When you're ready to proceed, press ENTER to continue."
+                    "When you're ready to proceed, press ENTER to continue.",
+                    require_some_input=False,
                 )
 
         save_progress(self.project.args['app_id'], self.project.current_step, {

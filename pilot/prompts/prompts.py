@@ -37,7 +37,7 @@ def ask_for_app_type():
 def ask_for_main_app_definition(project):
     question = 'Describe your app in as much detail as possible.'
     print(question, type='ipc')
-    description = styled_text(
+    description = ask_user(
         project,
         question
     )
@@ -51,11 +51,11 @@ def ask_for_main_app_definition(project):
     return description
 
 
-def ask_user(project, question: str, require_some_input=True, hint: str = None):
+def ask_user(project, question: str, require_some_input=True, hint: str = None, ignore_user_input_count: bool = False):
     while True:
         if hint is not None:
             print(color_white_bold(hint) + '\n', type='hint')
-        answer = styled_text(project, question, hint=hint)
+        answer = styled_text(project, question, hint=hint, ignore_user_input_count=ignore_user_input_count)
 
         logger.info('Q: %s', question)
         logger.info('A: %s', answer)

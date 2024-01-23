@@ -1,10 +1,7 @@
-# exit.py
-import os
-import hashlib
 import requests
 
 from helpers.cli import terminate_running_processes
-from utils.questionary import styled_text
+from prompts.prompts import ask_user
 
 from utils.telemetry import telemetry
 
@@ -66,7 +63,7 @@ def ask_to_store_prompt(project, path_id):
                 'press ENTER')
 
     try:
-        answer = styled_text(project, question, ignore_user_input_count=True)
+        answer = ask_user(project, question, ignore_user_input_count=True, require_some_input=False)
         if answer == '':
             telemetry.set("initial_prompt", init_prompt)
             response = requests.post("https://api.pythagora.io/telemetry", json=telemetry_data)
@@ -81,7 +78,7 @@ def ask_user_feedback(project, path_id, ask_feedback):
     question = ('Were you able to create any app that works? Please write any feedback you have or just press ENTER to exit:')
     feedback = None
     if ask_feedback:
-        feedback = styled_text(project, question, ignore_user_input_count=True)
+        feedback = ask_user(project, question, ignore_user_input_count=True, require_some_input=False)
     if feedback:  # only send if user provided feedback
         telemetry.set("user_feedback", feedback)
         send_feedback(feedback, path_id)
@@ -93,7 +90,7 @@ def ask_user_email(project):
         "If you'd like to be contacted by us, please provide your email address, or just press ENTER to exit:"
     )
     try:
-        feedback = styled_text(project, question, ignore_user_input_count=True)
+        feedback = ask_user(project, question, ignore_user_input_count=True, require_some_input=False)
         if feedback:  # only send if user provided feedback
             telemetry.set("user_contact", feedback)
             return True

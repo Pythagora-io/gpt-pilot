@@ -18,6 +18,12 @@ def styled_select(*args, **kwargs):
 
 
 def styled_text(project, question, ignore_user_input_count=False, style=None, hint=None):
+    """
+    Ask the user a question and return the answer.
+
+    NOTE: Use ask_user() instead of this function!
+    Use styled_text() only if you don't want to trigger project.finish_loading()!
+    """
     project.finish_loading()
     if not ignore_user_input_count:
         project.user_inputs_count += 1

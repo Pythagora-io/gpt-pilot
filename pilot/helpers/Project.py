@@ -143,12 +143,13 @@ class Project:
             "package_dependencies": self.package_dependencies,
         })
         # TODO move to constructor eventually
-        if self.args['step'] is not None and STEPS.index(self.args['step']) < STEPS.index('coding'):
+        project_reached_coding = STEPS.index(self.args['step']) >= STEPS.index('coding')
+        if self.args['step'] is not None and not project_reached_coding:
             clear_directory(self.root_path)
             delete_all_app_development_data(self.args['app_id'])
             self.finish_loading()
 
-        if self.continuing_project:
+        if self.continuing_project and project_reached_coding:
             should_overwrite_files = None
             while should_overwrite_files is None or should_overwrite_files.lower() not in AFFIRMATIVE_ANSWERS + NEGATIVE_ANSWERS:
                 print('yes/no', type='buttons-only')
@@ -343,9 +344,10 @@ class Project:
                 while user_input is None or user_input.lower() not in AFFIRMATIVE_ANSWERS + ['continue']:
                     print({'path': full_path, 'line': line_number}, type='openFile')
                     print('continue', type='buttons-only')
-                    user_input = styled_text(
+                    user_input = ask_user(
                         self,
                         f'Please open the file {data["path"]} on the line {line_number} and add the required input. Once you\'re done, type "y" to continue.',
+                        require_some_input=False,
                         ignore_user_input_count=True
                     )
 
