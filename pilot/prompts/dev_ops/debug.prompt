@@ -8,7 +8,6 @@ Ok, we need to debug this issue
 ```
 {{ user_input }}
 ```{% endif -%}
-{{ context }}
 I want you to create a list of steps that are needed to debug this issue.
 
 A step can be either a `command` or `code_change`.
