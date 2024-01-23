@@ -22,6 +22,9 @@ NEW_CODE:
 ```
 END
 ------------------------end_of_format---------------------------
+
+Once you respond in this format, I will find all occurrences of CURRENT_CODE in the file `{{ file_name }}` and replace them with the code under NEW_CODE.
+
 **IMPORTANT**
 Here are rules how to give good response. You have to strictly follow all rules at all times:
 
