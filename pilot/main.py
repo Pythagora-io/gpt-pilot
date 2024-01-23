@@ -1,5 +1,6 @@
 # main.py
 import builtins
+import json
 import os
 
 import sys
@@ -114,6 +115,7 @@ if __name__ == "__main__":
 
     finally:
         if project is not None:
+            project.current_task.exit()
             project.finish_loading()
         if run_exit_fn:
             exit_gpt_pilot(project, ask_feedback)

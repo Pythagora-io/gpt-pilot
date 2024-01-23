@@ -31,6 +31,7 @@ from utils.llm_connection import test_api_access
 from utils.ignore import IgnoreMatcher
 
 from utils.telemetry import telemetry
+from utils.task import Task
 
 class Project:
     def __init__(
@@ -56,6 +57,7 @@ class Project:
         self.llm_req_num = 0
         self.command_runs_count = 0
         self.user_inputs_count = 0
+        self.current_task = Task()
         self.checkpoints = {
             'last_user_input': None,
             'last_command_run': None,
