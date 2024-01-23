@@ -115,4 +115,40 @@ Rule #4:
 You must output the CURRENT_CODE exactly as it is in the original file, including the indentation from the original code, as it will be used for search-replace, and it should only match the original file in ONE place.
 In the NEW_CODE, remember to follow the same coding style that is used in the rest of the file. Pay special attention to the indentation of the new code and make sure to include all the required old and new code, without omitting anything.
 Pay very close attention to parenthesis and make sure that when CURRENT_CODE is replaced with NEW_CODE there are no extra parenthesis or any parenthesis missing.
+
+Rule #5:
+Pay attention to the lines of code that you select in the CURRENT_CODE and the lines that you add to NEW_CODE because all lines under CURRENT_CODE will be replaced with the lines under NEW_CODE. Sometimes you might duplicated the currently implemented lines by not putting them under CURRENT_CODE but repeating them under NEW_CODE - you must **NOT** do that.
+Here is an example. Let's say that you have a code like this:
+```
+let someClass = new SomeClass();
+let methodValue = someClass.someMethod();
+```
+And you want to add a line `methodValue += 22;` below the line `let methodValue = someClass.someMethod();`. Here is an example of what you must **NOT** do:
+------------------------incorrect example---------------------------
+CURRENT_CODE:
+```
+let methodValue = someClass.someMethod()
+```
+NEW_CODE:
+```
+let someClass = new SomeClass();
+let methodValue = someClass.someMethod();
+methodValue += 22;
+```
+END
+------------------------END incorrect example---------------------------
+
+See how the line `let someClass = new SomeClass();` was added under NEW_CODE but it wasn't mentioned under CURRENT_CODE so the result will be that this line will be duplicated in the end result once the line `let methodValue = someClass.someMethod()` gets replaced with lines under NEW_CODE. Instead, this would be a correct way to do it:
+------------------------correct example---------------------------
+CURRENT_CODE:
+```
+let methodValue = someClass.someMethod()
+```
+NEW_CODE:
+```
+let methodValue = someClass.someMethod();
+methodValue += 22;
+```
+END
+------------------------END correct example---------------------------
 {% endif %}
