@@ -290,7 +290,7 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
 
     unique_data = {
         'app': project.args['app_id'],
-        'previous_step': project.checkpoints['last_development_step']['id'],
+        'previous_step': project.checkpoints['last_development_step']['id'] if project.checkpoints['last_development_step'] else None,
         'high_level_step': project.current_step,
     }
 
