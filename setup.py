@@ -1,6 +1,6 @@
 from setuptools import setup
 
-VERSION = "0.0.9"
+VERSION = "0.0.10"
 
 requirements = open("requirements.txt").readlines()
 
