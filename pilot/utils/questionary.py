@@ -24,7 +24,6 @@ def styled_text(project, question, ignore_user_input_count=False, style=None, hi
     NOTE: Use ask_user() instead of this function!
     Use styled_text() only if you don't want to trigger project.finish_loading()!
     """
-    project.finish_loading()
     if not ignore_user_input_count:
         project.user_inputs_count += 1
 

@@ -162,13 +162,13 @@ class Project:
                 logger.info('should_overwrite_files: %s', should_overwrite_files)
                 if should_overwrite_files in NEGATIVE_ANSWERS:
                     self.should_overwrite_files = False
+                    if self.skip_until_dev_step is not None and self.skip_until_dev_step != '0':
+                        FileSnapshot.delete().where(
+                            FileSnapshot.app == self.app and FileSnapshot.development_step > int(self.skip_until_dev_step)).execute()
+                        self.save_files_snapshot(self.skip_until_dev_step)
                     break
                 elif should_overwrite_files in AFFIRMATIVE_ANSWERS:
                     self.should_overwrite_files = True
-                    if self.skip_until_dev_step is not None and self.skip_until_dev_step != '0':
-                        FileSnapshot.delete().where(
-                            FileSnapshot.app == self.app and FileSnapshot.development_step == self.skip_until_dev_step).execute()
-                        self.save_files_snapshot(self.skip_until_dev_step)
                     break
 
         if self.skip_until_dev_step is not None and self.skip_until_dev_step == '0':

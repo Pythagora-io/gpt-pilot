@@ -55,6 +55,7 @@ def ask_user(project, question: str, require_some_input=True, hint: str = None, 
     while True:
         if hint is not None:
             print(color_white_bold(hint) + '\n', type='hint')
+        project.finish_loading()
         answer = styled_text(project, question, hint=hint, ignore_user_input_count=ignore_user_input_count)
 
         logger.info('Q: %s', question)
