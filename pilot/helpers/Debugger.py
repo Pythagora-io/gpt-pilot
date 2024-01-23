@@ -34,6 +34,7 @@ class Debugger:
         """
         logger.info('Debugging %s', command)
         self.recursion_layer += 1
+        self.agent.project.current_task.add_debugging_task(self.recursion_layer, command, user_input, issue_description)
         if self.recursion_layer > MAX_RECUSION_LAYER:
             self.recursion_layer = 0
             raise TooDeepRecursionError()
@@ -53,6 +54,7 @@ class Debugger:
                     return True
                 if answer and answer.lower() not in AFFIRMATIVE_ANSWERS:
                     user_input = answer
+                    self.agent.project.current_task.add_user_input_to_debugging_task(user_input)
 
             llm_response = convo.send_message('dev_ops/debug.prompt',
                 {

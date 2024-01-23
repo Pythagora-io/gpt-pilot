@@ -67,6 +67,7 @@ class Developer(Agent):
                     self.project.technical_writer.document_project(current_progress_percent)
                     documented_thresholds.add(threshold)
 
+            self.project.current_task.start_new_task(dev_task['description'], i + 1)
             self.implement_task(i, dev_task)
             telemetry.inc("num_tasks")
 
@@ -376,6 +377,10 @@ class Developer(Agent):
             if i < continue_from_step:
                 continue
             logger.info('---------- execute_task() step #%d: %s', i, step)
+            # this if statement is for current way of loading app,
+            # once we move to backwards compatibility if statement can be removed
+            if not self.project.skip_steps:
+                self.project.current_task.inc('steps')
 
             result = None
             step_implementation_try = 0

@@ -13,6 +13,7 @@ MESSAGE_TYPE = {
     'ipc': 'ipc',                          # Regular print message that is for extension only
     'openFile': 'openFile',                # Open a file in extension
     'loadingFinished': 'loadingFinished',  # Marks end of loading project
+    'loopTrigger': 'loopTrigger',          # Trigger loop feedback popup in extension
 }
 
 LOCAL_IGNORE_MESSAGE_TYPES = [
@@ -24,4 +25,5 @@ LOCAL_IGNORE_MESSAGE_TYPES = [
     'ipc',
     'openFile',
     'loadingFinished',
+    'loopTrigger',
 ]
