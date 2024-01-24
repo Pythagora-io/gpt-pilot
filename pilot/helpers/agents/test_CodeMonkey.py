@@ -18,6 +18,30 @@ from const.function_calls import GET_FILE_TO_MODIFY
         ),
         (
             "\n".join([
+                "Change 1",
+                "CURRENT_CODE:",
+                "```python",
+                "old",
+                "```",
+                "NEW_CODE:",
+                "```javascript",
+                "```",
+                "END",
+                "Change 2",
+                "CURRENT_CODE:",
+                "```python",
+                "old",
+                "```",
+                "NEW_CODE:",
+                "```python",
+                "new",
+                "```",
+                "END",
+            ]),
+            [("old", ""), ("old", "new")]
+        ),
+        (
+            "\n".join([
                 "Code with markdown blocks in it",
                 "CURRENT_CODE:",
                 "```markdown",
@@ -150,6 +174,48 @@ def test_codemonkey_simple():
     mock_convo.send_message.return_value = "## Change\nCURRENT_CODE:\n```\nfoo\n```\nNEW_CODE:\n```\nbar\n```\nEND"
 
     cm = CodeMonkey(mock_project, None)
+    with patch.object(cm, "SMART_REPLACE_THRESHOLD", 1):
+        cm.implement_code_changes(
+            mock_convo,
+            "Modify all references from `foo` to `bar`",
+            {
+                "path": sep,
+                "name": "main.py",
+            }
+        )
+
+    mock_project.get_all_coded_files.assert_called_once()
+    mock_project.get_full_file_path.assert_called_once_with(sep, "main.py")
+    mock_convo.send_message.assert_called_once_with(
+        "development/implement_changes.prompt", {
+        "full_output": False,
+        "standalone": False,
+        "code_changes_description": "Modify all references from `foo` to `bar`",
+        "file_content": "one to the\nfoo\nto the three to the four",
+        "file_name": "main.py",
+        "files": mock_project.get_all_coded_files.return_value,
+    })
+    mock_project.save_file.assert_called_once_with({
+        "path": sep,
+        "name": "main.py",
+        "content": "one to the\nbar\nto the three to the four"
+    })
+
+
+def test_codemonkey_simple_replace():
+    mock_project = MagicMock()
+    mock_project.get_all_coded_files.return_value = [
+        {
+            "path": "",
+            "name": "main.py",
+            "content": "one to the\nfoo\nto the three to the four"
+        },
+    ]
+    mock_project.get_full_file_path.return_value = ("", normpath("/path/to/main.py"))
+    mock_convo = MagicMock()
+    mock_convo.send_message.return_value = "```\none to the\nbar\nto the three to the four\n```"
+
+    cm = CodeMonkey(mock_project, None)
     cm.implement_code_changes(
         mock_convo,
         "Modify all references from `foo` to `bar`",
@@ -163,7 +229,7 @@ def test_codemonkey_simple():
     mock_project.get_full_file_path.assert_called_once_with(sep, "main.py")
     mock_convo.send_message.assert_called_once_with(
         "development/implement_changes.prompt", {
-        "full_output": False,
+        "full_output": True,
         "standalone": False,
         "code_changes_description": "Modify all references from `foo` to `bar`",
         "file_content": "one to the\nfoo\nto the three to the four",
@@ -202,14 +268,15 @@ def test_codemonkey_retry(trace_code_event):
     ]
 
     cm = CodeMonkey(mock_project, None)
-    cm.implement_code_changes(
-        mock_convo,
-        "Modify all references from `foo` to `bar`",
-        {
-            "path": sep,
-            "name": "main.py",
-        }
-    )
+    with patch.object(cm, "SMART_REPLACE_THRESHOLD", 1):
+        cm.implement_code_changes(
+            mock_convo,
+            "Modify all references from `foo` to `bar`",
+            {
+                "path": sep,
+                "name": "main.py",
+            }
+        )
 
     mock_project.get_all_coded_files.assert_called_once()
     mock_project.get_full_file_path.assert_called_once_with(sep, "main.py")
@@ -281,14 +348,15 @@ def test_codemonkey_partial_retry(trace_code_event):
     ]
 
     cm = CodeMonkey(mock_project, None)
-    cm.implement_code_changes(
-        mock_convo,
-        "Modify all references from `foo` to `bar` and `trigger` to `cause`",
-        {
-            "path": sep,
-            "name": "main.py",
-        }
-    )
+    with patch.object(cm, "SMART_REPLACE_THRESHOLD", 1):
+        cm.implement_code_changes(
+            mock_convo,
+            "Modify all references from `foo` to `bar` and `trigger` to `cause`",
+            {
+                "path": sep,
+                "name": "main.py",
+            }
+        )
 
     mock_project.get_all_coded_files.assert_called_once()
     mock_project.get_full_file_path.assert_called_once_with(sep, "main.py")
@@ -358,14 +426,15 @@ def test_codemonkey_fallback(trace_code_event):
     ]
 
     cm = CodeMonkey(mock_project, None)
-    cm.implement_code_changes(
-        mock_convo,
-        "Modify all references from `foo` to `bar`",
-        {
-            "path": sep,
-            "name": "main.py",
-        }
-    )
+    with patch.object(cm, "SMART_REPLACE_THRESHOLD", 1):
+        cm.implement_code_changes(
+            mock_convo,
+            "Modify all references from `foo` to `bar`",
+            {
+                "path": sep,
+                "name": "main.py",
+            }
+        )
 
     mock_project.get_all_coded_files.assert_called_once()
     mock_project.get_full_file_path.assert_called_once_with(sep, "main.py")
@@ -439,12 +508,13 @@ def test_codemonkey_implement_changes_after_debugging(MockAgentConvo, mock_get_f
 
     cm = CodeMonkey(mock_project, None)
     with patch.object(cm, "identify_file_to_change") as mock_identify_file_to_change:
-        mock_identify_file_to_change.return_value = "/main.py"
-        cm.implement_code_changes(
-            None,
-            "Modify all references from `foo` to `bar`",
-            {},
-        )
+        with patch.object(cm, "SMART_REPLACE_THRESHOLD", 1):
+            mock_identify_file_to_change.return_value = "/main.py"
+            cm.implement_code_changes(
+                None,
+                "Modify all references from `foo` to `bar`",
+                {},
+            )
 
     MockAgentConvo.assert_called_once_with(cm)
     mock_project.get_all_coded_files.assert_called_once()
@@ -476,14 +546,15 @@ def test_codemonkey_original_file_not_found(mock_get_file_contents, _trace_code_
     mock_convo.send_message.return_value = "```\none to the\nbar\nto the three to the four\n```\n"
     mock_get_file_contents.side_effect = ValueError("File not found: /path/to/main.py")
     cm = CodeMonkey(mock_project, None)
-    cm.implement_code_changes(
-        mock_convo,
-        "Modify all references from `foo` to `bar`",
-        {
-            "path": sep,
-            "name": "main.py",
-        }
-    )
+    with patch.object(cm, "SMART_REPLACE_THRESHOLD", 1):
+        cm.implement_code_changes(
+            mock_convo,
+            "Modify all references from `foo` to `bar`",
+            {
+                "path": sep,
+                "name": "main.py",
+            }
+        )
 
     mock_project.get_all_coded_files.assert_called_once()
     mock_project.get_full_file_path.assert_called_once_with(sep, "main.py")

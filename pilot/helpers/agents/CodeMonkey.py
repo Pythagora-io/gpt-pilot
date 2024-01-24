@@ -8,15 +8,25 @@ from helpers.files import get_file_contents
 from const.function_calls import GET_FILE_TO_MODIFY
 
 from utils.exit import trace_code_event
+from utils.telemetry import telemetry
+
 
 class CodeMonkey(Agent):
     save_dev_steps = True
+
+    # Only attempt block-by-block replace if the file is larger than this many lines
+    SMART_REPLACE_THRESHOLD = 200
 
     def __init__(self, project, developer):
         super().__init__('code_monkey', project)
         self.developer = developer
 
-    def get_original_file(self, code_changes_description, step, files):
+    def get_original_file(
+            self,
+            code_changes_description: str,
+            step: dict[str, str],
+            files: list[dict],
+        ) -> tuple[str, str]:
         """
         Get the original file content and name.
 
@@ -77,8 +87,8 @@ class CodeMonkey(Agent):
         file_name, file_content = self.get_original_file(code_changes_description, step, files)
         content = file_content
 
-        if file_content:
-            # If we have the old file, try to replace individual code blocks
+        # If the file is non-empty and larger than the threshold, attempt to replace individual code blocks
+        if file_content and len(file_content.splitlines()) > self.SMART_REPLACE_THRESHOLD:
             replace_complete_file, content = self.replace_code_blocks(
                 step,
                 convo,
@@ -89,7 +99,7 @@ class CodeMonkey(Agent):
                 files,
             )
         else:
-            # We're creating a new file, so we need to get full output
+            # Just replace the entire file
             replace_complete_file = True
 
         # If this is a new file or replacing individual code blocks failed,
@@ -104,6 +114,9 @@ class CodeMonkey(Agent):
             )
 
         if content and content != file_content:
+            if not self.project.skip_steps:
+                delta_lines = len(content.splitlines()) - len(file_content.splitlines())
+                telemetry.inc("created_lines", delta_lines)
             self.project.save_file({
                 'path': step['path'],
                 'name': step['name'],
@@ -294,7 +307,7 @@ class CodeMonkey(Agent):
         :return: list of pairs of current and new blocks
         """
         pattern = re.compile(
-            r"CURRENT_CODE:\n```([a-z0-9]+)?\n(.*?)\n```\nNEW_CODE:\n```([a-z0-9]+)?\n(.*?)\n```\nEND\s*",
+            r"CURRENT_CODE:\n```([a-z0-9]+)?\n(.*?)\n```\nNEW_CODE:\n```([a-z0-9]+)?\n(.*?)\n?```\nEND\s*",
             re.DOTALL
         )
         pairs = []

@@ -165,6 +165,10 @@ class Developer(Agent):
                 return {"success": True}
 
         data = step['save_file']
+        if not self.project.skip_steps:
+            delta_lines = len(data.get("content", "").splitlines())
+            telemetry.inc("created_lines", delta_lines)
+
         self.project.save_file(data)
         return {"success": True}
 
