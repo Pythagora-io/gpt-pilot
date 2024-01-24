@@ -7,7 +7,12 @@ This file needs to be modified by these instructions:
 {{ code_changes_description }}
 ----------------------end_of_instructions-----------------------------
 {% if full_output %}
-I want you to implement the instructions and show me the COMPLETE NEW VERSION of this file.
+I want you to implement the instructions and show me the COMPLETE NEW VERSION of this file in this format:
+-----------------------format----------------------------
+```
+the full contents of the updated file, without skipping over any content
+```
+------------------------end_of_format---------------------------
 **IMPORTANT**: Your reply should not omit any code in the new implementation or substitute anything with comments like `// .. rest of the code goes here ..`, because I will overwrite the existing file with the content you provide. Output ONLY the content for this file, without additional explanation.
 {% else %}
 I want you to implement the instructions and show me the exact changes (`diff`) in the file `{{ file_name }}`. Reply only with the modifications (`diff`) in the following format:
