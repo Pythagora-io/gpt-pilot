@@ -6,6 +6,7 @@ from typing import Tuple
 import peewee
 
 from const.messages import CHECK_AND_CONTINUE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS
+from utils.exit import trace_code_event
 from utils.style import color_yellow_bold, color_cyan, color_white_bold
 from const.common import STEPS
 from database.database import delete_unconnected_steps_from, delete_all_app_development_data, \
@@ -72,8 +73,6 @@ class Project:
 
         self.ipc_client_instance = ipc_client_instance
 
-        # self.restore_files({dev_step_id_to_start_from})
-
         self.finished = False
         self.current_step = None
         self.name = None
@@ -94,16 +93,15 @@ class Project:
         self.should_overwrite_files = False
         self.last_detailed_user_review_goal = None
         self.last_iteration = None
+        self.tasks_to_load = []
+        self.features_to_load = []
+        self.dev_steps_to_load = []
         if self.continuing_project:
             self.dev_steps_to_load = get_all_app_development_steps(args['app_id'], last_step=self.skip_until_dev_step)
-            self.tasks_to_load = [el for el in self.dev_steps_to_load if 'breakdown.prompt' in el.get('prompt_path', '')]
-            self.features_to_load = [el for el in self.dev_steps_to_load if 'feature_plan.prompt' in el.get('prompt_path', '')]
-            if self.dev_steps_to_load is not None and len(self.dev_steps_to_load) > 0:
+            if self.dev_steps_to_load is not None and len(self.dev_steps_to_load):
                 self.checkpoints['last_development_step'] = self.dev_steps_to_load[-1]
-        else:
-            self.tasks_to_load = []
-            self.features_to_load = []
-            self.dev_steps_to_load = []
+                self.tasks_to_load = [el for el in self.dev_steps_to_load if 'breakdown.prompt' in el.get('prompt_path', '')]
+                self.features_to_load = [el for el in self.dev_steps_to_load if 'feature_plan.prompt' in el.get('prompt_path', '')]
         # end loading of project
 
     def set_root_path(self, root_path: str):
@@ -162,10 +160,6 @@ class Project:
                 logger.info('should_overwrite_files: %s', should_overwrite_files)
                 if should_overwrite_files in NEGATIVE_ANSWERS:
                     self.should_overwrite_files = False
-                    if self.skip_until_dev_step is not None and self.skip_until_dev_step != '0':
-                        FileSnapshot.delete().where(
-                            FileSnapshot.app == self.app and FileSnapshot.development_step > int(self.skip_until_dev_step)).execute()
-                        self.save_files_snapshot(self.skip_until_dev_step)
                     break
                 elif should_overwrite_files in AFFIRMATIVE_ANSWERS:
                     self.should_overwrite_files = True
@@ -553,8 +547,20 @@ class Project:
         if do_cleanup:
             if self.dev_steps_to_load:
                 self.checkpoints['last_development_step'] = self.dev_steps_to_load[0]
-            if self.should_overwrite_files:
-                self.restore_files(self.checkpoints['last_development_step']['id'])
+                if self.should_overwrite_files:
+                    self.restore_files(self.checkpoints['last_development_step']['id'])
+                else:
+                    FileSnapshot.delete().where(
+                        FileSnapshot.app == self.app and FileSnapshot.development_step == int(self.checkpoints['last_development_step']['id'])).execute()
+                    self.save_files_snapshot(int(self.checkpoints['last_development_step']['id']))
+            else:
+                # TODO remove before release
+                trace_code_event('error-loading', {
+                    'skip_until_dev_step': self.skip_until_dev_step,
+                    'tasks_to_load': self.tasks_to_load,
+                    'features_to_load': self.features_to_load,
+                    'dev_steps_to_load': self.dev_steps_to_load,
+                })
             delete_all_subsequent_steps(self)
 
         self.tasks_to_load = []
@@ -573,5 +579,11 @@ class Project:
         # Find the index of the first el with 'id' greater than target_id
         index = next((i for i, el in enumerate(temp_list) if el['id'] >= target_id), len(temp_list))
 
+        new_list = temp_list[index:]
+
+        if list_name == 'dev_steps_to_load' and len(new_list) == 0:
+            # needed for finish_loading() because then we restore files, and we need last dev step
+            self.checkpoints['last_development_step'] = temp_list[index - 1]
+
         # Keep only the elements from that index onwards
-        setattr(self, list_name, temp_list[index:])
+        setattr(self, list_name, new_list)

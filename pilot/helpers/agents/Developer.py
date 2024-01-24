@@ -123,7 +123,7 @@ class Developer(Agent):
         if self.project.dev_steps_to_load and 'breakdown.prompt' in self.project.dev_steps_to_load[0]['prompt_path']:
             instructions = self.project.dev_steps_to_load[0]['llm_response']['text']
             convo_dev_task.messages = self.project.dev_steps_to_load[0]['messages']
-            self.project.dev_steps_to_load.pop(0)
+            self.project.cleanup_list('dev_steps_to_load', int(self.project.dev_steps_to_load[0]['id']) + 1)
         else:
             instructions = convo_dev_task.send_message('development/task/breakdown.prompt', {
                 "name": self.project.args['name'],
@@ -146,7 +146,7 @@ class Developer(Agent):
             response = json.loads(self.project.dev_steps_to_load[0]['llm_response']['text'])
             convo_dev_task.messages = self.project.dev_steps_to_load[0]['messages']
             remove_last_x_messages = 1  # reason why 1 here is because in db we don't store llm_response in 'messages'
-            self.project.dev_steps_to_load.pop(0)
+            self.project.cleanup_list('dev_steps_to_load', int(self.project.dev_steps_to_load[0]['id']) + 1)
         else:
             response = convo_dev_task.send_message('development/parse_task.prompt', {
                 'running_processes': running_processes,
@@ -353,9 +353,6 @@ class Developer(Agent):
             self.run_command = single_match.group(1).strip()
 
     def task_postprocessing(self, convo, development_task, continue_development, task_result, last_branch_name):
-        # TODO: why does `run_command` belong to the Developer class, rather than just being passed?
-        #       ...It's set by execute_task() -> task_postprocessing(), but that is called by various sources.
-        #       What is it at step_human_intervention()?
         if self.project.last_iteration is None:
             self.get_run_command(convo)
 
