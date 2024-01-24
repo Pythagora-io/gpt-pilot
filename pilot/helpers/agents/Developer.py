@@ -123,6 +123,7 @@ class Developer(Agent):
         if self.project.dev_steps_to_load and 'breakdown.prompt' in self.project.dev_steps_to_load[0]['prompt_path']:
             instructions = self.project.dev_steps_to_load[0]['llm_response']['text']
             convo_dev_task.messages = self.project.dev_steps_to_load[0]['messages']
+            # remove breakdown from the head of dev_steps_to_load; if it's last, record it in checkpoint
             self.project.cleanup_list('dev_steps_to_load', int(self.project.dev_steps_to_load[0]['id']) + 1)
         else:
             instructions = convo_dev_task.send_message('development/task/breakdown.prompt', {
@@ -146,6 +147,7 @@ class Developer(Agent):
             response = json.loads(self.project.dev_steps_to_load[0]['llm_response']['text'])
             convo_dev_task.messages = self.project.dev_steps_to_load[0]['messages']
             remove_last_x_messages = 1  # reason why 1 here is because in db we don't store llm_response in 'messages'
+            # remove parse_task from the head of dev_steps_to_load; if it's last, record it in checkpoint
             self.project.cleanup_list('dev_steps_to_load', int(self.project.dev_steps_to_load[0]['id']) + 1)
         else:
             response = convo_dev_task.send_message('development/parse_task.prompt', {
@@ -187,6 +189,7 @@ class Developer(Agent):
                     if self.run_command is not None:
                         self.run_command = json.loads(self.run_command['llm_response']['text'])['command']
 
+                # remove last_iteration from the head of dev_steps_to_load; if it's last, record it in checkpoint
                 self.project.cleanup_list('dev_steps_to_load', last_iteration['id'])
                 self.project.last_iteration = self.project.dev_steps_to_load[0]
 
