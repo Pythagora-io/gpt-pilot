@@ -8,6 +8,8 @@ from helpers.files import get_file_contents
 from const.function_calls import GET_FILE_TO_MODIFY
 
 from utils.exit import trace_code_event
+from utils.telemetry import telemetry
+
 
 class CodeMonkey(Agent):
     save_dev_steps = True
@@ -112,6 +114,9 @@ class CodeMonkey(Agent):
             )
 
         if content and content != file_content:
+            if not self.project.skip_steps:
+                delta_lines = len(content.splitlines()) - len(file_content.splitlines())
+                telemetry.inc("created_lines", delta_lines)
             self.project.save_file({
                 'path': step['path'],
                 'name': step['name'],

@@ -124,6 +124,8 @@ class Telemetry:
             "num_tasks": 0,
             # Number of seconds elapsed during development
             "elapsed_time": 0,
+            # Total number of lines created by GPT Pilot
+            "created_lines": 0,
             # End result of development:
             # - success:initial-project
             # - success:feature
