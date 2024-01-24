@@ -6,9 +6,10 @@ from database.database import save_user_input, get_saved_user_input
 from utils.style import color_yellow_bold, style_config
 
 
-def remove_ansi_codes(s: str) -> str:
-    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    return ansi_escape.sub('', s)
+ANSI_ESCAPE_REGEX = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+
+def remove_ansi_codes(s):
+  return ANSI_ESCAPE_REGEX.sub('', s)
 
 
 def styled_select(*args, **kwargs):
