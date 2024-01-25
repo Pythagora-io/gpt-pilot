@@ -257,7 +257,7 @@ IMPLEMENT_TASK = {
                             'properties': {
                                 'type': {
                                     'type': 'string',
-                                    'enum': ['command', 'save_file', 'modify_file', 'human_intervention_description'],
+                                    'enum': ['command', 'save_file', 'modify_file', 'human_intervention'],
                                     'description': 'Type of the development step that needs to be done to complete the entire task.',
                                 },
                                 'command': command_definition(),
@@ -301,7 +301,7 @@ IMPLEMENT_TASK = {
                                 },
                                 'human_intervention_description': {
                                     'type': 'string',
-                                    'description': 'Description of what a human needs to do to debug this issue. This should be used only if the task is of a type "human_intervention_description".',
+                                    'description': 'Description of what a human needs to do to debug this issue. This should be used only if the task is of a type "human_intervention".',
                                 },
                             },
                             'required': ['type'],
