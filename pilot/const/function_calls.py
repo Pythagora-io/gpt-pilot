@@ -224,7 +224,7 @@ DEV_TASKS_BREAKDOWN = {
                                 },
                                 'human_intervention_description': {
                                     'type': 'string',
-                                    'description': 'Description of a task that requires a human to do.',
+                                    'description': 'Description of a task that requires a human to do. This description is required for "human_intervention" type and must not be used with any other types.',
                                 },
                             },
                             'required': ['type'],
@@ -301,7 +301,7 @@ IMPLEMENT_TASK = {
                                 },
                                 'human_intervention_description': {
                                     'type': 'string',
-                                    'description': 'Description of a step in debugging this issue when there is a human intervention needed. This should be used only if the task is of a type "human_intervention".',
+                                    'description': 'Description of a step in debugging this issue when there is a human intervention needed. This description is required for "human_intervention" type and must not be used with any other types.',
                                 },
                             },
                             'required': ['type'],
@@ -588,7 +588,7 @@ DEBUG_STEPS_BREAKDOWN = {
                                 },
                                 'human_intervention_description': {
                                     'type': 'string',
-                                    'description': 'Description of a step in debugging this issue when there is a human intervention needed. This should be used only if the task is of a type "human_intervention".',
+                                    'description': 'Description of a step in debugging this issue when there is a human intervention needed. This description is required for "human_intervention" type and must not be used with any other types.',
                                 },
                                 "need_to_see_output": {
                                     'type': 'boolean',

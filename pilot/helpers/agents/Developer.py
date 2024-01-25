@@ -270,10 +270,10 @@ class Developer(Agent):
         """
         logger.info('Human intervention needed%s: %s',
                     '' if self.run_command is None else f' for command `{self.run_command}`',
-                    step['human_intervention_description'])
+                    step['human_intervention_description'] if 'human_intervention_description' in step else '')
 
         while True:
-            human_intervention_description = step['human_intervention_description']
+            human_intervention_description = step['human_intervention_description'] if 'human_intervention_description' in step else ''
 
             if not self.run_command:
                 self.get_run_command(convo)
@@ -310,7 +310,7 @@ class Developer(Agent):
             else:
                 response['success'] = self.debugger.debug(convo,
                                                           user_input=response['user_input'],
-                                                          issue_description=step['human_intervention_description'])
+                                                          issue_description=step['human_intervention_description'] if 'human_intervention_description' in step else '')
                 # TODO add review
 
             return response
