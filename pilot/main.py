@@ -86,6 +86,9 @@ if __name__ == "__main__":
             if "email" in args:
                 telemetry.set("user_contact", args["email"])
 
+            if "extension_version" in args:
+                telemetry.set("extension_version", args["extension_version"])
+
             # TODO get checkpoint from database and fill the project with it
             project = Project(args, ipc_client_instance=ipc_client_instance)
             if project.check_ipc():

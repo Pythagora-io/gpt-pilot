@@ -78,6 +78,8 @@ class Telemetry:
             "python_version": sys.version,
             # GPT Pilot version
             "pilot_version": version,
+            # GPT Pilot Extension version
+            "extension_version": None,
             # Is extension used
             "is_extension": False,
             # LLM used
