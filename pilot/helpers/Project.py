@@ -141,8 +141,8 @@ class Project:
             "package_dependencies": self.package_dependencies,
         })
         # TODO move to constructor eventually
-        project_reached_coding = STEPS.index(self.args['step']) >= STEPS.index('coding')
-        if self.args['step'] is not None and not project_reached_coding:
+        project_reached_coding = self.args['step'] is not None and STEPS.index(self.args['step']) >= STEPS.index('coding')
+        if not project_reached_coding:
             clear_directory(self.root_path)
             delete_all_app_development_data(self.args['app_id'])
             self.finish_loading()
