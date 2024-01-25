@@ -509,14 +509,11 @@ def create_database():
 
 
 def tables_exist():
-    if DATABASE_TYPE == "postgres":
-        for table in TABLES:
-            try:
-                database.get_tables().index(table._meta.table_name)
-            except ValueError:
-                return False
-    else:
-        pass
+    for table in TABLES:
+        try:
+            database.get_tables().index(table._meta.table_name)
+        except ValueError:
+            return False
     return True
 
 
