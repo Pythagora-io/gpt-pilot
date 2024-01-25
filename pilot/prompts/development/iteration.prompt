@@ -45,4 +45,4 @@ When you think about in which file should the new code go to, always try to make
 You do not need to make any automated tests work.
 
 **IMPORTANT**
-Do not tell me anything about setting up the database or anything OS related - only if some dependencies need to be installed.
+You must not tell me to run a command in the database or anything OS related - only if some dependencies need to be installed. If there is a need to run an OS related command, specifically tell me that this should be labeled as "Human Intervention" and explain what the human needs to do.

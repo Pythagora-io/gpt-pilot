@@ -2,11 +2,9 @@ You're a senior software developer implementing changes in one file in the proje
 Based on the provided instructions and full file list, identify the file
 that needs to be modified.
 
-All files in the project:
+Here are files in the project:
 {% for file in files %}
-
 ### {{ file['path'] }}/{{ file['name'] }}
-
 ```
 {{ file['content'] }}
 ```

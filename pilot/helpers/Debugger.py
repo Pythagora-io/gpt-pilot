@@ -61,8 +61,7 @@ class Debugger:
                     'command': command['command'] if command is not None else None,
                     'user_input': user_input,
                     'issue_description': issue_description,
-                    'os': platform.system(),
-                    'context': convo.to_context_prompt()
+                    'os': platform.system()
                 },
                 DEBUG_STEPS_BREAKDOWN)
 

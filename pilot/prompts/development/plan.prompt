@@ -1,5 +1,7 @@
 You are working in a software development agency and a project manager and software architect approach you telling you that you're assigned to work on a new project. You are working on a {{ app_type }} called "{{ name }}" and you need to create a detailed development plan so that developers can start developing the app.
 
+When you make a plan, start by implementing frontend first so that the user can test the app more easily as they go instead of starting with backend first and then making each task be tested by making an API requests manually from the CLI.
+
 {{ project_details }}
 
 {{ project_tasks }}

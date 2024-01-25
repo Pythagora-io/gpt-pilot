@@ -301,7 +301,7 @@ IMPLEMENT_TASK = {
                                 },
                                 'human_intervention_description': {
                                     'type': 'string',
-                                    'description': 'Description of a step in debugging this issue when there is a human intervention needed. This should be used only if the task is of a type "human_intervention".',
+                                    'description': 'Description of what a human needs to do to debug this issue. This should be used only if the task is of a type "human_intervention".',
                                 },
                             },
                             'required': ['type'],
