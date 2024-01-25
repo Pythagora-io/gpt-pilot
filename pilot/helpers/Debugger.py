@@ -35,7 +35,7 @@ class Debugger:
         logger.info('Debugging %s', command)
         self.recursion_layer += 1
         self.agent.project.current_task.add_debugging_task(self.recursion_layer, command, user_input, issue_description)
-        if self.recursion_layer > MAX_RECUSION_LAYER:
+        if self.recursion_layer > MAX_RECURSION_LAYER:
             self.recursion_layer = 0
             raise TooDeepRecursionError()
 
