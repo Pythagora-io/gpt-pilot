@@ -64,4 +64,4 @@ Here is an example of good and bad task description:
 
 
 Rule #5
-When you're thinking about what tasks should be first, always priritize frontend tasks to be implemented before backend tasks so that, once we get to the backend implementation, user can test the backend by clicking around the frontend and not use tools like cUrl or Postman to make API requests to test the backend.
+When you're thinking about what tasks should be first, always prioritize frontend tasks to be implemented before backend tasks so that, once we get to the backend implementation, the user can test the backend by clicking around the frontend and not use tools like cUrl or Postman to make API requests to test the backend.
