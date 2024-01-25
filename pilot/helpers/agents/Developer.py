@@ -3,7 +3,7 @@ import uuid
 import re
 import json
 
-from const.messages import WHEN_USER_DONE
+from const.messages import WHEN_USER_DONE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS
 from utils.style import (
     color_green,
     color_green_bold,
@@ -386,15 +386,16 @@ class Developer(Agent):
         print(color_red_bold('\n--------- LLM Reached Token Limit ----------'))
         print(color_red_bold('Can I retry implementing the entire development step?'))
 
-        answer = ''
-        while answer != 'y':
+        answer = None
+        while answer.lower() not in AFFIRMATIVE_ANSWERS:
+            print('yes/no', type='buttons-only')
             answer = styled_text(
                 self.project,
                 'Type y/n'
             )
 
             logger.info("Retry step implementation? %s", answer)
-            if answer == 'n':
+            if answer.lower() in NEGATIVE_ANSWERS:
                 return self.dev_help_needed(step)
 
         return {"success": False, "retry": True}

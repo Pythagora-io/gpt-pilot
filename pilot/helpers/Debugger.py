@@ -2,7 +2,7 @@ import platform
 import uuid
 import re
 
-from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_RECUSION_LAYER
+from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_RECURSION_LAYER
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
 from const.messages import AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS
 from helpers.AgentConvo import AgentConvo
@@ -34,7 +34,7 @@ class Debugger:
         """
         logger.info('Debugging %s', command)
         self.recursion_layer += 1
-        if self.recursion_layer > MAX_RECUSION_LAYER:
+        if self.recursion_layer > MAX_RECURSION_LAYER:
             self.recursion_layer = 0
             raise TooDeepRecursionError()
 
