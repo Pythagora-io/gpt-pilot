@@ -547,22 +547,12 @@ class Project:
 
         print('', type='loadingFinished')
         if do_cleanup:
-            if self.dev_steps_to_load:
-                self.checkpoints['last_development_step'] = self.dev_steps_to_load[0]
-                if self.should_overwrite_files:
-                    self.restore_files(self.checkpoints['last_development_step']['id'])
-                else:
-                    FileSnapshot.delete().where(
-                        FileSnapshot.app == self.app and FileSnapshot.development_step == int(self.checkpoints['last_development_step']['id'])).execute()
-                    self.save_files_snapshot(int(self.checkpoints['last_development_step']['id']))
+            if self.should_overwrite_files:
+                self.restore_files(self.checkpoints['last_development_step']['id'])
             else:
-                # TODO remove before release
-                trace_code_event('error-loading', {
-                    'skip_until_dev_step': self.skip_until_dev_step,
-                    'tasks_to_load': self.tasks_to_load,
-                    'features_to_load': self.features_to_load,
-                    'dev_steps_to_load': self.dev_steps_to_load,
-                })
+                FileSnapshot.delete().where(
+                    FileSnapshot.app == self.app and FileSnapshot.development_step == int(self.checkpoints['last_development_step']['id'])).execute()
+                self.save_files_snapshot(int(self.checkpoints['last_development_step']['id']))
             delete_all_subsequent_steps(self)
 
         self.tasks_to_load = []
