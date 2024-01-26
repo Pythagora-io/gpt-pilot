@@ -6,7 +6,6 @@ from typing import Tuple
 import peewee
 
 from const.messages import CHECK_AND_CONTINUE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS
-from utils.exit import trace_code_event
 from utils.style import color_yellow_bold, color_cyan, color_white_bold
 from const.common import STEPS
 from database.database import delete_unconnected_steps_from, delete_all_app_development_data, \
@@ -68,7 +67,7 @@ class Project:
         # TODO make flexible
         self.root_path = ''
         self.skip_until_dev_step = self.args['skip_until_dev_step'] if 'skip_until_dev_step' in self.args else None
-        self.skip_steps = None
+        self.skip_steps = False
         self.main_prompt = None
         self.files = []
         self.continuing_project = args.get('continuing_project', False)
@@ -99,16 +98,50 @@ class Project:
         self.features_to_load = []
         self.dev_steps_to_load = []
         if self.continuing_project:
-            self.dev_steps_to_load = get_all_app_development_steps(args['app_id'], last_step=self.skip_until_dev_step)
-            if self.dev_steps_to_load is not None and len(self.dev_steps_to_load):
-                self.checkpoints['last_development_step'] = self.dev_steps_to_load[-1]
-                self.tasks_to_load = [el for el in self.dev_steps_to_load if 'breakdown.prompt' in el.get('prompt_path', '')]
-                self.features_to_load = [el for el in self.dev_steps_to_load if 'feature_plan.prompt' in el.get('prompt_path', '')]
+            self.setup_loading()
         # end loading of project
 
     def set_root_path(self, root_path: str):
         self.root_path = root_path
         self.dot_pilot_gpt.with_root_path(root_path)
+
+    def setup_loading(self):
+        self.skip_steps = True
+        should_overwrite_files = None
+        while should_overwrite_files is None or should_overwrite_files.lower() not in AFFIRMATIVE_ANSWERS + NEGATIVE_ANSWERS:
+            print('yes/no', type='buttons-only')
+            should_overwrite_files = styled_text(
+                self,
+                "Can I overwrite any changes that you might have made to the project since last running GPT Pilot (y/n)?",
+                ignore_user_input_count=True
+            )
+
+            logger.info('should_overwrite_files: %s', should_overwrite_files)
+            if should_overwrite_files in NEGATIVE_ANSWERS:
+                self.should_overwrite_files = False
+                break
+            elif should_overwrite_files in AFFIRMATIVE_ANSWERS:
+                self.should_overwrite_files = True
+                break
+
+        if self.skip_until_dev_step is not None and self.skip_until_dev_step == '0':
+            clear_directory(self.root_path)
+            delete_all_app_development_data(self.args['app_id'])
+            self.finish_loading()
+            return
+
+        self.dev_steps_to_load = get_all_app_development_steps(self.args['app_id'], last_step=self.skip_until_dev_step)
+        load_step_before_coding = ('step' in self.args and
+                                   self.args['step'] is not None and
+                                   STEPS.index(self.args['step']) <= STEPS.index('coding'))
+
+        if load_step_before_coding:
+            clear_directory(self.root_path)
+            delete_all_app_development_data(self.args['app_id'])
+        elif self.dev_steps_to_load is not None and len(self.dev_steps_to_load):
+            self.checkpoints['last_development_step'] = self.dev_steps_to_load[-1]
+            self.tasks_to_load = [el for el in self.dev_steps_to_load if 'breakdown.prompt' in el.get('prompt_path', '')]
+            self.features_to_load = [el for el in self.dev_steps_to_load if 'feature_plan.prompt' in el.get('prompt_path', '')]
 
     def start(self):
         """
@@ -142,36 +175,6 @@ class Project:
             "system_dependencies": self.system_dependencies,
             "package_dependencies": self.package_dependencies,
         })
-        # TODO move to constructor eventually
-        project_reached_coding = self.args['step'] is not None and STEPS.index(self.args['step']) >= STEPS.index('coding')
-        if not project_reached_coding:
-            clear_directory(self.root_path)
-            delete_all_app_development_data(self.args['app_id'])
-            self.finish_loading()
-
-        if self.continuing_project and project_reached_coding:
-            should_overwrite_files = None
-            while should_overwrite_files is None or should_overwrite_files.lower() not in AFFIRMATIVE_ANSWERS + NEGATIVE_ANSWERS:
-                print('yes/no', type='buttons-only')
-                should_overwrite_files = styled_text(
-                    self,
-                    "Can I overwrite any changes that you might have made to the project since last running GPT Pilot (y/n)?",
-                    ignore_user_input_count=True
-                )
-
-                logger.info('should_overwrite_files: %s', should_overwrite_files)
-                if should_overwrite_files in NEGATIVE_ANSWERS:
-                    self.should_overwrite_files = False
-                    break
-                elif should_overwrite_files in AFFIRMATIVE_ANSWERS:
-                    self.should_overwrite_files = True
-                    break
-
-        if self.skip_until_dev_step is not None and self.skip_until_dev_step == '0':
-            clear_directory(self.root_path)
-            delete_all_app_development_data(self.args['app_id'])
-            self.finish_loading()
-        # TODO END
 
         self.dot_pilot_gpt.write_project(self)
         print(json.dumps({
@@ -542,11 +545,11 @@ class Project:
 
     def finish_loading(self, do_cleanup=True):
         # if already done, don't do it again
-        if self.skip_steps is not True:
+        if not self.skip_steps:
             return
 
         print('', type='loadingFinished')
-        if do_cleanup:
+        if do_cleanup and self.checkpoints['last_development_step']:
             if self.should_overwrite_files:
                 self.restore_files(self.checkpoints['last_development_step']['id'])
             else:

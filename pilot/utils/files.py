@@ -26,7 +26,6 @@ def setup_workspace(args) -> str:
         name = args.get('name', 'default_project_name')
         project_path = create_directory(os.path.join(root, 'workspace'), name)
 
-    create_directory(project_path, 'tests')
     try:
         save_user_app(args.get('user_id'), args.get('app_id'), project_path)
     except Exception as e:

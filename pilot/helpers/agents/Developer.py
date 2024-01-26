@@ -46,16 +46,8 @@ class Developer(Agent):
             self.project.current_step = 'coding'
             update_app_status(self.project.args['app_id'], self.project.current_step)
 
-            if self.project.skip_steps is None:
-                if (not self.project.continuing_project or (
-                        'skip_until_dev_step' in self.project.args and self.project.args[
-                    'skip_until_dev_step'] == '0')):
-                    self.project.finish_loading()
-                else:
-                    self.project.skip_steps = True
-
         # DEVELOPMENT
-        if self.project.skip_steps is None:
+        if not self.project.skip_steps:
             print(color_green_bold("🚀 Now for the actual development...\n"))
             logger.info("Starting to create the actual code...")
 
@@ -64,13 +56,13 @@ class Developer(Agent):
         documented_thresholds = set()
 
         for i, dev_task in enumerate(self.project.development_plan):
-            if not self.project.finished and not self.project.skip_steps:  # don't create documentation for features
+            # don't create documentation for features
+            if not self.project.finished and not self.project.skip_steps:
                 current_progress_percent = round((i / total_tasks) * 100, 2)
 
                 for threshold in progress_thresholds:
                     if current_progress_percent > threshold and threshold not in documented_thresholds:
-                        if self.project.skip_steps is not True:
-                            self.project.technical_writer.document_project(current_progress_percent)
+                        self.project.technical_writer.document_project(current_progress_percent)
                         documented_thresholds.add(threshold)
 
             if self.project.tasks_to_load:
@@ -94,7 +86,7 @@ class Developer(Agent):
             telemetry.inc("num_tasks")
 
         # DEVELOPMENT END
-        if self.project.skip_steps is not True:
+        if not self.project.skip_steps:
             self.project.technical_writer.document_project(100)
             self.project.dot_pilot_gpt.chat_log_folder(None)
 
