@@ -11,7 +11,7 @@ from prompt_toolkit.styles import Style
 from jsonschema import validate, ValidationError
 from utils.style import color_red
 from typing import List
-from const.llm import MAX_GPT_MODEL_TOKENS
+from const.llm import MAX_GPT_MODEL_TOKENS, API_CONNECT_TIMEOUT, API_READ_TIMEOUT
 from const.messages import AFFIRMATIVE_ANSWERS
 from logger.logger import logger, logging
 from helpers.exceptions import TokenLimitError, ApiKeyNotDefinedError, ApiError
@@ -380,7 +380,8 @@ def stream_gpt_completion(data, req_type, project):
         endpoint_url,
         headers=headers,
         json=data,
-        stream=True
+        stream=True,
+        timeout=(API_CONNECT_TIMEOUT, API_READ_TIMEOUT),
     )
 
     if response.status_code != 200:
