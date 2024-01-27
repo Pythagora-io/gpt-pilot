@@ -242,6 +242,7 @@ class Telemetry:
     def record_crash(
         self,
         exception: Exception,
+        end_result: str = "failure",
     ):
         """
         Record crash diagnostics.
@@ -256,7 +257,7 @@ class Telemetry:
         if not self.enabled:
             return
 
-        self.set("end_result", "failure")
+        self.set("end_result", end_result)
 
         root_dir = Path(__file__).parent.parent.parent
         stack_trace = traceback.format_exc()

@@ -6,6 +6,7 @@ from utils.llm_connection import create_gpt_chat_completion
 from utils.utils import get_sys_message, get_prompt
 from utils.questionary import styled_select, styled_text
 from logger.logger import logger
+from helpers.exceptions import ApiError
 
 
 def ask_for_app_type():
@@ -88,7 +89,10 @@ def get_additional_info_from_openai(project, messages):
     while not is_complete:
         # Obtain clarifications using the OpenAI API
         # { 'text': new_code }
-        response = create_gpt_chat_completion(messages, 'additional_info', project)
+        try:
+            response = create_gpt_chat_completion(messages, 'additional_info', project)
+        except ApiError:
+            response = None
 
         if response is not None:
             if response['text'] and response['text'].strip() == END_RESPONSE:
