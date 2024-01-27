@@ -40,6 +40,141 @@ def return_array_from_prompt(name_plural, name_singular, return_var_name):
     }
 
 
+def dev_step_type_description():
+    return "Type of the development step that needs to be done to complete the entire task."
+
+
+def step_command_definition(extended=False):
+    # Base properties and required fields
+    properties = {
+        "type": {
+            "const": "command",
+            "description": dev_step_type_description()
+        },
+        "command": command_definition(),
+    }
+    required = ["type", "command"]
+
+    # Extended properties
+    if extended:
+        properties.update({
+            "need_to_see_output": {
+                "type": "boolean",
+                "description": "Set to `true` if the definition of subsequent steps may need to change after you see the output of a successful execution of this step. For example, if the purpose of a command is to check the status of a service or contents of a file before deciding how to proceed then this flag should be set to `true`. If subsequent steps can be executed as long as this step is successful, then this flag does not need to be set."
+            },
+            "check_if_fixed": {
+                "type": "boolean",
+                "description": "Flag that indicates if the original command that triggered the error that's being debugged should be tried after this step to check if the error is fixed. If you think that the original command `delete node_modules/ && delete package-lock.json` will pass after this step, then this flag should be set to TRUE and if you think that the original command will still fail after this step, then this flag should be set to `false`."
+            }
+        })
+        # Update required fields when extended
+        required.extend(["need_to_see_output", "check_if_fixed"])
+
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": required
+    }
+
+
+def step_save_file_definition():
+    return {
+        "type": "object",
+        "properties": {
+            "type": {
+                "const": "save_file",
+                "description": dev_step_type_description()
+            },
+            "save_file": {
+                "type": "object",
+                "description": "A file that needs to be created or file that needs to be completely replaced. This should be used for new files.",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the file that needs to be created or replaced."
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "Full path of the file (with the file name) that needs to be created or replaced."
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "Full content of the file that needs to be implemented. Remember, you MUST NOT omit any of the content that should go into this file."
+                    }
+                },
+                "required": ["name", "path", "content"]
+            }
+        },
+        "required": ["type", "save_file"]
+    }
+
+
+def step_modify_file_definition():
+    return {
+        "type": "object",
+        "properties": {
+            "type": {
+                "const": "modify_file",
+                "description": dev_step_type_description()
+            },
+            "modify_file": {
+                "type": "object",
+                "description": "A file that should be modified. This should only be used for existing files.",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the existing file that needs to be updated."
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "Full path of the file with the file name that needs to be updated."
+                    },
+                    "code_change_description": {
+                        "type": "string",
+                        "description": "Detailed description, with code snippets and any relevant context/explanation, of the changes that the developer should do."
+                    }
+                },
+                "required": ["name", "path", "code_change_description"]
+            }
+        },
+        "required": ["type", "modify_file"]
+    }
+
+
+def step_human_intervention_definition():
+    return {
+        "type": "object",
+        "properties": {
+            "type": {
+                "const": "human_intervention",
+                "description": dev_step_type_description()
+            },
+            "human_intervention_description": {
+                "type": "string",
+                "description": "Description of step where human intervention is needed."
+            }
+        },
+        "required": ["type", "human_intervention_description"]
+    }
+
+
+def step_code_change_definition():
+    return {
+        "type": "object",
+        "properties": {
+            "type": {
+                "const": "code_change",
+                "description": dev_step_type_description()
+            },
+            "code_change_description": {
+                "type": "string",
+                "description": "Description of a step in debugging this issue when there are code changes required. This should thoroughly describe what needs to be done to implement the code change for a single file - it cannot include changes for multiple files."
+            }
+        },
+        "required": ["type", "code_change_description"]
+    }
+
+
 def command_definition(description_command='A single command that needs to be executed.',
                        description_timeout=
                        'Timeout in milliseconds that represent the approximate time this command takes to finish. '
@@ -197,49 +332,6 @@ COMMAND_TO_RUN = {
     },
 }
 
-DEV_TASKS_BREAKDOWN = {
-    'definitions': [
-        {
-            'name': 'break_down_development_task',
-            'description': 'Breaks down the development task into smaller steps that need to be done to implement the entire task.',
-            'parameters': {
-                'type': 'object',
-                "properties": {
-                    "tasks": {
-                        'type': 'array',
-                        'description': 'List of smaller development steps that need to be done to complete the entire task.',
-                        'items': {
-                            'type': 'object',
-                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
-                            'properties': {
-                                'type': {
-                                    'type': 'string',
-                                    'enum': ['command', 'code_change', 'human_intervention'],
-                                    'description': 'Type of the development step that needs to be done to complete the entire task.',
-                                },
-                                'command': command_definition('A single command that needs to be executed.', 'Timeout in milliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. Remember, this is not in seconds but in milliseconds so likely it always needs to be greater than 1000.'),
-                                'code_change_description': {
-                                    'type': 'string',
-                                    'description': 'Description of a the development step that needs to be done. This should be used only if the task is of a type "code_change" and it should thoroughly describe what needs to be done to implement the code change for a single file - it cannot include changes for multiple files.',
-                                },
-                                'human_intervention_description': {
-                                    'type': 'string',
-                                    'description': 'Description of a task that requires a human to do.',
-                                },
-                            },
-                            'required': ['type'],
-                        }
-                    }
-                },
-                "required": ['tasks'],
-            },
-        },
-    ],
-    'functions': {
-        'break_down_development_task': lambda tasks: tasks
-    },
-}
-
 IMPLEMENT_TASK = {
     'definitions': [
         {
@@ -250,61 +342,14 @@ IMPLEMENT_TASK = {
                 "properties": {
                     "tasks": {
                         'type': 'array',
-                        'description': 'List of smaller development steps that need to be done to complete the entire task.',
+                        'description': 'List of smaller development steps.',
                         'items': {
-                            'type': 'object',
-                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesn\'t finish by itself (eg. a command to run an  If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
-                            'properties': {
-                                'type': {
-                                    'type': 'string',
-                                    'enum': ['command', 'save_file', 'modify_file', 'human_intervention'],
-                                    'description': 'Type of the development step that needs to be done to complete the entire task.',
-                                },
-                                'command': command_definition(),
-                                'save_file': {
-                                    'type': 'object',
-                                    'description': 'A file that needs to be created or file that needs to be completely replaced. This should be used for new files.',
-                                    'properties': {
-                                        'name': {
-                                            'type': 'string',
-                                            'description': 'Name of the file that needs to be created or replaced.',
-                                        },
-                                        'path': {
-                                            'type': 'string',
-                                            'description': 'Full path of the file (with the file name) that needs to be created or replaced.',
-                                        },
-                                        'content': {
-                                            'type': 'string',
-                                            'description': 'Full content of the file that needs to be implemented. Remember, you MUST NOT omit any of the content that should go into this file.',
-                                        },
-                                    },
-                                    'required': ['name', 'path', 'content'],
-                                },
-                                'modify_file': {
-                                    'type': 'object',
-                                    'description': 'A file that should be modified. This should only be used for existing files.',
-                                    'properties': {
-                                        'name': {
-                                            'type': 'string',
-                                            'description': 'Name of the existing file that needs to be updated.',
-                                        },
-                                        'path': {
-                                            'type': 'string',
-                                            'description': 'Full path of the file with the file name that needs to be updated.',
-                                        },
-                                        'code_change_description': {
-                                            'type': 'string',
-                                            'description': 'Detailed description, with code snippets and any relevant context/explanation, of the changes that the developer should do.',
-                                        },
-                                    },
-                                    'required': ['name', 'path', 'code_change_description'],
-                                },
-                                'human_intervention_description': {
-                                    'type': 'string',
-                                    'description': 'Description of what a human needs to do to debug this issue. This should be used only if the task is of a type "human_intervention".',
-                                },
-                            },
-                            'required': ['type'],
+                            "oneOf": [
+                                step_command_definition(),
+                                step_save_file_definition(),
+                                step_modify_file_definition(),
+                                step_human_intervention_definition(),
+                            ]
                         }
                     }
                 },
@@ -573,35 +618,11 @@ DEBUG_STEPS_BREAKDOWN = {
                         'type': 'array',
                         'description': 'List of steps that need to be done to debug the problem.',
                         'items': {
-                            'type': 'object',
-                            'description': 'A single step that needs to be done to get closer to debugging this issue.  Remember, if you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
-                            'properties': {
-                                'type': {
-                                    'type': 'string',
-                                    'enum': ['command', 'code_change', 'human_intervention'],
-                                    'description': 'Type of the step that needs to be done to debug this issue.',
-                                },
-                                'command': command_definition('Command that needs to be run to debug this issue.', 'Timeout in milliseconds that represent the approximate time this command takes to finish. If you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds.'),
-                                'code_change_description': {
-                                    'type': 'string',
-                                    'description': 'Description of a step in debugging this issue when there are code changes required. This should be used only if the task is of a type "code_change" and it should thoroughly describe what needs to be done to implement the code change for a single file - it cannot include changes for multiple files.',
-                                },
-                                'human_intervention_description': {
-                                    'type': 'string',
-                                    'description': 'Description of a step in debugging this issue when there is a human intervention needed. This should be used only if the task is of a type "human_intervention".',
-                                },
-                                "need_to_see_output": {
-                                    'type': 'boolean',
-                                    'description': 'Set to `true` if the definition of subsequent steps may need to change after you see the output of a successful execution of this step. '
-                                                   'For example, if the purpose of a command is to check the status of a service or contents of a file before deciding how to proceed then this flag should be set to `true`. '
-                                                   'If subsequent steps can be executed as long as this step is successful, then this flag does not need to be set.',
-                                },
-                                "check_if_fixed": {
-                                    'type': 'boolean',
-                                    'description': 'Flag that indicates if the original command that triggered the error that\'s being debugged should be tried after this step to check if the error is fixed. If you think that the original command `delete node_modules/ && delete package-lock.json` will pass after this step, then this flag should be set to TRUE and if you think that the original command will still fail after this step, then this flag should be set to `false`.',
-                                }
-                            },
-                            'required': ['type', 'check_if_fixed'],
+                            "oneOf": [
+                                step_command_definition(True),
+                                step_code_change_definition(),
+                                step_human_intervention_definition(),
+                            ]
                         }
                     }
                 },
