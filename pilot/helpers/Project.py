@@ -133,7 +133,7 @@ class Project:
         self.dev_steps_to_load = get_all_app_development_steps(self.args['app_id'], last_step=self.skip_until_dev_step)
         load_step_before_coding = ('step' in self.args and
                                    self.args['step'] is not None and
-                                   STEPS.index(self.args['step']) <= STEPS.index('coding'))
+                                   STEPS.index(self.args['step']) < STEPS.index('coding'))
 
         if load_step_before_coding:
             clear_directory(self.root_path)
