@@ -206,9 +206,25 @@ python main.py theme=dark
 
 
 # 🔎 Examples
+### Backend system for billing, admin, and user management
+- 💬 [Full initial prompt + additional features prompts](https://github.com/Pythagora-io/credit-based-backend-gpt-pilot-example/tree/main/prompts)
+- ▶️ [Video overview of app features](https://youtu.be/-OB6BJKADEo)
+- 💻️ [GitHub repo](https://github.com/Pythagora-io/credit-based-backend-gpt-pilot-example)
+- 📊 Stats:
+  - **3185** lines of code
+  - **104** files
+  - **~3** days of work
 
-Here are a couple of example apps GPT Pilot created by itself:
+### SQLite db analytics app
+- 💬 [All prompts used (initial and for additional features)](https://github.com/Pythagora-io/gpt-pilot-sqlite-analysis-tool/tree/main/prompts)
+- ▶️ [Video overview of app features](https://youtu.be/7t-Q2e7QsbE)
+- 💻️ [GitHub repo](https://github.com/Pythagora-io/gpt-pilot-sqlite-analysis-tool)
+- 📊 Stats:
+  - **730** lines of code
+  - **9** files
+  - **6** hours of work
 
+## Simple Examples
 ### 📱 Real-time chat app
 - 💬 Prompt: `A simple chat app with real-time communication`
 - ▶️ [Video of the app creation process](https://youtu.be/bUj9DbMRYhA)

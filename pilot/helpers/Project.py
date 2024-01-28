@@ -109,10 +109,10 @@ class Project:
         self.skip_steps = True
         should_overwrite_files = None
         while should_overwrite_files is None or should_overwrite_files.lower() not in AFFIRMATIVE_ANSWERS + NEGATIVE_ANSWERS:
-            print('yes/no', type='buttons-only')
+            print('Use GPT Pilot\'s code/Keep my changes', type='buttons-only')
             should_overwrite_files = styled_text(
                 self,
-                "Can I overwrite any changes that you might have made to the project since last running GPT Pilot (y/n)?",
+                "Can GPT Pilot overwrite code changes you made since last running GPT Pilot?",
                 ignore_user_input_count=True
             )
 

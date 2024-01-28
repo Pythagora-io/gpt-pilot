@@ -214,8 +214,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
 
         print('yes/no', type='buttons-only')
         logger.info('--------- EXECUTE COMMAND ---------- : %s', question)
-        answer = ask_user(project, 'If yes, just press ENTER. Otherwise, type "no" but it will be processed as '
-                                   'successfully executed.', False, hint=question)
+        answer = ask_user(project, question, False, hint='If yes, just press ENTER. Otherwise, type "no" but it will be processed as successfully executed.')
         # TODO can we use .confirm(question, default='yes').ask()  https://questionary.readthedocs.io/en/stable/pages/types.html#confirmation
         print('answer: ' + answer)
         if answer.lower() in NEGATIVE_ANSWERS:
