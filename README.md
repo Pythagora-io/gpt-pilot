@@ -224,6 +224,24 @@ python main.py theme=dark
   - **9** files
   - **6** hours of work
 
+## Simple Examples
+### 📱 Real-time chat app
+- 💬 Prompt: `A simple chat app with real-time communication`
+- ▶️ [Video of the app creation process](https://youtu.be/bUj9DbMRYhA)
+- 💻️ [GitHub repo](https://github.com/Pythagora-io/gpt-pilot-chat-app-demo)
+
+
+### 📝 Markdown editor
+- 💬 Prompt: `Build a simple markdown editor using HTML, CSS, and JavaScript. Allow users to input markdown text and display the formatted output in real-time.`
+- ▶️ [Video of the app creation process](https://youtu.be/uZeA1iX9dgg)
+- 💻️ [GitHub repo](https://github.com/Pythagora-io/gpt-pilot-demo-markdown-editor.git)
+
+
+### ⏱️ Timer app
+- 💬 Prompt: `Create a simple timer app using HTML, CSS, and JavaScript that allows users to set a countdown timer and receive an alert when the time is up.`
+- ▶️ [Video of the app creation process](https://youtu.be/CMN3W18zfiE)
+- 💻️ [GitHub repo](https://github.com/Pythagora-io/gpt-pilot-timer-app-demo)
+
 <br>
 
 # 🏗 How GPT Pilot works?
