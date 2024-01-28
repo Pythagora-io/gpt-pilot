@@ -162,18 +162,18 @@ class Developer(Agent):
         # step in db.
         if self.project.dev_steps_to_load:
             # get last occurrence of iteration.prompt (used in continue_development)
-            last_iteration = next((el for el in reversed(self.project.dev_steps_to_load) if
+            self.project.last_iteration = next((el for el in reversed(self.project.dev_steps_to_load) if
                                    'iteration.prompt' in el.get('prompt_path', '')), None)
 
+            # detailed_user_review_goal is explanation for user how to review task (used in continue_development)
+            self.project.last_detailed_user_review_goal = next(
+                (el for el in reversed(self.project.dev_steps_to_load) if
+                 'define_user_review_goal.prompt' in el.get('prompt_path', '')), None)
+
             # if no iteration.prompt then finish loading and continue execution normally
-            if last_iteration is None:
+            if self.project.last_iteration is None and self.project.last_detailed_user_review_goal is None:
                 self.project.finish_loading()
             else:
-                # detailed_user_review_goal is explanation for user how to review task (used in continue_development)
-                self.project.last_detailed_user_review_goal = next(
-                    (el for el in reversed(self.project.dev_steps_to_load) if
-                     'define_user_review_goal.prompt' in el.get('prompt_path', '')), None)
-
                 # run_command is command to run app (used in continue_development)
                 if self.run_command is None:
                     self.run_command = next(
@@ -182,9 +182,13 @@ class Developer(Agent):
                     if self.run_command is not None:
                         self.run_command = json.loads(self.run_command['llm_response']['text'])['command']
 
-                # remove last_iteration from the head of dev_steps_to_load; if it's last, record it in checkpoint
-                self.project.cleanup_list('dev_steps_to_load', last_iteration['id'])
-                self.project.last_iteration = self.project.dev_steps_to_load[0]
+                ids = [
+                    self.project.last_iteration['id'] if self.project.last_iteration else None,
+                    self.project.last_detailed_user_review_goal['id'] if self.project.last_detailed_user_review_goal else None
+                ]
+                # remove latest ID (which can be last_iteration or last_detailed_user_review_goal) from the head of
+                # dev_steps_to_load; if it's last, record it in checkpoint
+                self.project.cleanup_list('dev_steps_to_load', max(id for id in ids if id is not None))
 
         while True:
             result = self.execute_task(convo_dev_task,
@@ -353,7 +357,7 @@ class Developer(Agent):
             self.run_command = single_match.group(1).strip()
 
     def task_postprocessing(self, convo, development_task, continue_development, task_result, last_branch_name):
-        if self.project.last_iteration is None:
+        if self.project.last_detailed_user_review_goal is None:
             self.get_run_command(convo)
 
             if development_task is not None:
@@ -443,7 +447,7 @@ class Developer(Agent):
 
         for (i, step) in enumerate(task_steps):
             # This means we are still loading the project and have all the steps until last iteration
-            if self.project.last_iteration is not None:
+            if self.project.last_iteration is not None or self.project.last_detailed_user_review_goal is not None:
                 break
 
             # Skip steps before continue_from_step
