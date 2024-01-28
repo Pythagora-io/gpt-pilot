@@ -82,9 +82,9 @@ class Project:
         self.clarifications = None
         self.user_stories = None
         self.user_tasks = None
-        self.architecture = None
-        self.system_dependencies = None
-        self.package_dependencies = None
+        self.architecture = ""
+        self.system_dependencies = []
+        self.package_dependencies = []
         self.development_plan = None
         self.dot_pilot_gpt = DotGptPilot(log_chat_completions=True)
 

@@ -2,8 +2,7 @@ You are working on a {{ app_type }} called "{{ name }}" and you need to write co
 
 {{ project_details }}
 
-{% if current_task_index != 0 or task_type == 'feature' %}
-So far, this code has been implemented:
+{% if current_task_index != 0 or task_type == 'feature' %}So far, this code has been implemented:
 {% for file in files %}
 **{{ file.path }}/{{ file.name }}**:
 ```{# file.language #}
@@ -11,8 +10,8 @@ So far, this code has been implemented:
 ```
 
 {% endfor %}
-{% endif %}
 
+{% endif %}
 We've broken the development of this {{ task_type }} down to these tasks:
 ```{% for task in development_tasks %}
 {{ loop.index }}. {{ task['description'] }}

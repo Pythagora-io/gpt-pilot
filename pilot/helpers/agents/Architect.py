@@ -1,7 +1,7 @@
 from utils.utils import step_already_finished
 from helpers.Agent import Agent
 import json
-from utils.style import color_green_bold
+from utils.style import color_green_bold, color_yellow_bold
 from const.function_calls import ARCHITECTURE
 import platform
 
@@ -9,8 +9,12 @@ from utils.utils import should_execute_step, generate_app_data
 from database.database import save_progress, get_progress_steps
 from logger.logger import logger
 from helpers.AgentConvo import AgentConvo
+from prompts.prompts import ask_user
 
 ARCHITECTURE_STEP = 'architecture'
+WARN_SYSTEM_DEPS = ["docker", "kubernetes", "microservices"]
+WARN_FRAMEWORKS = ["react", "react.js", "next.js", "vue", "vue.js", "svelte", "angular"]
+WARN_FRAMEWORKS_URL = "https://github.com/Pythagora-io/gpt-pilot/wiki/Using-GPT-Pilot-with-frontend-frameworks"
 
 
 class Architect(Agent):
@@ -67,6 +71,26 @@ class Architect(Agent):
         self.project.architecture = llm_response["architecture"]
         self.project.system_dependencies = llm_response["system_dependencies"]
         self.project.package_dependencies = llm_response["package_dependencies"]
+
+        warn_system_deps = [dep["name"] for dep in self.project.system_dependencies if dep["name"].lower() in WARN_SYSTEM_DEPS]
+        warn_package_deps = [dep["name"] for dep in self.project.package_dependencies if dep["name"].lower() in WARN_FRAMEWORKS]
+
+        if warn_system_deps:
+            print(color_yellow_bold(
+                f"Warning: GPT Pilot doesn't officially support {', '.join(warn_system_deps)}. "
+                f"You can try to use {'it' if len(warn_system_deps) == 1 else 'them'}, but you may run into problems."
+            ))
+            print('continue', type='buttons-only')
+            ask_user(self.project, "Press ENTER if you still want to proceed. If you'd like to modify the project description, close the app and start a new one.", require_some_input=False)
+
+        if warn_package_deps:
+            print(color_yellow_bold(
+                f"Warning: GPT Pilot works best with vanilla JavaScript. "
+                f"You can try try to use {', '.join(warn_package_deps)}, but you may run into problems. "
+                f"Visit {WARN_FRAMEWORKS_URL} for more information."
+            ))
+            print('continue', type='buttons-only')
+            ask_user(self.project, "Press ENTER if you still want to proceed. If you'd like to modify the project description, close the app and start a new one.", require_some_input=False)
 
         # TODO: Project.args should be a defined class so that all of the possible args are more obvious
         if self.project.args.get('advanced', False):

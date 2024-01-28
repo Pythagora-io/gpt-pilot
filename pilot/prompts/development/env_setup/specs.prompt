@@ -1,11 +1,8 @@
 You are working in a software development agency and a project manager and software architect approach you telling you that you're assigned to work on a new project. You are working on a {{ app_type }} called "{{ name }}" and your first job is to set up the environment on a computer.
 
 Here are the technologies that you need to use for this project:
-```
 {% for tech in technologies %}
-- {{ tech }}
-{% endfor %}
-```
+* {{ tech["name"] }} - {{ tech["description"] }}{% endfor %}
 
 Let's set up the environment on my machine. Here are the details about my machine:
 ```

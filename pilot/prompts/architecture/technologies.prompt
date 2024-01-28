@@ -17,25 +17,18 @@ Based on these details, think step by step to design the architecture for the pr
 
 * You must only list *system* dependencies, ie. the ones that need to be installed (typically as admin) to set up the programming language, database, etc. Any packages that will need to be installed via language/platform-specific package managers are *not* system dependencies.
 * If there are several popular options (such as Nginx or Apache for web server), pick one that would be more suitable for the app in question.
-* DO NOT include text editors, IDEs, shells, OpenSSL, CLI tools such as AWS, or Stripe clients, or other utilities in your list. only direct dependencies required to build and run the project.
+* DO NOT include text editors, IDEs, shells, OpenSSL, CLI tools such as git, AWS, or Stripe clients, or other utilities in your list. only direct dependencies required to build and run the project.
 * If a dependency (such as database) has a cloud alternative or can be installed on another computer (ie. isn't required on this computer), you must mark it as `required_locally: false`
 
 Output only your response in JSON format like in this example, without other commentary:
 ```
 {
-    "architecture": "Detailed description of the arch
-itecture of the application",
+    "architecture": "Detailed description of the architecture of the application",
     "system_dependencies": [
         {
             "name": "Node.js",
             "description": "JavaScript runtime for building apps. This is required to be able to run the app you're building.",
             "test": "node --version",
-            "required_locally": true
-        },
-        {
-            "name": "git",
-            "description": "A popular version control system. Required to be able to store your code in version control.",
-            "test": "git --version",
             "required_locally": true
         },
         {
