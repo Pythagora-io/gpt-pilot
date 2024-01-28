@@ -61,7 +61,3 @@ Here is an example of good and bad task description:
     "description": "In 'route.js' add a route for /dashboard that returns the status 200. Route should be accessible only for logged in users. In 'middlewares.js' there should be a check if user is logged in using session. If user is not logged in, it should redirect to /login. If user is logged in, it should return the user data. User data should be fetched from database in 'users' collection using the user id from session.",
     "user_review_goal": "Reviewer should be able to navigate to '/dashboard' page without error. If user is logged in it should show user data, if not it should redirect to /login."
 }
-
-
-Rule #5
-When you're thinking about what tasks should be first, always prioritize frontend tasks to be implemented before backend tasks so that, once we get to the backend implementation, the user can test the backend by clicking around the frontend and not use tools like cUrl or Postman to make API requests to test the backend.
