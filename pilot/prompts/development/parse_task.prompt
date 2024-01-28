@@ -9,6 +9,8 @@ Each step can be either:
 
 If the step is of type `save_file` or `modify_file`, it needs to contain instructions on how to change only ONE file.
 
+Whenever you write code, make sure to log code execution using a logger so that, when a developer looks at the CLI output, that they can understand what is happening on the server. If there is no logging set up in the project, make sure that you install it first. This logging library will be used instead of functions like `console.log` or `print` so be sure that it can log an arbitrary text around the code.
+
 **IMPORTANT**: In `code_change_description` field of `modify_file` step, you must provide full information (including code samples, if any) from the previous message, so that the developer can correctly implement the change.  For `save_file`, you MUST include FULL file contents, without omitting anything or adding comments like `// rest of the code goes here`.
 
 Examples:
