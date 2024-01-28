@@ -5,15 +5,16 @@ import sys
 import time
 import json
 import tiktoken
+from traceback import format_exc
 from prompt_toolkit.styles import Style
 
 from jsonschema import validate, ValidationError
 from utils.style import color_red
 from typing import List
-from const.llm import MAX_GPT_MODEL_TOKENS
+from const.llm import MAX_GPT_MODEL_TOKENS, API_CONNECT_TIMEOUT, API_READ_TIMEOUT
 from const.messages import AFFIRMATIVE_ANSWERS
 from logger.logger import logger, logging
-from helpers.exceptions import TokenLimitError, ApiKeyNotDefinedError
+from helpers.exceptions import TokenLimitError, ApiKeyNotDefinedError, ApiError
 from utils.utils import fix_json, get_prompt
 from utils.function_calling import add_function_calls_to_request, FunctionCallSet, FunctionType
 from utils.questionary import styled_text
@@ -142,10 +143,11 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
         raise e
     except Exception as e:
         logger.error(f'The request to {os.getenv("ENDPOINT")} API failed: %s', e)
-        print(f'The request to {os.getenv("ENDPOINT")} API failed. Here is the error message:')
-        print(e)
-        return {}   # https://github.com/Pythagora-io/gpt-pilot/issues/130 - may need to revisit how we handle this
-
+        print(color_red(f'The request to {os.getenv("ENDPOINT")} API failed with error: {e}. Please try again later.'))
+        if isinstance(e, ApiError):
+            raise e
+        else:
+            raise ApiError("Error making LLM API request: {e}") from e
 
 def delete_last_n_lines(n):
     for _ in range(n):
@@ -245,7 +247,9 @@ def retry_on_exception(func):
                 if "context_length_exceeded" in err_str:
                     # If the specific error "context_length_exceeded" is present, simply return without retry
                     # spinner_stop(spinner)
-                    raise TokenLimitError(get_tokens_in_messages_from_openai_error(err_str), MAX_GPT_MODEL_TOKENS)
+                    n_tokens = get_tokens_in_messages_from_openai_error(err_str)
+                    print(color_red(f"Error calling LLM API: The request exceeded the maximum token limit (request size: {n_tokens}) tokens."))
+                    raise TokenLimitError(n_tokens, MAX_GPT_MODEL_TOKENS)
                 if "rate_limit_exceeded" in err_str:
                     # Extracting the duration from the error string
                     match = re.search(r"Please try again in (\d+)ms.", err_str)
@@ -279,7 +283,10 @@ def retry_on_exception(func):
                 # TODO: take user's input into consideration - send to LLM?
                 # https://github.com/Pythagora-io/gpt-pilot/issues/122
                 if user_message.lower() not in AFFIRMATIVE_ANSWERS:
-                    return {}
+                    if isinstance(e, ApiError):
+                        raise
+                    else:
+                        raise ApiError(f"Error making LLM API request: {err_str}") from e
 
     return wrapper
 
@@ -373,14 +380,15 @@ def stream_gpt_completion(data, req_type, project):
         endpoint_url,
         headers=headers,
         json=data,
-        stream=True
+        stream=True,
+        timeout=(API_CONNECT_TIMEOUT, API_READ_TIMEOUT),
     )
 
     if response.status_code != 200:
         project.dot_pilot_gpt.log_chat_completion(endpoint, model, req_type, data['messages'], response.text)
         logger.info(f'problem with request (status {response.status_code}): {response.text}')
         telemetry.record_llm_request(token_count, time.time() - request_start_time, is_error=True)
-        raise Exception(f"API responded with status code: {response.status_code}. Response text: {response.text}")
+        raise ApiError(f"API responded with status code: {response.status_code}. Request token size: {token_count} tokens. Response text: {response.text}")
 
     # function_calls = {'name': '', 'arguments': ''}
 

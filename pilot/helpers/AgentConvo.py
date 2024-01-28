@@ -2,10 +2,11 @@ import json
 import re
 import subprocess
 import uuid
-from utils.style import color_yellow, color_yellow_bold
+from traceback import format_exc
+from utils.style import color_yellow, color_yellow_bold, color_red_bold
 
 from database.database import get_saved_development_step, save_development_step, delete_all_subsequent_steps
-from helpers.exceptions.TokenLimitError import TokenLimitError
+from helpers.exceptions import TokenLimitError, ApiError
 from utils.function_calling import parse_agent_response, FunctionCallSet
 from utils.llm_connection import create_gpt_chat_completion
 from utils.utils import get_prompt, get_sys_message, capitalize_first_word_with_underscores
@@ -95,11 +96,21 @@ class AgentConvo:
         # TODO handle errors from OpenAI
         # It's complicated because calling functions are expecting different types of responses - string or tuple
         # https://github.com/Pythagora-io/gpt-pilot/issues/165 & #91
-        if response == {}:
+        if response == {} or response is None:
+            # This should never happen since we're raising ApiError in create_gpt_chat_completion
+            # Leaving this in place in case there's a case where this can still happen
             logger.error('Aborting with "OpenAI API error happened"')
-            raise Exception("OpenAI API error happened.")
+            print(color_red_bold('There was an error talking to OpenAI API. Please try again later.'))
+            payload_size_kb = len(json.dumps(self.messages)) // 1000
+            raise ApiError(f"Unknown API error (prompt: {prompt_path}, request size: {payload_size_kb}KB)")
 
-        response = parse_agent_response(response, function_calls)
+        try:
+            response = parse_agent_response(response, function_calls)
+        except (KeyError, json.JSONDecodeError) as err:
+            logger.error("Error while parsing LLM response: {err.__class__.__name__}: {err}")
+            print(color_red_bold(f'There was an error parsing LLM response: \"{err.__class__.__name__}: {err}\". Please try again later.'))
+            raise ApiError(f"Error parsing LLM response: {err.__class__.__name__}: {err}: Response text: {response}") from err
+
         message_content = self.format_message_content(response, function_calls)
 
         # TODO we need to specify the response when there is a function called

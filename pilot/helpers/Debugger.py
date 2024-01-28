@@ -6,8 +6,8 @@ from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_RECUSION_LAYER
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
 from const.messages import AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS
 from helpers.AgentConvo import AgentConvo
-from helpers.exceptions.TokenLimitError import TokenLimitError
-from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
+from helpers.exceptions import TokenLimitError
+from helpers.exceptions import TooDeepRecursionError
 from logger.logger import logger
 from prompts.prompts import ask_user
 

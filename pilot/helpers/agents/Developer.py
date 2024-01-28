@@ -12,9 +12,9 @@ from utils.style import (
     color_cyan_bold,
     color_white_bold
 )
-from helpers.exceptions.TokenLimitError import TokenLimitError
+from helpers.exceptions import TokenLimitError
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES
-from helpers.exceptions.TooDeepRecursionError import TooDeepRecursionError
+from helpers.exceptions import TooDeepRecursionError
 from helpers.Debugger import Debugger
 from utils.questionary import styled_text
 from utils.utils import step_already_finished

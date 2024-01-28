@@ -23,7 +23,7 @@ from database.database import database_exists, create_database, tables_exist, cr
 
 from utils.settings import settings, loader
 from utils.telemetry import telemetry
-
+from helpers.exceptions import ApiError, TokenLimitError
 
 def init():
     # Check if the "euclid" database exists, if not, create it
@@ -103,6 +103,11 @@ if __name__ == "__main__":
                 telemetry.set("end_result", "failure:api-error")
                 print('Exit', type='exit')
 
+    except (ApiError, TokenLimitError) as err:
+        telemetry.record_crash(err, end_result="failure:api-error")
+        telemetry.send()
+        run_exit_fn = False
+        print('Exit', type='exit')
     except KeyboardInterrupt:
         telemetry.set("end_result", "interrupt")
         if project.check_ipc():
