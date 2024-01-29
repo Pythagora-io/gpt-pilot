@@ -12,6 +12,13 @@ I want you to implement the instructions and show me the COMPLETE NEW VERSION of
 ```
 the full contents of the updated file, without skipping over any content
 ```
+
+**IMPORTANT**: Logging
+Whenever you write code, make sure to log code execution so that when a developer looks at the CLI output, they can understand what is happening on the server. If the description above mentions the exact code that needs to be added but doesn't contain enough logs, you need to add the logs handlers inside that code yourself.
+
+**IMPORTANT**: Error handling
+Whenever you write code, make sure to add error handling for all edge cases you can think of because this app will be used in production so there shouldn't be any crashes. Whenever you log the error, you **MUST** log the entire error message and trace and not only the error message. If the description above mentions the exact code that needs to be added but doesn't contain enough error handlers, you need to add the error handlers inside that code yourself.
+
 ------------------------end_of_format---------------------------
 **IMPORTANT**: Your reply should not omit any code in the new implementation or substitute anything with comments like `// .. rest of the code goes here ..`, because I will overwrite the existing file with the content you provide. Output ONLY the content for this file, without additional explanation.
 {% else %}
@@ -29,6 +36,12 @@ END
 ------------------------end_of_format---------------------------
 
 Once you respond in this format, I will find all occurrences of CURRENT_CODE in the file `{{ file_name }}` and replace them with the code under NEW_CODE.
+
+**IMPORTANT**: Logging
+Whenever you write code, make sure to log code execution so that when a developer looks at the CLI output, they can understand what is happening on the server. If the description above mentions the exact code that needs to be added but doesn't contain enough logs, you need to add the logs handlers inside that code yourself.
+
+**IMPORTANT**: Error handling
+Whenever you write code, make sure to add error handling for all edge cases you can think of because this app will be used in production so there shouldn't be any crashes. Whenever you log the error, you **MUST** log the entire error message and trace and not only the error message. If the description above mentions the exact code that needs to be added but doesn't contain enough error handlers, you need to add the error handlers inside that code yourself.
 
 **IMPORTANT**
 Here are rules how to give good response. You have to strictly follow all rules at all times:

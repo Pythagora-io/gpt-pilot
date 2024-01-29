@@ -9,6 +9,12 @@ Each step can be either:
 
 If the step is of type `save_file` or `modify_file`, it needs to contain instructions on how to change only ONE file.
 
+**IMPORTANT**: Logging
+Whenever you write code, make sure to log code execution so that when a developer looks at the CLI output, they can understand what is happening on the server. If the description above mentions the exact code that needs to be added but doesn't contain enough logs, you need to add the logs handlers inside that code yourself.
+
+**IMPORTANT**: Error handling
+Whenever you write code, make sure to add error handling for all edge cases you can think of because this app will be used in production so there shouldn't be any crashes. Whenever you log the error, you **MUST** log the entire error message and trace and not only the error message. If the description above mentions the exact code that needs to be added but doesn't contain enough error handlers, you need to add the error handlers inside that code yourself.
+
 **IMPORTANT**: In `code_change_description` field of `modify_file` step, you must provide full information (including code samples, if any) from the previous message, so that the developer can correctly implement the change.  For `save_file`, you MUST include FULL file contents, without omitting anything or adding comments like `// rest of the code goes here`.
 
 Examples:
