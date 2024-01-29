@@ -3,8 +3,9 @@ import re
 import subprocess
 import uuid
 from traceback import format_exc
-from utils.style import color_yellow, color_yellow_bold, color_red_bold
+from os.path import sep
 
+from utils.style import color_yellow, color_yellow_bold, color_red_bold
 from database.database import get_saved_development_step, save_development_step, delete_all_subsequent_steps
 from helpers.exceptions import TokenLimitError, ApiError
 from utils.function_calling import parse_agent_response, FunctionCallSet
@@ -198,8 +199,25 @@ class AgentConvo:
         files = self.agent.project.get_all_coded_files()
         for msg in self.messages:
             if msg['role'] == 'user':
-                for file in files:
-                    msg['content'] = self.replace_file_content(msg['content'], f"{file['path']}/{file['name']}", file['content'])
+                new_content = self.replace_files_in_one_message(files, msg["content"])
+                if new_content != msg["content"]:
+                    msg["content"] = new_content
+
+    def replace_files_in_one_message(self, files, message):
+        # This needs to EXACTLY match the formatting in `files_list.prompt`
+        replacement_lines = ["\n---START_OF_FILES---"]
+        for file in files:
+            path = f"{file['path']}{sep}{file['name']}"
+            content = file['content']
+            replacement_lines.append(f"**{path}**:\n```\n{content}\n```\n")
+        replacement_lines.append("---END_OF_FILES---\n")
+        replacement = "\n".join(replacement_lines)
+
+        def replace_cb(_m):
+            return replacement
+
+        pattern = r"\n---START_OF_FILES---\n(.*?)\n---END_OF_FILES---\n"
+        return re.sub(pattern, replace_cb, message, flags=re.MULTILINE|re.DOTALL)
 
     @staticmethod
     def escape_specials(s):
@@ -222,22 +240,6 @@ class AgentConvo:
         for seq in sequences_to_preserve:
             s = s.replace('\\\\' + seq[-1], seq)
         return s
-
-    def replace_file_content(self, message, file_path, new_content):
-        pattern = rf'\*\*{re.escape(file_path)}\*\*:\n```\n(.*?)\n```'
-
-        # Escape special characters in new_content for the sake of regex replacement
-        new_content_escaped = self.escape_specials(new_content)
-        file_path_escaped = self.escape_specials(file_path)
-
-        new_section_content = f'**{file_path_escaped}**\n```\n{new_content_escaped}\n```'
-
-        updated_message, num_replacements = re.subn(pattern, new_section_content, message, flags=re.DOTALL)
-
-        if num_replacements == 0:
-            return message
-
-        return updated_message
 
     def convo_length(self):
         return len([msg for msg in self.messages if msg['role'] != 'system'])
