@@ -9,9 +9,9 @@ body:
       value: |
         Thank you for taking the time to suggest improvement to GPT Pilot!
         
-        If you haven't already, please also check [currently open issues](https://github.com/Pythagora-io/gpt-pilot/issues/) to see if this is a commonly-asked feature. If so, please comment on the the existing issue instead of creating a new one.
+        If you haven't already, please check our [Frequently Asked Questions](https://github.com/Pythagora-io/gpt-pilot/wiki/Frequently-Asked-Questions) and [currently open issues](https://github.com/Pythagora-io/gpt-pilot/issues/) to see if this is a commonly-asked feature. If so, please comment on the the existing issue instead of creating a new one.
         
-        We also have an [active community on Discord](https://discord.gg/HaqXugmxr9), so please consider joining and sharing your idea with the rest of the community.
+        We also have an [active community on Discord](https://discord.gg/HaqXugmxr9), so please consider joining, sharing your idea and starting a discussion there.
   - type: dropdown
     id: client
     attributes:
