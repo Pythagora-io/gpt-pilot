@@ -79,7 +79,6 @@ class Debugger:
                     # TODO refactor to nicely get the developer agent
                     result = self.agent.project.developer.execute_task(
                         convo,
-                        '',
                         steps,
                         test_command=command,
                         test_after_code_changes=True,

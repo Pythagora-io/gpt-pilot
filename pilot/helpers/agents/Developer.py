@@ -193,7 +193,6 @@ class Developer(Agent):
 
         while True:
             result = self.execute_task(convo_dev_task,
-                                       development_task['description'],
                                        steps,
                                        development_task=development_task,
                                        continue_development=True,
@@ -463,7 +462,7 @@ class Developer(Agent):
 
         return {"success": True, "user_input": answer}
 
-    def execute_task(self, convo, task_description, task_steps, test_command=None, reset_convo=True,
+    def execute_task(self, convo, task_steps, test_command=None, reset_convo=True,
                      test_after_code_changes=True, continue_development=False,
                      development_task=None, is_root_task=False, continue_from_step=0):
         function_uuid = str(uuid.uuid4())
@@ -618,7 +617,7 @@ class Developer(Agent):
                 iteration_convo.remove_last_x_messages(2)
 
                 task_steps = llm_response['tasks']
-                self.execute_task(iteration_convo, iteration_description, task_steps, is_root_task=True)
+                self.execute_task(iteration_convo, task_steps, is_root_task=True)
 
     def set_up_environment(self):
         self.project.current_step = ENVIRONMENT_SETUP_STEP
