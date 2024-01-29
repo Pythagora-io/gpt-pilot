@@ -110,7 +110,7 @@ if __name__ == "__main__":
         print('Exit', type='exit')
     except KeyboardInterrupt:
         telemetry.set("end_result", "interrupt")
-        if project.check_ipc():
+        if project is not None and project.check_ipc():
             telemetry.send()
             run_exit_fn = False
 

@@ -221,7 +221,7 @@ class Developer(Agent):
                 logger.warning('Testing at end of task failed')
                 break
 
-    def step_code_change(self, convo, task_description, step, i, test_after_code_changes):
+    def step_code_change(self, convo, step, i, test_after_code_changes):
         if 'code_change_description' in step:
             print(f'Implementing code changes for `{step["code_change_description"]}`')
             code_monkey = CodeMonkey(self.project, self)
@@ -239,7 +239,7 @@ class Developer(Agent):
         self.project.save_file(data)
         return {"success": True}
 
-    def step_modify_file(self, convo, task_description, step, i, test_after_code_changes):
+    def step_modify_file(self, convo, step, i, test_after_code_changes):
         data = step['modify_file']
         print(f'Updating existing file {data["name"]}: {data["code_change_description"].splitlines()[0]}')
         code_monkey = CodeMonkey(self.project, self)
@@ -475,10 +475,10 @@ class Developer(Agent):
                         #     result['user_input'] = result['cli_response']
 
                     elif step['type'] in ['save_file', 'code_change']:
-                        result = self.step_code_change(convo, task_description, step, i, test_after_code_changes)
+                        result = self.step_code_change(convo, step, i, test_after_code_changes)
 
                     elif step['type'] == 'modify_file':
-                        result = self.step_modify_file(convo, task_description, step, i, test_after_code_changes)
+                        result = self.step_modify_file(convo, step, i, test_after_code_changes)
 
                     elif step['type'] == 'human_intervention':
                         result = self.step_human_intervention(convo, step)

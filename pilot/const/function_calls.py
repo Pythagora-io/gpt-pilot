@@ -607,13 +607,6 @@ DEBUG_STEPS_BREAKDOWN = {
             'parameters': {
                 'type': 'object',
                 'properties': {
-                    'thoughts': {
-                        'type': 'string',
-                        'description': 'Thoughts that you have about the problem that you are trying to debug.'
-                    },
-                    'reasoning': {
-                        'type': 'string',
-                    },
                     'steps': {
                         'type': 'array',
                         'description': 'List of steps that need to be done to debug the problem.',
@@ -626,7 +619,7 @@ DEBUG_STEPS_BREAKDOWN = {
                         }
                     }
                 },
-                "required": ['thoughts', 'reasoning', 'steps'],
+                "required": ['steps'],
             },
         },
     ],

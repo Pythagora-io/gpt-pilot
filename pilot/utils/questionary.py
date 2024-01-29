@@ -27,7 +27,7 @@ def styled_text(project, question, ignore_user_input_count=False, style=None, hi
     if not ignore_user_input_count:
         project.user_inputs_count += 1
 
-    if project.check_ipc():
+    if project is not None and project.check_ipc():
         response = print(question, type='user_input_request')
         print(response)
     else:
