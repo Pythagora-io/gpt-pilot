@@ -12,6 +12,9 @@ I want you to implement the instructions and show me the COMPLETE NEW VERSION of
 ```
 the full contents of the updated file, without skipping over any content
 ```
+
+{{ logs_and_error_handling }}
+
 ------------------------end_of_format---------------------------
 **IMPORTANT**: Your reply should not omit any code in the new implementation or substitute anything with comments like `// .. rest of the code goes here ..`, because I will overwrite the existing file with the content you provide. Output ONLY the content for this file, without additional explanation.
 {% else %}
@@ -29,6 +32,8 @@ END
 ------------------------end_of_format---------------------------
 
 Once you respond in this format, I will find all occurrences of CURRENT_CODE in the file `{{ file_name }}` and replace them with the code under NEW_CODE.
+
+{{ logs_and_error_handling }}
 
 **IMPORTANT**
 Here are rules how to give good response. You have to strictly follow all rules at all times:
