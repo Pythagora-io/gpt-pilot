@@ -337,14 +337,17 @@ class Developer(Agent):
 
             return response
 
-    def step_test(self, convo, test_command):
+    def step_test(self, convo, test_command, task_steps=None, step_index=None):
         # TODO: don't re-run if it's already running
         should_rerun_command = convo.send_message('dev_ops/should_rerun_command.prompt', test_command)
         if should_rerun_command == 'NO':
             return {'success': True}
         elif should_rerun_command == 'YES':
             logger.info('Re-running test command: %s', test_command)
-            cli_response, llm_response = execute_command_and_check_cli_response(convo, test_command)
+            cli_response, llm_response = execute_command_and_check_cli_response(convo,
+                                                                                test_command,
+                                                                                task_steps=task_steps,
+                                                                                step_index=step_index)
             logger.info('After running command llm_response: ' + llm_response)
             if llm_response == 'NEEDS_DEBUGGING':
                 print(color_red('Got incorrect CLI response:'))
@@ -518,7 +521,7 @@ class Developer(Agent):
 
                     if test_command is not None and ('check_if_fixed' not in step or step['check_if_fixed']):
                         logger.info('check_if_fixed: %s', test_command)
-                        result = self.step_test(convo, test_command)
+                        result = self.step_test(convo, test_command, task_steps=task_steps, step_index=i)
                         logger.info('task result: %s', result)
                         return result
 

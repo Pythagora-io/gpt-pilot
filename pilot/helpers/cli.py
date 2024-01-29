@@ -316,7 +316,8 @@ def execute_command(project, command, timeout=None, success_message=None, comman
     return return_value, done_or_error_response, process.returncode
 
 
-def check_if_command_successful(convo, command, cli_response, response, exit_code, additional_message=None):
+def check_if_command_successful(convo, command, cli_response, response, exit_code, additional_message=None,
+                                task_steps=None, step_index=None):
     if cli_response is not None:
         logger.info(f'`{command}` ended with exit code: {exit_code}')
         if exit_code is None:
@@ -331,6 +332,8 @@ def check_if_command_successful(convo, command, cli_response, response, exit_cod
                                               'command': command,
                                               'additional_message': additional_message,
                                               'exit_code': exit_code,
+                                              'task_steps': task_steps,
+                                              'step_index': step_index,
                                           })
             logger.debug(f'LLM response to ran_command.prompt: {response}')
 
@@ -392,7 +395,7 @@ def build_directory_tree(path, prefix='', root_path=None) -> str:
     return output
 
 
-def execute_command_and_check_cli_response(convo, command: dict):
+def execute_command_and_check_cli_response(convo, command: dict, task_steps=None, step_index=None):
     """
     Execute a command and check its CLI response.
 
@@ -401,6 +404,8 @@ def execute_command_and_check_cli_response(convo, command: dict):
         command (dict):
           ['command'] (str): The command to run.
           ['timeout'] (int): The maximum execution time in milliseconds.
+        task_steps (list, optional): The steps of the current task. Default is None.
+        step_index (int, optional): The index of the current step. Default is None.
 
 
     Returns:
@@ -416,7 +421,8 @@ def execute_command_and_check_cli_response(convo, command: dict):
                                                         timeout=command['timeout'],
                                                         command_id=command_id)
 
-    response = check_if_command_successful(convo, command['command'], cli_response, response, exit_code)
+    response = check_if_command_successful(convo, command['command'], cli_response, response, exit_code,
+                                           task_steps=task_steps, step_index=step_index)
     return cli_response, response
 
 
@@ -471,7 +477,8 @@ def run_command_until_success(convo, command,
     if cli_response is None and response != 'DONE':
         return {'success': False, 'user_input': response}
 
-    response = check_if_command_successful(convo, command, cli_response, response, exit_code, additional_message)
+    response = check_if_command_successful(convo, command, cli_response, response, exit_code, additional_message,
+                                           task_steps=task_steps, step_index=step_index)
     if response:
         response = response.strip()
 
