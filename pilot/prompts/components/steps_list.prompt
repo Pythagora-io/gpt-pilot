@@ -1,4 +1,4 @@
-{% if task_steps and step_index -%}
+{% if task_steps and step_index is not none -%}
 Task is split into multiple steps. Previously generated steps can be one of the following:
 * `command` - command to run
 * `save_file` or `code_change` -  create new or update existing file
@@ -7,16 +7,17 @@ Task is split into multiple steps. Previously generated steps can be one of the 
 
 {% if step_index > 0 %}Here is the list of steps that have been executed:
 {% for step in task_steps %}{% if loop.index0 < step_index %}
-{%- if step[step.type].content -%}
+{%- if step.type in ['save_file', 'code_change', 'modify_file'] -%}
     {% set _ = step[step.type].update({'content': '...'}) %}
 {%- endif -%}
 {{ step }}
 {% endif %}{% endfor %}{% endif %}
 Here is the step you are currently debugging:
 {{ task_steps[step_index] }}
+
 {% if step_index < task_steps|length - 1 %}Here are steps that will be executed once debugging is done:
 {% for step in task_steps %}{% if loop.index0 > step_index %}
-{%- if step[step.type].content -%}
+{%- if step.type in ['save_file', 'code_change', 'modify_file'] -%}
     {% set _ = step[step.type].update({'content': '...'}) %}
 {%- endif -%}
 {{ step }}
