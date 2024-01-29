@@ -107,6 +107,8 @@ class Developer(Agent):
             "current_task_index": i,
             "development_tasks": self.project.development_plan,
             "files": self.project.get_all_coded_files(),
+            "architecture": self.project.architecture,
+            "technologies": self.project.system_dependencies + self.project.package_dependencies,
             "task_type": 'feature' if self.project.finished else 'app'
         })
 
@@ -491,10 +493,6 @@ class Developer(Agent):
 
             if user_feedback is not None:
                 iteration_convo = AgentConvo(self)
-                technologies = (
-                    [dep["name"] for dep in self.project.system_dependencies] +
-                    [dep["name"] for dep in self.project.package_dependencies]
-                )
                 iteration_description = iteration_convo.send_message('development/iteration.prompt', {
                     "name": self.project.args['name'],
                     "app_type": self.project.args['app_type'],
@@ -502,7 +500,8 @@ class Developer(Agent):
                     "clarifications": self.project.clarifications,
                     "user_stories": self.project.user_stories,
                     "user_tasks": self.project.user_tasks,
-                    "technologies": technologies,
+                    "architecture": self.project.architecture,
+                    "technologies": self.project.system_dependencies + self.project.package_dependencies,
                     "array_of_objects_to_string": array_of_objects_to_string,  # TODO check why is this here
                     "directory_tree": self.project.get_directory_tree(True),
                     "current_task": development_task,

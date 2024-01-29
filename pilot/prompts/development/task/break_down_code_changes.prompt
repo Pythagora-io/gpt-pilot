@@ -9,11 +9,8 @@ Here is the current folder tree:
 ```
 
 Here are technologies that you can use:
-```
-{% for technology in technologies %}
-- {{ technology }}
-{% endfor %}
-```
+{% for tech in technologies %}
+* {{ tech["name"] }} - {{ tech["description"] }}{% endfor %}
 
 First, you need to break down these instructions into actionable steps that can be made. There are 2 types of steps. If a step requires a change in a file content, that step is of a type `code_change` and if a change requires a command to be run (eg. to create a file or a folder), that step is of a type `run_command`.
 For a step to be actionable, it cannot have a vague description but a clear explanation of what needs to be done to finish that step. Here are a couple of examples of good and bad steps:

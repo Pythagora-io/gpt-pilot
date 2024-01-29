@@ -5,10 +5,12 @@ Here is a high level description of "{{ name }}":
 {{ app_summary }}
 ```
 
+Project architecture:
+{{ architecture }}
+
 Here are the technologies that you need to use for this project:
-```{% for tech in technologies %}
-- {{ tech }}{% endfor %}
-```
+{% for tech in technologies %}
+* {{ tech["name"] }} - {{ tech["description"] }}{% endfor %}
 
 {% if development_tasks and current_task %}
 Development process of this app was split into smaller tasks. Here is the list of all tasks:

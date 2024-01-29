@@ -40,6 +40,8 @@ class TechLead(Agent):
                 "clarifications": self.project.clarifications,
                 "user_stories": self.project.user_stories,
                 "user_tasks": self.project.user_tasks,
+                "architecture": self.project.architecture,
+                "technologies": self.project.system_dependencies + self.project.package_dependencies,
                 "task_type": 'app',
             }, DEVELOPMENT_PLAN)
         self.project.development_plan = llm_response['plan']
@@ -65,7 +67,8 @@ class TechLead(Agent):
                 "clarifications": self.project.clarifications,
                 "user_stories": self.project.user_stories,
                 "user_tasks": self.project.user_tasks,
-                "technologies": self.project.architecture,
+                "architecture": self.project.architecture,
+                "technologies": self.project.system_dependencies + self.project.package_dependencies,
                 "directory_tree": self.project.get_directory_tree(True),
                 "development_tasks": self.project.development_plan,
                 "files": self.project.get_all_coded_files(),
