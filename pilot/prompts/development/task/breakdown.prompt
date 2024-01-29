@@ -2,14 +2,8 @@ You are working on a {{ app_type }} called "{{ name }}" and you need to write co
 
 {{ project_details }}
 
-{% if current_task_index != 0 or task_type == 'feature' %}So far, this code has been implemented:
-{% for file in files %}
-**{{ file.path }}/{{ file.name }}**:
-```{# file.language #}
-{{ file.content }}
-```
-
-{% endfor %}
+{% if current_task_index != 0 or task_type == 'feature' %}
+{{ files_list }}
 
 {% endif %}
 We've broken the development of this {{ task_type }} down to these tasks:
