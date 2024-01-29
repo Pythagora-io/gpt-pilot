@@ -9,7 +9,7 @@ body:
       value: |
         Thank you for taking the time to fill out this bug report!
         
-        If you haven't already, please also check [currently open issues](https://github.com/Pythagora-io/gpt-pilot/issues/) to see if the problem you have is already mentioned. If so, please comment on the the existing issue instead of creating a new one.
+        If you haven't already, please also check our [Frequently Asked Questions](https://github.com/Pythagora-io/gpt-pilot/wiki/Frequently-Asked-Questions) and [currently open issues](https://github.com/Pythagora-io/gpt-pilot/issues/) to see if the problem you have is already mentioned. If so, please comment on the the existing issue instead of creating a new one.
         
         We also have an [active community on Discord](https://discord.gg/HaqXugmxr9). If the issue is more about how to do something with GPT Pilot and not about a bug or problem, consider joining our Discord and discussing there, as it's possible other community members could help you!
   - type: dropdown
