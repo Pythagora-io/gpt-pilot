@@ -17,7 +17,8 @@ class Debugger:
         self.agent = agent
         self.recursion_layer = 0
 
-    def debug(self, convo, command=None, user_input=None, issue_description=None, is_root_task=False, ask_before_debug=False):
+    def debug(self, convo, command=None, user_input=None, issue_description=None, is_root_task=False,
+              ask_before_debug=False, task_steps=None, step_index=None):
         """
         Debug a conversation.
 
@@ -28,6 +29,8 @@ class Debugger:
                 Should provide `command` or `user_input`.
             issue_description (str, optional): Description of the issue to debug. Default is None.
             ask_before_debug (bool, optional): True if we have to ask user for permission to start debugging.
+            task_steps (list, optional): The steps of the task to debug. Default is None.
+            step_index (int, optional): The index of the step to debug. Default is None.
 
         Returns:
             bool: True if debugging was successful, False otherwise.
@@ -61,6 +64,8 @@ class Debugger:
                     'command': command['command'] if command is not None else None,
                     'user_input': user_input,
                     'issue_description': issue_description,
+                    'task_steps': task_steps,
+                    'step_index': step_index,
                     'os': platform.system()
                 },
                 DEBUG_STEPS_BREAKDOWN)

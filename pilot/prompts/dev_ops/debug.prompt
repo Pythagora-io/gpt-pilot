@@ -1,7 +1,31 @@
+{% if task_steps and step_index -%}
+Task is split into multiple steps. Previously generated steps can be one of the following:
+* `command` - command to run
+* `save_file` or `code_change` -  create new or update existing file
+* `modify_file` - update large existing file
+* `human_intervention` - if the human needs to do something
+
+{% if step_index > 0 %}Here is the list of steps that have been executed:
+{% for step in task_steps %}{% if loop.index0 < step_index %}
+{%- if step[step.type].content -%}
+    {% set _ = step[step.type].update({'content': '...'}) %}
+{%- endif -%}
+{{ step }}
+{% endif %}{% endfor %}{% endif %}
+Here is the step you are currently debugging:
+{{ task_steps[step_index] }}
+{% if step_index < task_steps|length - 1 %}Here are steps that will be executed once debugging is done:
+{% for step in task_steps %}{% if loop.index0 > step_index %}
+{%- if step[step.type].content -%}
+    {% set _ = step[step.type].update({'content': '...'}) %}
+{%- endif -%}
+{{ step }}
+{% endif %}{% endfor %}{% endif %}
+{%- endif %}
 {% if issue_description -%}
 You wanted me to check this - `{{ issue_description }}` but there was a problem
 {%- else -%}
-Ok, we need to debug this issue
+Now, we need to debug this issue
 {%- endif -%}
 {% if command %} and we need to be able to execute `{{ command }}` successfully. {% endif %}.
 {% if user_input %}I looked into this issue. I want you to take my findings as important part of debugging this issue. Here are my findings:

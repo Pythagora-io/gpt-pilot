@@ -221,13 +221,24 @@ class Developer(Agent):
                 logger.warning('Testing at end of task failed')
                 break
 
-    def step_code_change(self, convo, step, i, test_after_code_changes):
+    def step_code_change(self, convo, task_steps, i, test_after_code_changes):
+        """
+        :param convo: AgentConvo
+        :param task_steps: list of steps
+        :param i: index of the step that is being implemented
+        :param test_after_code_changes: bool
+        :return: {
+          'success': bool
+          'user_input': string_from_human
+        }
+        """
+        step = task_steps[i]
         if 'code_change_description' in step:
             print(f'Implementing code changes for `{step["code_change_description"]}`')
             code_monkey = CodeMonkey(self.project, self)
             updated_convo = code_monkey.implement_code_changes(convo, step['code_change_description'], step)
             if test_after_code_changes:
-                return self.test_code_changes(code_monkey, updated_convo)
+                return self.test_code_changes(updated_convo, task_steps, i)
             else:
                 return {"success": True}
 
@@ -246,7 +257,8 @@ class Developer(Agent):
         code_monkey.implement_code_changes(convo, data['code_change_description'], data)
         return {"success": True}
 
-    def step_command_run(self, convo, step, i, success_with_cli_response=False):
+    def step_command_run(self, convo, task_steps, i, success_with_cli_response=False):
+        step = task_steps[i]
         logger.info('Running command: %s', step['command'])
         data = step['command']
         additional_message = ''  # 'Let\'s start with the step #0:\n' if i == 0 else f'So far, steps { ", ".join(f"#{j}" for j in range(i+1)) } are finished so let\'s do step #{i + 1} now.\n'
@@ -259,17 +271,21 @@ class Developer(Agent):
                                          command_id=command_id,
                                          success_message=success_message,
                                          additional_message=additional_message,
-                                         success_with_cli_response=success_with_cli_response)
+                                         success_with_cli_response=success_with_cli_response,
+                                         task_steps=task_steps,
+                                         step_index=i)
 
-    def step_human_intervention(self, convo, step: dict):
+    def step_human_intervention(self, convo, task_steps: list, step_index):
         """
         :param convo:
-        :param step: {'human_intervention_description': 'some description'}
+        :param task_steps: list of steps
+        :param step_index: index of the step that needs human intervention
         :return: {
           'success': bool
           'user_input': string_from_human
         }
         """
+        step = task_steps[step_index]
         logger.info('Human intervention needed%s: %s',
                     '' if self.run_command is None else f' for command `{self.run_command}`',
                     step['human_intervention_description'] if 'human_intervention_description' in step else '')
@@ -299,7 +315,9 @@ class Developer(Agent):
                                                                 # If timeout is None the conversation can't continue
                                                                 timeout=None,
                                                                 force=True,
-                                                                return_cli_response=True)
+                                                                return_cli_response=True,
+                                                                task_steps=task_steps,
+                                                                step_index=step_index)
                 },
                 convo=convo)
 
@@ -312,7 +330,9 @@ class Developer(Agent):
             else:
                 response['success'] = self.debugger.debug(convo,
                                                           user_input=response['user_input'],
-                                                          issue_description=step['human_intervention_description'] if 'human_intervention_description' in step else '')
+                                                          issue_description=step['human_intervention_description'] if 'human_intervention_description' in step else '',
+                                                          task_steps=task_steps,
+                                                          step_index=step_index)
                 # TODO add review
 
             return response
@@ -470,18 +490,18 @@ class Developer(Agent):
                         convo.load_branch(function_uuid)
 
                     if step['type'] == 'command':
-                        result = self.step_command_run(convo, step, i, success_with_cli_response=need_to_see_output)
+                        result = self.step_command_run(convo, task_steps, i, success_with_cli_response=need_to_see_output)
                         # if need_to_see_output and 'cli_response' in result:
                         #     result['user_input'] = result['cli_response']
 
                     elif step['type'] in ['save_file', 'code_change']:
-                        result = self.step_code_change(convo, step, i, test_after_code_changes)
+                        result = self.step_code_change(convo, task_steps, i, test_after_code_changes)
 
                     elif step['type'] == 'modify_file':
                         result = self.step_modify_file(convo, step, i, test_after_code_changes)
 
                     elif step['type'] == 'human_intervention':
-                        result = self.step_human_intervention(convo, step)
+                        result = self.step_human_intervention(convo, task_steps, i)
 
                     # TODO background_command - if we run commands in background we should have way to kill processes
                     #  and that should be added to function_calls.py DEBUG_STEPS_BREAKDOWN and IMPLEMENT_TASK
@@ -654,7 +674,16 @@ class Developer(Agent):
         )
         return llm_response
 
-    def test_code_changes(self, code_monkey, convo):
+    def test_code_changes(self, convo, task_steps, step_index):
+        """
+        :param convo: AgentConvo
+        :param task_steps: list of steps
+        :param step_index: index of the step that is being implemented
+        :return: {
+          'success': bool
+          'user_input': string_from_human
+        }
+        """
         return {"success": True}
         logger.info('Testing code changes...')
         llm_response = convo.send_message('development/task/step_check.prompt', {}, GET_TEST_TYPE)
@@ -662,7 +691,8 @@ class Developer(Agent):
 
         if test_type == 'command_test':
             command = llm_response['command']
-            return run_command_until_success(convo, command['command'], timeout=command['timeout'])
+            return run_command_until_success(convo, command['command'], timeout=command['timeout'],
+                                             task_steps=task_steps, step_index=step_index)
         elif test_type == 'automated_test':
             # TODO get code monkey to implement the automated test
             pass
@@ -678,7 +708,8 @@ class Developer(Agent):
 
                 user_feedback = response['user_input']
                 if user_feedback is not None and user_feedback != 'continue':
-                    self.debugger.debug(convo, user_input=user_feedback, issue_description=description)
+                    self.debugger.debug(convo, user_input=user_feedback, issue_description=description,
+                                        task_steps=task_steps, step_index=step_index)
                 else:
                     return_value = {'success': True, 'user_input': user_feedback}
 

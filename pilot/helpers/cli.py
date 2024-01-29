@@ -428,7 +428,9 @@ def run_command_until_success(convo, command,
                               force=False,
                               return_cli_response=False,
                               success_with_cli_response=False,
-                              is_root_task=False):
+                              is_root_task=False,
+                              task_steps=None,
+                              step_index=None):
     """
     Run a command until it succeeds or reaches a timeout.
 
@@ -445,6 +447,8 @@ def run_command_until_success(convo, command,
         success_with_cli_response (bool, optional): If True, simply send the cli_response back to the caller without checking with LLM.
                                                     The LLM has asked to see the output and may update the task step list.
         is_root_task (bool, optional): If True and TokenLimitError is raised, will call `convo.load_branch(reset_branch_id)`
+        task_steps (list, optional): The steps of the current task. Default is None.
+        step_index (int, optional): The index of the current step. Default is None.
 
     Returns:
         - 'success': bool,
@@ -488,7 +492,7 @@ def run_command_until_success(convo, command,
                     'timeout': timeout,
                     'command_id': command_id,
                     'success_message': success_message,
-                },user_input=cli_response, is_root_task=is_root_task, ask_before_debug=True)
+                },user_input=cli_response, is_root_task=is_root_task, ask_before_debug=True, task_steps=task_steps, step_index=step_index)
                 return {'success': success, 'cli_response': cli_response}
             except TooDeepRecursionError as e:
                 # this is only to put appropriate message in the response after TooDeepRecursionError is raised
