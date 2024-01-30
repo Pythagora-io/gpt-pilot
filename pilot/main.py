@@ -115,7 +115,7 @@ if __name__ == "__main__":
             telemetry.send()
             run_exit_fn = False
 
-    except GracefulExit as err:
+    except GracefulExit:
         # can't call project.finish_loading() here because project can be None
         run_exit_fn = False
         print('', type='loadingFinished')

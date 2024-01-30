@@ -119,7 +119,6 @@ class TestDeveloper:
                                mock_execute_command):
                                # mock_ask_user, mock_get_saved_command_run):
         # Given
-        monkey = None
         convo = AgentConvo(self.developer)
         convo.save_branch = lambda branch_name=None: branch_name
 
@@ -137,12 +136,11 @@ class TestDeveloper:
     @patch('helpers.Project.ask_user', return_value='continue')
     def test_code_changes_manual_test_continue(self, mock_save, mock_chat_completion, mock_ask_user):
         # Given
-        monkey = None
         convo = AgentConvo(self.developer)
         convo.save_branch = lambda branch_name=None: branch_name
 
         # When
-        result = self.developer.test_code_changes(monkey, convo)
+        result = self.developer.test_code_changes(convo)
 
         # Then
         assert result == {'success': True}
@@ -154,7 +152,6 @@ class TestDeveloper:
     # https://github.com/Pythagora-io/gpt-pilot/issues/35
     def test_code_changes_manual_test_no(self, mock_get_saved_user_input, mock_chat_completion, mock_save):
         # Given
-        monkey = None
         convo = AgentConvo(self.developer)
         convo.save_branch = lambda branch_name=None: branch_name
         convo.load_branch = lambda function_uuid=None: function_uuid
@@ -170,7 +167,7 @@ class TestDeveloper:
 
         with patch('utils.questionary.questionary', mock_questionary):
             # When
-            result = self.developer.test_code_changes(monkey, convo)
+            result = self.developer.test_code_changes(convo)
 
             # Then
             assert result == {'success': True, 'user_input': 'no'}
@@ -184,7 +181,6 @@ class TestDeveloper:
                                             mock_execute,
                                             monkeypatch):
         # Given
-        monkey = None
         convo = AgentConvo(self.developer)
         convo.save_branch = lambda branch_name=None: branch_name
         convo.load_branch = lambda function_uuid=None: function_uuid
@@ -222,7 +218,7 @@ class TestDeveloper:
 
         # with patch('utils.questionary.questionary', mock_questionary):
         # When
-        result = self.developer.test_code_changes(monkey, convo)
+        result = self.developer.test_code_changes(convo)
 
         # Then
         assert result == {'success': True}
