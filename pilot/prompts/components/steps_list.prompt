@@ -8,7 +8,12 @@ The current task has been split into multiple steps, and each step is one of the
 {% if step_index > 0 %}Here is the list of steps that have been executed:
 {% for step in task_steps %}{% if loop.index0 < step_index %}
 {%- if step.type in ['save_file', 'code_change', 'modify_file'] -%}
-    {% set _ = step[step.type].update({'content': '...'}) %}
+    {%- if 'content' in step[step.type] -%}
+        {%- set _ = step[step.type].update({'content': '...' }) -%}
+    {%- endif -%}
+    {%- if 'code_change_description' in step[step.type] -%}
+        {%- set _ = step[step.type].update({'code_change_description': '...' }) -%}
+    {%- endif -%}
 {%- endif -%}
 {{ step }}
 {% endif %}{% endfor %}{% endif %}
@@ -18,7 +23,12 @@ Here is the step you are currently debugging:
 {% if step_index < task_steps|length - 1 %}Here are steps that will be executed once debugging is done:
 {% for step in task_steps %}{% if loop.index0 > step_index %}
 {%- if step.type in ['save_file', 'code_change', 'modify_file'] -%}
-    {% set _ = step[step.type].update({'content': '...'}) %}
+    {%- if 'content' in step[step.type] -%}
+        {%- set _ = step[step.type].update({'content': '...' }) -%}
+    {%- endif -%}
+    {%- if 'code_change_description' in step[step.type] -%}
+        {%- set _ = step[step.type].update({'code_change_description': '...' }) -%}
+    {%- endif -%}
 {%- endif -%}
 {{ step }}
 {% endif %}{% endfor %}{% endif %}
