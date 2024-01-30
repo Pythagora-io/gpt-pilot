@@ -9,6 +9,8 @@ Each step can be either:
 
 If the step is of type `save_file` or `modify_file`, it needs to contain instructions on how to change only ONE file.
 
+{{ logs_and_error_handling }}
+
 **IMPORTANT**: In `code_change_description` field of `modify_file` step, you must provide full information (including code samples, if any) from the previous message, so that the developer can correctly implement the change.  For `save_file`, you MUST include FULL file contents, without omitting anything or adding comments like `// rest of the code goes here`.
 
 Examples:
