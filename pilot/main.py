@@ -23,7 +23,7 @@ from database.database import database_exists, create_database, tables_exist, cr
 
 from utils.settings import settings, loader
 from utils.telemetry import telemetry
-from helpers.exceptions import ApiError, TokenLimitError
+from helpers.exceptions import ApiError, TokenLimitError, GracefulExit
 
 def init():
     # Check if the "euclid" database exists, if not, create it
@@ -108,11 +108,18 @@ if __name__ == "__main__":
         telemetry.send()
         run_exit_fn = False
         print('Exit', type='exit')
+
     except KeyboardInterrupt:
         telemetry.set("end_result", "interrupt")
         if project is not None and project.check_ipc():
             telemetry.send()
             run_exit_fn = False
+
+    except GracefulExit as err:
+        # can't call project.finish_loading() here because project can be None
+        run_exit_fn = False
+        print('', type='loadingFinished')
+        print('Exit', type='exit')
 
     except Exception as err:
         print(color_red('---------- GPT PILOT EXITING WITH ERROR ----------'))

@@ -1,18 +1,19 @@
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Tuple
 
 import peewee
 
 from const.messages import CHECK_AND_CONTINUE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS
-from utils.style import color_yellow_bold, color_cyan, color_white_bold
+from utils.style import color_yellow_bold, color_cyan, color_white_bold, color_red_bold
 from const.common import STEPS
 from database.database import delete_unconnected_steps_from, delete_all_app_development_data, \
     get_all_app_development_steps, delete_all_subsequent_steps
 from const.ipc import MESSAGE_TYPE
 from prompts.prompts import ask_user
-from helpers.exceptions import TokenLimitError
+from helpers.exceptions import TokenLimitError, GracefulExit
 from utils.questionary import styled_text
 from helpers.files import get_directory_contents, get_file_contents, clear_directory, update_file
 from helpers.cli import build_directory_tree
@@ -106,6 +107,12 @@ class Project:
         self.dot_pilot_gpt.with_root_path(root_path)
 
     def setup_loading(self):
+        if self.skip_until_dev_step == '0':
+            clear_directory(self.root_path)
+            delete_all_app_development_data(self.args['app_id'])
+            self.finish_loading(False)
+            return
+
         self.skip_steps = True
         should_overwrite_files = None
         while should_overwrite_files is None or should_overwrite_files.lower() not in AFFIRMATIVE_ANSWERS + NEGATIVE_ANSWERS:
@@ -124,21 +131,23 @@ class Project:
                 self.should_overwrite_files = True
                 break
 
-        if self.skip_until_dev_step is not None and self.skip_until_dev_step == '0':
-            clear_directory(self.root_path)
-            delete_all_app_development_data(self.args['app_id'])
-            self.finish_loading()
-            return
-
-        self.dev_steps_to_load = get_all_app_development_steps(self.args['app_id'], last_step=self.skip_until_dev_step)
         load_step_before_coding = ('step' in self.args and
                                    self.args['step'] is not None and
                                    STEPS.index(self.args['step']) < STEPS.index('coding'))
 
         if load_step_before_coding:
+            if not self.should_overwrite_files:
+                print(color_red_bold('Cannot load step before "coding" without overwriting files. You have to reload '
+                                     'the app and select "Use GPT Pilot\'s code" but you will lose all coding progress'
+                                     ' on this project.'))
+                raise GracefulExit()
+
             clear_directory(self.root_path)
             delete_all_app_development_data(self.args['app_id'])
-        elif self.dev_steps_to_load is not None and len(self.dev_steps_to_load):
+            return
+
+        self.dev_steps_to_load = get_all_app_development_steps(self.args['app_id'], last_step=self.skip_until_dev_step)
+        if self.dev_steps_to_load is not None and len(self.dev_steps_to_load):
             self.checkpoints['last_development_step'] = self.dev_steps_to_load[-1]
             self.tasks_to_load = [el for el in self.dev_steps_to_load if 'breakdown.prompt' in el.get('prompt_path', '')]
             self.features_to_load = [el for el in self.dev_steps_to_load if 'feature_plan.prompt' in el.get('prompt_path', '')]
@@ -189,7 +198,7 @@ class Project:
         """
         while True:
             feature_description = ''
-            if not any(el for el in self.dev_steps_to_load if 'feature_plan.prompt' in el.get('prompt_path', '')):
+            if not self.features_to_load:
                 self.finish_loading()
             if not self.skip_steps:
                 feature_description = ask_user(self, "Project is finished! Do you want to add any features or changes? "
@@ -202,7 +211,7 @@ class Project:
                 self.tech_lead.create_feature_plan(feature_description)
 
             # loading of features
-            elif self.features_to_load:
+            else:
                 num_of_features = len(self.features_to_load)
 
                 # last feature is always the one we want to load

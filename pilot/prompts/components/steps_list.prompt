@@ -1,5 +1,5 @@
 {% if task_steps and step_index is not none -%}
-Task is split into multiple steps. Previously generated steps can be one of the following:
+The current task has been split into multiple steps, and each step is one of the following:
 * `command` - command to run
 * `save_file` or `code_change` -  create new or update existing file
 * `modify_file` - update large existing file

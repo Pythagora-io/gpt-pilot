@@ -300,9 +300,6 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
 
     project.save_files_snapshot(development_step.id)
 
-    # todo check if we need to return anything
-    return development_step
-
 
 def save_command_run(project, command, cli_response, done_or_error_response, exit_code):
     if project.current_step != 'coding':

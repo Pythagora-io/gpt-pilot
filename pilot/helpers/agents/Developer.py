@@ -390,8 +390,7 @@ class Developer(Agent):
                 }, should_log_message=False)
                 convo.remove_last_x_messages(2)
         else:
-            detailed_user_review_goal = self.project.last_detailed_user_review_goal['llm_response']['text'] if\
-                self.project.last_detailed_user_review_goal is not None else None
+            detailed_user_review_goal = self.project.last_detailed_user_review_goal['llm_response']['text']
 
         try:
             if continue_development:
