@@ -65,8 +65,13 @@ def get_created_apps_with_steps():
     return apps
 
 
-def get_all_app_development_steps(app_id):
-    return [model_to_dict(dev_step) for dev_step in DevelopmentSteps.select().where(DevelopmentSteps.app == app_id)]
+def get_all_app_development_steps(app_id, last_step=None):
+    query = DevelopmentSteps.select().where(DevelopmentSteps.app == app_id)
+
+    if last_step is not None:
+        query = query.where(DevelopmentSteps.id <= last_step)
+
+    return [model_to_dict(dev_step) for dev_step in query]
 
 
 def save_user(user_id, email, password):
@@ -285,26 +290,15 @@ def save_development_step(project, prompt_path, prompt_data, messages, llm_respo
 
     unique_data = {
         'app': project.args['app_id'],
-        'previous_step': project.checkpoints['last_development_step'],
+        'previous_step': project.checkpoints['last_development_step']['id'] if project.checkpoints['last_development_step'] else None,
         'high_level_step': project.current_step,
     }
 
     development_step = hash_and_save_step(DevelopmentSteps, project.args['app_id'], unique_data, data_fields,
                                           "Saved Development Step")
-    project.checkpoints['last_development_step'] = development_step
+    project.checkpoints['last_development_step'] = model_to_dict(development_step)
 
     project.save_files_snapshot(development_step.id)
-
-    return development_step
-
-
-def get_saved_development_step(project):
-    development_step = get_db_model_from_hash_id(DevelopmentSteps, project.args['app_id'],
-                                                 project.checkpoints['last_development_step'], project.current_step)
-
-    if development_step is None and project.skip_steps:
-        project.finish_loading()
-    return development_step
 
 
 def save_command_run(project, command, cli_response, done_or_error_response, exit_code):
@@ -329,19 +323,6 @@ def save_command_run(project, command, cli_response, done_or_error_response, exi
     return command_run
 
 
-def get_saved_command_run(project, command):
-    # data_to_hash = {
-    #     'command': command,
-    #     'command_runs_count': project.command_runs_count
-    # }
-    command_run = get_db_model_from_hash_id(CommandRuns, project.args['app_id'],
-                                            project.checkpoints['last_command_run'], project.current_step)
-
-    if command_run is None and project.skip_steps:
-        project.finish_loading()
-    return command_run
-
-
 def save_user_input(project, query, user_input, hint):
     if project.current_step != 'coding':
         return
@@ -361,30 +342,26 @@ def save_user_input(project, query, user_input, hint):
     return user_input
 
 
-def get_saved_user_input(project, query):
-    # data_to_hash = {
-    #     'query': query,
-    #     'user_inputs_count': project.user_inputs_count
-    # }
-    user_input = get_db_model_from_hash_id(UserInputs, project.args['app_id'], project.checkpoints['last_user_input'],
-                                           project.current_step)
-
-    if user_input is None and project.skip_steps:
-        project.finish_loading()
-    return user_input
-
-
 def delete_all_subsequent_steps(project):
     app = get_app(project.args['app_id'])
     delete_subsequent_steps(DevelopmentSteps, app, project.checkpoints['last_development_step'])
-    delete_subsequent_steps(CommandRuns, app, project.checkpoints['last_command_run'])
-    delete_subsequent_steps(UserInputs, app, project.checkpoints['last_user_input'])
+    # after implementation of backwards compatibility, we don't need to delete subsequent steps for CommandRuns and UserInputs
+    # delete_subsequent_steps(CommandRuns, app, project.checkpoints['last_command_run'])
+    # delete_subsequent_steps(UserInputs, app, project.checkpoints['last_user_input'])
 
 
 def delete_subsequent_steps(Model, app, step):
-    logger.info(color_red(f"Deleting subsequent {Model.__name__} steps after {step.id if step is not None else None}"))
+    if isinstance(step, dict):
+        step_id = step.get('id')
+    elif hasattr(step, 'id'):
+        step_id = step.id
+    else:
+        step_id = None
+    logger.info(color_red(f"Deleting subsequent {Model.__name__} steps after {step_id}"))
+
     subsequent_steps = Model.select().where(
-        (Model.app == app) & (Model.previous_step == (step.id if step is not None else None)))
+        (Model.app == app) & (Model.previous_step == step_id))
+
     for subsequent_step in subsequent_steps:
         if subsequent_step:
             delete_subsequent_steps(Model, app, subsequent_step)

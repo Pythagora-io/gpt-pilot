@@ -1,3 +1,7 @@
+{{ steps_list }}
+{%- if task_steps and step_index is not none -%}
+When trying to see if command was ran successfully, take into consideration steps that were previously executed and steps that will be executed after the current step. It can happen that command seems like it failed but it will be fixed with next steps. In that case you should consider that command to be successfully executed.
+{%- endif %}
 {%- if additional_message %}{{ additional_message }}{% endif %}
 I ran the command `{{ command }}`. The output was:
 {#%- if error_response %}, it {{ error_response }}{% endif %#}

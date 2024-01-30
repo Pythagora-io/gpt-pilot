@@ -1,20 +1,21 @@
+{{ steps_list }}
 {% if issue_description -%}
 You wanted me to check this - `{{ issue_description }}` but there was a problem
 {%- else -%}
-Ok, we need to debug this issue
+Now, we need to debug this issue
 {%- endif -%}
 {% if command %} and we need to be able to execute `{{ command }}` successfully. {% endif %}.
-{% if user_input %}Here is a brief explanation of what's happening:
+{% if user_input %}I looked into this issue. I want you to take my findings as important part of debugging this issue. Here are my findings:
 ```
 {{ user_input }}
 ```{% endif -%}
 I want you to create a list of steps that are needed to debug this issue.
 
-A step can be either a `command` or `code_change`.
+Each step can be either:
 
-`command` step will run a command on the machine and will return the CLI output to you so you can see what to do next. Note that the command will be run on a {{ os }} machine.
-
-`code_change` step will change the code and you need to thoroughly describe what needs to be implemented. I will implement the requested changes and let you know.
+* `command` - command to run (must be able to run on a {{ os }} machine, assume current working directory is project root folder)
+* `code_change` -  step will change the code and you need to thoroughly describe what needs to be implemented. I will implement the requested changes and let you know.
+* `human_intervention` - if you need the human to do something, use this type of step and explain in details what you want the human to do.
 
 Also, make sure that at least the last step has `check_if_fixed` set to TRUE.
 

@@ -8,6 +8,7 @@ import distro
 import json
 import hashlib
 import re
+import copy
 from jinja2 import Environment, FileSystemLoader
 from .style import color_green
 
@@ -33,9 +34,8 @@ def capitalize_first_word_with_underscores(s):
     return capitalized_string
 
 
-def get_prompt(prompt_name, data=None):
-    if data is None:
-        data = {}
+def get_prompt(prompt_name, original_data=None):
+    data = copy.deepcopy(original_data) if original_data is not None else {}
 
     get_prompt_components(data)
 

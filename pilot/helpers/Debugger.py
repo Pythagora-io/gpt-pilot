@@ -2,7 +2,7 @@ import platform
 import uuid
 import re
 
-from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_RECUSION_LAYER
+from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_RECURSION_LAYER
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
 from const.messages import AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS
 from helpers.AgentConvo import AgentConvo
@@ -17,7 +17,8 @@ class Debugger:
         self.agent = agent
         self.recursion_layer = 0
 
-    def debug(self, convo, command=None, user_input=None, issue_description=None, is_root_task=False, ask_before_debug=False):
+    def debug(self, convo, command=None, user_input=None, issue_description=None, is_root_task=False,
+              ask_before_debug=False, task_steps=None, step_index=None):
         """
         Debug a conversation.
 
@@ -28,6 +29,8 @@ class Debugger:
                 Should provide `command` or `user_input`.
             issue_description (str, optional): Description of the issue to debug. Default is None.
             ask_before_debug (bool, optional): True if we have to ask user for permission to start debugging.
+            task_steps (list, optional): The steps of the task to debug. Default is None.
+            step_index (int, optional): The index of the step to debug. Default is None.
 
         Returns:
             bool: True if debugging was successful, False otherwise.
@@ -35,7 +38,7 @@ class Debugger:
         logger.info('Debugging %s', command)
         self.recursion_layer += 1
         self.agent.project.current_task.add_debugging_task(self.recursion_layer, command, user_input, issue_description)
-        if self.recursion_layer > MAX_RECUSION_LAYER:
+        if self.recursion_layer > MAX_RECURSION_LAYER:
             self.recursion_layer = 0
             raise TooDeepRecursionError()
 
@@ -61,6 +64,8 @@ class Debugger:
                     'command': command['command'] if command is not None else None,
                     'user_input': user_input,
                     'issue_description': issue_description,
+                    'task_steps': task_steps,
+                    'step_index': step_index,
                     'os': platform.system()
                 },
                 DEBUG_STEPS_BREAKDOWN)
@@ -69,14 +74,11 @@ class Debugger:
 
             try:
                 while True:
-                    logger.info('Thoughts: ' + llm_response['thoughts'])
-                    logger.info('Reasoning: ' + llm_response['reasoning'])
                     steps = completed_steps + llm_response['steps']
 
                     # TODO refactor to nicely get the developer agent
                     result = self.agent.project.developer.execute_task(
                         convo,
-                        f"Thoughts: {llm_response['thoughts']}\n\nReasoning: {llm_response['reasoning']}",
                         steps,
                         test_command=command,
                         test_after_code_changes=True,

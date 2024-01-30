@@ -1,18 +1,18 @@
 import json
 import os
 from pathlib import Path
-import re
 from typing import Tuple
 
 import peewee
 
 from const.messages import CHECK_AND_CONTINUE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS
-from utils.style import color_yellow_bold, color_cyan, color_white_bold, color_green
+from utils.style import color_yellow_bold, color_cyan, color_white_bold, color_red_bold
 from const.common import STEPS
-from database.database import delete_unconnected_steps_from, delete_all_app_development_data, update_app_status
+from database.database import delete_unconnected_steps_from, delete_all_app_development_data, \
+    get_all_app_development_steps, delete_all_subsequent_steps
 from const.ipc import MESSAGE_TYPE
 from prompts.prompts import ask_user
-from helpers.exceptions import TokenLimitError
+from helpers.exceptions import TokenLimitError, GracefulExit
 from utils.questionary import styled_text
 from helpers.files import get_directory_contents, get_file_contents, clear_directory, update_file
 from helpers.cli import build_directory_tree
@@ -32,6 +32,7 @@ from utils.ignore import IgnoreMatcher
 
 from utils.telemetry import telemetry
 from utils.task import Task
+
 
 class Project:
     def __init__(
@@ -65,15 +66,13 @@ class Project:
         }
         # TODO make flexible
         self.root_path = ''
-        self.skip_until_dev_step = None
-        self.skip_steps = None
+        self.skip_until_dev_step = self.args['skip_until_dev_step'] if 'skip_until_dev_step' in self.args else None
+        self.skip_steps = False
         self.main_prompt = None
         self.files = []
         self.continuing_project = args.get('continuing_project', False)
 
         self.ipc_client_instance = ipc_client_instance
-
-        # self.restore_files({dev_step_id_to_start_from})
 
         self.finished = False
         self.current_step = None
@@ -91,9 +90,66 @@ class Project:
         if os.getenv("AUTOFIX_FILE_PATHS", "").lower() in ["true", "1", "yes"]:
             File.update_paths()
 
+        # start loading of project (since backwards compatibility)
+        self.should_overwrite_files = False
+        self.last_detailed_user_review_goal = None
+        self.last_iteration = None
+        self.tasks_to_load = []
+        self.features_to_load = []
+        self.dev_steps_to_load = []
+        if self.continuing_project:
+            self.setup_loading()
+        # end loading of project
+
     def set_root_path(self, root_path: str):
         self.root_path = root_path
         self.dot_pilot_gpt.with_root_path(root_path)
+
+    def setup_loading(self):
+        if self.skip_until_dev_step == '0':
+            clear_directory(self.root_path)
+            delete_all_app_development_data(self.args['app_id'])
+            self.finish_loading(False)
+            return
+
+        self.skip_steps = True
+        should_overwrite_files = None
+        while should_overwrite_files is None or should_overwrite_files.lower() not in AFFIRMATIVE_ANSWERS + NEGATIVE_ANSWERS:
+            print('Use GPT Pilot\'s code/Keep my changes', type='buttons-only')
+            should_overwrite_files = styled_text(
+                self,
+                "Can GPT Pilot overwrite code changes you made since last running GPT Pilot?",
+                ignore_user_input_count=True
+            )
+
+            logger.info('should_overwrite_files: %s', should_overwrite_files)
+            if should_overwrite_files in NEGATIVE_ANSWERS:
+                self.should_overwrite_files = False
+                break
+            elif should_overwrite_files in AFFIRMATIVE_ANSWERS:
+                self.should_overwrite_files = True
+                break
+
+        load_step_before_coding = ('step' in self.args and
+                                   self.args['step'] is not None and
+                                   STEPS.index(self.args['step']) < STEPS.index('coding'))
+
+        if load_step_before_coding:
+            if not self.should_overwrite_files:
+                print(color_red_bold('Cannot load step before "coding" without overwriting files. You have to reload '
+                                     'the app and select "Use GPT Pilot\'s code" but you will lose all coding progress'
+                                     ' on this project.'))
+                raise GracefulExit()
+
+            clear_directory(self.root_path)
+            delete_all_app_development_data(self.args['app_id'])
+            return
+
+        self.dev_steps_to_load = get_all_app_development_steps(self.args['app_id'], last_step=self.skip_until_dev_step)
+        if self.dev_steps_to_load is not None and len(self.dev_steps_to_load):
+            self.checkpoints['last_development_step'] = self.dev_steps_to_load[-1]
+            self.tasks_to_load = [el for el in self.dev_steps_to_load if 'breakdown.prompt' in el.get('prompt_path', '')]
+            self.features_to_load = [el for el in self.dev_steps_to_load if 'feature_plan.prompt' in el.get('prompt_path', '')]
 
     def start(self):
         """
@@ -127,37 +183,6 @@ class Project:
             "system_dependencies": self.system_dependencies,
             "package_dependencies": self.package_dependencies,
         })
-        # TODO move to constructor eventually
-        if self.args['step'] is not None and STEPS.index(self.args['step']) < STEPS.index('coding'):
-            clear_directory(self.root_path)
-            delete_all_app_development_data(self.args['app_id'])
-            self.finish_loading()
-
-        if 'skip_until_dev_step' in self.args:
-            self.skip_until_dev_step = self.args['skip_until_dev_step']
-            if self.args['skip_until_dev_step'] == '0':
-                clear_directory(self.root_path)
-                delete_all_app_development_data(self.args['app_id'])
-                self.finish_loading()
-            elif self.skip_until_dev_step is not None:
-                should_overwrite_files = None
-                while should_overwrite_files is None or should_overwrite_files.lower() not in AFFIRMATIVE_ANSWERS + NEGATIVE_ANSWERS:
-                    print('yes/no', type='buttons-only')
-                    should_overwrite_files = styled_text(
-                        self,
-                        "Can I overwrite any changes that you might have made to the project since last running GPT Pilot (y/n)?",
-                        ignore_user_input_count=True
-                    )
-
-                    logger.info('should_overwrite_files: %s', should_overwrite_files)
-                    if should_overwrite_files in NEGATIVE_ANSWERS:
-                        break
-                    elif should_overwrite_files in AFFIRMATIVE_ANSWERS:
-                        FileSnapshot.delete().where(
-                            FileSnapshot.app == self.app and FileSnapshot.development_step == self.skip_until_dev_step).execute()
-                        self.save_files_snapshot(self.skip_until_dev_step)
-                        break
-        # TODO END
 
         self.dot_pilot_gpt.write_project(self)
         print(json.dumps({
@@ -171,14 +196,46 @@ class Project:
         Finish the project.
         """
         while True:
-            feature_description = ask_user(self, "Project is finished! Do you want to add any features or changes? "
-                                                 "If yes, describe it here and if no, just press ENTER",
-                                           require_some_input=False)
+            feature_description = ''
+            if not self.features_to_load:
+                self.finish_loading()
+            if not self.skip_steps:
+                feature_description = ask_user(self, "Project is finished! Do you want to add any features or changes? "
+                                                     "If yes, describe it here and if no, just press ENTER",
+                                               require_some_input=False)
 
-            if feature_description == '':
-                return
+                if feature_description == '':
+                    return
 
-            self.tech_lead.create_feature_plan(feature_description)
+                self.tech_lead.create_feature_plan(feature_description)
+
+            # loading of features
+            else:
+                num_of_features = len(self.features_to_load)
+
+                # last feature is always the one we want to load
+                current_feature = self.features_to_load[-1]
+                self.tech_lead.convo_feature_plan.messages = current_feature['messages'] + [{"role": "assistant", "content": current_feature['llm_response']['text']}]
+                target_id = current_feature['id']
+                self.cleanup_list('tasks_to_load', target_id)
+                self.cleanup_list('dev_steps_to_load', target_id)
+
+                # if there is feature_summary.prompt in remaining dev steps it means feature is fully done
+                # finish loading and ask to add another feature or finish project
+                feature_summary_dev_step = next((el for el in reversed(self.dev_steps_to_load) if 'feature_summary.prompt' in el.get('prompt_path', '')), None)
+                if feature_summary_dev_step is not None:
+                    self.cleanup_list('dev_steps_to_load', feature_summary_dev_step['id'])
+                    self.finish_loading()
+                    print(f'loaded {num_of_features} features')
+                    continue
+
+
+                print(f'Loaded {num_of_features - 1} features!')
+                print(f'Continuing feature #{num_of_features}...')
+                self.development_plan = json.loads(current_feature['llm_response']['text'])['plan']
+                feature_description = current_feature['prompt_data']['feature_description']
+                self.features_to_load = []
+
             self.developer.start_coding()
             self.tech_lead.create_feature_summary(feature_description)
 
@@ -213,12 +270,12 @@ class Project:
         """
         files = (
             File
-                .select()
-                .where(
-                    (File.app_id == self.args['app_id']) &
-                    peewee.fn.EXISTS(FileSnapshot.select().where(FileSnapshot.file_id == File.id))
-                )
+            .select()
+            .where(
+                (File.app_id == self.args['app_id']) &
+                peewee.fn.EXISTS(FileSnapshot.select().where(FileSnapshot.file_id == File.id))
             )
+        )
 
         return self.get_files([file.path + '/' + file.name for file in files])
 
@@ -296,9 +353,10 @@ class Project:
                 while user_input is None or user_input.lower() not in AFFIRMATIVE_ANSWERS + ['continue']:
                     print({'path': full_path, 'line': line_number}, type='openFile')
                     print('continue', type='buttons-only')
-                    user_input = styled_text(
+                    user_input = ask_user(
                         self,
                         f'Please open the file {data["path"]} on the line {line_number} and add the required input. Once you\'re done, type "y" to continue.',
+                        require_some_input=False,
                         ignore_user_input_count=True
                     )
 
@@ -313,6 +371,7 @@ class Project:
         Tries to combine the two in a way that makes most sense, even if the given path
         have some shared components.
         """
+
         def normalize_path(path: str) -> Tuple[str, str]:
             """
             Normalizes a path (see rules in comments) and returns (directory, basename) pair.
@@ -396,7 +455,6 @@ class Project:
 
         final_absolute_path = os.path.join(self.root_path, final_file_path[1:], final_file_name)
         return final_file_path, final_absolute_path
-
 
     def save_files_snapshot(self, development_step_id):
         files = get_directory_contents(self.root_path)
@@ -493,6 +551,42 @@ class Project:
         """
         return self.ipc_client_instance is not None and self.ipc_client_instance.client is not None
 
-    def finish_loading(self):
+    def finish_loading(self, do_cleanup=True):
+        # if already done, don't do it again
+        if not self.skip_steps:
+            return
+
         print('', type='loadingFinished')
+        if do_cleanup and self.checkpoints['last_development_step']:
+            if self.should_overwrite_files:
+                self.restore_files(self.checkpoints['last_development_step']['id'])
+            else:
+                FileSnapshot.delete().where(
+                    FileSnapshot.app == self.app and FileSnapshot.development_step == int(self.checkpoints['last_development_step']['id'])).execute()
+                self.save_files_snapshot(int(self.checkpoints['last_development_step']['id']))
+            delete_all_subsequent_steps(self)
+
+        self.tasks_to_load = []
+        self.features_to_load = []
+        self.dev_steps_to_load = []
+        self.last_detailed_user_review_goal = None
+        self.last_iteration = None
         self.skip_steps = False
+
+    def cleanup_list(self, list_name, target_id):
+        if target_id is None or list_name is None:
+            return
+
+        temp_list = getattr(self, list_name, [])
+
+        # Find the index of the first el with 'id' greater than target_id
+        index = next((i for i, el in enumerate(temp_list) if el['id'] >= target_id), len(temp_list))
+
+        new_list = temp_list[index:]
+
+        if list_name == 'dev_steps_to_load' and len(new_list) == 0:
+            # needed for finish_loading() because then we restore files, and we need last dev step
+            self.checkpoints['last_development_step'] = temp_list[index - 1]
+
+        # Keep only the elements from that index onwards
+        setattr(self, list_name, new_list)
