@@ -675,7 +675,7 @@ class Developer(Agent):
         )
         return llm_response
 
-    def test_code_changes(self, convo, task_steps, step_index):
+    def test_code_changes(self, convo, task_steps=None, step_index=None):
         """
         :param convo: AgentConvo
         :param task_steps: list of steps

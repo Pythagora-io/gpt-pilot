@@ -72,7 +72,7 @@ class TestDeveloper:
 
         # Then we parse the response correctly and send list of steps to execute_task()
         assert developer.execute_task.call_count == 1
-        assert developer.execute_task.call_args[0][2] == [{'command': 'ls -al'}]
+        assert developer.execute_task.call_args[0][1] == [{'command': 'ls -al'}]
 
     @patch('helpers.AgentConvo.save_development_step')
     @patch('helpers.AgentConvo.create_gpt_chat_completion',
@@ -125,7 +125,7 @@ class TestDeveloper:
 
         # When
         # "Now, we need to verify if this change was successfully implemented...
-        result = self.developer.test_code_changes(monkey, convo)
+        result = self.developer.test_code_changes(convo)
 
         # Then
         assert result == {'success': True}

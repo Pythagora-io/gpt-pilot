@@ -8,6 +8,7 @@ from helpers.Project import Project
 test_root = str(Path(__file__).parent.parent.parent / Path("workspace") / Path("gpt-pilot-test"))
 
 def create_project():
+    os.environ["AUTOFIX_FILE_PATHS"] = "false"
     project = Project({
         'app_id': 'test-project',
         'name': 'TestProject',

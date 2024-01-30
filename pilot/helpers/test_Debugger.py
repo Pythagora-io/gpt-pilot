@@ -145,4 +145,4 @@ def test_debug_need_to_see_output(mock_save_step, mock_get_completion):
     assert prompt.startswith('{"thoughts": "It is already installed", "reasoning": "I installed it earlier", "steps": [{"type": "command", "command": "npm start", "command_id": "app"}]}'.lstrip())
     # And eventually we start the app
     assert developer.step_command_run.call_count == 2
-    assert developer.step_command_run.call_args_list[1].args[1]['command'] == 'npm start'
+    assert developer.step_command_run.call_args_list[1].args[1][1]['command'] == 'npm start'
