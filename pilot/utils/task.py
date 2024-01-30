@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from utils.telemetry import telemetry
 from utils.exit import trace_code_event
-from const.telemetry import LOOP_THRESHOLD
+from const.telemetry import LOOP_THRESHOLD, LOOP_THRESHOLD_EARLY
 
 
 class Task:
@@ -72,6 +72,8 @@ class Task:
         :param value: value to increment by
         """
         self.data[key] += value
+        if key == 'steps' and self.data[key] == LOOP_THRESHOLD_EARLY:
+            self.send(name='loop-early', force=True)
         if key == 'steps' and self.data[key] == LOOP_THRESHOLD + 1:
             self.send()
 
@@ -122,17 +124,18 @@ class Task:
         """
         self.data = self.initial_data.copy()
 
-    def send(self, name: str = 'loop-start'):
+    def send(self, name: str = 'loop-start', force: bool = False):
         """
         Send the task data to telemetry
 
         :param name: name of the event
+        :param force: force send the task data to telemetry
         """
-        if self.data['steps'] > LOOP_THRESHOLD:
+        if self.data['steps'] > LOOP_THRESHOLD or force:
             full_data = telemetry.data.copy()
             full_data['task_with_loop'] = self.data.copy()
             trace_code_event(name=name, data=full_data)
-            if self.ping_extension:
+            if self.ping_extension and not force:
                 print(json.dumps({
                     'pathId': telemetry.telemetry_id,
                     'data': full_data,
