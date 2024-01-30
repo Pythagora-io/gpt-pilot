@@ -21,7 +21,7 @@ stdout:
 success
 ```
 
-Think about this output and not any output in previous messages. If the command was successfully executed, respond with `DONE`. If it wasn't, respond with `NEEDS_DEBUGGING`.
+Think about this output and not any output in previous messages. If the command was successfully executed, respond with `DONE`. If it wasn't, respond with `BUG`.
 
 Do not respond with anything other than these two keywords.
 '''.strip()
@@ -47,7 +47,7 @@ stdout:
 success
 ```
 
-Think about this output and not any output in previous messages. If the command was successfully executed, respond with `DONE`. If it wasn't, respond with `NEEDS_DEBUGGING`.
+Think about this output and not any output in previous messages. If the command was successfully executed, respond with `DONE`. If it wasn't, respond with `BUG`.
 
 Do not respond with anything other than these two keywords.
 '''.strip()
