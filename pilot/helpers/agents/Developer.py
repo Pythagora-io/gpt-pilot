@@ -348,7 +348,7 @@ class Developer(Agent):
                                                                                 task_steps=task_steps,
                                                                                 step_index=step_index)
             logger.info('After running command llm_response: ' + llm_response)
-            if llm_response == 'NEEDS_DEBUGGING':
+            if llm_response == 'BUG':
                 print(color_red('Got incorrect CLI response:'))
                 print(cli_response)
                 print(color_red('-------------------'))
