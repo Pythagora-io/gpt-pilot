@@ -471,7 +471,7 @@ class Project:
                 app=self.app,
                 name=file['name'],
                 path=file['path'],
-                full_path=file['full_path'],
+                defaults={'full_path': file['full_path']},
             )
 
             file_snapshot, created = FileSnapshot.get_or_create(
