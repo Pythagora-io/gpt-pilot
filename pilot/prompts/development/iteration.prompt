@@ -24,17 +24,43 @@ You are currently working on task "{{ current_task.description }}" and you have 
 A part of the app is already finished.
 {{ files_list }}
 
+{#% if previous_solutions|length == 0 %#}
 Now, your colleague who is testing the app "{{ name }}" sent you some additional info. Here it is:
 ```
 {{ user_input }}
 ```
+{#% elif %}
+You are trying to solve an issue that your colleague is reporting. You tried {{ previous_solutions|length }} times to solve it but it was unsuccessful.
+First time, your colleague gave you this report:
+{% for solution in previous_solutions %}
+----------------------------start_of_report_{{ loop.index + 1 }}----------------------------
+solution['report']
+----------------------------end_of_report_{{ loop.index + 1 }}----------------------------
+
+Then, you gave the following proposal (proposal_{{ loop.index + 1 }}) of what needs to be done to fix the issue:
+----------------------------start_of_proposal_{{ loop.index + 1 }}----------------------------
+solution['proposal']
+----------------------------end_of_of_proposal_{{ loop.index + 1 }}----------------------------
+
+{% if loop.index < previous_solutions|length %}
+Then, upon implementing these changes, your colleague came back with the following report:
+{% endif %}
+{% endfor %}
+
+After implementing these changes as well, your colleague who is testing the app "{{ name }}" sent you this report now:
+```
+{{ user_input }}
+```
+
+Every time your proposals didn’t lead to the solution. This needs to be fixed and you need to try an alternative solution to this problem. Think step by step any see what are other ways how you this issue can be fixed, propose all changes that are needed to solve this issue and do not repeat previous mistakes.
+{% endif -%#}
 
 Can you debug this issue or implement changes to comply with the additional user input?
 
 Tell me all the new code that needs to be written or modified to implement current task and have it fully working. You can count that the environment is set up previously and packages listed in files are installed so tell me only commands needed for installation of new dependencies, if there are any.
 
 **IMPORTANT**
-When there is an error in the code, the best way to debug the issue is to understand the values of different variables so usually, developers put logs around the code and print out the values variables important to fix this issue. If, and only if, your colleague's report is a bug report and not an improvement request, think about variables that you would like to know the value of in the code that would help you fix this issue and then add logs around the code that will help you resolve this issue. Whenever you add a log that is meant to debug an issue, on the each line on which you add a log, you **MUST* append a code comment `gpt_pilot_debugging_log` (for example, `// gpt_pilot_debugging_log` or `# gpt_pilot_debugging_log`) so that the developer can remove all these logs after this issue is fixed.
+When there is an error in the code, the best way to debug the issue is to understand the values of different variables so usually, developers put logs around the code and print out the values variables important to fix this issue. If, and only if, your colleague's report is a bug report and not an improvement request, think about variables that you would like to know the value of in the code that would help you fix this issue and then add logs around the code that will help you resolve this issue. Whenever you add a log that is meant to debug an issue, on the each line on which you add a log, you **MUST** append a code comment `gpt_pilot_debugging_log` (for example, `// gpt_pilot_debugging_log` or `# gpt_pilot_debugging_log`) so that the developer can remove all these logs after this issue is fixed.
 
 **IMPORTANT**
 When you think about in which file should the new code go to, always try to make files as small as possible and put code in more smaller files rather than in one big file. Whenever a file becomes too large (more than 50 lines of code) split it into smaller files.
