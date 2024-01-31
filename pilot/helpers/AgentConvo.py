@@ -64,7 +64,7 @@ class AgentConvo:
         try:
             self.replace_files()
             response = create_gpt_chat_completion(self.messages, self.high_level_step, self.agent.project,
-                                                  function_calls=function_calls)
+                                                  function_calls=function_calls, prompt_data=prompt_data)
         except TokenLimitError as e:
             save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, '', str(e))
             raise e

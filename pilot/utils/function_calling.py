@@ -36,7 +36,7 @@ class FunctionCallSet(TypedDict):
 
 def add_function_calls_to_request(gpt_data, function_calls: Union[FunctionCallSet, None]):
     if function_calls is None:
-        return
+        return None
 
     model: str = gpt_data['model']
     is_instruct = 'llama' in model or 'anthropic' in model
@@ -50,10 +50,13 @@ def add_function_calls_to_request(gpt_data, function_calls: Union[FunctionCallSe
     else:
         function_call = function_calls['definitions'][0]['name']
 
-    gpt_data['messages'].append({
+    function_call_message = {
         'role': 'user',
         'content': prompter.prompt('', function_calls['definitions'], function_call)
-    })
+    }
+    gpt_data['messages'].append(function_call_message)
+
+    return function_call_message
 
 
 def parse_agent_response(response, function_calls: Union[FunctionCallSet, None]):
