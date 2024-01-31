@@ -583,6 +583,7 @@ class Developer(Agent):
             logger.info('response: %s', response)
             user_feedback = response['user_input'] if 'user_input' in response else None
             if user_feedback == 'continue':
+                self.project.remove_debugging_logs_from_all_files()
                 return {"success": True, "user_input": user_feedback}
 
             if user_feedback is not None:

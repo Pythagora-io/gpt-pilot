@@ -203,3 +203,8 @@ def json_serial(obj):
         return str(obj)
     else:
         return str(obj)
+
+def remove_lines_with_string(file_content, matching_string):
+    lines = file_content.split('\n')
+    new_lines = [line for line in lines if matching_string not in line.lower()]
+    return '\n'.join(new_lines)
