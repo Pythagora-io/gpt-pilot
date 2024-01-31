@@ -9,7 +9,7 @@ from traceback import format_exc
 from prompt_toolkit.styles import Style
 
 from jsonschema import validate, ValidationError
-from utils.style import color_red
+from utils.style import color_red, color_yellow
 from typing import List
 from const.llm import MAX_GPT_MODEL_TOKENS, API_CONNECT_TIMEOUT, API_READ_TIMEOUT
 from const.messages import AFFIRMATIVE_ANSWERS
@@ -147,7 +147,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
         if isinstance(e, ApiError):
             raise e
         else:
-            raise ApiError("Error making LLM API request: {e}") from e
+            raise ApiError(f"Error making LLM API request: {e}") from e
 
 def delete_last_n_lines(n):
     for _ in range(n):
@@ -261,7 +261,14 @@ def retry_on_exception(func):
                             # waiting 6ms isn't usually long enough - exponential back-off until about 6 seconds
                             wait_duration_ms *= 2
                         logger.debug(f'Rate limited. Waiting {wait_duration_ms}ms...')
-                        time.sleep(wait_duration_ms / 1000)
+                        wait_duration_sec = int(wait_duration_ms / 1000) + 1
+                        if isinstance(e, ApiError) and hasattr(e, "response_json") and e.response_json is not None and "error" in e.response_json:
+                            message = e.response_json["error"]["message"]
+                        else:
+                            message = "Rate limited by the API (we're over 'tokens per minute' or 'requests per minute' limit)"
+                        print(color_yellow(message))
+                        print(color_yellow(f"Retrying in {wait_duration_sec} second(s)..."))
+                        time.sleep(wait_duration_sec)
                     continue
 
                 print(color_red('There was a problem with request to openai API:'))
@@ -388,7 +395,7 @@ def stream_gpt_completion(data, req_type, project):
         project.dot_pilot_gpt.log_chat_completion(endpoint, model, req_type, data['messages'], response.text)
         logger.info(f'problem with request (status {response.status_code}): {response.text}')
         telemetry.record_llm_request(token_count, time.time() - request_start_time, is_error=True)
-        raise ApiError(f"API responded with status code: {response.status_code}. Request token size: {token_count} tokens. Response text: {response.text}")
+        raise ApiError(f"API responded with status code: {response.status_code}. Request token size: {token_count} tokens. Response text: {response.text}", response=response)
 
     # function_calls = {'name': '', 'arguments': ''}
 

@@ -370,7 +370,7 @@ class TestLlmConnection:
 
         error_text = '''{
                 "error": {
-                    "message": "Rate limit reached for 10KTPM-200RPM in organization org-OASFC7k1Ff5IzueeLArhQtnT on tokens per min. Limit: 10000 / min. Please try again in 6ms. Contact us through our help center at help.openai.com if you continue to have issues.",
+                    "message": "Rate limit reached for 10KTPM-200RPM in organization org-OASFC7k1Ff5IzueeLArhQtnT on tokens per min. Limit: 10000 / min. Please try again in 750ms. Contact us through our help center at help.openai.com if you continue to have issues.",
                     "type": "tokens",
                     "param": null,
                     "code": "rate_limit_exceeded"
@@ -387,9 +387,7 @@ class TestLlmConnection:
         mock_response.status_code = 200
         mock_response.iter_lines.return_value = [success_text.encode('utf-8')]
 
-        mock_post.side_effect = [error_response, error_response, error_response, error_response, error_response,
-                                 error_response, error_response, error_response, error_response, error_response,
-                                 error_response, error_response, mock_response]
+        mock_post.side_effect = [error_response, error_response, error_response, error_response, error_response, mock_response]
         wrapper = retry_on_exception(stream_gpt_completion)
         data = {
             'model': 'gpt-4',
@@ -401,11 +399,7 @@ class TestLlmConnection:
 
         # Then
         assert response == {'text': 'DONE'}
-        # assert mock_sleep.call_count == 9
-        assert mock_sleep.call_args_list == [call(0.006), call(0.012), call(0.024), call(0.048), call(0.096),
-                                             call(0.192), call(0.384), call(0.768), call(1.536), call(3.072),
-                                             call(6.144), call(6.144)]
-        # mock_sleep.call
+        assert mock_sleep.call_args_list == [call(1), call(2), call(4), call(7), call(7)]
 
     @patch('utils.llm_connection.requests.post')
     def test_stream_gpt_completion(self, mock_post, monkeypatch):
