@@ -92,7 +92,8 @@ def test_api_access(project) -> bool:
 
 
 def create_gpt_chat_completion(messages: List[dict], req_type, project,
-                               function_calls: FunctionCallSet = None):
+                               function_calls: FunctionCallSet = None,
+                               prompt_data: dict = None):
     """
     Called from:
       - AgentConvo.send_message() - these calls often have `function_calls`, usually from `pilot/const/function_calls.py`
@@ -105,6 +106,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
     :param project: project
     :param function_calls: (optional) {'definitions': [{ 'name': str }, ...]}
         see `IMPLEMENT_CHANGES` etc. in `pilot/const/function_calls.py`
+    :param prompt_data: (optional) { 'prompt': str, 'variables': { 'variable_name': 'variable_value', ... } }
     :return: {'text': new_code}
         or if `function_calls` param provided
              {'function_calls': {'name': str, arguments: {...}}}
@@ -130,7 +132,9 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
 
     # Advise the LLM of the JSON response schema we are expecting
     messages_length = len(messages)
-    add_function_calls_to_request(gpt_data, function_calls)
+    function_call_message = add_function_calls_to_request(gpt_data, function_calls)
+    if prompt_data is not None and function_call_message is not None:
+        prompt_data['function_call_message'] = function_call_message
 
     try:
         response = stream_gpt_completion(gpt_data, req_type, project)
