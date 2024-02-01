@@ -366,30 +366,34 @@ class TestLlmConnection:
     def test_rate_limit_error(self, mock_sleep, mock_post, monkeypatch):
         project = Project({'app_id': 'test-app'})
 
+        monkeypatch.setenv('RATE_LIMIT_EXTRA_BUFFER', '6')
         monkeypatch.setenv('OPENAI_API_KEY', 'secret')
 
-        error_text = '''{
-                "error": {
-                    "message": "Rate limit reached for 10KTPM-200RPM in organization org-OASFC7k1Ff5IzueeLArhQtnT on tokens per min. Limit: 10000 / min. Please try again in 6ms. Contact us through our help center at help.openai.com if you continue to have issues.",
-                    "type": "tokens",
-                    "param": null,
-                    "code": "rate_limit_exceeded"
-                }
-            }'''
+        error_texts = [
+            "Rate limit reached for 10KTPM-200RPM in organization org-OASFC7k1Ff5IzueeLArhQtnT on tokens per min. Limit: 10000 / min. Please try again in 6ms.",
+            "Rate limit reached for 10KTPM-200RPM in organization org-OASFC7k1Ff5IzueeLArhQtnT on tokens per min. Limit: 10000 / min. Please try again in 1.2s.",
+            "Rate limit reached for 10KTPM-200RPM in organization org-OASFC7k1Ff5IzueeLArhQtnT on tokens per min. Limit: 10000 / min. Please try again in 2m5.5s",
+        ]
+
+        mock_responses = [Mock(status_code=429, text='''{
+            "error": {
+                "message": "''' + error_text + '''",
+                "type": "tokens",
+                "param": null,
+                "code": "rate_limit_exceeded"
+            }
+        }''') for error_text in error_texts]
         content = 'DONE'
         success_text = '{"id": "gen-123", "choices": [{"index": 0, "delta": {"role": "assistant", "content": "' + content + '"}}]}'
 
-        error_response = Mock()
-        error_response.status_code = 429
-        error_response.text = error_text
+        mock_success_response = Mock()
+        mock_success_response.status_code = 200
+        mock_success_response.iter_lines.return_value = [success_text.encode('utf-8')]
 
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.iter_lines.return_value = [success_text.encode('utf-8')]
+        mock_responses.append(mock_success_response)
 
-        mock_post.side_effect = [error_response, error_response, error_response, error_response, error_response,
-                                 error_response, error_response, error_response, error_response, error_response,
-                                 error_response, error_response, mock_response]
+        mock_post.side_effect = mock_responses
+
         wrapper = retry_on_exception(stream_gpt_completion)
         data = {
             'model': 'gpt-4',
@@ -401,10 +405,9 @@ class TestLlmConnection:
 
         # Then
         assert response == {'text': 'DONE'}
-        # assert mock_sleep.call_count == 9
-        assert mock_sleep.call_args_list == [call(0.006), call(0.012), call(0.024), call(0.048), call(0.096),
-                                             call(0.192), call(0.384), call(0.768), call(1.536), call(3.072),
-                                             call(6.144), call(6.144)]
+
+        # there is an extra 6 secs in the asserts set in RATE_LIMIT_EXTRA_BUFFER
+        assert mock_sleep.call_args_list ==  [call(6.006), call(7.2), call(131.5)] 
         # mock_sleep.call
 
     @patch('utils.llm_connection.requests.post')

@@ -251,40 +251,7 @@ def retry_on_exception(func):
                     print(color_red(f"Error calling LLM API: The request exceeded the maximum token limit (request size: {n_tokens}) tokens."))
                     raise TokenLimitError(n_tokens, MAX_GPT_MODEL_TOKENS)
                 if "rate_limit_exceeded" in err_str:
-                    time_to_wait = 0  # Default time to wait in seconds
-                    extra_buffer_time = 1 # Dont make the request right away.
-                    # Regular expression to find minutes and seconds
-                    match = re.search(r'(\d+)m(\d+\.\d+)s', err_str)
-                    if match:
-                        minutes = int(match.group(1))
-                        seconds = float(match.group(2))
-                        time_to_wait = minutes * 60 + seconds
-                    else:
-                        # Check for only minutes
-                        match = re.search(r'(\d+)m', err_str)
-                        if match:
-                            minutes = int(match.group(1))
-                            time_to_wait = minutes * 60
-                        else:
-                            # Check for only seconds
-                            match = re.search(r'(\d+\.\d+)s', err_str)
-                            if match:
-                                seconds = float(match.group(1))
-                                time_to_wait = seconds
-                            else:
-                                # Check for milliseconds
-                                match = re.search(r'(\d+)ms', err_str)
-                                if match:
-                                    milliseconds = int(match.group(1))
-                                    time_to_wait += milliseconds / 1000
-
-                    # Add extra buffer time
-                    time_to_wait += extra_buffer_time
-
-                    # Wait for the specified amount of time
-                    print(f"Rate limit exceeded. Waiting for {time_to_wait} seconds (including extra buffer time)...")
-                    time.sleep(time_to_wait)
-                    print("Continuing execution...")
+                    rate_limit_exceeded_try_again_in_sleep(err_str)
                     continue
 
                 print(color_red('There was a problem with request to openai API:'))
@@ -314,20 +281,35 @@ def retry_on_exception(func):
     return wrapper
 
 
-def parse_time_to_wait(message):
-    # Regular expression to find minutes, seconds, and milliseconds
-    match = re.search(r'(\d+)m(\d+\.\d+)s', message)
+def rate_limit_exceeded_try_again_in_sleep (err_str):
+    time_to_wait = 0  # Default time to wait in seconds
+    extra_buffer_time = float(os.getenv('RATE_LIMIT_EXTRA_BUFFER', 0)) #extra buffer time to wait
+    # Regular expression to find minutes and seconds
+    match = re.search(r'(\d+)m(\d+\.\d+)s', err_str)
     if match:
         minutes = int(match.group(1))
         seconds = float(match.group(2))
-        return minutes * 60 + seconds
+        time_to_wait = minutes * 60 + seconds
     else:
-        # Check for milliseconds
-        match = re.search(r'(\d+)ms', message)
+        # Check for only seconds
+        match = re.search(r'(\d+\.\d+)s', err_str)
         if match:
-            milliseconds = int(match.group(1))
-            return milliseconds / 1000
-    return 0
+            seconds = float(match.group(1))
+            time_to_wait = seconds
+        else:
+            # Check for milliseconds
+            match = re.search(r'(\d+)ms', err_str)
+            if match:
+                milliseconds = int(match.group(1))
+                time_to_wait += milliseconds / 1000
+
+    # Add extra buffer time
+    time_to_wait += extra_buffer_time
+
+    # Wait for the specified amount of time
+    print(f"Rate limit exceeded. Waiting for {time_to_wait} seconds (including extra buffer time)...")
+    time.sleep(time_to_wait)
+    print("Continuing execution...")
 
 @retry_on_exception
 def stream_gpt_completion(data, req_type, project):
