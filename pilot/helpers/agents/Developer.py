@@ -452,6 +452,7 @@ class Developer(Agent):
         answer = ''
         while answer.lower() != 'continue':
             print(color_red_bold('\n----------------------------- I need your help ------------------------------'))
+            print(color_red('\nHere are instructions for the issue I did not manage to solve:'))
             print(extract_substring(str(help_description)))
             print(color_red_bold('\n-----------------------------------------------------------------------------'))
             print('continue', type='buttons-only')
