@@ -147,11 +147,11 @@ def step_human_intervention_definition():
         "properties": {
             "type": {
                 "const": "human_intervention",
-                "description": dev_step_type_description()
+                "description": 'Development step that will be executed by a human. You should avoid using this step if possible, task does NOT need to have "human_intervention" step.'
             },
             "human_intervention_description": {
                 "type": "string",
-                "description": "Description of step where human intervention is needed."
+                "description": "Very clear description of step where human intervention is needed."
             }
         },
         "required": ["type", "human_intervention_description"]

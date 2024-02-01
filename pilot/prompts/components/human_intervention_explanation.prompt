@@ -1,0 +1,20 @@
+**IMPORTANT**
+You must not tell me to run a command in the database or anything OS related - only if some dependencies need to be installed. If there is a need to run an OS related command, specifically tell me that this should be labeled as "Human Intervention" and explain what the human needs to do.
+Avoid using "Human Intervention" if possible. You should NOT use "Human Intervention" for anything else than steps that you can't execute. Here are few examples when and how to use "Human Intervention":
+------------------------start_of_example_1---------------------------
+* "Human Intervention"
+"1. Go to OpenAI website and create an account.
+2. Create a new API key and put it in the .env file."
+------------------------end_of_example_1---------------------------
+
+------------------------start_of_example_2---------------------------
+* "Human Intervention"
+"To enable sending emails from your Node.js app via your Gmail, account, you need to do the following:
+1. Log in to your Gmail account.
+2. Go to 'Manage your Google Account' > Security.
+3. Scroll down to 'Less secure app access' and turn it on.
+4. Under 'Signing in to Google', select 'App Passwords'. (You may need to sign in again)
+5. At the bottom, click 'Select app' and choose the app you’re using.
+6. Click 'Generate'.
+Then, use your gmail address and the password generated in the step #6 and put it into the .env file."
+------------------------end_of_example_2---------------------------
