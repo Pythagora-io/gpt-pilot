@@ -254,26 +254,26 @@ def retry_on_exception(func):
                     time_to_wait = 0  # Default time to wait in seconds
                     extra_buffer_time = 1 # Dont make the request right away.
                     # Regular expression to find minutes and seconds
-                    match = re.search(r'(\d+)m(\d+\.\d+)s', message)
+                    match = re.search(r'(\d+)m(\d+\.\d+)s', err_str)
                     if match:
                         minutes = int(match.group(1))
                         seconds = float(match.group(2))
                         time_to_wait = minutes * 60 + seconds
                     else:
                         # Check for only minutes
-                        match = re.search(r'(\d+)m', message)
+                        match = re.search(r'(\d+)m', err_str)
                         if match:
                             minutes = int(match.group(1))
                             time_to_wait = minutes * 60
                         else:
                             # Check for only seconds
-                            match = re.search(r'(\d+\.\d+)s', message)
+                            match = re.search(r'(\d+\.\d+)s', err_str)
                             if match:
                                 seconds = float(match.group(1))
                                 time_to_wait = seconds
                             else:
                                 # Check for milliseconds
-                                match = re.search(r'(\d+)ms', message)
+                                match = re.search(r'(\d+)ms', err_str)
                                 if match:
                                     milliseconds = int(match.group(1))
                                     time_to_wait += milliseconds / 1000
@@ -421,6 +421,8 @@ def stream_gpt_completion(data, req_type, project):
         stream=True,
         timeout=(API_CONNECT_TIMEOUT, API_READ_TIMEOUT),
     )
+
+    logger.info(f'response headers: {response.headers})')
 
     if response.status_code != 200:
         project.dot_pilot_gpt.log_chat_completion(endpoint, model, req_type, data['messages'], response.text)
