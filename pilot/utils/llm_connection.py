@@ -283,7 +283,7 @@ def retry_on_exception(func):
 
 def rate_limit_exceeded_try_again_in_sleep (err_str):
     time_to_wait = 0  # Default time to wait in seconds
-    extra_buffer_time = float(os.getenv('RATE_LIMIT_EXTRA_BUFFER', 0)) #extra buffer time to wait
+    extra_buffer_time = float(os.getenv('RATE_LIMIT_EXTRA_BUFFER', 6)) # extra buffer time to wait, defaults to 6 secs
     # Regular expression to find minutes and seconds
     match = re.search(r'(\d+)m(\d+\.\d+)s', err_str)
     if match:

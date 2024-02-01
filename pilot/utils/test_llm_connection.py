@@ -366,7 +366,6 @@ class TestLlmConnection:
     def test_rate_limit_error(self, mock_sleep, mock_post, monkeypatch):
         project = Project({'app_id': 'test-app'})
 
-        monkeypatch.setenv('RATE_LIMIT_EXTRA_BUFFER', '6')
         monkeypatch.setenv('OPENAI_API_KEY', 'secret')
 
         error_texts = [
