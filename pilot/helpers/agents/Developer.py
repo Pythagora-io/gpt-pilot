@@ -404,7 +404,7 @@ class Developer(Agent):
 
     def should_retry_step_implementation(self, step, step_implementation_try):
         if step_implementation_try >= MAX_COMMAND_DEBUG_TRIES:
-            self.dev_help_needed(step)
+            return self.dev_help_needed(step)
 
         print(color_red_bold('\n--------- LLM Reached Token Limit ----------'))
         print(color_red_bold('Can I retry implementing the entire development step?'))
@@ -432,6 +432,8 @@ class Developer(Agent):
                     color_red_bold('\n\nCan you please make it work?'))
         elif step['type'] == 'code_change':
             help_description = step['code_change_description']
+        elif step['type'] == 'modify_file':
+            help_description = step['modify_file']['code_change_description']
         elif step['type'] == 'human_intervention':
             help_description = step['human_intervention_description']
 
@@ -529,6 +531,7 @@ class Developer(Agent):
                         response = self.should_retry_step_implementation(step, step_implementation_try)
                         if 'retry' in response:
                             # TODO we can rewind this convo even more
+                            step_implementation_try += 1
                             convo.load_branch(function_uuid)
                             continue
                         elif 'success' in response:
@@ -543,7 +546,7 @@ class Developer(Agent):
                     else:
                         raise e
 
-        result = {"success": True}  # if all steps are finished, the task has been successfully implemented
+        result = {"success": True}  # if all steps are finished, the task has been successfully implemented... NOT!
         convo.load_branch(function_uuid)
         return self.task_postprocessing(convo, development_task, continue_development, result, function_uuid)
 
