@@ -195,8 +195,6 @@ def retry_on_exception(func):
             del args[0]['function_buffer']
 
     def wrapper(*args, **kwargs):
-        wait_duration_ms = None
-
         while True:
             try:
                 # spinner_stop(spinner)
