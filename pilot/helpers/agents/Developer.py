@@ -348,7 +348,7 @@ class Developer(Agent):
                                                                                 task_steps=task_steps,
                                                                                 step_index=step_index)
             logger.info('After running command llm_response: ' + llm_response)
-            if llm_response == 'NEEDS_DEBUGGING':
+            if llm_response == 'BUG':
                 print(color_red('Got incorrect CLI response:'))
                 print(cli_response)
                 print(color_red('-------------------'))
@@ -583,6 +583,7 @@ class Developer(Agent):
             logger.info('response: %s', response)
             user_feedback = response['user_input'] if 'user_input' in response else None
             if user_feedback == 'continue':
+                self.project.remove_debugging_logs_from_all_files()
                 return {"success": True, "user_input": user_feedback}
 
             if user_feedback is not None:

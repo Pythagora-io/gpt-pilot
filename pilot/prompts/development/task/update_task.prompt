@@ -40,7 +40,7 @@ When you think about in which file should the new code go to, always try to make
 {% if len(next_steps) > 0 -%}
 Now, think step by step and tell me if the next command `{{ next_steps[0] }}` should be executed or not. If it should be executed, respond with `RUN`. If it shouldn't be executed, respond with `SKIP`.
 {% else -%}
-When you look at the output of the command run, is there anything else that should be done to complete this task. If the command was successfully executed, respond with `DONE`. If it wasn't, respond with `NEEDS_DEBUGGING`.
+When you look at the output of the command run, is there anything else that should be done to complete this task. If the command was successfully executed, respond with `DONE`. If it wasn't, respond with `BUG`.
 
 Do not respond with anything other than these two keywords.
 {% endif -%}
