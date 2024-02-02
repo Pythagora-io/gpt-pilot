@@ -410,7 +410,7 @@ class Developer(Agent):
         print(color_red_bold('Can I retry implementing the entire development step?'))
 
         answer = None
-        while answer.lower() not in AFFIRMATIVE_ANSWERS:
+        while answer is None or answer.lower() not in AFFIRMATIVE_ANSWERS:
             print('yes/no', type='buttons-only')
             answer = styled_text(
                 self.project,

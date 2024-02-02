@@ -336,6 +336,8 @@ def check_if_command_successful(convo, command, cli_response, response, exit_cod
                                               'step_index': step_index,
                                           })
             logger.debug(f'LLM response to ran_command.prompt: {response}')
+            if response == 'DONE':
+                convo.remove_last_x_messages(2)
 
     return response
 
