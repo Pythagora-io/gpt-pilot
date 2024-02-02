@@ -700,19 +700,19 @@ REVIEW_CHANGES = {
                     "items": {
                         "type": "object",
                         "properties": {
-                        "number": {
-                            "type": "integer",
-                            "description": "Index of the hunk in the diff. Starts from 1."
-                        },
-                        "decision": {
-                            "type": "string",
-                            "enum": ["apply", "ignore"],
-                            "description": "Whether to apply this hunk (if it's a valid change) or ignore it."
-                        },
-                        "reason": {
-                            "type": "string",
-                            "desciprion": "Reason for allowing or ignoring this hunk."
-                        }
+                            "number": {
+                                "type": "integer",
+                                "description": "Index of the hunk in the diff. Starts from 1."
+                            },
+                            "decision": {
+                                "type": "string",
+                                "enum": ["apply", "ignore"],
+                                "description": "Whether to apply this hunk (if it's a valid change) or ignore it."
+                            },
+                            "reason": {
+                                "type": "string",
+                                "desciprion": "Reason for allowing or ignoring this hunk."
+                            }
                         },
                         "required": ["number", "decision", "reason"],
                         "additionalProperties": False
@@ -722,7 +722,7 @@ REVIEW_CHANGES = {
                     "type": "string"
                 }
             },
-            "required": ["hunks"],
+            "required": ["hunks", "review_notes"],
             "additionalProperties": False
         }
     }],

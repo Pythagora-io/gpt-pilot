@@ -17,9 +17,9 @@ Here is the diff of the changes:
 ```
 {% endfor %}
 
-Think carefully about the instructions and review the proposed changes. For each hunk of change, decide whether it should be applied or should be ignored (for example if it is a code deletion or change that wasn't asked for). Finally, if the changes miss something that was in the instructions, menton that.
+Think carefully about the instructions and review the proposed changes. For each hunk of change, decide whether it should be applied or should be ignored (for example if it is a code deletion or change that wasn't asked for). Finally, if the changes miss something that was in the instructions, mention that.
 
-Example output if 3 of 4 hunks in the change should be applied and one of them should be ignored, and no other changes are needed:
+Here is an example output if 3 of 4 hunks in the change should be applied and one of them should be ignored, and no other changes are needed:
 ```
 {
     "hunks": [
@@ -36,7 +36,7 @@ Example output if 3 of 4 hunks in the change should be applied and one of them s
         {
             "number": 3,
             "decision": "ignore",
-            "reason": "This hunk accidentially deletes important code",
+            "reason": "This hunk accidentally deletes important code",
         },
         {
             "number": 4,

@@ -1,6 +1,7 @@
 import os.path
 import re
 from typing import Optional
+from traceback import format_exc
 from difflib import unified_diff
 
 from helpers.AgentConvo import AgentConvo
@@ -8,6 +9,7 @@ from helpers.Agent import Agent
 from helpers.files import get_file_contents
 from const.function_calls import GET_FILE_TO_MODIFY, REVIEW_CHANGES
 
+from utils.exit import trace_code_event
 from utils.telemetry import telemetry
 
 # Constant for indicating missing new line at the end of a file in a unified diff
@@ -20,9 +22,8 @@ PATCH_HEADER_PATTERN = re.compile(r"^@@ -(\d+),?(\d+)? \+(\d+),?(\d+)? @@")
 class CodeMonkey(Agent):
     save_dev_steps = True
 
-    def __init__(self, project, developer):
+    def __init__(self, project):
         super().__init__('code_monkey', project)
-        self.developer = developer
 
     def get_original_file(
             self,
@@ -69,41 +70,41 @@ class CodeMonkey(Agent):
     def implement_code_changes(
         self,
         convo: Optional[AgentConvo],
-        code_changes_description: str,
         step: dict[str, str],
     ) -> AgentConvo:
         """
         Implement code changes described in `code_changes_description`.
 
-        :param convo: AgentConvo instance (optional)
-        :param task_description: description of the task
-        :param code_changes_description: description of the code changes
+        :param convo: conversation to continue)
         :param step: information about the step being implemented
-        :param step_index: index of the step to implement
         """
+        code_change_description = step['code_change_description']
+
         standalone = False
         if not convo:
             standalone = True
             convo = AgentConvo(self)
 
         files = self.project.get_all_coded_files()
-        file_name, file_content = self.get_original_file(code_changes_description, step, files)
-        content = file_content
+        file_name, file_content = self.get_original_file(code_change_description, step, files)
 
         # Get the new version of the file
         content = self.replace_complete_file(
             convo,
             standalone,
-            code_changes_description,
+            code_change_description,
             file_content,
-            file_name, files
+            file_name,
+            files,
         )
 
         # Review the changes and only apply changes that are useful/approved
         if content and content != file_content:
-            content = self.review_change(convo, code_changes_description, file_name, file_content, content)
+            content = self.review_change(convo, code_change_description, file_name, file_content, content)
 
         # If we have changes, update the file
+        # TODO: if we *don't* have changes, we might want to retry the whole process (eg. have the reviewer
+        # explicitly reject the whole PR and use that as feedback in implement_changes.prompt)
         if content and content != file_content:
             if not self.project.skip_steps:
                 delta_lines = len(content.splitlines()) - len(file_content.splitlines())
@@ -182,7 +183,7 @@ class CodeMonkey(Agent):
         Review changes that were applied to the file.
 
         This asks the LLM to act as a PR reviewer and for each part (hunk) of the
-        diff, decide if it shold be applied (kept) or ignored (removed from the PR).
+        diff, decide if it should be applied (kept) or ignored (removed from the PR).
 
         :param convo: AgentConvo instance
         :param instructions: instructions for the reviewer
@@ -202,23 +203,44 @@ class CodeMonkey(Agent):
             "old_content": old_content,
             "hunks": hunks,
         }, REVIEW_CHANGES)
+        messages_to_remove = 2
 
-        hunk_ids = set()
-        for hunk in llm_response.get("hunks", []):
-            if hunk.get("decision", "").lower() == "apply":
-                hunk_ids.add(hunk["number"] - 1)
+        while True:
+            ids_to_apply = set()
+            ids_to_ignore = set()
+            for hunk in llm_response.get("hunks", []):
+                if hunk.get("decision", "").lower() == "apply":
+                    ids_to_apply.add(hunk["number"] - 1)
+                elif hunk.get("decision", "").lower() == "ignore":
+                    ids_to_ignore.add(hunk["number"] - 1)
 
-        hunks_to_apply = [ h for i, h in enumerate(hunks) if i in hunk_ids ]
-        diff_log = f"---{file_name}\n+++{file_name}\n" + "\n".join(hunks_to_apply)
+            if len(ids_to_apply | ids_to_ignore) == len(hunks):
+                break
 
-        convo.remove_last_x_messages(2)
+            llm_response = convo.send_message('utils/llm_response_error.prompt', {
+                "error": "Not all hunks have been reviewed. Please review all hunks and add 'apply' or 'ignore' decision for each.",
+            }, REVIEW_CHANGES)
+            messages_to_remove += 2
+
+        convo.remove_last_x_messages(messages_to_remove)
+
+        hunks_to_apply = [ h for i, h in enumerate(hunks) if i in ids_to_apply ]
+        diff_log = f"--- {file_name}\n+++ {file_name}\n" + "\n".join(hunks_to_apply)
 
         if len(hunks_to_apply) == len(hunks):
             print("Applying entire change")
             return new_content
         elif len(hunks_to_apply) == 0:
-            print("Rejecting all changes, keeping the file as-is")
-            return old_content
+            print("Reviewer has doubts, but applying all proposed changes anyway")
+            trace_code_event(
+                "modify-file-review-reject-all",
+                {
+                    "file": file_name,
+                    "original": old_content,
+                    "diff": f"--- {file_name}\n+++ {file_name}\n" + "\n".join(hunks),
+                }
+            )
+            return new_content
         else:
             print("Applying code change:\n" + diff_log)
             return self.apply_diff(file_name, old_content, hunks_to_apply, new_content)
@@ -268,10 +290,7 @@ class CodeMonkey(Agent):
         approved diff hunks to the original file content.
 
         If patch apply fails, the fallback is the full new file content
-        with all the changes applied (as if the reviewer approved eveythng).
-
-        FIXME: For verification, it also calls command-line "Patch"
-        utility to check that the internal algorithm works correctly.
+        with all the changes applied (as if the reviewer approved everythng).
 
         :param file_name: name of the file being modified
         :param old_content: old file content
@@ -289,7 +308,17 @@ class CodeMonkey(Agent):
         except Exception as e:
             # This should never happen but if it does, just use the new version from
             # the LLM and hope for the best
-            print(f"Error applying diff: {e}; assuming all changes are valid")
+            print(f"Error applying diff: {e}; hoping all changes are valid")
+            trace_code_event(
+                "patch-apply-error",
+                {
+                    "file": file_name,
+                    "error": str(e),
+                    "traceback": format_exc(),
+                    "original": old_content,
+                    "diff": diff
+                }
+            )
             return fallback
 
         return fixed_content
