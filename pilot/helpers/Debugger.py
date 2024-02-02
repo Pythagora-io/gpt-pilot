@@ -1,6 +1,7 @@
 import platform
 import uuid
 import re
+import traceback
 
 from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_RECURSION_LAYER
 from const.function_calls import DEBUG_STEPS_BREAKDOWN
@@ -10,6 +11,7 @@ from helpers.exceptions import TokenLimitError
 from helpers.exceptions import TooDeepRecursionError
 from logger.logger import logger
 from prompts.prompts import ask_user
+from utils.exit import trace_code_event
 
 
 class Debugger:
@@ -40,6 +42,8 @@ class Debugger:
         self.agent.project.current_task.add_debugging_task(self.recursion_layer, command, user_input, issue_description)
         if self.recursion_layer > MAX_RECURSION_LAYER:
             self.recursion_layer = 0
+            # TooDeepRecursionError kills all debugging loops and goes back to the point where first debug was called
+            # it does not retry initial step but instead calls dev_help_needed()
             raise TooDeepRecursionError()
 
         function_uuid = str(uuid.uuid4())
@@ -54,6 +58,8 @@ class Debugger:
                 print('yes/no', type='button')
                 answer = ask_user(self.agent.project, 'Can I start debugging this issue [Y/n/error details]?', require_some_input=False)
                 if answer.lower() in NEGATIVE_ANSWERS:
+                    self.recursion_layer -= 1
+                    convo.load_branch(function_uuid)
                     return True
                 if answer and answer.lower() not in AFFIRMATIVE_ANSWERS:
                     user_input = answer
@@ -117,13 +123,21 @@ class Debugger:
                         break
 
             except TokenLimitError as e:
+                # initial TokenLimitError is triggered by OpenAI API
+                # TokenLimitError kills recursion loops 1 by 1 and reloads convo, so it can retry the same initial step
                 if self.recursion_layer > 0:
+                    convo.load_branch(function_uuid)
                     self.recursion_layer -= 1
                     raise e
                 else:
+                    trace_code_event('token-limit-error', {'error': traceback.format_exc()})
                     if not success:
                         convo.load_branch(function_uuid)
                     continue
+
+            except TooDeepRecursionError as e:
+                convo.load_branch(function_uuid)
+                raise e
 
             # if not success:
             #     # TODO explain better how should the user approach debugging
@@ -136,5 +150,6 @@ class Debugger:
             #     if user_input == 'continue':
             #         success = True
 
+        convo.load_branch(function_uuid)
         self.recursion_layer -= 1
         return success
