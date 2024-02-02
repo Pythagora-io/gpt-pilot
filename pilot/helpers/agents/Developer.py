@@ -234,8 +234,8 @@ class Developer(Agent):
         step = task_steps[i]
         if 'code_change_description' in step:
             print(f'Implementing code changes for `{step["code_change_description"]}`')
-            code_monkey = CodeMonkey(self.project, self)
-            updated_convo = code_monkey.implement_code_changes(convo, step['code_change_description'], step)
+            code_monkey = CodeMonkey(self.project)
+            updated_convo = code_monkey.implement_code_changes(convo, step)
             if test_after_code_changes:
                 return self.test_code_changes(updated_convo, task_steps, i)
             else:
@@ -252,8 +252,8 @@ class Developer(Agent):
     def step_modify_file(self, convo, step, i, test_after_code_changes):
         data = step['modify_file']
         print(f'Updating existing file {data["name"]}: {data["code_change_description"].splitlines()[0]}')
-        code_monkey = CodeMonkey(self.project, self)
-        code_monkey.implement_code_changes(convo, data['code_change_description'], data)
+        code_monkey = CodeMonkey(self.project)
+        code_monkey.implement_code_changes(convo, data)
         return {"success": True}
 
     def step_command_run(self, convo, task_steps, i, success_with_cli_response=False):

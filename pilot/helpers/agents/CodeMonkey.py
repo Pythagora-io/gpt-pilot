@@ -1,25 +1,29 @@
 import os.path
 import re
 from typing import Optional
+from traceback import format_exc
+from difflib import unified_diff
 
 from helpers.AgentConvo import AgentConvo
 from helpers.Agent import Agent
 from helpers.files import get_file_contents
-from const.function_calls import GET_FILE_TO_MODIFY
+from const.function_calls import GET_FILE_TO_MODIFY, REVIEW_CHANGES
 
 from utils.exit import trace_code_event
 from utils.telemetry import telemetry
+
+# Constant for indicating missing new line at the end of a file in a unified diff
+NO_EOL = "\ No newline at end of file"
+
+# Regular expression pattern for matching hunk headers
+PATCH_HEADER_PATTERN = re.compile(r"^@@ -(\d+),?(\d+)? \+(\d+),?(\d+)? @@")
 
 
 class CodeMonkey(Agent):
     save_dev_steps = True
 
-    # Only attempt block-by-block replace if the file is larger than this many lines
-    SMART_REPLACE_THRESHOLD = 200
-
-    def __init__(self, project, developer):
+    def __init__(self, project):
         super().__init__('code_monkey', project)
-        self.developer = developer
 
     def get_original_file(
             self,
@@ -66,53 +70,41 @@ class CodeMonkey(Agent):
     def implement_code_changes(
         self,
         convo: Optional[AgentConvo],
-        code_changes_description: str,
         step: dict[str, str],
     ) -> AgentConvo:
         """
         Implement code changes described in `code_changes_description`.
 
-        :param convo: AgentConvo instance (optional)
-        :param task_description: description of the task
-        :param code_changes_description: description of the code changes
+        :param convo: conversation to continue)
         :param step: information about the step being implemented
-        :param step_index: index of the step to implement
         """
+        code_change_description = step['code_change_description']
+
         standalone = False
         if not convo:
             standalone = True
             convo = AgentConvo(self)
 
         files = self.project.get_all_coded_files()
-        file_name, file_content = self.get_original_file(code_changes_description, step, files)
-        content = file_content
+        file_name, file_content = self.get_original_file(code_change_description, step, files)
 
-        # If the file is non-empty and larger than the threshold, attempt to replace individual code blocks
-        if file_content and len(file_content.splitlines()) > self.SMART_REPLACE_THRESHOLD:
-            replace_complete_file, content = self.replace_code_blocks(
-                step,
-                convo,
-                standalone,
-                code_changes_description,
-                file_content,
-                file_name,
-                files,
-            )
-        else:
-            # Just replace the entire file
-            replace_complete_file = True
+        # Get the new version of the file
+        content = self.replace_complete_file(
+            convo,
+            standalone,
+            code_change_description,
+            file_content,
+            file_name,
+            files,
+        )
 
-        # If this is a new file or replacing individual code blocks failed,
-        # replace the complete file.
-        if replace_complete_file:
-            content = self.replace_complete_file(
-                convo,
-                standalone,
-                code_changes_description,
-                file_content,
-                file_name, files
-            )
+        # Review the changes and only apply changes that are useful/approved
+        if content and content != file_content:
+            content = self.review_change(convo, code_change_description, file_name, file_content, content)
 
+        # If we have changes, update the file
+        # TODO: if we *don't* have changes, we might want to retry the whole process (eg. have the reviewer
+        # explicitly reject the whole PR and use that as feedback in implement_changes.prompt)
         if content and content != file_content:
             if not self.project.skip_steps:
                 delta_lines = len(content.splitlines()) - len(file_content.splitlines())
@@ -124,123 +116,6 @@ class CodeMonkey(Agent):
             })
 
         return convo
-
-    def replace_code_blocks(
-        self,
-        step: dict[str, str],
-        convo: AgentConvo,
-        standalone: bool,
-        code_changes_description: str,
-        file_content: str,
-        file_name: str,
-        files: list[dict]
-    ):
-        llm_response = convo.send_message('development/implement_changes.prompt', {
-            "full_output": False,
-            "standalone": standalone,
-            "code_changes_description": code_changes_description,
-            "file_content": file_content,
-            "file_name": file_name,
-            "files": files,
-        })
-
-        replace_complete_file = False
-        exchanged_messages = 2
-        content = file_content
-
-        # Allow for up to 2 retries
-        while exchanged_messages < 7:
-            if re.findall('(old|existing).+code', llm_response, re.IGNORECASE):
-                trace_code_event("codemonkey-file-update-error", {
-                    "error": "old-code-comment",
-                    "llm_response": llm_response,
-                })
-                llm_response = convo.send_message('utils/llm_response_error.prompt', {
-                    "error": (
-                        "You must not omit any code from NEW_CODE. "
-                        "Please don't use coments like `// .. existing code goes here`."
-                    )
-                })
-                exchanged_messages += 2
-                continue
-
-            # Split the response into pairs of old and new code blocks
-            block_pairs = self.get_code_blocks(llm_response)
-
-            if len(block_pairs) == 0:
-                if "```" in llm_response:
-                    # We know some code blocks were outputted but we couldn't find them
-                    print("Unable to parse code blocks from LLM response, asking to retry")
-                    trace_code_event("codemonkey-file-update-error", {
-                        "error": "error-parsing-blocks",
-                        "llm_response": llm_response,
-                    })
-
-                    # If updating is more complicated than just replacing the complete file, don't bother.
-                    if len(llm_response) > len(file_content):
-                        replace_complete_file = True
-                        break
-
-                    llm_response = convo.send_message('utils/llm_response_error.prompt', {
-                        "error": "I can't find CURRENT_CODE and NEW_CODE blocks in your response, please try again."
-                    })
-                    exchanged_messages += 2
-                    continue
-                else:
-                    print(f"No changes required for {step['name']}")
-                    break
-
-            # Replace old code blocks with new code blocks
-            errors = []
-            for i, (old_code, new_code) in enumerate(block_pairs):
-                try:
-                    old_code, new_code = self.dedent(old_code, new_code)
-                    content = self.replace(content, old_code, new_code)
-                except ValueError as err:
-                    errors.append((i + 1, str(err)))
-
-            if not errors:
-                break
-
-            trace_code_event("codemonkey-file-update-error", {
-                "error": "replace-errors",
-                "llm_response": llm_response,
-                "details": errors,
-            })
-            print(f"{len(errors)} error(s) while trying to update file, asking LLM to retry")
-
-            if len(llm_response) > len(file_content):
-                # If updating is more complicated than just replacing the complete file, don't bother.
-                replace_complete_file = True
-                break
-
-            # Otherwise, identify the problem block(s) and ask the LLM to retry
-            if content != file_content:
-                error_text = (
-                    "Some changes were applied, but these failed:\n" +
-                    "\n".join(f"Error in change {i}:\n{err}" for i, err in errors) +
-                    "\nPlease fix the errors and try again (only output the blocks that failed to update, not all of them)."
-                )
-            else:
-                error_text = "\n".join(f"Error in change {i}:\n{err}" for i, err in errors)
-
-            llm_response = convo.send_message('utils/llm_response_error.prompt', {
-                "error": error_text,
-            })
-            exchanged_messages += 2
-        else:
-            # We failed after a few retries, so let's just replace the complete file
-            print("Unable to modify file, asking LLM to output the complete new file")
-            replace_complete_file = True
-
-        if replace_complete_file:
-            trace_code_event("codemonkey-file-update-error", {
-                "error": "fallback-complete-replace",
-                "llm_response": llm_response,
-            })
-
-        convo.remove_last_x_messages(exchanged_messages)
-        return replace_complete_file, content
 
     def replace_complete_file(
         self,
@@ -278,8 +153,8 @@ class CodeMonkey(Agent):
         end_pattern = re.compile(r"\n```\s*$")
         llm_response = start_pattern.sub("", llm_response)
         llm_response = end_pattern.sub("", llm_response)
+        convo.remove_last_x_messages(2)
         return llm_response
-
 
     def identify_file_to_change(self, code_changes_description: str, files: list[dict]) -> str:
         """
@@ -296,118 +171,208 @@ class CodeMonkey(Agent):
         }, GET_FILE_TO_MODIFY)
         return llm_response["file"]
 
-    @staticmethod
-    def get_code_blocks(llm_response: str) -> list[tuple[str, str]]:
+    def review_change(
+        self,
+        convo: AgentConvo,
+        instructions: str,
+        file_name: str,
+        old_content: str,
+        new_content: str
+    ) -> str:
         """
-        Split the response into code block(s).
+        Review changes that were applied to the file.
 
-        Ignores any content outside of code blocks.
+        This asks the LLM to act as a PR reviewer and for each part (hunk) of the
+        diff, decide if it should be applied (kept) or ignored (removed from the PR).
 
-        :param llm_response: response from the LLM
-        :return: list of pairs of current and new blocks
-        """
-        pattern = re.compile(
-            r"CURRENT_CODE:\n```([a-z0-9]+)?\n(.*?)\n```\nNEW_CODE:\n```([a-z0-9]+)?\n(.*?)\n?```\nEND\s*",
-            re.DOTALL
-        )
-        pairs = []
-        for block in pattern.findall(llm_response):
-            pairs.append((block[1], block[3]))
-        return pairs
+        :param convo: AgentConvo instance
+        :param instructions: instructions for the reviewer
+        :param file_name: name of the file being modified
+        :param old_content: old file content
+        :param new_content: new file content (with proposed changes)
+        :return: file content update with approved changes
 
-    @staticmethod
-    def dedent(old_code: str, new_code: str) -> tuple[str, str]:
-        """
-        Remove common indentation from `old_code` and `new_code`.
-
-        This is useful because the LLM will sometimes indent the code blocks MORE
-        than in the original file, leading to no matches. Since we have indent
-        compensation, we can just remove any extra indent as long as we do it
-        consistently for both old and new code block.
-
-        :param old_code: old code block
-        :param new_code: new code block
-        :return: tuple of (old_code, new_code) with common indentation removed
-        """
-        old_lines = old_code.splitlines()
-        new_lines = new_code.splitlines()
-        indent = 0
-        while all(ol.startswith(" ") for ol in old_lines) and all(ol.startswith(" ") for ol in new_lines):
-            indent -= 1
-            old_lines = [ol[1:] for ol in old_lines]
-            new_lines = [nl[1:] for nl in new_lines]
-        return "\n".join(old_lines), "\n".join(new_lines)
-
-    @staticmethod
-    def replace(haystack: str, needle: str, replacement: str) -> str:
-        """
-        Replace `needle` text in `haystack`, allowing that `needle` is not
-        indented the same as the matching part of `haystack` and
-        compensating for it.
-
-        :param haystack: text to search in
-        :param needle: text to search for
-        :param replacement: text to replace `needle` with
-        :return: `haystack` with `needle` replaced with `replacement`
-
-        Example:
-        >>> haystack = "def foo():\n    pass"
-        >>> needle = "pass"
-        >>> replacement = "return 42"
-        >>> replace(haystack, needle, replacement)
-        "def foo():\n    return 42"
-
-        If `needle` is not found in `haystack` even with indent compensation,
-        or if it's found multiple times, raise a ValueError.
+        Diff hunk explanation: https://www.gnu.org/software/diffutils/manual/html_node/Hunks.html
         """
 
-        def indent_text(text: str, indent: int) -> str:
-            return "\n".join((" " * indent + line) for line in text.splitlines())
+        hunks = self.get_diff_hunks(file_name, old_content, new_content)
 
-        def indent_sensitive_match(haystack: str, needle: str) -> int:
-            """
-            Check if 'needle' is in 'haystack' but compare full lines.
-            """
-            # This is required so we don't match text "foo" (no indentation) with line "  foo"
-            # (2 spaces indentation). We want exact matches so we know exact indentation needed.
-            haystack_with_line_start_stop_markers = "\n".join(f"\x00{line}\x00" for line in haystack.splitlines())
-            needle_with_line_start_stop_markers = "\n".join(f"\x00{line}\x00" for line in needle.splitlines())
-            return haystack_with_line_start_stop_markers.count(needle_with_line_start_stop_markers)
+        llm_response = convo.send_message('development/review_changes.prompt', {
+            "instructions": instructions,
+            "file_name": file_name,
+            "old_content": old_content,
+            "hunks": hunks,
+        }, REVIEW_CHANGES)
+        messages_to_remove = 2
 
-        # Try from the largest indents to the smallest so that we know the correct indentation of
-        # single-line old blocks that would otherwise match with 0 indent as well. If these single-line
-        # old blocks were then replaced with multi-line blocks and indentation wasn't not correctly re-applied,
-        # the new multiline block would only have the first line correctly indented. We want to avoid that.
-        matching_old_blocks = []
+        while True:
+            ids_to_apply = set()
+            ids_to_ignore = set()
+            for hunk in llm_response.get("hunks", []):
+                if hunk.get("decision", "").lower() == "apply":
+                    ids_to_apply.add(hunk["number"] - 1)
+                elif hunk.get("decision", "").lower() == "ignore":
+                    ids_to_ignore.add(hunk["number"] - 1)
 
-        for indent in range(128, -1, -1):
-            text = indent_text(needle, indent)
-            if text not in haystack:
-                # If there are empty lines in the old code, `indent_text` will indent them as well. The original
-                # file might not have them indented as they're empty, so it is useful to try without indenting
-                # those empty lines.
-                text = "\n".join(
-                    (line if line.strip() else "")
-                    for line
-                    in text.splitlines()
-                )
-            n_matches = indent_sensitive_match(haystack, text)
-            for i in range(n_matches):
-                matching_old_blocks.append((indent, text))
+            if len(ids_to_apply | ids_to_ignore) == len(hunks):
+                break
 
-        if len(matching_old_blocks) == 0:
-            raise ValueError(
-                f"Old code block not found in the original file:\n```\n{needle}\n```\n"
-                "Old block *MUST* contain the exact same text (including indentation, empty lines, etc.) as the original file "
-                "in order to match."
+            llm_response = convo.send_message('utils/llm_response_error.prompt', {
+                "error": "Not all hunks have been reviewed. Please review all hunks and add 'apply' or 'ignore' decision for each.",
+            }, REVIEW_CHANGES)
+            messages_to_remove += 2
+
+        convo.remove_last_x_messages(messages_to_remove)
+
+        hunks_to_apply = [ h for i, h in enumerate(hunks) if i in ids_to_apply ]
+        diff_log = f"--- {file_name}\n+++ {file_name}\n" + "\n".join(hunks_to_apply)
+
+        if len(hunks_to_apply) == len(hunks):
+            print("Applying entire change")
+            return new_content
+        elif len(hunks_to_apply) == 0:
+            print("Reviewer has doubts, but applying all proposed changes anyway")
+            trace_code_event(
+                "modify-file-review-reject-all",
+                {
+                    "file": file_name,
+                    "original": old_content,
+                    "diff": f"--- {file_name}\n+++ {file_name}\n" + "\n".join(hunks),
+                }
             )
+            return new_content
+        else:
+            print("Applying code change:\n" + diff_log)
+            return self.apply_diff(file_name, old_content, hunks_to_apply, new_content)
 
-        if len(matching_old_blocks) > 1:
-            raise ValueError(
-                f"Old code block found more than once ({len(matching_old_blocks)} matches) in the original file:\n```\n{needle}\n```\n\n"
-                "Please provide larger blocks (more context) to uniquely identify the code that needs to be changed."
+    @staticmethod
+    def get_diff_hunks(file_name: str, old_content: str, new_content: str) -> list[str]:
+        """
+        Get the diff between two files.
+
+        This uses Python difflib to produce an unified diff, then splits
+        it into hunks that will be separately reviewed by the reviewer.
+
+        :param file_name: name of the file being modified
+        :param old_content: old file content
+        :param new_content: new file content
+        :return: change hunks from the unified diff
+        """
+        from_name = "old_" + file_name
+        to_name = "to_" + file_name
+        from_lines = old_content.splitlines(keepends=True)
+        to_lines = new_content.splitlines(keepends=True)
+        diff_gen = unified_diff(from_lines, to_lines, fromfile=from_name, tofile=to_name)
+        diff_txt = "".join(diff_gen)
+
+        hunks = re.split(r'\n@@', diff_txt, re.MULTILINE)
+        result = []
+        for i, h in enumerate(hunks):
+            # Skip the prologue (file names)
+            if i == 0:
+                continue
+            txt = h.splitlines()
+            txt[0] = "@@" + txt[0]
+            result.append("\n".join(txt))
+        return result
+
+    def apply_diff(
+        self,
+        file_name: str,
+        old_content: str,
+        hunks: list[str],
+        fallback: str
+    ):
+        """
+        Apply the diff to the original file content.
+
+        This uses the internal `_apply_patch` method to apply the
+        approved diff hunks to the original file content.
+
+        If patch apply fails, the fallback is the full new file content
+        with all the changes applied (as if the reviewer approved everythng).
+
+        :param file_name: name of the file being modified
+        :param old_content: old file content
+        :param hunks: change hunks from the unified diff
+        :param fallback: proposed new file content (with all the changes applied)
+        """
+        diff = "\n".join(
+            [
+                "--- " + file_name,
+                "+++ " + file_name,
+            ] + hunks
+        ) + "\n"
+        try:
+            fixed_content = self._apply_patch(old_content, diff)
+        except Exception as e:
+            # This should never happen but if it does, just use the new version from
+            # the LLM and hope for the best
+            print(f"Error applying diff: {e}; hoping all changes are valid")
+            trace_code_event(
+                "patch-apply-error",
+                {
+                    "file": file_name,
+                    "error": str(e),
+                    "traceback": format_exc(),
+                    "original": old_content,
+                    "diff": diff
+                }
             )
+            return fallback
 
-        indent, text = matching_old_blocks[0]
-        indented_replacement = indent_text(replacement, indent)
-        return haystack.replace(text, indented_replacement)
+        return fixed_content
+
+    # Adapted from https://gist.github.com/noporpoise/16e731849eb1231e86d78f9dfeca3abc (Public Domain)
+    @staticmethod
+    def _apply_patch(original: str, patch: str, revert: bool = False):
+        """
+        Apply a patch to a string to recover a newer version of the string.
+
+        :param original: The original string.
+        :param patch: The patch to apply.
+        :param revert: If True, treat the original string as the newer version and recover the older string.
+        :return: The updated string after applying the patch.
+        """
+        original_lines = original.splitlines(True)
+        patch_lines = patch.splitlines(True)
+
+        updated_text = ''
+        index_original = start_line = 0
+
+        # Choose which group of the regex to use based on the revert flag
+        match_index, line_sign = (1, '+') if not revert else (3, '-')
+
+        # Skip header lines of the patch
+        while index_original < len(patch_lines) and patch_lines[index_original].startswith(("---", "+++")):
+            index_original += 1
+
+        while index_original < len(patch_lines):
+            match = PATCH_HEADER_PATTERN.match(patch_lines[index_original])
+            if not match:
+                raise Exception("Bad patch -- regex mismatch [line " + str(index_original) + "]")
+
+            line_number = int(match.group(match_index)) - 1 + (match.group(match_index + 1) == '0')
+
+            if start_line > line_number or line_number > len(original_lines):
+                raise Exception("Bad patch -- bad line number [line " + str(index_original) + "]")
+
+            updated_text += ''.join(original_lines[start_line:line_number])
+            start_line = line_number
+            index_original += 1
+
+            while index_original < len(patch_lines) and patch_lines[index_original][0] != '@':
+                if index_original + 1 < len(patch_lines) and patch_lines[index_original + 1][0] == '\\':
+                    line_content = patch_lines[index_original][:-1]
+                    index_original += 2
+                else:
+                    line_content = patch_lines[index_original]
+                    index_original += 1
+
+                if line_content:
+                    if line_content[0] == line_sign or line_content[0] == ' ':
+                        updated_text += line_content[1:]
+                    start_line += (line_content[0] != line_sign)
+
+        updated_text += ''.join(original_lines[start_line:])
+        return updated_text

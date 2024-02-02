@@ -87,7 +87,7 @@ def step_save_file_definition():
             },
             "save_file": {
                 "type": "object",
-                "description": "A file that needs to be created or file that needs to be completely replaced. This should be used for new files.",
+                "description": "A file that needs to be created or file that needs to be completely replaced. This should only be used for new files.",
                 "properties": {
                     "name": {
                         "type": "string",
@@ -95,7 +95,7 @@ def step_save_file_definition():
                     },
                     "path": {
                         "type": "string",
-                        "description": "Full path of the file (with the file name) that needs to be created or replaced."
+                        "description": "Full path of the file (with the file name) that needs to be created."
                     },
                     "content": {
                         "type": "string",
@@ -685,5 +685,45 @@ GET_DOCUMENTATION_FILE = {
             },
             'required': ['name', 'path', 'content'],
         },
+    }],
+}
+
+REVIEW_CHANGES = {
+    'definitions': [{
+        'name': 'review_diff',
+        'description': 'Review a unified diff and select hunks to apply.',
+        'parameters': {
+            "type": "object",
+            "properties": {
+                "hunks": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "number": {
+                                "type": "integer",
+                                "description": "Index of the hunk in the diff. Starts from 1."
+                            },
+                            "decision": {
+                                "type": "string",
+                                "enum": ["apply", "ignore"],
+                                "description": "Whether to apply this hunk (if it's a valid change) or ignore it."
+                            },
+                            "reason": {
+                                "type": "string",
+                                "desciprion": "Reason for allowing or ignoring this hunk."
+                            }
+                        },
+                        "required": ["number", "decision", "reason"],
+                        "additionalProperties": False
+                    },
+                },
+                "review_notes": {
+                    "type": "string"
+                }
+            },
+            "required": ["hunks", "review_notes"],
+            "additionalProperties": False
+        }
     }],
 }
