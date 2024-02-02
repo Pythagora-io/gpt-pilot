@@ -5,7 +5,7 @@ from typing import Tuple
 
 import peewee
 
-from const.messages import CHECK_AND_CONTINUE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS
+from const.messages import CHECK_AND_CONTINUE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS, STUCK_IN_LOOP
 from utils.style import color_yellow_bold, color_cyan, color_white_bold, color_red_bold
 from const.common import STEPS
 from database.database import delete_unconnected_steps_from, delete_all_app_development_data, \
@@ -505,7 +505,7 @@ class Project:
         delete_unconnected_steps_from(self.checkpoints['last_command_run'], 'previous_step')
         delete_unconnected_steps_from(self.checkpoints['last_user_input'], 'previous_step')
 
-    def ask_for_human_intervention(self, message, description=None, cbs={}, convo=None, is_root_task=False):
+    def ask_for_human_intervention(self, message, description=None, cbs={}, convo=None, is_root_task=False, add_loop_button=False):
         answer = ''
         question = color_yellow_bold(message)
 
@@ -515,7 +515,7 @@ class Project:
         reset_branch_id = None if convo is None else convo.save_branch()
 
         while answer.lower() != 'continue':
-            print('continue', type='button')
+            print(f'continue{f"/{STUCK_IN_LOOP}" if add_loop_button else ""}', type='button')
             answer = ask_user(self, CHECK_AND_CONTINUE,
                               require_some_input=False,
                               hint=question)

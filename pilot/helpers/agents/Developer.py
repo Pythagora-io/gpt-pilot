@@ -3,7 +3,7 @@ import uuid
 import re
 import json
 
-from const.messages import WHEN_USER_DONE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS
+from const.messages import WHEN_USER_DONE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS, STUCK_IN_LOOP
 from utils.style import (
     color_green,
     color_green_bold,
@@ -25,7 +25,7 @@ from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
 from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes
-from const.function_calls import EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN
+from const.function_calls import EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN, ALTERNATIVE_SOLUTIONS
 from database.database import save_progress, get_progress_steps, update_app_status
 from utils.telemetry import telemetry
 from prompts.prompts import ask_user
@@ -548,7 +548,13 @@ class Developer(Agent):
         return self.task_postprocessing(convo, development_task, continue_development, result, function_uuid)
 
     def continue_development(self, iteration_convo, last_branch_name, continue_description='', development_task=None):
+        llm_solutions = self.project.last_iteration['prompt_data']['previous_solutions'] if (self.project.last_iteration and 'previous_solutions' in self.project.last_iteration['prompt_data']) else []
+        alternative_solutions_to_current_issue = self.project.last_iteration['prompt_data']['alternative_solutions_to_current_issue'] if (self.project.last_iteration and 'alternative_solutions_to_current_issue' in self.project.last_iteration['prompt_data']) else []
+        tried_alternative_solutions_to_current_issue = self.project.last_iteration['prompt_data']['tried_alternative_solutions_to_current_issue'] if (self.project.last_iteration and 'tried_alternative_solutions_to_current_issue' in self.project.last_iteration['prompt_data']) else []
+        next_solution_to_try = None
+        iteration_count = 0
         while True:
+            iteration_count += 1
             logger.info('Continue development, last_branch_name: %s', last_branch_name)
             if last_branch_name in iteration_convo.branches.keys():  # if user_feedback is not None we create new convo
                 iteration_convo.load_branch(last_branch_name)
@@ -578,7 +584,8 @@ class Developer(Agent):
                                                                   force=True,
                                                                   return_cli_response=True, is_root_task=True)},
                 convo=iteration_convo,
-                is_root_task=True)
+                is_root_task=True,
+                add_loop_button=iteration_count > 3)
 
             logger.info('response: %s', response)
             user_feedback = response['user_input'] if 'user_input' in response else None
@@ -587,6 +594,21 @@ class Developer(Agent):
                 return {"success": True, "user_input": user_feedback}
 
             if user_feedback is not None:
+                stuck_in_loop = user_feedback.startswith(STUCK_IN_LOOP)
+                if stuck_in_loop:
+                    # Remove the STUCK_IN_LOOP prefix from the user feedback
+                    user_feedback = user_feedback[len(STUCK_IN_LOOP):]
+                    stuck_in_loop = False
+                    if len(alternative_solutions_to_current_issue) > 0:
+                        next_solution_to_try_index = self.ask_user_for_next_solution(alternative_solutions_to_current_issue)
+                        next_solution_to_try = alternative_solutions_to_current_issue.pop(next_solution_to_try_index - 1)
+                    else:
+                        description_of_tried_solutions, alternative_solutions_to_current_issue, next_solution_to_try = self.get_alternative_solutions(development_task, user_feedback, llm_solutions, tried_alternative_solutions_to_current_issue)
+                        if len(tried_alternative_solutions_to_current_issue) == 0:
+                            tried_alternative_solutions_to_current_issue.append(description_of_tried_solutions)
+
+                    tried_alternative_solutions_to_current_issue.append(next_solution_to_try)
+
                 iteration_convo = AgentConvo(self)
                 iteration_description = iteration_convo.send_message('development/iteration.prompt', {
                     "name": self.project.args['name'],
@@ -603,6 +625,16 @@ class Developer(Agent):
                     "development_tasks": self.project.development_plan,
                     "files": self.project.get_all_coded_files(),
                     "user_input": user_feedback,
+                    "stuck_in_loop": stuck_in_loop,
+                    "previous_solutions": llm_solutions[-3:],
+                    "next_solution_to_try": next_solution_to_try,
+                    "alternative_solutions_to_current_issue": alternative_solutions_to_current_issue,
+                    "tried_alternative_solutions_to_current_issue": tried_alternative_solutions_to_current_issue,
+                })
+
+                llm_solutions.append({
+                    "user_feedback": user_feedback,
+                    "llm_proposal": iteration_description
                 })
 
                 instructions_prefix = " ".join(iteration_description.split()[:5])
@@ -738,3 +770,39 @@ class Developer(Agent):
         #     code_changes_details = get_step_code_changes()
         #     # TODO: give to code monkey for implementation
         pass
+
+    def get_alternative_solutions(self, development_task, user_feedback, previous_solutions, tried_alternative_solutions_to_current_issue):
+        convo = AgentConvo(self)
+        response = convo.send_message('development/get_alternative_solutions.prompt', {
+            "name": self.project.args['name'],
+            "app_type": self.project.args['app_type'],
+            "app_summary": self.project.project_description,
+            "architecture": self.project.architecture,
+            "technologies": self.project.system_dependencies + self.project.package_dependencies,
+            "directory_tree": self.project.get_directory_tree(True),
+            "current_task": development_task,
+            "development_tasks": self.project.development_plan,
+            "files": self.project.get_all_coded_files(),
+            "user_input": user_feedback,
+            "previous_solutions": previous_solutions,
+            "tried_alternative_solutions_to_current_issue": tried_alternative_solutions_to_current_issue,
+        }, ALTERNATIVE_SOLUTIONS)
+
+        next_solution_to_try_index = self.ask_user_for_next_solution(response['alternative_solutions'])
+
+        next_solution_to_try = response['alternative_solutions'].pop(next_solution_to_try_index - 1)
+
+        return response['description_of_tried_solutions'], response['alternative_solutions'], next_solution_to_try
+
+    def ask_user_for_next_solution(self, alternative_solutions):
+        solutions_indices_as_strings = [str(i + 1) for i in range(len(alternative_solutions))]
+        string_for_buttons = '/'.join(solutions_indices_as_strings) + '/You Choose'
+        description_of_solutions = '\n\n'.join([f"{index + 1}: {sol}" for index, sol in enumerate(alternative_solutions)])
+        print(string_for_buttons, type='button')
+        next_solution_to_try_index = ask_user(self.project, 'Which solution would you like to try next?',
+                                              require_some_input=False,
+                                              hint=description_of_solutions)
+
+        next_solution_to_try_index = 0 if next_solution_to_try_index.lower() not in solutions_indices_as_strings else int(next_solution_to_try_index)
+
+        return next_solution_to_try_index
