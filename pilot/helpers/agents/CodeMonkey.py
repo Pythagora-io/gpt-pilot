@@ -223,8 +223,6 @@ class CodeMonkey(Agent):
                 error = "Not all hunks have been reviewed. Please review all hunks and add 'apply' or 'ignore' decision for each."
             elif n_review_hunks > n_hunks:
                 error = f"Your review contains more hunks ({n_review_hunks}) than in the original diff ({n_hunks}). Note that one hunk may have multiple changed lines."
-            if len(ids_to_apply | ids_to_ignore) == len(hunks):
-                break
 
             # Max two retries; if the reviewer still hasn't reviewed all hunks, we'll just use the entire new content
             llm_response = convo.send_message(
@@ -236,6 +234,7 @@ class CodeMonkey(Agent):
             messages_to_remove += 2
         else:
             # The reviewer failed to review all the hunks in 3 attempts, let's just use all the new content
+            convo.remove_last_x_messages(messages_to_remove)
             return new_content
 
         convo.remove_last_x_messages(messages_to_remove)
