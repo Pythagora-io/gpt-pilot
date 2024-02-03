@@ -18,6 +18,7 @@ NO_EOL = "\ No newline at end of file"
 # Regular expression pattern for matching hunk headers
 PATCH_HEADER_PATTERN = re.compile(r"^@@ -(\d+),?(\d+)? \+(\d+),?(\d+)? @@")
 
+MAX_REVIEW_RETRIES = 3
 
 class CodeMonkey(Agent):
     save_dev_steps = True
@@ -205,7 +206,7 @@ class CodeMonkey(Agent):
         }, REVIEW_CHANGES)
         messages_to_remove = 2
 
-        while True:
+        for i in range(MAX_REVIEW_RETRIES):
             ids_to_apply = set()
             ids_to_ignore = set()
             for hunk in llm_response.get("hunks", []):
@@ -214,13 +215,28 @@ class CodeMonkey(Agent):
                 elif hunk.get("decision", "").lower() == "ignore":
                     ids_to_ignore.add(hunk["number"] - 1)
 
+            n_hunks = len(hunks)
+            n_review_hunks = len(ids_to_apply | ids_to_ignore)
+            if n_review_hunks == n_hunks:
+                break
+            elif n_review_hunks < n_hunks:
+                error = "Not all hunks have been reviewed. Please review all hunks and add 'apply' or 'ignore' decision for each."
+            elif n_review_hunks > n_hunks:
+                error = f"Your review contains more hunks ({n_review_hunks}) than in the original diff ({n_hunks}). Note that one hunk may have multiple changed lines."
             if len(ids_to_apply | ids_to_ignore) == len(hunks):
                 break
 
-            llm_response = convo.send_message('utils/llm_response_error.prompt', {
-                "error": "Not all hunks have been reviewed. Please review all hunks and add 'apply' or 'ignore' decision for each.",
-            }, REVIEW_CHANGES)
+            # Max two retries; if the reviewer still hasn't reviewed all hunks, we'll just use the entire new content
+            llm_response = convo.send_message(
+                'utils/llm_response_error.prompt', {
+                    "error": error
+                },
+                REVIEW_CHANGES,
+            )
             messages_to_remove += 2
+        else:
+            # The reviewer failed to review all the hunks in 3 attempts, let's just use all the new content
+            return new_content
 
         convo.remove_last_x_messages(messages_to_remove)
 
