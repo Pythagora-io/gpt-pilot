@@ -139,17 +139,6 @@ class Debugger:
                 convo.load_branch(function_uuid)
                 raise e
 
-            # if not success:
-            #     # TODO explain better how should the user approach debugging
-            #     # we can copy the entire convo to clipboard so they can paste it in the playground
-            #     user_input = convo.agent.project.ask_for_human_intervention(
-            #         'It seems like I cannot debug this problem by myself. Can you please help me and try debugging it yourself?' if user_input is None else f'Can you check this again:\n{issue_description}?',
-            #         response['data']
-            #     )
-
-            #     if user_input == 'continue':
-            #         success = True
-
         convo.load_branch(function_uuid)
         self.recursion_layer -= 1
         return success

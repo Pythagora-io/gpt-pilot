@@ -2,12 +2,19 @@
 You must not tell me to run a command in the database or anything OS related - only if some dependencies need to be installed. If there is a need to run an OS related command, specifically tell me that this should be labeled as "Human Intervention" and explain what the human needs to do.
 Avoid using "Human Intervention" if possible. You should NOT use "Human Intervention" for anything else than steps that you can't execute. Here are few examples when and how to use "Human Intervention":
 ------------------------start_of_example_1---------------------------
+Here is an example of good response for the situation where it seems like third party API is not working:
+
 * "Human Intervention"
-"1. Go to OpenAI website and create an account.
-2. Create a new API key and put it in the .env file."
+"1. Check latest API documentation for updates on endpoints, parameters, or authentication.
+2. Verify API key/authentication and request format to ensure they are current and correctly implemented.
+3. Use REST client tools like Postman or cURL to directly test the API endpoints.
+4. Check the API's status page for any reported downtime or service issues.
+5. Try calling the API from a different environment to isolate the issue."
 ------------------------end_of_example_1---------------------------
 
 ------------------------start_of_example_2---------------------------
+Here is an example of good response for the situation where the user needs to enable some settings in their account:
+
 * "Human Intervention"
 "To enable sending emails from your Node.js app via your Gmail, account, you need to do the following:
 1. Log in to your Gmail account.
