@@ -56,12 +56,13 @@ class Developer(Agent):
 
         for i, dev_task in enumerate(self.project.development_plan):
             # don't create documentation for features
-            if not self.project.finished and not self.project.skip_steps:
+            if not self.project.finished:
                 current_progress_percent = round((i / total_tasks) * 100, 2)
 
                 for threshold in progress_thresholds:
                     if current_progress_percent > threshold and threshold not in documented_thresholds:
-                        self.project.technical_writer.document_project(current_progress_percent)
+                        if not self.project.skip_steps:
+                            self.project.technical_writer.document_project(current_progress_percent)
                         documented_thresholds.add(threshold)
 
             if self.project.tasks_to_load:
