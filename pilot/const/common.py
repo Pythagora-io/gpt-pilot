@@ -26,6 +26,7 @@ DEFAULT_IGNORE_PATHS = [
     '.gpt-pilot',
     '.idea',
     '.vscode',
+    '.next',
     '.DS_Store',
     '__pycache__',
     'node_modules',
@@ -38,6 +39,8 @@ DEFAULT_IGNORE_PATHS = [
     "*.min.css",
     "*.svg",
     "*.csv",
+    "*.log",
+    "go.sum",
 ]
 IGNORE_PATHS = DEFAULT_IGNORE_PATHS + [
     folder for folder
