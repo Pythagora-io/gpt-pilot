@@ -552,7 +552,7 @@ class Developer(Agent):
         alternative_solutions_to_current_issue = self.project.last_iteration['prompt_data']['alternative_solutions_to_current_issue'] if (self.project.last_iteration and 'alternative_solutions_to_current_issue' in self.project.last_iteration['prompt_data']) else []
         tried_alternative_solutions_to_current_issue = self.project.last_iteration['prompt_data']['tried_alternative_solutions_to_current_issue'] if (self.project.last_iteration and 'tried_alternative_solutions_to_current_issue' in self.project.last_iteration['prompt_data']) else []
         next_solution_to_try = None
-        iteration_count = 0
+        iteration_count = self.project.last_iteration['prompt_data']['iteration_count'] if (self.project.last_iteration and 'iteration_count' in self.project.last_iteration['prompt_data']) else 0
         while True:
             iteration_count += 1
             logger.info('Continue development, last_branch_name: %s', last_branch_name)
@@ -601,7 +601,10 @@ class Developer(Agent):
                     stuck_in_loop = False
                     if len(alternative_solutions_to_current_issue) > 0:
                         next_solution_to_try_index = self.ask_user_for_next_solution(alternative_solutions_to_current_issue)
-                        next_solution_to_try = alternative_solutions_to_current_issue.pop(next_solution_to_try_index - 1)
+                        if next_solution_to_try_index.lower() == 'none of these':
+                            next_solution_to_try = self.get_alternative_solutions(development_task, user_feedback, llm_solutions, tried_alternative_solutions_to_current_issue + alternative_solutions_to_current_issue)
+                        else:
+                            next_solution_to_try = alternative_solutions_to_current_issue.pop(next_solution_to_try_index - 1)
                     else:
                         description_of_tried_solutions, alternative_solutions_to_current_issue, next_solution_to_try = self.get_alternative_solutions(development_task, user_feedback, llm_solutions, tried_alternative_solutions_to_current_issue)
                         if len(tried_alternative_solutions_to_current_issue) == 0:
@@ -630,6 +633,7 @@ class Developer(Agent):
                     "next_solution_to_try": next_solution_to_try,
                     "alternative_solutions_to_current_issue": alternative_solutions_to_current_issue,
                     "tried_alternative_solutions_to_current_issue": tried_alternative_solutions_to_current_issue,
+                    "iteration_count": iteration_count
                 })
 
                 llm_solutions.append({
@@ -789,6 +793,8 @@ class Developer(Agent):
         }, ALTERNATIVE_SOLUTIONS)
 
         next_solution_to_try_index = self.ask_user_for_next_solution(response['alternative_solutions'])
+        if type(next_solution_to_try_index) is str and next_solution_to_try_index.lower() == 'none of these':
+            return self.get_alternative_solutions(development_task, user_feedback, previous_solutions, tried_alternative_solutions_to_current_issue + response['alternative_solutions'])
 
         next_solution_to_try = response['alternative_solutions'].pop(next_solution_to_try_index - 1)
 
@@ -796,13 +802,18 @@ class Developer(Agent):
 
     def ask_user_for_next_solution(self, alternative_solutions):
         solutions_indices_as_strings = [str(i + 1) for i in range(len(alternative_solutions))]
-        string_for_buttons = '/'.join(solutions_indices_as_strings) + '/You Choose'
+        string_for_buttons = '/'.join(solutions_indices_as_strings) + '/None of these'
         description_of_solutions = '\n\n'.join([f"{index + 1}: {sol}" for index, sol in enumerate(alternative_solutions)])
         print(string_for_buttons, type='button')
-        next_solution_to_try_index = ask_user(self.project, 'Which solution would you like to try next?',
+        next_solution_to_try_index = ask_user(self.project, 'Choose which solution would you like GPT Pilot to try next?',
                                               require_some_input=False,
                                               hint=description_of_solutions)
 
-        next_solution_to_try_index = 0 if next_solution_to_try_index.lower() not in solutions_indices_as_strings else int(next_solution_to_try_index)
+        if next_solution_to_try_index in solutions_indices_as_strings:
+            next_solution_to_try_index = int(next_solution_to_try_index)
+        elif next_solution_to_try_index.lower() == 'none of these':
+            next_solution_to_try_index = 'none of these'
+        else:
+            next_solution_to_try_index = 0
 
         return next_solution_to_try_index
