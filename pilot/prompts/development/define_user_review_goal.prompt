@@ -3,6 +3,6 @@ How can a human user test if this task was completed successfully? If you specif
 **IMPORTANT**
 In case the task can be tested by making an API request, you should always prefer to test functionality in the browser. In case you can't do that, do not suggest how can a request be made with Postman but rather write a full cURL command that the user can just run.
 **IMPORTANT**
-Do not require any code writing form the user for testing this task.
+Do not require any code writing from the user for testing this task.
 
 Try your best to avoid this if possible, but if it is very difficult to test the task, you can just answer with only this sentence - `There is nothing specific to test for this task so you can write "continue" and we'll move on to the next task.`
