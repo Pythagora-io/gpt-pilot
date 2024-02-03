@@ -3,7 +3,7 @@ import uuid
 import re
 import json
 
-from const.messages import WHEN_USER_DONE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS, STUCK_IN_LOOP
+from const.messages import WHEN_USER_DONE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS, STUCK_IN_LOOP, NONE_OF_THESE
 from utils.style import (
     color_green,
     color_green_bold,
@@ -601,7 +601,7 @@ class Developer(Agent):
                     stuck_in_loop = False
                     if len(alternative_solutions_to_current_issue) > 0:
                         next_solution_to_try_index = self.ask_user_for_next_solution(alternative_solutions_to_current_issue)
-                        if next_solution_to_try_index.lower() == 'none of these':
+                        if next_solution_to_try_index == NONE_OF_THESE:
                             next_solution_to_try = self.get_alternative_solutions(development_task, user_feedback, llm_solutions, tried_alternative_solutions_to_current_issue + alternative_solutions_to_current_issue)
                         else:
                             next_solution_to_try = alternative_solutions_to_current_issue.pop(next_solution_to_try_index - 1)
@@ -628,7 +628,6 @@ class Developer(Agent):
                     "development_tasks": self.project.development_plan,
                     "files": self.project.get_all_coded_files(),
                     "user_input": user_feedback,
-                    "stuck_in_loop": stuck_in_loop,
                     "previous_solutions": llm_solutions[-3:],
                     "next_solution_to_try": next_solution_to_try,
                     "alternative_solutions_to_current_issue": alternative_solutions_to_current_issue,
@@ -793,7 +792,7 @@ class Developer(Agent):
         }, ALTERNATIVE_SOLUTIONS)
 
         next_solution_to_try_index = self.ask_user_for_next_solution(response['alternative_solutions'])
-        if type(next_solution_to_try_index) is str and next_solution_to_try_index.lower() == 'none of these':
+        if type(next_solution_to_try_index) is str and next_solution_to_try_index == NONE_OF_THESE:
             return self.get_alternative_solutions(development_task, user_feedback, previous_solutions, tried_alternative_solutions_to_current_issue + response['alternative_solutions'])
 
         next_solution_to_try = response['alternative_solutions'].pop(next_solution_to_try_index - 1)
@@ -802,7 +801,8 @@ class Developer(Agent):
 
     def ask_user_for_next_solution(self, alternative_solutions):
         solutions_indices_as_strings = [str(i + 1) for i in range(len(alternative_solutions))]
-        string_for_buttons = '/'.join(solutions_indices_as_strings) + '/None of these'
+        string_for_buttons = '/'.join(solutions_indices_as_strings) + '/' + (NONE_OF_THESE[0].upper() + NONE_OF_THESE[1:])
+
         description_of_solutions = '\n\n'.join([f"{index + 1}: {sol}" for index, sol in enumerate(alternative_solutions)])
         print(string_for_buttons, type='button')
         next_solution_to_try_index = ask_user(self.project, 'Choose which solution would you like GPT Pilot to try next?',
@@ -811,8 +811,8 @@ class Developer(Agent):
 
         if next_solution_to_try_index in solutions_indices_as_strings:
             next_solution_to_try_index = int(next_solution_to_try_index)
-        elif next_solution_to_try_index.lower() == 'none of these':
-            next_solution_to_try_index = 'none of these'
+        elif next_solution_to_try_index.lower() == NONE_OF_THESE:
+            next_solution_to_try_index = NONE_OF_THESE
         else:
             next_solution_to_try_index = 0
 

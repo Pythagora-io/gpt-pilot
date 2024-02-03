@@ -25,40 +25,14 @@ A part of the app is already finished.
 {{ files_list }}
 
 
-{%- if stuck_in_loop -%}{#
-
-You are trying to solve an issue that your colleague is reporting. You tried {{ previous_solutions|length }} times to solve it but it was unsuccessful.
-First time, your colleague gave you this report:
-{% for solution in previous_solutions %}
-----------------------------start_of_report_{{ loop.index }}----------------------------
-{{ solution['user_feedback'] }}
-----------------------------end_of_report_{{ loop.index }}----------------------------
-
-Then, you gave the following proposal (proposal_{{ loop.index }}) of what needs to be done to fix the issue:
-----------------------------start_of_proposal_{{ loop.index }}----------------------------
-{{ solution['llm_proposal'] }}
-----------------------------end_of_of_proposal_{{ loop.index }}----------------------------
-
-{% if loop.index < previous_solutions|length %}
-Then, upon implementing these changes, your colleague came back with the following report:
-{% endif %}
-{% endfor %}
 {% if user_input != '' %}
-After implementing these changes as well, your colleague who is testing the app "{{ name }}" sent you this report now:
-```
-{{ user_input }}
-```
-{% endif %}
-You must focus on solving the issue that your colleague reported but in the way how this alternative solution proposes.
-
-#}{% elif user_input != '' %}
 Now, your colleague who is testing the app "{{ name }}" sent you some additional info. Here it is:
 ```
 {{ user_input }}
 ```
 {% endif %}
 {% if next_solution_to_try is not none %}
-Now, focus on solving this issue in the following way:
+Focus on solving this issue in the following way:
 ```
 {{ next_solution_to_try }}
 ```
