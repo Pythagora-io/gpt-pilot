@@ -309,7 +309,7 @@ class TestSchemaValidation:
     def test_assert_json_schema(self):
         # When assert_json_schema is called with valid JSON
         # Then no errors
-        assert(assert_json_schema('{"foo": "bar"}', [self.function]))
+        assert (assert_json_schema('{"foo": "bar"}', [self.function]))
 
     def test_assert_json_schema_incomplete(self):
         # When assert_json_schema is called with incomplete JSON
@@ -333,7 +333,7 @@ class TestSchemaValidation:
             assert_json_schema('{"foo": "bar"}', [self.function])
 
     def test_DEVELOPMENT_PLAN(self):
-        assert(assert_json_schema('''
+        assert (assert_json_schema('''
 {
   "plan": [
     {
@@ -368,28 +368,33 @@ class TestLlmConnection:
 
         monkeypatch.setenv('OPENAI_API_KEY', 'secret')
 
-        error_text = '''{
-                "error": {
-                    "message": "Rate limit reached for 10KTPM-200RPM in organization org-OASFC7k1Ff5IzueeLArhQtnT on tokens per min. Limit: 10000 / min. Please try again in 6ms. Contact us through our help center at help.openai.com if you continue to have issues.",
-                    "type": "tokens",
-                    "param": null,
-                    "code": "rate_limit_exceeded"
-                }
-            }'''
+        error_texts = [
+            "Please try again in 6ms.",
+            "Please try again in 1.2s.",
+            "Please try again in 2m5.5s.",
+        ]
+
+        mock_responses = [Mock(status_code=429, text='''{
+            "error": {
+                "message": "Rate limit reached for 10KTPM-200RPM in organization org-OASFC7k1Ff5IzueeLArhQtnT on tokens per min. Limit: 10000 / min. ''' + error_text + '''",
+                "type": "tokens",
+                "param": null,
+                "code": "rate_limit_exceeded"
+            }
+        }''') for error_text in error_texts]
+
         content = 'DONE'
         success_text = '{"id": "gen-123", "choices": [{"index": 0, "delta": {"role": "assistant", "content": "' + content + '"}}]}'
 
-        error_response = Mock()
-        error_response.status_code = 429
-        error_response.text = error_text
+        mock_success_response = Mock()
+        mock_success_response.status_code = 200
+        mock_success_response.iter_lines.return_value = [success_text.encode('utf-8')]
 
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.iter_lines.return_value = [success_text.encode('utf-8')]
+        # add the success at the end of the error requests
+        mock_responses.append(mock_success_response)
 
-        mock_post.side_effect = [error_response, error_response, error_response, error_response, error_response,
-                                 error_response, error_response, error_response, error_response, error_response,
-                                 error_response, error_response, mock_response]
+        mock_post.side_effect = mock_responses
+
         wrapper = retry_on_exception(stream_gpt_completion)
         data = {
             'model': 'gpt-4',
@@ -401,11 +406,7 @@ class TestLlmConnection:
 
         # Then
         assert response == {'text': 'DONE'}
-        # assert mock_sleep.call_count == 9
-        assert mock_sleep.call_args_list == [call(0.006), call(0.012), call(0.024), call(0.048), call(0.096),
-                                             call(0.192), call(0.384), call(0.768), call(1.536), call(3.072),
-                                             call(6.144), call(6.144)]
-        # mock_sleep.call
+        assert mock_sleep.call_args_list == [call(6.006), call(7.2), call(131.5)]
 
     @patch('utils.llm_connection.requests.post')
     def test_stream_gpt_completion(self, mock_post, monkeypatch):
@@ -440,15 +441,14 @@ class TestLlmConnection:
             # Then
             assert response == {'text': '{\n  "foo": "bar",\n  "prompt": "Hello",\n  "choices": []\n}'}
 
-
     @pytest.mark.uses_tokens
     @pytest.mark.parametrize('endpoint, model', [
-        ('OPENAI', 'gpt-4'),                                 # role: system
-        ('OPENROUTER', 'openai/gpt-3.5-turbo'),              # role: user
-        ('OPENROUTER', 'meta-llama/codellama-34b-instruct'), # rule: user, is_llama
-        ('OPENROUTER', 'google/palm-2-chat-bison'),          # role: user/system
+        ('OPENAI', 'gpt-4'),  # role: system
+        ('OPENROUTER', 'openai/gpt-3.5-turbo'),  # role: user
+        ('OPENROUTER', 'meta-llama/codellama-34b-instruct'),  # rule: user, is_llama
+        ('OPENROUTER', 'google/palm-2-chat-bison'),  # role: user/system
         ('OPENROUTER', 'google/palm-2-codechat-bison'),
-        ('OPENROUTER', 'anthropic/claude-2'),              # role: user, is_llama
+        ('OPENROUTER', 'anthropic/claude-2'),  # role: user, is_llama
     ])
     def test_chat_completion_Architect(self, endpoint, model, monkeypatch):
         # Given
@@ -459,9 +459,9 @@ class TestLlmConnection:
         agent = Architect(project)
         convo = AgentConvo(agent)
         convo.construct_and_add_message_from_prompt('architecture/technologies.prompt',
-                                                        {
-                                                            'name': 'Test App',
-                                                            'app_summary': '''
+                                                    {
+                                                        'name': 'Test App',
+                                                        'app_summary': '''
 The project involves the development of a web-based chat application named "Test_App".
 In this application, users can send direct messages to each other.
 However, it does not include a group chat functionality.
@@ -471,19 +471,19 @@ picture and status updates, as well as a feature for chat history. The project m
 as a monolithic application, regardless of any other suggested methods.
 The project's specifications are subject to the project manager's discretion, implying a need for
 solution-oriented decision-making in areas where precise instructions were not provided.''',
-                                                            'app_type': 'web app',
-                                                            'user_stories': [
-                                                                'User will be able to send direct messages to another user.',
-                                                                'User will receive direct messages from other users.',
-                                                                'User will view the sent and received messages in a conversation view.',
-                                                                'User will select a user to send a direct message.',
-                                                                'User will be able to search for users to send direct messages to.',
-                                                                'Users can view the online status of other users.',
-                                                                'User will be able to log into the application using their credentials.',
-                                                                'User will be able to logout from the Test_App.',
-                                                                'User will be able to register a new account on Test_App.',
-                                                            ]
-                                                        })
+                                                        'app_type': 'web app',
+                                                        'user_stories': [
+                                                            'User will be able to send direct messages to another user.',
+                                                            'User will receive direct messages from other users.',
+                                                            'User will view the sent and received messages in a conversation view.',
+                                                            'User will select a user to send a direct message.',
+                                                            'User will be able to search for users to send direct messages to.',
+                                                            'Users can view the online status of other users.',
+                                                            'User will be able to log into the application using their credentials.',
+                                                            'User will be able to logout from the Test_App.',
+                                                            'User will be able to register a new account on Test_App.',
+                                                        ]
+                                                    })
         function_calls = ARCHITECTURE
 
         # When
@@ -528,12 +528,12 @@ The development of this application will strictly follow a monolithic structure,
 The development process will include the creation of user stories and tasks, based on detailed discussions with the client.''',
                                                         'app_type': 'web app',
                                                         'user_stories': [
-            'User Story 1: As a user, I can access the web-based "chat_app" directly without needing to authenticate or log in. Do you want to add anything else? If not, just press ENTER.',
-            'User Story 2: As a user, I can start one-on-one conversations with another user on the "chat_app". Do you want to add anything else? If not, just press ENTER.',
-            'User Story 3: As a user, I can send and receive messages in real-time within my one-on-one conversation on the "chat_app". Do you want to add anything else? If not, just press ENTER.',
-            'User Story 4: As a user, I do not need to worry about deleting or storing my chats because the "chat_app" does not store chat histories. Do you want to add anything else? If not, just press ENTER.',
-            'User Story 5: As a user, I will only be able to send text messages, as the "chat_app" does not support any kind of multimedia sharing like photos, videos, or files. Do you want to add anything else? If not, just press ENTER.',
-            'User Story 6: As a user, I will not see any live typing indicators or read receipts since the "chat_app" does not provide any additional real-time functionality beyond message exchange. Do you want to add anything else? If not, just press ENTER.',
+                                                            'User Story 1: As a user, I can access the web-based "chat_app" directly without needing to authenticate or log in. Do you want to add anything else? If not, just press ENTER.',
+                                                            'User Story 2: As a user, I can start one-on-one conversations with another user on the "chat_app". Do you want to add anything else? If not, just press ENTER.',
+                                                            'User Story 3: As a user, I can send and receive messages in real-time within my one-on-one conversation on the "chat_app". Do you want to add anything else? If not, just press ENTER.',
+                                                            'User Story 4: As a user, I do not need to worry about deleting or storing my chats because the "chat_app" does not store chat histories. Do you want to add anything else? If not, just press ENTER.',
+                                                            'User Story 5: As a user, I will only be able to send text messages, as the "chat_app" does not support any kind of multimedia sharing like photos, videos, or files. Do you want to add anything else? If not, just press ENTER.',
+                                                            'User Story 6: As a user, I will not see any live typing indicators or read receipts since the "chat_app" does not provide any additional real-time functionality beyond message exchange. Do you want to add anything else? If not, just press ENTER.',
                                                         ]
                                                     })
         function_calls = DEVELOPMENT_PLAN
@@ -547,7 +547,8 @@ The development process will include the creation of user stories and tasks, bas
 
         # Then
         assert convo.messages[0]['content'].startswith('You are a tech lead in a software development agency')
-        assert convo.messages[1]['content'].startswith('You are working in a software development agency and a project manager and software architect approach you')
+        assert convo.messages[1]['content'].startswith(
+            'You are working in a software development agency and a project manager and software architect approach you')
 
         assert response is not None
         response = parse_agent_response(response, function_calls)

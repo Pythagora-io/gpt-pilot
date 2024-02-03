@@ -4,3 +4,4 @@ AFFIRMATIVE_ANSWERS = ['', 'y', 'yes', 'ok', 'okay', 'sure', 'absolutely', 'inde
 NEGATIVE_ANSWERS = ['n', 'no', 'skip', 'negative', 'not now', 'cancel', 'decline', 'stop', 'Keep my changes']
 STUCK_IN_LOOP = 'I\'m stuck in loop'
 NONE_OF_THESE = 'none of these'
+MAX_PROJECT_NAME_LENGTH = 50

@@ -28,7 +28,6 @@ You do not need to make any automated tests work.
 {% endif %}
 DO NOT specify commands to create any folders or files, they will be created automatically - just specify the relative path to each file that needs to be written.
 
-**IMPORTANT**
-You must not tell me to run a command in the database or anything OS related - only if some dependencies need to be installed. If there is a need to run an OS related command, specifically tell me that this should be labeled as "Human Intervention" and explain what the human needs to do.
+{{ human_intervention_explanation }}
 
 Never use the port 5000 to run the app, it's reserved.

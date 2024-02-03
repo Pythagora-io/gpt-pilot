@@ -3,8 +3,8 @@ Ok, now, take your previous message that starts with `{{ instructions_prefix }}`
 Each step can be either:
 
 * `command` - command to run (must be able to run on a {{ os }} machine, assume current working directory is project root folder)
-* `save_file` -  create new or update ONE existing file; use this if the existing file is smaller than 20 lines or if many lines need to be changed
-* `modify_file` - update ONE existing file; use this if the existing file is larger than 20 lines and only a few lines need to be updated
+* `save_file` -  create a NEW file
+* `modify_file` - update ONE EXISTING file
 * `human_intervention` - if you need the human to do something, use this type of step and explain in details what you want the human to do.
 
 If the step is of type `save_file` or `modify_file`, it needs to contain instructions on how to change only ONE file.

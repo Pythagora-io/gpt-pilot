@@ -56,12 +56,13 @@ class Developer(Agent):
 
         for i, dev_task in enumerate(self.project.development_plan):
             # don't create documentation for features
-            if not self.project.finished and not self.project.skip_steps:
+            if not self.project.finished:
                 current_progress_percent = round((i / total_tasks) * 100, 2)
 
                 for threshold in progress_thresholds:
                     if current_progress_percent > threshold and threshold not in documented_thresholds:
-                        self.project.technical_writer.document_project(current_progress_percent)
+                        if not self.project.skip_steps:
+                            self.project.technical_writer.document_project(current_progress_percent)
                         documented_thresholds.add(threshold)
 
             if self.project.tasks_to_load:
@@ -234,8 +235,8 @@ class Developer(Agent):
         step = task_steps[i]
         if 'code_change_description' in step:
             print(f'Implementing code changes for `{step["code_change_description"]}`')
-            code_monkey = CodeMonkey(self.project, self)
-            updated_convo = code_monkey.implement_code_changes(convo, step['code_change_description'], step)
+            code_monkey = CodeMonkey(self.project)
+            updated_convo = code_monkey.implement_code_changes(convo, step)
             if test_after_code_changes:
                 return self.test_code_changes(updated_convo, task_steps, i)
             else:
@@ -252,8 +253,8 @@ class Developer(Agent):
     def step_modify_file(self, convo, step, i, test_after_code_changes):
         data = step['modify_file']
         print(f'Updating existing file {data["name"]}: {data["code_change_description"].splitlines()[0]}')
-        code_monkey = CodeMonkey(self.project, self)
-        code_monkey.implement_code_changes(convo, data['code_change_description'], data)
+        code_monkey = CodeMonkey(self.project)
+        code_monkey.implement_code_changes(convo, data)
         return {"success": True}
 
     def step_command_run(self, convo, task_steps, i, success_with_cli_response=False):
@@ -404,13 +405,13 @@ class Developer(Agent):
 
     def should_retry_step_implementation(self, step, step_implementation_try):
         if step_implementation_try >= MAX_COMMAND_DEBUG_TRIES:
-            self.dev_help_needed(step)
+            return self.dev_help_needed(step)
 
         print(color_red_bold('\n--------- LLM Reached Token Limit ----------'))
         print(color_red_bold('Can I retry implementing the entire development step?'))
 
         answer = None
-        while answer.lower() not in AFFIRMATIVE_ANSWERS:
+        while answer is None or answer.lower() not in AFFIRMATIVE_ANSWERS:
             print('yes/no', type='buttons-only')
             answer = styled_text(
                 self.project,
@@ -432,6 +433,8 @@ class Developer(Agent):
                     color_red_bold('\n\nCan you please make it work?'))
         elif step['type'] == 'code_change':
             help_description = step['code_change_description']
+        elif step['type'] == 'modify_file':
+            help_description = step['modify_file']['code_change_description']
         elif step['type'] == 'human_intervention':
             help_description = step['human_intervention_description']
 
@@ -450,6 +453,7 @@ class Developer(Agent):
         answer = ''
         while answer.lower() != 'continue':
             print(color_red_bold('\n----------------------------- I need your help ------------------------------'))
+            print(color_red('\nHere are instructions for the issue I did not manage to solve:'))
             print(extract_substring(str(help_description)))
             print(color_red_bold('\n-----------------------------------------------------------------------------'))
             print('continue', type='buttons-only')
@@ -529,6 +533,7 @@ class Developer(Agent):
                         response = self.should_retry_step_implementation(step, step_implementation_try)
                         if 'retry' in response:
                             # TODO we can rewind this convo even more
+                            step_implementation_try += 1
                             convo.load_branch(function_uuid)
                             continue
                         elif 'success' in response:
@@ -543,7 +548,7 @@ class Developer(Agent):
                     else:
                         raise e
 
-        result = {"success": True}  # if all steps are finished, the task has been successfully implemented
+        result = {"success": True}  # if all steps are finished, the task has been successfully implemented... NOT!
         convo.load_branch(function_uuid)
         return self.task_postprocessing(convo, development_task, continue_development, result, function_uuid)
 
@@ -590,7 +595,7 @@ class Developer(Agent):
             logger.info('response: %s', response)
             user_feedback = response['user_input'] if 'user_input' in response else None
             if user_feedback == 'continue':
-                self.project.remove_debugging_logs_from_all_files()
+                # self.project.remove_debugging_logs_from_all_files()
                 return {"success": True, "user_input": user_feedback}
 
             if user_feedback is not None:
