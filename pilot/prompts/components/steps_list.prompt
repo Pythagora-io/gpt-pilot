@@ -1,8 +1,8 @@
 {% if task_steps and step_index is not none -%}
 The current task has been split into multiple steps, and each step is one of the following:
 * `command` - command to run
-* `save_file` or `code_change` -  create new or update existing file
-* `modify_file` - update large existing file
+* `save_file` -  create a NEW file
+* `modify_file` or `code_change` - update ONE EXISTING file
 * `human_intervention` - if the human needs to do something
 
 {% if step_index > 0 %}Here is the list of steps that have been executed:

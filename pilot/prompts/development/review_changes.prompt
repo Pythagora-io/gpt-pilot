@@ -1,0 +1,55 @@
+A developer on your team has been working on this task:
+
+{{ instructions }}
+
+Based on this instructions, the developer has made changes to file `{{ file_name }}`.
+
+Here is the original content of this file:
+```
+{{ old_content }}
+```
+
+Here is the diff of the changes:
+
+{% for hunk in hunks %}## Hunk {{ loop.index }}
+```diff
+{{ hunk }}
+```
+{% endfor %}
+
+As you can see, there {% if hunks|length == 1 %}is only one hunk in this diff, and it{% else %}are {hunks|length} hunks in this diff, and each{% endif %} starts with the `@@` header line.
+
+Think carefully about the instructions and review the proposed changes. For each hunk of change, decide whether it should be applied or should be ignored (for example if it is a code deletion or change that wasn't asked for). Finally, if the changes miss something that was in the instructions, mention that.
+
+Note that the developer may add logging (including `gpt_pilot_debugging_log`) or error handling that's not explicitly asked for, but is a part of good development practice. Unless these logging and error handling additions break something, you should not ignore those changes.
+
+Here is an example output if 3 of 4 hunks in the change should be applied and one of them should be ignored, and no other changes are needed:
+```
+{
+    "hunks": [
+        {
+            "number": 1,
+            "decision": "apply",
+            "reason": "Some explanation why this part of the change is important",
+        },
+        {
+            "number": 2,
+            "decision": "apply",
+            "reason": "Another explanation, for the 2nd hunk",
+        },
+        {
+            "number": 3,
+            "decision": "ignore",
+            "reason": "This hunk accidentally deletes important code",
+        },
+        {
+            "number": 4,
+            "decision": "apply",
+            "reason": "Explanation why the fourth hunk should be included in the change",
+        },
+    ],
+    "review_notes": "General review notes, if something is missing from the change you can comment about it here"
+}
+```
+
+IMPORTANT: The developer that wrote this is sloppy and has probably deleted some parts of the code that should not be deleted. Pay special attention to that in your review!
