@@ -62,5 +62,9 @@ You tried to solve this problem before but your colleague is telling you that yo
 
 It seems that the solutions you're proposing aren't working.
 
-Now, think about 5 alternative ways to get this code to work that are most probable to solve this issue. Order them in the order of the biggest probability of fixing the problem. A developer will then go through this list item by item, try to implement it, and check if it solved the issue until the end of the list.
+Now, think about 5 alternative solutions to get this code to work that are most probable to solve this issue.
+
+Every proposed solution needs to be concrete and not vague (eg, it cannot be "Review and change apps functionality") and based on the code changes. A solution can be complex if it's related to the same part of the code (eg. "Try changing the input variables X, Y and Z to a method N").
+
+Order them in the order of the biggest probability of fixing the problem. A developer will then go through this list item by item, try to implement it, and check if it solved the issue until the end of the list.
 Let's think step by step.
