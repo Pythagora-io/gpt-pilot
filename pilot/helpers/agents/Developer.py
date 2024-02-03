@@ -797,7 +797,7 @@ class Developer(Agent):
         }, ALTERNATIVE_SOLUTIONS)
 
         next_solution_to_try_index = self.ask_user_for_next_solution(response['alternative_solutions'])
-        if type(next_solution_to_try_index) is str and next_solution_to_try_index == NONE_OF_THESE:
+        if isinstance(next_solution_to_try_index, str) and next_solution_to_try_index == NONE_OF_THESE:
             return self.get_alternative_solutions(development_task, user_feedback, previous_solutions, tried_alternative_solutions_to_current_issue + response['alternative_solutions'])
 
         next_solution_to_try = response['alternative_solutions'].pop(next_solution_to_try_index - 1)
