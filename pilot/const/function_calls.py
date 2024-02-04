@@ -731,17 +731,17 @@ REVIEW_CHANGES = {
                                 "type": "integer",
                                 "description": "Index of the hunk in the diff. Starts from 1."
                             },
+                            "reason": {
+                                "type": "string",
+                                "desciprion": "Reason for applying or ignoring this hunk."
+                            },
                             "decision": {
                                 "type": "string",
                                 "enum": ["apply", "ignore"],
                                 "description": "Whether to apply this hunk (if it's a valid change) or ignore it."
-                            },
-                            "reason": {
-                                "type": "string",
-                                "desciprion": "Reason for allowing or ignoring this hunk."
                             }
                         },
-                        "required": ["number", "decision", "reason"],
+                        "required": ["number", "reason", "decision"],
                         "additionalProperties": False
                     },
                 },
