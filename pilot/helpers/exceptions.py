@@ -1,3 +1,5 @@
+import json
+
 from const.llm import MAX_GPT_MODEL_TOKENS
 
 
@@ -27,8 +29,16 @@ class TooDeepRecursionError(Exception):
 
 
 class ApiError(Exception):
-    def __init__(self, message):
+    def __init__(self, message, response=None):
         self.message = message
+        self.response = response
+        self.response_json = None
+        if response and hasattr(response, "text"):
+            try:
+                self.response_json = json.loads(response.text)
+            except Exception:  # noqa
+                pass
+
         super().__init__(message)
 
 

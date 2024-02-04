@@ -336,6 +336,8 @@ def check_if_command_successful(convo, command, cli_response, response, exit_cod
                                               'step_index': step_index,
                                           })
             logger.debug(f'LLM response to ran_command.prompt: {response}')
+            if response == 'DONE':
+                convo.remove_last_x_messages(2)
 
     return response
 
@@ -411,7 +413,7 @@ def execute_command_and_check_cli_response(convo, command: dict, task_steps=None
     Returns:
         tuple: A tuple containing the CLI response and the agent's response.
             - cli_response (str): The command output.
-            - response (str): 'DONE' or 'NEEDS_DEBUGGING'.
+            - response (str): 'DONE' or 'BUG'.
                 If `cli_response` is None, user's response to "Can I execute...".
     """
     # TODO: Prompt mentions `command` could be `INSTALLED` or `NOT_INSTALLED`, where is this handled?
@@ -483,7 +485,7 @@ def run_command_until_success(convo, command,
         response = response.strip()
 
     if response != 'DONE':
-        # 'NEEDS_DEBUGGING'
+        # 'BUG'
         print(color_red('Got incorrect CLI response:'))
         print(cli_response)
         print(color_red('-------------------'))

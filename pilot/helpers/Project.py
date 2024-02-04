@@ -32,6 +32,7 @@ from utils.ignore import IgnoreMatcher
 
 from utils.telemetry import telemetry
 from utils.task import Task
+from utils.utils import remove_lines_with_string
 
 
 class Project:
@@ -471,7 +472,7 @@ class Project:
                 app=self.app,
                 name=file['name'],
                 path=file['path'],
-                full_path=file['full_path'],
+                defaults={'full_path': file['full_path']},
             )
 
             file_snapshot, created = FileSnapshot.get_or_create(
@@ -590,3 +591,11 @@ class Project:
 
         # Keep only the elements from that index onwards
         setattr(self, list_name, new_list)
+
+    def remove_debugging_logs_from_all_files(self):
+        project_files = self.get_all_coded_files()
+        for file in project_files:
+            if 'gpt_pilot_debugging_log' in file['content'].lower():
+                # remove all lines that contain 'debugging_log'
+                file['content'] = remove_lines_with_string(file['content'], 'gpt_pilot_debugging_log')
+                self.save_file(file)
