@@ -417,8 +417,14 @@ class Project:
             # - /pilot -> /pilot/
             # - \pilot\server.js -> \pilot\server.js
             # - \pilot -> \pilot\
+            KNOWN_FILES = ["makefile", "dockerfile", "readme", "license"]  # known exceptions that break the heuristic
+            KNOWN_DIRS = []  # known exceptions that break the heuristic
             base = os.path.basename(path)
-            if base and "." not in base:
+            if (
+                base
+                and ("." not in base or base.lower() in KNOWN_DIRS)
+                and base.lower() not in KNOWN_FILES
+            ):
                 path += os.path.sep
 
             # In case we're in Windows and dealing with full paths, remove the drive letter.
