@@ -28,6 +28,8 @@ You do not need to make any automated tests work.
 {% endif %}
 DO NOT specify commands to create any folders or files, they will be created automatically - just specify the relative path to each file that needs to be written.
 
+{{ execution_order }}
+
 {{ human_intervention_explanation }}
 
 {{ file_size_limit }}

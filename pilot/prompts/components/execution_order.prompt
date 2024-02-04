@@ -1,0 +1,1 @@
+All the steps will be executed in order in which you give them, so it is very important that you think about all steps before you start listing them. For example, you should never code something before you install dependencies or you should never try access a file before it exists in project.
