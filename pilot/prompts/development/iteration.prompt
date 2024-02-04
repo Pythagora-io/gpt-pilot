@@ -44,6 +44,8 @@ Tell me all the new code that needs to be written or modified to implement curre
 **IMPORTANT**
 When there is an error in the code, the best way to debug the issue is to understand the values of different variables so usually, developers put logs around the code and print out the values variables important to fix this issue. If, and only if, your colleague's report is a bug report and not an improvement request, think about variables that you would like to know the value of in the code that would help you fix this issue and then add logs around the code that will help you resolve this issue. Whenever you add a log that is meant to debug an issue, on the each line on which you add a log, you **MUST** append a code comment `gpt_pilot_debugging_log` (for example, `// gpt_pilot_debugging_log` or `# gpt_pilot_debugging_log`) so that the developer can remove all these logs after this issue is fixed.
 
+{{ execution_order }}
+
 {{ file_size_limit }}
 
 You do not need to make any automated tests work.
