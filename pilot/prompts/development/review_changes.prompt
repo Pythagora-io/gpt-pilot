@@ -29,23 +29,23 @@ Here is an example output if 3 of 4 hunks in the change should be applied and on
     "hunks": [
         {
             "number": 1,
-            "decision": "apply",
             "reason": "Some explanation why this part of the change is important",
+            "decision": "apply"
         },
         {
             "number": 2,
-            "decision": "apply",
             "reason": "Another explanation, for the 2nd hunk",
+            "decision": "apply"
         },
         {
             "number": 3,
-            "decision": "ignore",
             "reason": "This hunk accidentally deletes important code",
+            "decision": "ignore"
         },
         {
             "number": 4,
-            "decision": "apply",
             "reason": "Explanation why the fourth hunk should be included in the change",
+            "decision": "apply"
         },
     ],
     "review_notes": "General review notes, if something is missing from the change you can comment about it here"
