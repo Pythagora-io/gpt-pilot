@@ -452,6 +452,33 @@ DEV_STEPS = {
     },
 }
 
+ALTERNATIVE_SOLUTIONS = {
+    'definitions': [
+        {
+            'name': 'get_alternative_solutions_to_issue',
+            'description': 'Gets alternative solutions to the recurring issue that was labeled as loop by the user.',
+            'parameters': {
+                'type': 'object',
+                "properties": {
+                    "description_of_tried_solutions": {
+                        'type': 'string',
+                        'description': 'A description of the solutions that were tried to solve the recurring issue that was labeled as loop by the user.',
+                    },
+                    "alternative_solutions": {
+                        'type': 'array',
+                        'description': 'List of all alternative solutions to the recurring issue that was labeled as loop by the user.',
+                        'items': {
+                            'type': 'string',
+                            'description': 'Development step that needs to be done to complete the entire task.',
+                        }
+                    }
+                },
+                "required": ['description_of_tried_solutions', 'alternative_solutions'],
+            },
+        }
+    ]
+}
+
 CODE_CHANGES = {
     'definitions': [
         {

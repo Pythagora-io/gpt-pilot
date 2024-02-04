@@ -24,38 +24,20 @@ You are currently working on task "{{ current_task.description }}" and you have 
 A part of the app is already finished.
 {{ files_list }}
 
-{#% if previous_solutions|length == 0 %#}
+
+{% if user_input != '' %}
 Now, your colleague who is testing the app "{{ name }}" sent you some additional info. Here it is:
 ```
 {{ user_input }}
 ```
-{#% elif %}
-You are trying to solve an issue that your colleague is reporting. You tried {{ previous_solutions|length }} times to solve it but it was unsuccessful.
-First time, your colleague gave you this report:
-{% for solution in previous_solutions %}
-----------------------------start_of_report_{{ loop.index + 1 }}----------------------------
-solution['report']
-----------------------------end_of_report_{{ loop.index + 1 }}----------------------------
-
-Then, you gave the following proposal (proposal_{{ loop.index + 1 }}) of what needs to be done to fix the issue:
-----------------------------start_of_proposal_{{ loop.index + 1 }}----------------------------
-solution['proposal']
-----------------------------end_of_of_proposal_{{ loop.index + 1 }}----------------------------
-
-{% if loop.index < previous_solutions|length %}
-Then, upon implementing these changes, your colleague came back with the following report:
 {% endif %}
-{% endfor %}
-
-After implementing these changes as well, your colleague who is testing the app "{{ name }}" sent you this report now:
+{% if next_solution_to_try is not none %}
+Focus on solving this issue in the following way:
 ```
-{{ user_input }}
+{{ next_solution_to_try }}
 ```
-
-Every time your proposals didn’t lead to the solution. This needs to be fixed and you need to try an alternative solution to this problem. Think step by step any see what are other ways how you this issue can be fixed, propose all changes that are needed to solve this issue and do not repeat previous mistakes.
-{% endif -%#}
-
-Can you debug this issue or implement changes to comply with the additional input?
+{% endif %}
+Can you debug this issue or implement changes to comply with the additional user input?
 
 Tell me all the new code that needs to be written or modified to implement current task and have it fully working. You can count that the environment is set up previously and packages listed in files are installed so tell me only commands needed for installation of new dependencies, if there are any.
 
