@@ -476,10 +476,7 @@ ALTERNATIVE_SOLUTIONS = {
                 "required": ['description_of_tried_solutions', 'alternative_solutions'],
             },
         }
-    ],
-    'functions': {
-        'parse_alternative_solutions': lambda solutions: solutions
-    },
+    ]
 }
 
 CODE_CHANGES = {

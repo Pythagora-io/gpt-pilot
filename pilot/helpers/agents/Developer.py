@@ -819,6 +819,6 @@ class Developer(Agent):
         elif next_solution_to_try_index.lower() == NONE_OF_THESE:
             next_solution_to_try_index = NONE_OF_THESE
         else:
-            next_solution_to_try_index = 0
+            next_solution_to_try_index = 1
 
         return next_solution_to_try_index

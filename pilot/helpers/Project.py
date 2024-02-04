@@ -515,7 +515,7 @@ class Project:
         reset_branch_id = None if convo is None else convo.save_branch()
 
         while answer.lower() != 'continue':
-            print(f'continue{f"/{STUCK_IN_LOOP}" if add_loop_button else ""}', type='button')
+            print('continue' + (f'/{STUCK_IN_LOOP}' if add_loop_button else ''), type='button')
             answer = ask_user(self, CHECK_AND_CONTINUE,
                               require_some_input=False,
                               hint=question)
