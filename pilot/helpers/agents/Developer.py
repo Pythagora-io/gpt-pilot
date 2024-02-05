@@ -394,7 +394,7 @@ class Developer(Agent):
             detailed_user_review_goal = self.project.last_detailed_user_review_goal['llm_response']['text']
 
         try:
-            if continue_development:
+            if continue_development and detailed_user_review_goal and detailed_user_review_goal != "DONE":
                 continue_description = detailed_user_review_goal if detailed_user_review_goal is not None else None
                 return self.continue_development(convo, last_branch_name, continue_description, development_task)
         except TooDeepRecursionError as e:
