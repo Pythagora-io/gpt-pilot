@@ -323,7 +323,7 @@ def rate_limit_exceeded_sleep(e, err_str):
 def trace_token_limit_error(request_tokens: int, messages: list[dict], err_str: str):
     # This must match files_list.prompt format in order to be able to count number of sent files
     FILES_SECTION_PATTERN = r".*---START_OF_FILES---(.*)---END_OF_FILES---"
-    FILE_PATH_PATTERN = r"^\*\*(.*)\*\*:$"
+    FILE_PATH_PATTERN = r"^\*\*(.*?)\*\*.*:$"
 
     sent_files = set()
     for msg in messages:

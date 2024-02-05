@@ -2,7 +2,6 @@ import json
 import re
 import subprocess
 import uuid
-from traceback import format_exc
 from os.path import sep
 
 from utils.style import color_yellow, color_yellow_bold, color_red_bold
