@@ -77,6 +77,7 @@ def test_get_file_contents(encoded, expected):
         "name": file_path.name,
         "path": str(file_path.parent.relative_to(file_path.anchor)),
         "full_path": file.name,
+        "lines_of_code": 1,
     }
     file.close()
     os.remove(file.name)
@@ -118,18 +119,21 @@ def test_get_directory_contents_mocked(mock_IgnoreMatcher, mock_os, mock_open):
         {
             "content": "file.txt",
             "full_path": np("/fake/root/file.txt"),
+            'lines_of_code': 1,
             "name": "file.txt",
             "path": "",
         },
         {
             "content": "foo.txt - 無為",
             "full_path": np("/fake/root/foo/foo.txt"),
+            'lines_of_code': 1,
             "name": "foo.txt",
             "path": "foo",
         },
         {
             "content": b"\xff\xff\xff",
             "full_path": np("/fake/root/bar/bar.txt"),
+            'lines_of_code': 1,
             "name": "bar.txt",
             "path": "bar",
         },
