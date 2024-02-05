@@ -188,7 +188,7 @@ class AgentConvo:
         for file in files:
             path = f"{file['path']}{sep}{file['name']}"
             content = file['content']
-            replacement_lines.append(f"**{path}**:\n```\n{content}\n```\n")
+            replacement_lines.append(f"**{path}** ({ file['lines_of_code'] } lines of code):\n```\n{content}\n```\n")
         replacement_lines.append("---END_OF_FILES---\n")
         replacement = "\n".join(replacement_lines)
 
