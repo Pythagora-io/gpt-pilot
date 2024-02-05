@@ -58,6 +58,12 @@ class ProductOwner(Agent):
 
         self.project.set_root_path(setup_workspace(self.project.args))
 
+        print(color_green_bold(
+            "GPT Pilot currently works best for web app projects using Node, Express and MongoDB. "
+            "You can use it with other technologies, but you may run into problems "
+            "(eg. React might not work as expected).\n"
+        ))
+
         self.project.main_prompt = ask_for_main_app_definition(self.project)
 
         print(json.dumps({'open_project': {
