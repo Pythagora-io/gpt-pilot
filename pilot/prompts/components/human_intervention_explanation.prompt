@@ -31,6 +31,6 @@ Here is an example when there are issues with writing to the MongoDB connection:
 
 * "Human Intervention"
 "1. Verify the MongoDB credentials provided have write permissions, not just read-only access.
-2. Confirm correct database and collection names are used in the insert command.
+2. Confirm correct database and collection names are used when connecting to database.
 3. Update credentials if necessary to include insert document permissions."
 ------------------------end_of_example_3---------------------------
