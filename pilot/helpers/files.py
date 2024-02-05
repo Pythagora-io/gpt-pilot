@@ -83,7 +83,7 @@ def get_file_contents(
         "path": relative_path,
         "content": file_content,
         "full_path": full_path,
-        "lines_of_code": file_content.count('\n') + 1
+        "lines_of_code": len(file_content.splitlines()),
     }
 
 
