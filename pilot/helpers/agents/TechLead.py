@@ -84,6 +84,7 @@ class TechLead(Agent):
         return
 
     def create_feature_summary(self, feature_description):
+        self.save_dev_steps = True
         self.convo_feature_summary = AgentConvo(self)
 
         llm_response = self.convo_feature_summary.send_message('development/feature_summary.prompt',
