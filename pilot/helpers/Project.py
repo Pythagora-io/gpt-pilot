@@ -417,7 +417,7 @@ class Project:
             # - /pilot -> /pilot/
             # - \pilot\server.js -> \pilot\server.js
             # - \pilot -> \pilot\
-            KNOWN_FILES = ["makefile", "dockerfile", "readme", "license"]  # known exceptions that break the heuristic
+            KNOWN_FILES = ["makefile", "dockerfile", "procfile", "readme", "license"]  # known exceptions that break the heuristic
             KNOWN_DIRS = []  # known exceptions that break the heuristic
             base = os.path.basename(path)
             if (

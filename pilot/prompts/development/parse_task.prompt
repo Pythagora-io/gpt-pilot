@@ -5,7 +5,7 @@ Each step can be either:
 * `command` - command to run (must be able to run on a {{ os }} machine, assume current working directory is project root folder)
 * `save_file` -  create a NEW file
 * `modify_file` - update ONE EXISTING file
-* `human_intervention` - if you need the human to do something, use this type of step and explain in details what you want the human to do.
+* `human_intervention` - if you need the human to do something, use this type of step and explain in details what you want the human to do. NEVER use `human_intervention` for testing, as testing will be done separately by a dedicated QA after all the steps are done.
 
 If the step is of type `save_file` or `modify_file`, it needs to contain instructions on how to change only ONE file.
 
@@ -14,6 +14,8 @@ If the step is of type `save_file` or `modify_file`, it needs to contain instruc
 {{ logs_and_error_handling }}
 
 **IMPORTANT**: In `code_change_description` field of `modify_file` step, you must provide full information (including code samples, if any) from the previous message, so that the developer can correctly implement the change.  For `save_file`, you MUST include FULL file contents, without omitting anything or adding comments like `// rest of the code goes here`.
+
+**IMPORTANT**: Remember, NEVER output human intervention steps to do manual tests, even if the previous message asks for it! The testing will be done *after* these steps and you MUTS NOT include testing in these steps.
 
 Examples:
 ------------------------example_1---------------------------
