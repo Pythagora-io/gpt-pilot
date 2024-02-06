@@ -1,6 +1,5 @@
-[INST]I received an invalid JSON response. The response was a parseable JSON object, but it is not valid against the schema I provided. The JSON is invalid {{ invalid_reason }}
+I received an invalid JSON response. The response was a parseable JSON object, but it is not valid against the schema I provided. The JSON is invalid {{ invalid_reason }}
 
 Please try again with a valid JSON object, referring to the previous JSON schema I provided above.
 
 A response which starts with "I'm sorry for the confusion" would be an example of an invalid response, a preamble must NOT be included.
-[/INST]
