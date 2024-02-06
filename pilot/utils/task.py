@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from utils.telemetry import telemetry
 from utils.exit import trace_code_event
-from const.telemetry import LOOP_THRESHOLD, LOOP_THRESHOLD_EARLY
+from const.telemetry import LOOP_THRESHOLD
 
 
 class Task:
@@ -72,8 +72,6 @@ class Task:
         :param value: value to increment by
         """
         self.data[key] += value
-        if key == 'steps' and self.data[key] == LOOP_THRESHOLD_EARLY:
-            self.send(name='loop-early', force=True)
         if key == 'steps' and self.data[key] == LOOP_THRESHOLD + 1:
             self.send()
 

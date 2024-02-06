@@ -1,6 +1,6 @@
 {% if files|length > 0 %}Here are files that are currently implemented:
 ---START_OF_FILES---{% for file in files %}
-**{{ file.path }}/{{ file.name }}**:
+**{{ file.path }}/{{ file.name }}** ({{ file.lines_of_code }} lines of code):
 ```
 {{ file.content }}
 ```

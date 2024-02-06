@@ -17,9 +17,10 @@ Each step can be either:
 * `code_change` -  step will change the code and you need to thoroughly describe what needs to be implemented. I will implement the requested changes and let you know.
 * `human_intervention` - if you need the human to do something, use this type of step and explain in details what you want the human to do.
 
+{{ execution_order }}
+
 Also, make sure that at least the last step has `check_if_fixed` set to TRUE.
 
-**IMPORTANT**
-When you think about in which file should the new code go to, always try to make files as small as possible and put code in more smaller files rather than in one big file. Whenever a file becomes too large (more than 50 lines of code) split it into smaller files.
+{{ file_size_limit }}
 
 {# After this, you need to decide what to do next. You can rerun the command `{{ command }}` to check if the problem is fixed or run another command with `run_command` or change more code with `implement_code_changes`. #}

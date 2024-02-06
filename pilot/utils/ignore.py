@@ -72,20 +72,29 @@ class IgnoreMatcher:
         """
         Check if the given file is larger than the threshold.
 
+        This also returns True for files that aren't accessible, since
+        we want to ignore those as well.
+
         :param path: FULL path to the file to check.
         :return: True if the file is larger than the threshold, False otherwise.
         """
         if not os.path.isfile(path):
             return False
 
-        return bool(os.path.getsize(path) > IGNORE_SIZE_THRESHOLD)
+        try:
+            return bool(os.path.getsize(path) > IGNORE_SIZE_THRESHOLD)
+        except:  # noqa
+            return True
 
     def is_binary(self, path: str) -> bool:
         """
-        Check if the given file is binary.
+        Check if the given file is binary and should be ignored.
+
+        This also returns True if the file doesn't exist or can't be opened,
+        since we want to ignore those kinds of files as well.
 
         :param path: FULL path to the file to check.
-        :return: True if the file is binary, False otherwise.
+        :return: True if the file should be ignored, False otherwise.
         """
         if not os.path.isfile(path):
             return False
@@ -93,5 +102,7 @@ class IgnoreMatcher:
         try:
             open(path, "r", encoding="utf-8").read(128*1024)
             return False
-        except UnicodeDecodeError:
+        except:  # noqa
+            # If we can't open the file for any reason (eg. PermissionError), it's
+            # best to ignore it anyway
             return True

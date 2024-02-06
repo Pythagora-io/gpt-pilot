@@ -77,13 +77,15 @@ def test_get_file_contents(encoded, expected):
         "name": file_path.name,
         "path": str(file_path.parent.relative_to(file_path.anchor)),
         "full_path": file.name,
+        "lines_of_code": 1,
     }
     file.close()
     os.remove(file.name)
 
 @patch("pilot.helpers.files.open")
 @patch("pilot.helpers.files.os")
-def test_get_directory_contents_mocked(mock_os, mock_open):
+@patch("pilot.helpers.files.IgnoreMatcher")
+def test_get_directory_contents_mocked(mock_IgnoreMatcher, mock_os, mock_open):
     """
     Test that get_directory_contents traverses the directory tree,
     ignores specified ignore files/folders, and can handle both
@@ -97,6 +99,7 @@ def test_get_directory_contents_mocked(mock_os, mock_open):
     mock_os.path.join = os.path.join
     mock_os.path.normpath = os.path.normpath
     mock_os.path.basename = os.path.basename
+    mock_IgnoreMatcher.return_value.ignore = lambda path: os.path.basename(path) in ["to-ignore", "to-ignore.txt"]
 
     mock_walk = mock_os.walk
     mock_walk.return_value = [
@@ -116,18 +119,21 @@ def test_get_directory_contents_mocked(mock_os, mock_open):
         {
             "content": "file.txt",
             "full_path": np("/fake/root/file.txt"),
+            'lines_of_code': 1,
             "name": "file.txt",
             "path": "",
         },
         {
             "content": "foo.txt - 無為",
             "full_path": np("/fake/root/foo/foo.txt"),
+            'lines_of_code': 1,
             "name": "foo.txt",
             "path": "foo",
         },
         {
             "content": b"\xff\xff\xff",
             "full_path": np("/fake/root/bar/bar.txt"),
+            'lines_of_code': 1,
             "name": "bar.txt",
             "path": "bar",
         },

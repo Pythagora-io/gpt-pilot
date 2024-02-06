@@ -5,7 +5,6 @@ import sys
 import time
 import json
 import tiktoken
-from traceback import format_exc
 from prompt_toolkit.styles import Style
 
 from jsonschema import validate, ValidationError
@@ -178,11 +177,14 @@ def get_tokens_in_messages_from_openai_error(error_message):
     """
 
     match = re.search(r"your messages resulted in (\d+) tokens", error_message)
-
     if match:
         return int(match.group(1))
-    else:
-        return None
+
+    match = re.search(r"Requested (\d+). The input or output tokens must be reduced", error_message)
+    if match:
+        return int(match.group(1))
+
+    return None
 
 
 def retry_on_exception(func):
@@ -246,11 +248,12 @@ def retry_on_exception(func):
                     # Attempt retry if the JSON schema is invalid, but avoid getting stuck in a loop
                     if function_error_count < 3:
                         continue
-                if "context_length_exceeded" in err_str:
+                if "context_length_exceeded" in err_str or "Request too large" in err_str:
                     # If the specific error "context_length_exceeded" is present, simply return without retry
                     # spinner_stop(spinner)
                     n_tokens = get_tokens_in_messages_from_openai_error(err_str)
                     print(color_red(f"Error calling LLM API: The request exceeded the maximum token limit (request size: {n_tokens}) tokens."))
+                    trace_token_limit_error(n_tokens, args[0]['messages'], err_str)
                     raise TokenLimitError(n_tokens, MAX_GPT_MODEL_TOKENS)
                 if "rate_limit_exceeded" in err_str:
                     rate_limit_exceeded_sleep(e, err_str)
@@ -283,10 +286,10 @@ def retry_on_exception(func):
     return wrapper
 
 
-def rate_limit_exceeded_sleep (e, err_str):
+def rate_limit_exceeded_sleep(e, err_str):
     extra_buffer_time = float(os.getenv('RATE_LIMIT_EXTRA_BUFFER', 6))  # extra buffer time to wait, defaults to 6 secs
     wait_duration_sec = extra_buffer_time  # Default time to wait in seconds
-    
+
     # Regular expression to find milliseconds
     match = re.search(r'Please try again in (\d+)ms.', err_str)
     if match:
@@ -315,6 +318,36 @@ def rate_limit_exceeded_sleep (e, err_str):
     print(color_yellow(message))
     print(color_yellow(f"Retrying in {wait_duration_sec} second(s)... with extra buffer of: {extra_buffer_time} second(s)"))
     time.sleep(wait_duration_sec)
+
+
+def trace_token_limit_error(request_tokens: int, messages: list[dict], err_str: str):
+    # This must match files_list.prompt format in order to be able to count number of sent files
+    FILES_SECTION_PATTERN = r".*---START_OF_FILES---(.*)---END_OF_FILES---"
+    FILE_PATH_PATTERN = r"^\*\*(.*?)\*\*.*:$"
+
+    sent_files = set()
+    for msg in messages:
+        if not msg.get("content"):
+            continue
+        m = re.match(FILES_SECTION_PATTERN, msg["content"], re.DOTALL)
+        if not m:
+            continue
+        files_section = m.group(1)
+        msg_files = re.findall(FILE_PATH_PATTERN, files_section, re.MULTILINE)
+        sent_files.update(msg_files)
+
+    # Importing here to avoid circular import problem
+    from utils.exit import trace_code_event
+    trace_code_event(
+        "llm-request-token-limit-error",
+        {
+            "n_messages": len(messages),
+            "n_tokens": request_tokens,
+            "files": sorted(sent_files),
+            "error": err_str,
+        }
+    )
+
 
 @retry_on_exception
 def stream_gpt_completion(data, req_type, project):
