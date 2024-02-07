@@ -99,6 +99,9 @@ class CodeMonkey(Agent):
             files,
         )
 
+        if content and content != file_content:
+            content = self.format_file(file_name, content)
+
         # Review the changes and only apply changes that are useful/approved
         if content and content != file_content:
             content = self.review_change(convo, code_change_description, file_name, file_content, content)
@@ -171,6 +174,46 @@ class CodeMonkey(Agent):
             "files": files,
         }, GET_FILE_TO_MODIFY)
         return llm_response["file"]
+
+    def format_file(
+        self,
+        file_name: str,
+        content: str,
+    ) -> str:
+        """
+        Format the file using an available formatter, if any.
+        """
+        def prettier(name: str) -> list[str]:
+            return ["npx", "prettier", "--stdin-filepath", name]
+
+        FORMATTERS = {
+            ".js": prettier,
+            ".json": prettier,
+            ".ts": prettier,
+            ".jsx": prettier,
+            ".vue": prettier,
+            ".tsx": prettier,
+            ".css": prettier,
+            ".scss": prettier,
+            ".py": lambda name: ["ruff", "format", "--stdin-filename", name],
+            ".go": lambda _: ["gofmt"],
+        }
+
+        _, file_ext = os.path.splitext(file_name)
+        formatter = FORMATTERS.get(file_ext, None)
+        if not formatter:
+            return
+
+        from subprocess import check_output, CalledProcessError
+        format_cmd = formatter(file_name)
+        try:
+            return check_output(format_cmd, input=content, text=True)
+        except FileNotFoundError:
+            # formatter not installer, silently ignore and do nothing
+            return content
+        except CalledProcessError as e:
+            raise ValueError(f"Syntax check failed with:\n{e.stderr}")
+
 
     def review_change(
         self,
