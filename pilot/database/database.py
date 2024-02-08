@@ -424,11 +424,14 @@ def save_feature(app_id, summary, messages, previous_step):
 def get_features_by_app_id(app_id):
     try:
         app = get_app(app_id)
-        features = Feature.select().where(Feature.app == app).order_by(Feature.created_at)
+        features = DevelopmentSteps.select().where(
+            (DevelopmentSteps.app_id == app) &
+            (DevelopmentSteps.prompt_path.contains("feature_plan"))
+        ).order_by(DevelopmentSteps.created_at)
         features_dict = [model_to_dict(feature) for feature in features]
 
         # return only 'summary' because we store all prompt_data to DB
-        return [{'summary': feature['summary']} for feature in features_dict]
+        return [{'summary': feature['prompt_data']['feature_description'], 'id': feature['id']} for feature in features_dict]
     except DoesNotExist:
         raise ValueError(f"No app with id: {app_id}")
 

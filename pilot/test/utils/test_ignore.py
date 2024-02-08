@@ -29,7 +29,13 @@ from os.path import sep, join, dirname
         (join(dirname(__file__), "subdirectory", "node_modules"), True),
     ]
 )
-def test_default_ignore(path, expected):
+@patch("utils.ignore.os.path.getsize")
+@patch("utils.ignore.os.path.isfile")
+@patch("utils.ignore.open")
+def test_default_ignore(mock_open, mock_isfile, mock_getsize, path, expected):
+    mock_open.return_value.read.return_value = "fake-content"
+    mock_isfile.return_value = True
+    mock_getsize.return_value = 100
     matcher = IgnoreMatcher(root_path=dirname(__file__))
     assert matcher.ignore(path) == expected
 
@@ -44,7 +50,13 @@ def test_default_ignore(path, expected):
         ("*.min.js", f"public{sep}js{sep}min.js", False),
     ]
 )
-def test_additional_ignore(ignore, path, expected):
+@patch("utils.ignore.os.path.getsize")
+@patch("utils.ignore.os.path.isfile")
+@patch("utils.ignore.open")
+def test_additional_ignore(mock_open, mock_isfile, mock_getsize, ignore, path, expected):
+    mock_open.return_value.read.return_value = "fake-content"
+    mock_isfile.return_value = True
+    mock_getsize.return_value = 100
     matcher = IgnoreMatcher([ignore])
     assert matcher.ignore(path) == expected
 
@@ -66,7 +78,7 @@ def test_full_path(ignore, path, expected):
     ("size", "expected"),
     [
         (1024*1024, True),  # 1MB
-        (102400, False),    # 100KB
+        (49999, False),    # one byte less than the threshold
     ]
 )
 @patch("utils.ignore.os.path.isfile")
@@ -100,3 +112,18 @@ def test_ignore_binary_files(content, expected):
         # Check both relative and absolute paths
         assert matcher.ignore("testfile.txt") is expected
         assert matcher.ignore(path) is expected
+
+@patch("utils.ignore.os.path.isfile")
+@patch("utils.ignore.os.path.getsize")
+@patch("utils.ignore.open")
+def test_ignore_permission_denied(mock_open, mock_getsize, mock_isfile):
+    """
+    Test that files that can't be accessed are ignored.
+    """
+    mock_isfile.return_value = True
+    mock_getsize.return_value = 100
+    mock_open.side_effect = PermissionError("Permission denied")
+
+    matcher = IgnoreMatcher()
+    assert matcher.ignore("somefile.txt") is True
+    mock_open.assert_called_once_with("somefile.txt", "r", encoding="utf-8")

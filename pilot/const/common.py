@@ -26,6 +26,7 @@ DEFAULT_IGNORE_PATHS = [
     '.gpt-pilot',
     '.idea',
     '.vscode',
+    '.next',
     '.DS_Store',
     '__pycache__',
     'node_modules',
@@ -38,11 +39,13 @@ DEFAULT_IGNORE_PATHS = [
     "*.min.css",
     "*.svg",
     "*.csv",
+    "*.log",
+    "go.sum",
 ]
 IGNORE_PATHS = DEFAULT_IGNORE_PATHS + [
     folder for folder
     in os.environ.get('IGNORE_PATHS', '').split(',')
     if folder
 ]
-IGNORE_SIZE_THRESHOLD = 102400  # 100K+ files are ignored by default
+IGNORE_SIZE_THRESHOLD = 50000  # 50K+ files are ignored by default
 PROMPT_DATA_TO_IGNORE = {'directory_tree', 'name'}

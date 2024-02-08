@@ -25,3 +25,12 @@ Here is an example of good response for the situation where the user needs to en
 6. Click 'Generate'.
 Then, use your gmail address and the password generated in the step #6 and put it into the .env file."
 ------------------------end_of_example_2---------------------------
+
+------------------------start_of_example_3---------------------------
+Here is an example when there are issues with writing to the MongoDB connection:
+
+* "Human Intervention"
+"1. Verify the MongoDB credentials provided have write permissions, not just read-only access.
+2. Confirm correct database and collection names are used when connecting to database.
+3. Update credentials if necessary to include insert document permissions."
+------------------------end_of_example_3---------------------------
