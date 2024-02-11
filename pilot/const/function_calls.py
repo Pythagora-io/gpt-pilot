@@ -282,6 +282,10 @@ ARCHITECTURE = {
                             "required": ["name", "description"],
                         },
                     },
+                    'template': {
+                        'type': ['string', 'null'],
+                        'description': 'One of the available project templates.',
+                    },
                 },
                 "required": ["architecture", "system_dependencies", "package_dependencies"],
             },

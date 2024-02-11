@@ -12,6 +12,20 @@ Based on these details, think step by step to design the architecture for the pr
 1. First, design and describe project architecture in general terms
 2. Then, list any system dependencies that should be installed on the system prior to start of development.  For each system depedency, output a {{ os }} command to check whether it's installed.
 3. Finally, list any other 3rd party packages or libraries that will be used (that will be installed later using packager a package manager in the project repository/environment).
+4. {% if templates %}Optionally, choose a project starter template.{% else %}(for this project there are no available starter/boilerplate templates, so there's no template to choose){% endif %}
+
+{% if templates %}You have an option to use a project template that implements standard boilerplate/scaffolding so you can start faster and be more productive. To be considered, a template must be compatible with the architecture and technologies you've choosen (it doesn't need to implement everything that will be used in the project, just a useful subset). If multiple templates can be considered, pick one that's the best match.
+
+If no project templates are a good match, don't pick any! It's better to start from scratch than to use a template that is not a good fit for the project and then spend time reworking it to fit the requirements.
+
+Here are the available project templates:
+{% for name, tpl in templates.items() %}
+### {{ name }}
+{{ tpl['description']}}
+
+Contains:
+{{ tpl['summary']}}
+{% endfor %}{% endif %}
 
 *IMPORTANT*: You must follow these rules while creating your project:
 
@@ -42,9 +56,10 @@ Output only your response in JSON format like in this example, without other com
     "package_dependencies": [
         {
             "name": "express",
-            "description": "Express web server for Node",
+            "description": "Express web server for Node"
         },
         ...
-    ]
+    ],
+    "template": "name of the project template to use" // or null if you decide not to use a project template
 }
 ```
