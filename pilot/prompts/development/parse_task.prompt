@@ -26,7 +26,7 @@ Examples:
       "type": "modify_file",
       "modify_file": {
         "name": "server.js",
-        "path": "/server.ejs",
+        "path": "/server.js",
         "code_change_description": "Update code to use port from environment instead of hardcoding it.\nReplace this line:\nconst port = 3001;\nwith\nconst port = process.env.PORT || 3001;\n",
       },
     },
@@ -34,7 +34,7 @@ Examples:
       "type": "modify_file",
       "modify_file": {
         "name": "server.js",
-        "path": "/server.ejs",
+        "path": "/server.js",
         "code_change_description": "Within findByEmail() method of User model, replace `return await User.find({email});` with a try/catch block:\ntry\n{  return await User.find({email});\n} catch (err)\n{ return null; }\n",
       },
     },
@@ -44,6 +44,15 @@ Examples:
         "name": "README.md",
         "path": "/README.md",
         "content": "# Example Readme\n\nThis is an example readme for the example project.\n\nThanks to everyone who contributes to this repository!\n"
+      }
+    },
+    {
+      "type": "command",
+      "command": {
+        "command": "ls",
+        "timeout": "5000",
+        "success_message": "README.md",
+        "command_id": "check_existence_of_readme_file"
       }
     }
   ]
