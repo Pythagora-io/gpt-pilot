@@ -95,7 +95,7 @@ class ProductOwner(Agent):
         instructions = generate_messages_from_description(main_prompt,
                                                           self.project.args['app_type'],
                                                           self.project.args['name'])
-        return get_additional_info_from_openai(self.project, instructions)
+        return get_additional_info_from_openai(self.project, instructions, self.modle)
 
     def generate_project_summary(self, high_level_messages: list[dict]):
         print(color_green_bold('Project Summary:\n'))

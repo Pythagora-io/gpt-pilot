@@ -73,7 +73,7 @@ def ask_user(project, question: str, require_some_input=True, hint: str = None, 
             return answer
 
 
-def get_additional_info_from_openai(project, messages):
+def get_additional_info_from_openai(project, messages, model):
     """
     Runs the conversation between Product Owner and LLM.
     Provides the user's initial description, LLM asks the user clarifying questions and user responds.
@@ -91,7 +91,7 @@ def get_additional_info_from_openai(project, messages):
         # Obtain clarifications using the OpenAI API
         # { 'text': new_code }
         try:
-            response = create_gpt_chat_completion(messages, 'additional_info', project)
+            response = create_gpt_chat_completion(messages, 'additional_info', project, model)
         except ApiError:
             response = None
 

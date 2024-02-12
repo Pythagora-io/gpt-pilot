@@ -76,7 +76,7 @@ def test_api_access(project) -> bool:
     ]
 
     endpoint = os.getenv('ENDPOINT')
-    model = os.getenv('MODEL_NAME', 'gpt-4')
+    model = os.getenv('DEFAULT_MODEL_NAME', 'gpt-4')
     try:
         response = create_gpt_chat_completion(messages, 'project_description', project)
         if response is None or response == {}:
@@ -89,8 +89,7 @@ def test_api_access(project) -> bool:
         logger.error(f"The request to {endpoint} model {model} API failed: {err}", exc_info=err)
         return False
 
-
-def create_gpt_chat_completion(messages: List[dict], req_type, project,
+def create_gpt_chat_completion(messages: List[dict], req_type, project, model:str,
                                function_calls: FunctionCallSet = None,
                                prompt_data: dict = None):
     """
@@ -111,8 +110,9 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
              {'function_calls': {'name': str, arguments: {...}}}
     """
 
+
     gpt_data = {
-        'model': os.getenv('MODEL_NAME', 'gpt-4'),
+        'model': model,
         'n': 1,
         'temperature': 1,
         'top_p': 1,
@@ -396,7 +396,7 @@ def stream_gpt_completion(data, req_type, project):
     # print(yellow("Stream response from OpenAI:"))
 
     # Configure for the selected ENDPOINT
-    model = os.getenv('MODEL_NAME', 'gpt-4')
+    model = os.getenv('DEFAULT_MODEL_NAME', 'gpt-4')
     endpoint = os.getenv('ENDPOINT')
 
     logger.info(f'> Request model: {model}')
