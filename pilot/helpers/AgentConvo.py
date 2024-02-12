@@ -3,6 +3,7 @@ import re
 import subprocess
 import uuid
 from os.path import sep
+from pilot.helpers import Agent
 
 from utils.style import color_yellow, color_yellow_bold, color_red_bold
 from database.database import save_development_step
@@ -17,6 +18,7 @@ from helpers.cli import running_processes
 
 
 class AgentConvo:
+    agent: Agent;
     """
     Represents a conversation with an agent.
 
@@ -24,7 +26,7 @@ class AgentConvo:
         agent: An instance of the agent participating in the conversation.
     """
 
-    def __init__(self, agent):
+    def __init__(self, agent: Agent):
         # [{'role': 'system'|'user'|'assistant', 'content': ''}, ...]
         self.messages: list[dict] = []
         self.branches = {}
@@ -62,7 +64,7 @@ class AgentConvo:
 
         try:
             self.replace_files()
-            response = create_gpt_chat_completion(self.messages, self.high_level_step, self.agent.project,
+            response = create_gpt_chat_completion(self.messages, self.high_level_step, self.agent.project, self.agent.model,
                                                   function_calls=function_calls, prompt_data=prompt_data)
         except TokenLimitError as e:
             save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, '', str(e))

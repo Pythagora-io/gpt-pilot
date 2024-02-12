@@ -78,7 +78,7 @@ def test_api_access(project) -> bool:
     endpoint = os.getenv('ENDPOINT')
     model = os.getenv('DEFAULT_MODEL_NAME', 'gpt-4')
     try:
-        response = create_gpt_chat_completion(messages, 'project_description', project)
+        response = create_gpt_chat_completion(messages, 'project_description', project, model)
         if response is None or response == {}:
             print(color_red("Error connecting to the API. Please check your API key/endpoint and try again."))
             logger.error(f"The request to {endpoint} model {model} API failed.")
