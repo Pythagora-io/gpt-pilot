@@ -65,3 +65,14 @@ class TestProductOwner:
         assert 'EVERYTHING_CLEAR' not in summary
         assert 'neutral tone' not in summary
         assert 'clarification' not in summary
+
+    def test_product_owner_model_override(self, monkeypatch):
+        # Given any project
+        project = create_project()
+
+        model = 'some_model'
+        monkeypatch.setenv('PRODUCT_OWNER_MODEL_NAME', model)
+
+        # and a developer who will execute any task
+        agent = ProductOwner(project)
+        assert agent.model == model

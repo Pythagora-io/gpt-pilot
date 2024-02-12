@@ -225,44 +225,13 @@ class TestDeveloper:
         assert mock_requests_post.call_count == 0
 
 
-    @patch('helpers.AgentConvo.save_development_step')
-    @patch('helpers.AgentConvo.create_gpt_chat_completion', return_value={'text': '{"tasks": [{"command": "ls -al"}]}'})
     def test_developer_model_override(self, monkeypatch):
         # Given any project
         project = create_project()
-        project.project_description = 'Test Project'
-        project.development_plan = [{
-            'description': 'Do stuff',
-            'user_review_goal': 'Do stuff',
-        }]
-        project.get_all_coded_files = lambda: []
-        project.current_step = 'test'
+
+        model = 'some_model'
+        monkeypatch.setenv('FULL_STACK_DEVELOPER_MODEL_NAME', model)
 
         # and a developer who will execute any task
-        developer = Developer(project)
-        developer.execute_task = MagicMock()
-        developer.execute_task.return_value = {'success': True}
-
-        # When
-        developer.implement_task(0, {'description': 'Do stuff'})
-
-        # Then we parse the response correctly and send list of steps to execute_task()
-        assert developer.execute_task.call_count == 1
-        assert developer.execute_task.call_args[0][1] == [{'command': 'ls -al'}]
-
-        # # Given any project
-        # project = create_project()
-        # project.project_description = 'Test Project'
-        # project.development_plan = [{
-        #     'description': 'Do stuff',
-        #     'user_review_goal': 'Do stuff',
-        # }]
-        # project.get_all_coded_files = lambda: []
-        # project.current_step = 'test'
-
-        # model = 'some_model'
-        # monkeypatch.setenv('FULL_STACK_DEVELOPER_MODEL_NAME', model)
-
-        # # and a developer who will execute any task
-        # developer = Developer(project)
-        # assert developer.modle == model
+        agent = Developer(project)
+        assert agent.model == model
