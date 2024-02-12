@@ -9,6 +9,8 @@ Each step can be either:
 
 If the step is of type `save_file` or `modify_file`, it needs to contain instructions on how to change only ONE file.
 
+{{ file_naming }}
+
 {{ execution_order }}
 
 {{ logs_and_error_handling }}
@@ -26,7 +28,7 @@ Examples:
       "type": "modify_file",
       "modify_file": {
         "name": "server.js",
-        "path": "/server.ejs",
+        "path": "/server.js",
         "code_change_description": "Update code to use port from environment instead of hardcoding it.\nReplace this line:\nconst port = 3001;\nwith\nconst port = process.env.PORT || 3001;\n",
       },
     },
@@ -34,7 +36,7 @@ Examples:
       "type": "modify_file",
       "modify_file": {
         "name": "server.js",
-        "path": "/server.ejs",
+        "path": "/server.js",
         "code_change_description": "Within findByEmail() method of User model, replace `return await User.find({email});` with a try/catch block:\ntry\n{  return await User.find({email});\n} catch (err)\n{ return null; }\n",
       },
     },
