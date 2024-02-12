@@ -14,6 +14,6 @@ the full contents of the updated file, without skipping over any content
 ```
 ------------------------end_of_format---------------------------
 
-**IMPORTANT**: Your reply MUST NOT omit any code in the new implementation or substitute anything with comments like `// .. rest of the code goes here ..` or `# insert existing code here`, because I will overwrite the existing file with the content you provide. Output ONLY the content for this file, without additional explanation. Your output MUST start with ``` and MUST end with ``` and include only the complete file contents.
+**IMPORTANT**: Your reply MUST NOT omit any code in the new implementation or substitute anything with comments like `// .. rest of the code goes here ..` or `# insert existing code here`, because I will overwrite the existing file with the content you provide. Output ONLY the content for this file, without additional explanation, suggestions or notes. Your output MUST start with ``` and MUST end with ``` and include only the complete file contents.
 
 {{ logs_and_error_handling }}
