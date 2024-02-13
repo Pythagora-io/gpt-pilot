@@ -91,11 +91,11 @@ def step_save_file_definition():
                 "properties": {
                     "name": {
                         "type": "string",
-                        "description": "Name of the file in camelCase that needs to be created or replaced."
+                        "description": "Name of the file that needs to be created or replaced."
                     },
                     "path": {
                         "type": "string",
-                        "description": "Full path of the file (with the file name in camelCase) that needs to be created."
+                        "description": "Full path of the file (with the file name) that needs to be created."
                     },
                     "content": {
                         "type": "string",
