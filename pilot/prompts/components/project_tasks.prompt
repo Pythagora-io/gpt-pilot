@@ -5,7 +5,7 @@ Each task needs to be related only to the development of this {{ task_type }} an
 **IMPORTANT**
 As an experienced tech lead you always follow rules on how to create tasks. Dividing project into tasks is extremely important job and you have to do it very carefully.
 
-Now, based on the project details provided{% if task_type  == 'feature' %} and new feature description{% endif %}, think task by task and create the entire development plan{% if task_type  == 'feature' %} for new feature{% elif task_type  == 'app' %}. Start from the project setup and specify each task until the moment when the entire app should be fully working{% endif %} while strictly following these rules:
+Now, based on the project details provided{% if task_type  == 'feature' %} and new feature description{% endif %}, think task by task and create the entire development plan{% if task_type  == 'feature' %} for new feature{% elif task_type  == 'app' %}. {% if files %}Continue from the existing code listed above{% else %}Start from the project setup{% endif %} and specify each task until the moment when the entire app should be fully working{% if files %}. You should not reimplement what's already done - just continue from the implementation already there{% endif %}{% endif %} while strictly following these rules:
 
 Rule #1
 There should never be a task that is only testing or ensuring something works, every task must have coding involved. Have this in mind for every task, but it is extremely important for last task of project. Testing if {{ task_type }} works will be done as part of each task.

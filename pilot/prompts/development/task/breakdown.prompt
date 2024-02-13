@@ -2,10 +2,8 @@ You are working on a {{ app_type }} called "{{ name }}" and you need to write co
 
 {{ project_details }}
 
-{% if current_task_index != 0 or task_type == 'feature' %}
 {{ files_list }}
 
-{% endif %}
 We've broken the development of this {{ task_type }} down to these tasks:
 ```{% for task in development_tasks %}
 {{ loop.index }}. {{ task['description'] }}

@@ -7,6 +7,8 @@ from utils.utils import should_execute_step, generate_app_data
 from database.database import save_progress, get_progress_steps, save_feature, get_features_by_app_id
 from logger.logger import logger
 from const.function_calls import DEVELOPMENT_PLAN
+from templates import apply_project_template
+from utils.exit import trace_code_event
 
 DEVELOPMENT_PLANNING_STEP = 'development_planning'
 
@@ -28,6 +30,8 @@ class TechLead(Agent):
             self.project.development_plan = step['development_plan']
             return
 
+        existing_summary = apply_project_template(self.project)
+
         # DEVELOPMENT PLANNING
         print(color_green_bold("Starting to create the action plan for development...\n"))
         logger.info("Starting to create the action plan for development...")
@@ -43,6 +47,8 @@ class TechLead(Agent):
                 "user_tasks": self.project.user_tasks,
                 "architecture": self.project.architecture,
                 "technologies": self.project.system_dependencies + self.project.package_dependencies,
+                "existing_summary": existing_summary,
+                "files": self.project.get_all_coded_files(),
                 "task_type": 'app',
             }, DEVELOPMENT_PLAN)
         self.project.development_plan = llm_response['plan']

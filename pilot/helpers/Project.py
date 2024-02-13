@@ -85,6 +85,7 @@ class Project:
         self.architecture = ""
         self.system_dependencies = []
         self.package_dependencies = []
+        self.project_template = None
         self.development_plan = None
         self.dot_pilot_gpt = DotGptPilot(log_chat_completions=True)
 
