@@ -296,33 +296,6 @@ ARCHITECTURE = {
     },
 }
 
-FILTER_OS_TECHNOLOGIES = {
-    'definitions': [
-        return_array_from_prompt('os specific technologies', 'os specific technology', 'technologies')
-    ],
-    'functions': {
-        'process_os_specific_technologies': process_os_technologies
-    },
-}
-
-INSTALL_TECH = {
-    'definitions': [
-        return_array_from_prompt('os specific technologies', 'os specific technology', 'technologies')
-    ],
-    'functions': {
-        'process_os_specific_technologies': process_os_technologies
-    },
-}
-
-COMMANDS_TO_RUN = {
-    'definitions': [
-        return_array_from_prompt('commands', 'command', 'commands')
-    ],
-    'functions': {
-        'process_commands': run_commands
-    },
-}
-
 COMMAND_TO_RUN = {
     'definitions': [
         {
@@ -366,96 +339,6 @@ IMPLEMENT_TASK = {
     },
 }
 
-DEV_STEPS = {
-    'definitions': [
-        {
-            'name': 'break_down_development_task',
-            'description': 'Breaks down the development task into smaller steps that need to be done to implement the entire task.',
-            'parameters': {
-                'type': 'object',
-                "properties": {
-                    "tasks": {
-                        'type': 'array',
-                        'description': 'List of development steps that need to be done to complete the entire task.',
-                        'items': {
-                            'type': 'object',
-                            'description': 'Development step that needs to be done to complete the entire task.',
-                            'properties': {
-                                'type': {
-                                    'type': 'string',
-                                    'description': 'Type of the development step that needs to be done to complete the entire task - it can be "command" or "code_change".',
-                                },
-                                'description': {
-                                    'type': 'string',
-                                    'description': 'Description of the development step that needs to be done.',
-                                },
-                            },
-                            'required': ['type', 'description'],
-                        }
-                    }
-                },
-                "required": ['tasks'],
-            },
-        },
-        {
-            'name': 'run_commands',
-            'description': 'Run all commands in the given list. Each command needs to be a single command that can be executed.',
-            'parameters': {
-                'type': 'object',
-                "properties": {
-                    "commands": {
-                        'type': 'array',
-                        'description': 'List of commands that need to be run to complete the currrent task. Each command cannot be anything other than a single CLI command that can be independetly run.',
-                        'items': {
-                            'type': 'string',
-                            'description': 'A single command that needs to be run to complete the current task.',
-                        }
-                    }
-                },
-                "required": ['commands'],
-            },
-        },
-        {
-            'name': 'process_code_changes',
-            'description': 'Implements all the code changes outlined in the description.',
-            'parameters': {
-                'type': 'object',
-                "properties": {
-                    "code_change_description": {
-                        'type': 'string',
-                        'description': 'A detailed description of what needs to be done to implement all the code changes from the task.',
-                    }
-                },
-                "required": ['code_change_description'],
-            },
-        },
-        {
-            'name': 'get_files',
-            'description': 'Returns development files that are currently implemented so that they can be analized and so that changes can be appropriatelly made.',
-            'parameters': {
-                'type': 'object',
-                'properties': {
-                    'files': {
-                        'type': 'array',
-                        'description': 'List of files that need to be analyzed to implement the required changes.',
-                        'items': {
-                            'type': 'string',
-                            'description': 'A single file name that needs to be analized to implement the reqired changes. Remember, this is a file name with path relative to the project root. For example, if a file path is `{{project_root}}/models/model.py`, this value needs to be `models/model.py`.',
-                        }
-                    }
-                },
-                'required': ['files'],
-            },
-        }
-    ],
-    'functions': {
-        'break_down_development_task': lambda tasks: (tasks, 'more_tasks'),
-        'run_commands': lambda commands: (commands, 'run_commands'),
-        'process_code_changes': lambda code_change_description: (code_change_description, 'code_changes'),
-        'get_files': return_files
-    },
-}
-
 ALTERNATIVE_SOLUTIONS = {
     'definitions': [
         {
@@ -481,45 +364,6 @@ ALTERNATIVE_SOLUTIONS = {
             },
         }
     ]
-}
-
-CODE_CHANGES = {
-    'definitions': [
-        {
-            'name': 'break_down_development_task',
-            'description': 'Implements all the smaller tasks that need to be done to complete the entire development task.',
-            'parameters': {
-                'type': 'object',
-                "properties": {
-                    "tasks": {
-                        'type': 'array',
-                        'description': 'List of smaller development steps that need to be done to complete the entire task.',
-                        'items': {
-                            'type': 'object',
-                            'description': 'A smaller development step that needs to be done to complete the entire task.  Remember, if you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. If you need to create a directory that doesn\'t exist and is not the root project directory, always create it by running a command `mkdir`',
-                            'properties': {
-                                'type': {
-                                    'type': 'string',
-                                    'enum': ['command', 'code_change'],
-                                    'description': 'Type of the development step that needs to be done to complete the entire task.',
-                                },
-                                'command': command_definition('Command that needs to be run to complete the current task. This should be used only if the task is of a type "command".', 'Timeout in milliseconds that represent the approximate time the command takes to finish. This should be used only if the task is of a type "command". If you need to run a command that doesn\'t finish by itself (eg. a command to run an app), put the timeout to 3000 milliseconds. Remember, this is not in seconds but in milliseconds so likely it always needs to be greater than 1000.'),
-                                'code_change_description': {
-                                    'type': 'string',
-                                    'description': 'Description of a the development step that needs to be done. This should be used only if the task is of a type "code_change" and it should thoroughly describe what needs to be done to implement the code change.',
-                                },
-                            },
-                            'required': ['type'],
-                        }
-                    }
-                },
-                "required": ['tasks'],
-            },
-        }
-    ],
-    'functions': {
-        'break_down_development_task': lambda tasks: tasks,
-    },
 }
 
 DEVELOPMENT_PLAN = {
@@ -594,7 +438,6 @@ GET_FILE_TO_MODIFY = {
     }
 }
 
-
 GET_TEST_TYPE = {
     'definitions': [{
         'name': 'test_changes',
@@ -653,41 +496,6 @@ DEBUG_STEPS_BREAKDOWN = {
     'functions': {
         'start_debugging': lambda steps: steps
     },
-}
-
-GET_MISSING_SNIPPETS = {
-    'definitions': [{
-        'name': 'get_missing_snippets',
-        'description': 'Gets the list of snippets that are missing from the code.',
-        'parameters': {
-            'type': 'object',
-            'properties': {
-                'snippets': {
-                    'type': 'array',
-                    'description': 'List of snippets that are missing from the code.',
-                    'items': {
-                        'type': 'object',
-                        'properties': {
-                            'comment_label': {
-                                'type': 'string',
-                                'description': 'Comment label that identifies the snippet that needs to be inserted.',
-                            },
-                            'snippet': {
-                                'type': 'string',
-                                'description': 'The code from earlier in this conversation that needs to be inserted instead of the comment. **IMPORTANT** You always need to write the entire snippet, and under no circumstances should you ever leave any part of the code snippet unwritten. **IMPORTANT** Every single line of code that exists in the place where the comment lives right now should be replaced. **IMPORTANT** Do not include any code that is above or below the comment but only the code that should be in the position of the comment. **IMPORTANT** Make sure that you write the entire snippet that should be inserted in the place of the comment_label, including all control structures, error handling, and any other relevant logic that was in the original code.',
-                            },
-                            'file_path': {
-                                'type': 'string',
-                                'description': 'Path to the file where the snippet needs to be inserted.',
-                            }
-                        },
-                        'required': ['comment_label', 'snippet', 'file_path'],
-                    }
-                }
-            },
-            'required': ['snippets'],
-        },
-    }],
 }
 
 GET_DOCUMENTATION_FILE = {
