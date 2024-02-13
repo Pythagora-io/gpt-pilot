@@ -28,7 +28,7 @@ class TestTechLead:
         project = create_project()
 
         model = 'some_model'
-        monkeypatch.setenv('ARCHITECT_MODEL_NAME', model)
+        monkeypatch.setenv('CODE_MONKEY_MODEL_NAME', model)
 
         # and a developer who will execute any task
         agent = CodeMonkey(project)
