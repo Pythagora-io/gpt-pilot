@@ -535,13 +535,9 @@ DEVELOPMENT_PLAN = {
                             'description': {
                                 'type': 'string',
                                 'description': 'Very detailed description of the development task that needs to be done to implement the entire plan.',
-                            },
-                            'user_review_goal': {
-                                'type': 'string',
-                                'description': 'User review goal that will determine if a task is done or not, but from a user perspective since it will be reviewed by a human.',
                             }
                         },
-                        'required': ['description', 'user_review_goal'],
+                        'required': ['description'],
                     },
                 },
             },

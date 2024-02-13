@@ -9,6 +9,8 @@ Each step can be either:
 
 If the step is of type `save_file` or `modify_file`, it needs to contain instructions on how to change only ONE file.
 
+{{ file_naming }}
+
 {{ execution_order }}
 
 {{ logs_and_error_handling }}
