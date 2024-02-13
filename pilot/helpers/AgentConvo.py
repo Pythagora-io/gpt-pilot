@@ -18,7 +18,7 @@ from helpers.cli import running_processes
 
 
 class AgentConvo:
-    agent: Agent;
+    agent: Agent
     """
     Represents a conversation with an agent.
 
