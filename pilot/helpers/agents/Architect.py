@@ -67,7 +67,6 @@ class Architect(Agent):
         llm_response = self.convo_architecture.send_message('architecture/technologies.prompt',
             {'name': self.project.args['name'],
              'app_summary': self.project.project_description,
-             'clarifications': self.project.clarifications,
              'user_stories': self.project.user_stories,
              'user_tasks': self.project.user_tasks,
              "os": platform.system(),

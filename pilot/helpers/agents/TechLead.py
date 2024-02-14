@@ -36,13 +36,11 @@ class TechLead(Agent):
         print(color_green_bold("Starting to create the action plan for development...\n"))
         logger.info("Starting to create the action plan for development...")
 
-        # TODO add clarifications
         llm_response = self.convo_development_plan.send_message('development/plan.prompt',
             {
                 "name": self.project.args['name'],
                 "app_type": self.project.args['app_type'],
                 "app_summary": self.project.project_description,
-                "clarifications": self.project.clarifications,
                 "user_stories": self.project.user_stories,
                 "user_tasks": self.project.user_tasks,
                 "architecture": self.project.architecture,
@@ -71,7 +69,6 @@ class TechLead(Agent):
                 "name": self.project.args['name'],
                 "app_type": self.project.args['app_type'],
                 "app_summary": self.project.project_description,
-                "clarifications": self.project.clarifications,
                 "user_stories": self.project.user_stories,
                 "user_tasks": self.project.user_tasks,
                 "architecture": self.project.architecture,

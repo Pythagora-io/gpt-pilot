@@ -113,7 +113,6 @@ class ProductOwner(Agent):
         self.project.user_stories = self.convo_user_stories.continuous_conversation('user_stories/specs.prompt', {
             'name': self.project.args['name'],
             'prompt': self.project.project_description,
-            'clarifications': self.project.project_description_messages,
             'app_type': self.project.args['app_type'],
             'END_RESPONSE': END_RESPONSE
         })
