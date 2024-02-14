@@ -91,6 +91,7 @@ def test_api_access(project) -> bool:
 
 
 def create_gpt_chat_completion(messages: List[dict], req_type, project,
+                               temperature: float = 1.0,
                                function_calls: FunctionCallSet = None,
                                prompt_data: dict = None):
     """
@@ -100,6 +101,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
     :param messages: [{ "role": "system"|"assistant"|"user", "content": string }, ... ]
     :param req_type: 'project_description' etc. See common.STEPS
     :param project: project
+    :param temperature: (optional) float
     :param function_calls: (optional) {'definitions': [{ 'name': str }, ...]}
         see `IMPLEMENT_CHANGES` etc. in `pilot/const/function_calls.py`
     :param prompt_data: (optional) { 'prompt': str, 'variables': { 'variable_name': 'variable_value', ... } }
@@ -111,7 +113,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
     gpt_data = {
         'model': os.getenv('MODEL_NAME', 'gpt-4'),
         'n': 1,
-        'temperature': 1,
+        'temperature': temperature,
         'top_p': 1,
         'presence_penalty': 0,
         'frequency_penalty': 0,

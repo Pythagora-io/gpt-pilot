@@ -31,6 +31,7 @@ class AgentConvo:
         self.log_to_user = True
         self.agent = agent
         self.high_level_step = self.agent.project.current_step
+        self.temperature = None
 
         # add system message
         system_message = get_sys_message(self.agent.role, self.agent.project.args)
@@ -63,7 +64,8 @@ class AgentConvo:
         try:
             self.replace_files()
             response = create_gpt_chat_completion(self.messages, self.high_level_step, self.agent.project,
-                                                  function_calls=function_calls, prompt_data=prompt_data)
+                                                  function_calls=function_calls, prompt_data=prompt_data,
+                                                  temperature=self.temperature)
         except TokenLimitError as e:
             save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, '', str(e))
             raise e
