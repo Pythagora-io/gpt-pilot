@@ -102,14 +102,6 @@ class Architect(Agent):
             print('continue', type='buttons-only')
             ask_user(self.project, "Press ENTER if you still want to proceed. If you'd like to modify the project description, close the app and start a new one.", require_some_input=False)
 
-        # TODO: Project.args should be a defined class so that all of the possible args are more obvious
-        if self.project.args.get('advanced', False):
-            llm_response = self.convo_architecture.get_additional_info_from_user(ARCHITECTURE)
-            if llm_response is not None:
-                self.project.architecture = llm_response["architecture"]
-                self.project.system_dependencies = llm_response["system_dependencies"]
-                self.project.package_dependencies = llm_response["package_dependencies"]
-
         logger.info(f"Final architecture: {self.project.architecture}")
 
         save_progress(self.project.args['app_id'], self.project.current_step, {
