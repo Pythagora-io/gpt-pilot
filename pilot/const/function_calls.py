@@ -131,7 +131,7 @@ def step_modify_file_definition():
                     },
                     "code_change_description": {
                         "type": "string",
-                        "description": "Detailed description, with code snippets and any relevant context/explanation, of the changes that the developer should do."
+                        "description": "Empty string"
                     }
                 },
                 "required": ["name", "path", "code_change_description"]

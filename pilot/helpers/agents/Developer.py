@@ -252,7 +252,7 @@ class Developer(Agent):
 
     def step_modify_file(self, convo, step, i, test_after_code_changes):
         data = step['modify_file']
-        print(f'Updating existing file {data["name"]}: {data["code_change_description"].splitlines()[0]}')
+        print(f'Updating existing file {data["name"]}')
         code_monkey = CodeMonkey(self.project)
         code_monkey.implement_code_changes(convo, data)
         return {"success": True}

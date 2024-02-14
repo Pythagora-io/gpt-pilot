@@ -114,7 +114,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
     gpt_data = {
         'model': os.getenv('MODEL_NAME', 'gpt-4'),
         'n': 1,
-        'temperature': 1,
+        'temperature': 0.7,
         'top_p': 1,
         'presence_penalty': 0,
         'frequency_penalty': 0,

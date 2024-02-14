@@ -2,12 +2,8 @@ I need to modify file `{{ file_name }}` that currently looks like this:
 ```
 {{ file_content }}
 ```
-This file needs to be modified by these instructions:
----------------------start_of_instructions------------------------------
-{{ code_changes_description }}
-----------------------end_of_instructions-----------------------------
 
-I want you to implement the instructions and show me the COMPLETE NEW VERSION of this file in this format:
+I want you to implement changes described in previous message and show me the COMPLETE NEW VERSION of this file in this format:
 -----------------------format----------------------------
 ```
 the full contents of the updated file, without skipping over any content

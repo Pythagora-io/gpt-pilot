@@ -1,8 +1,5 @@
-A developer on your team has been working on this task:
-
-{{ instructions }}
-
-Based on this instructions, the developer has made changes to file `{{ file_name }}`.
+A developer on your team has been working on the task described in previous message.
+Based on those instructions, the developer has made changes to file `{{ file_name }}`.
 
 Here is the original content of this file:
 ```
