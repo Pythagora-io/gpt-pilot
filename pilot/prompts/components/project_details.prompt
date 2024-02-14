@@ -3,15 +3,7 @@ Here is a high level description of "{{ name }}":
 {{ app_summary }}
 ```
 
-{% if clarifications %}Here are some additional questions and answers to clarify the apps description:
-```
-{% for clarification in clarifications %}
-Q: {{ clarification.question }}
-A: {{ clarification.answer }}
-{% endfor %}
-```
-
-{% endif %}{% if architecture %}Here is a short description of the project architecture:
+{% if architecture %}Here is a short description of the project architecture:
 {{ architecture }}
 
 {% endif %}{% if user_stories %}Here are user stories that specify how users use "{{ name }}":

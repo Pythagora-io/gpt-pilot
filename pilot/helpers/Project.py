@@ -79,7 +79,6 @@ class Project:
         self.current_step = None
         self.name = None
         self.project_description = None
-        self.clarifications = None
         self.user_stories = None
         self.user_tasks = None
         self.architecture = ""

@@ -34,7 +34,6 @@ class TechnicalWriter(Agent):
             "name": self.project.args['name'],
             "app_type": self.project.args['app_type'],
             "app_summary": self.project.project_description,
-            "clarifications": self.project.clarifications,
             "user_stories": self.project.user_stories,
             "user_tasks": self.project.user_tasks,
             "directory_tree": self.project.get_directory_tree(True),

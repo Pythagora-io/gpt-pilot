@@ -266,28 +266,3 @@ class AgentConvo:
             prompt = get_prompt(prompt_path, prompt_data)
             logger.info('\n>>>>>>>>>> User Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', prompt)
             self.messages.append({"role": "user", "content": prompt})
-
-    def get_additional_info_from_user(self, function_calls: FunctionCallSet = None):
-        """
-        Asks user if he wants to make any changes to last message in conversation.
-
-        Args:
-            function_calls: Optional function calls to be included in the message.
-
-        Returns:
-            The response from the agent OR None if user didn't ask for change.
-        """
-        llm_response = None
-        while True:
-            print(color_yellow(
-                "Please check this message and say what needs to be changed. If everything is ok just press ENTER", ))
-            changes = ask_user(self.agent.project, self.messages[-1]['content'], require_some_input=False)
-            if changes.lower() == '':
-                break
-
-            llm_response = self.send_message('utils/update.prompt',
-                                             {'changes': changes},
-                                             function_calls)
-
-        logger.info('Getting additional info from user done')
-        return llm_response
