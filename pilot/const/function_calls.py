@@ -87,47 +87,15 @@ def step_save_file_definition():
             },
             "save_file": {
                 "type": "object",
-                "description": "A file that needs to be created or file that needs to be completely replaced. This should only be used for new files.",
+                "description": "A file that should be created or updated.",
                 "properties": {
                     "name": {
                         "type": "string",
-                        "description": "Name of the file that needs to be created or replaced."
+                        "description": "Name of the file that will be created (if it doesn't exist) or updated (if it already exists)."
                     },
                     "path": {
                         "type": "string",
-                        "description": "Full path of the file (with the file name) that needs to be created."
-                    },
-                    "content": {
-                        "type": "string",
-                        "description": "Full content of the file that needs to be implemented. Remember, you MUST NOT omit any of the content that should go into this file."
-                    }
-                },
-                "required": ["name", "path", "content"]
-            }
-        },
-        "required": ["type", "save_file"]
-    }
-
-
-def step_modify_file_definition():
-    return {
-        "type": "object",
-        "properties": {
-            "type": {
-                "const": "modify_file",
-                "description": dev_step_type_description()
-            },
-            "modify_file": {
-                "type": "object",
-                "description": "A file that should be modified. This should only be used for existing files.",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "description": "Name of the existing file that needs to be updated."
-                    },
-                    "path": {
-                        "type": "string",
-                        "description": "Full path of the file with the file name that needs to be updated."
+                        "description": "Full path of the file with the file name."
                     },
                     "code_change_description": {
                         "type": "string",
@@ -137,7 +105,35 @@ def step_modify_file_definition():
                 "required": ["name", "path", "code_change_description"]
             }
         },
-        "required": ["type", "modify_file"]
+        "required": ["type", "save_file"]
+    }
+
+
+def step_delete_file_definition():
+    return {
+        "type": "object",
+        "properties": {
+            "type": {
+                "const": "delete_file",
+                "description": dev_step_type_description()
+            },
+            "delete_file": {
+                "type": "object",
+                "description": "A file that should be deleted. This should only be used for existing files that should get removed from the project.",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the existing file that needs to be deleted."
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "Full path of the file with the file name that needs to be deleted."
+                    }
+                },
+                "required": ["name", "path"]
+            }
+        },
+        "required": ["type", "delete_file"]
     }
 
 
@@ -155,23 +151,6 @@ def step_human_intervention_definition():
             }
         },
         "required": ["type", "human_intervention_description"]
-    }
-
-
-def step_code_change_definition():
-    return {
-        "type": "object",
-        "properties": {
-            "type": {
-                "const": "code_change",
-                "description": dev_step_type_description()
-            },
-            "code_change_description": {
-                "type": "string",
-                "description": "Description of a step in debugging this issue when there are code changes required. This should thoroughly describe what needs to be done to implement the code change for a single file - it cannot include changes for multiple files."
-            }
-        },
-        "required": ["type", "code_change_description"]
     }
 
 
@@ -324,7 +303,7 @@ IMPLEMENT_TASK = {
                             "oneOf": [
                                 step_command_definition(),
                                 step_save_file_definition(),
-                                step_modify_file_definition(),
+                                step_delete_file_definition(),
                                 step_human_intervention_definition(),
                             ]
                         }
@@ -483,7 +462,7 @@ DEBUG_STEPS_BREAKDOWN = {
                         'items': {
                             "oneOf": [
                                 step_command_definition(True),
-                                step_code_change_definition(),
+                                step_save_file_definition(),
                                 step_human_intervention_definition(),
                             ]
                         }

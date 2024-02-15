@@ -76,24 +76,22 @@ class CodeMonkey(Agent):
         """
         Implement code changes described in `code_changes_description`.
 
-        :param convo: conversation to continue)
+        :param convo: conversation to continue (must contain file coding/modification instructions)
         :param step: information about the step being implemented
         """
-        code_change_description = step['code_change_description']
-
-        standalone = False
-        if not convo:
-            standalone = True
-            convo = AgentConvo(self)
+        code_change_description = step.get('code_change_description')
 
         files = self.project.get_all_coded_files()
         file_name, file_content = self.get_original_file(code_change_description, step, files)
 
+        if file_content:
+            print(f'Updating existing file {file_name}')
+        else:
+            print(f'Creating new file {file_name}')
+
         # Get the new version of the file
         content = self.replace_complete_file(
             convo,
-            standalone,
-            code_change_description,
             file_content,
             file_name,
             files,
@@ -121,8 +119,6 @@ class CodeMonkey(Agent):
     def replace_complete_file(
         self,
         convo: AgentConvo,
-        standalone: bool,
-        code_changes_description: str,
         file_content: str,
         file_name: str,
         files: list[dict]
@@ -143,9 +139,6 @@ class CodeMonkey(Agent):
         Note: if even this fails for any reason, the original content is returned instead.
         """
         llm_response = convo.send_message('development/implement_changes.prompt', {
-            "full_output": True,
-            "standalone": standalone,
-            "code_changes_description": code_changes_description,
             "file_content": file_content,
             "file_name": file_name,
             "files": files,
