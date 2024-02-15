@@ -4,6 +4,7 @@ import re
 import json
 
 from const.messages import WHEN_USER_DONE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS, STUCK_IN_LOOP, NONE_OF_THESE
+from utils.exit import trace_code_event
 from utils.style import (
     color_green,
     color_green_bold,
@@ -223,14 +224,25 @@ class Developer(Agent):
 
     def step_delete_file(self, convo, step, i, test_after_code_changes):
         """
-        What could possibly go wrong?
+        Delete a file from the project.
+
+        This doesn't delete the files yet, but measures how often LLM
+        neads to clean up (delete) entire files.
         """
         data = step['delete_file']
-        print(f'Deleting file {data["name"]} [not implemented yet]')
+        trace_code_event(
+            "delete-file-stub",
+            data,
+        )
+
 
     def step_save_file(self, convo, step, i, test_after_code_changes):
+        # Backwards
         if 'modify_file' in step:
             step['save_file'] = step.pop('modify_file')
+        elif 'code_change' in step:
+            step['save_file'] = step.pop('code_change')
+
         data = step['save_file']
         code_monkey = CodeMonkey(self.project)
         code_monkey.implement_code_changes(convo, data)
@@ -413,7 +425,8 @@ class Developer(Agent):
         elif step['type'] == 'human_intervention':
             help_description = step['human_intervention_description']
         else:
-            help_description = repr(step['type'])
+            # This should never happen on steps other than command and HI, but just in case
+            help_description = step['type']
 
         # TODO remove this
         def extract_substring(s):
@@ -476,11 +489,11 @@ class Developer(Agent):
                         # if need_to_see_output and 'cli_response' in result:
                         #     result['user_input'] = result['cli_response']
 
-                    elif step['type'] == 'save_file':
+                    elif step['type'] in ['save_file', 'modify_file', 'code_change']:
                         result = self.step_save_file(convo, step, i, test_after_code_changes)
 
                     elif step['type'] == 'delete_file':
-                        result = self.step_delete(convo, step, i, test_after_code_changes)
+                        result = self.step_delete_file(convo, step, i, test_after_code_changes)
 
                     elif step['type'] == 'human_intervention':
                         result = self.step_human_intervention(convo, task_steps, i)
