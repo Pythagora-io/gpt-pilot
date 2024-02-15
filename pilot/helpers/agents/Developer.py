@@ -221,38 +221,17 @@ class Developer(Agent):
                 logger.warning('Testing at end of task failed')
                 break
 
-    def step_code_change(self, convo, task_steps, i, test_after_code_changes):
+    def step_delete_file(self, convo, step, i, test_after_code_changes):
         """
-        :param convo: AgentConvo
-        :param task_steps: list of steps
-        :param i: index of the step that is being implemented
-        :param test_after_code_changes: bool
-        :return: {
-          'success': bool
-          'user_input': string_from_human
-        }
+        What could possibly go wrong?
         """
-        step = task_steps[i]
-        if 'code_change_description' in step:
-            print(f'Implementing code changes for `{step["code_change_description"]}`')
-            code_monkey = CodeMonkey(self.project)
-            updated_convo = code_monkey.implement_code_changes(convo, step)
-            if test_after_code_changes:
-                return self.test_code_changes(updated_convo, task_steps, i)
-            else:
-                return {"success": True}
+        data = step['delete_file']
+        print(f'Deleting file {data["name"]} [not implemented yet]')
 
+    def step_save_file(self, convo, step, i, test_after_code_changes):
+        if 'modify_file' in step:
+            step['save_file'] = step.pop('modify_file')
         data = step['save_file']
-        if not self.project.skip_steps:
-            delta_lines = len(data.get("content", "").splitlines())
-            telemetry.inc("created_lines", delta_lines)
-
-        self.project.save_file(data)
-        return {"success": True}
-
-    def step_modify_file(self, convo, step, i, test_after_code_changes):
-        data = step['modify_file']
-        print(f'Updating existing file {data["name"]}')
         code_monkey = CodeMonkey(self.project)
         code_monkey.implement_code_changes(convo, data)
         return {"success": True}
@@ -431,12 +410,10 @@ class Developer(Agent):
                     color_red_bold('I tried running the following command but it doesn\'t seem to work:\n\n') +
                     color_white_bold(step['command']['command']) +
                     color_red_bold('\n\nCan you please make it work?'))
-        elif step['type'] == 'code_change':
-            help_description = step['code_change_description']
-        elif step['type'] == 'modify_file':
-            help_description = step['modify_file']['code_change_description']
         elif step['type'] == 'human_intervention':
             help_description = step['human_intervention_description']
+        else:
+            help_description = repr(step['type'])
 
         # TODO remove this
         def extract_substring(s):
@@ -499,11 +476,11 @@ class Developer(Agent):
                         # if need_to_see_output and 'cli_response' in result:
                         #     result['user_input'] = result['cli_response']
 
-                    elif step['type'] in ['save_file', 'code_change']:
-                        result = self.step_code_change(convo, task_steps, i, test_after_code_changes)
+                    elif step['type'] == 'save_file':
+                        result = self.step_save_file(convo, step, i, test_after_code_changes)
 
-                    elif step['type'] == 'modify_file':
-                        result = self.step_modify_file(convo, step, i, test_after_code_changes)
+                    elif step['type'] == 'delete_file':
+                        result = self.step_delete(convo, step, i, test_after_code_changes)
 
                     elif step['type'] == 'human_intervention':
                         result = self.step_human_intervention(convo, task_steps, i)
