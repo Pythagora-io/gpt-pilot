@@ -15,7 +15,7 @@ Each step can be either:
 
 {{ logs_and_error_handling }}
 
-**IMPORTANT**: Remember, NEVER output human intervention steps to do manual tests, even if the previous message asks for it! The testing will be done *after* these steps and you MUTS NOT include testing in these steps.
+**IMPORTANT**: Remember, NEVER output human intervention steps to do manual tests or coding tasks, even if the previous message asks for it! The testing will be done *after* these steps and you MUTS NOT include testing in these steps.
 
 Examples:
 ------------------------example_1---------------------------
