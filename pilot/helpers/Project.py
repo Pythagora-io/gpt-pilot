@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Tuple
 
 import peewee
+from playhouse.shortcuts import model_to_dict
 
 from const.messages import CHECK_AND_CONTINUE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS, STUCK_IN_LOOP
 from utils.style import color_yellow_bold, color_cyan, color_white_bold, color_red_bold
@@ -261,6 +262,29 @@ class Project:
         """
         # TODO remove hardcoded path
         return build_directory_tree(self.root_path + '/tests')
+
+    def get_files_from_db_by_step_id(self, step_id):
+        """
+        Get all coded files associated with a specific step_id.
+
+        Args:
+            step_id (int): The ID of the step.
+
+        Returns:
+            list: A list of coded files associated with the step_id.
+        """
+        if step_id is None:
+            return []
+
+        file_snapshots = FileSnapshot.select().where(FileSnapshot.development_step_id == step_id)
+
+        return [{
+            "name": item['file']['name'],
+            "path": item['file']['path'],
+            "full_path": item['file']['full_path'],
+            'content': item['content'],
+            "lines_of_code": len(item['content'].splitlines()),
+        } for item in [model_to_dict(file) for file in file_snapshots]]
 
     def get_all_coded_files(self):
         """

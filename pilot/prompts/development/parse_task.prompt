@@ -3,11 +3,11 @@ Ok, now, take your previous message that starts with `{{ instructions_prefix }}`
 Each step can be either:
 
 * `command` - command to run (must be able to run on a {{ os }} machine, assume current working directory is project root folder)
-* `save_file` -  create a NEW file
-* `modify_file` - update ONE EXISTING file
+* `save_file` - create or update ONE file
+* `delete_file` - delete a file that is no longer used
 * `human_intervention` - if you need the human to do something, use this type of step and explain in details what you want the human to do. NEVER use `human_intervention` for testing, as testing will be done separately by a dedicated QA after all the steps are done.
 
-If the step is of type `save_file` or `modify_file`, it needs to contain instructions on how to change only ONE file.
+**IMPORTANT**: In `code_change_description` field of `save_file` step, you must provide empty string. If multiple changes are required for same file, you must provide single `save_file` step for each file.
 
 {{ file_naming }}
 
@@ -15,9 +15,7 @@ If the step is of type `save_file` or `modify_file`, it needs to contain instruc
 
 {{ logs_and_error_handling }}
 
-**IMPORTANT**: In `code_change_description` field of `modify_file` step, you must provide full information (including code samples, if any) from the previous message, so that the developer can correctly implement the change.  For `save_file`, you MUST include FULL file contents, without omitting anything or adding comments like `// rest of the code goes here`.
-
-**IMPORTANT**: Remember, NEVER output human intervention steps to do manual tests, even if the previous message asks for it! The testing will be done *after* these steps and you MUTS NOT include testing in these steps.
+**IMPORTANT**: Remember, NEVER output human intervention steps to do manual tests or coding tasks, even if the previous message asks for it! The testing will be done *after* these steps and you MUTS NOT include testing in these steps.
 
 Examples:
 ------------------------example_1---------------------------
@@ -25,29 +23,20 @@ Examples:
 {
   "tasks": [
     {
-      "type": "modify_file",
-      "modify_file": {
-        "name": "server.js",
-        "path": "/server.js",
-        "code_change_description": "Update code to use port from environment instead of hardcoding it.\nReplace this line:\nconst port = 3001;\nwith\nconst port = process.env.PORT || 3001;\n",
-      },
-    },
-    {
-      "type": "modify_file",
-      "modify_file": {
-        "name": "server.js",
-        "path": "/server.js",
-        "code_change_description": "Within findByEmail() method of User model, replace `return await User.find({email});` with a try/catch block:\ntry\n{  return await User.find({email});\n} catch (err)\n{ return null; }\n",
-      },
-    },
-    {
       "type": "save_file",
       "save_file": {
-        "name": "README.md",
-        "path": "/README.md",
-        "content": "# Example Readme\n\nThis is an example readme for the example project.\n\nThanks to everyone who contributes to this repository!\n"
-      }
+        "name": "server.js",
+        "path": "/server.js",
+        "code_change_description": "",
+      },
     },
+    {
+      "type": "delete_file",
+      "delete_file": {
+        "name": "some_old_unused_file.js",
+        "path": "some/path/to/some_old_unused_file.js",
+      }
+    }
     {
       "type": "command",
       "command": {
@@ -61,7 +50,3 @@ Examples:
 }
 ```
 ------------------------end_of_example_1---------------------------
-
-Within the file modifications, mark any settings that the user must configure manually with `// INPUT_REQUIRED {input_description}` comment,  where `input_description` is a description of what needs to be added here by the user. Use appropriate syntax for comments in the file you're saving. If the file type doesn't support comments (eg JSON), don't add any.
-
-Remember: you must provide all the information (context) for file modification steps that you thought of in the previous message, so that the developer can correctly implement your changes. This is very important!
