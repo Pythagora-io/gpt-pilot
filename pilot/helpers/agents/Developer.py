@@ -25,7 +25,7 @@ from logger.logger import logger
 from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
-from helpers.cli import run_command_until_success, execute_command_and_check_cli_response, running_processes
+from helpers.cli import run_command_until_success, execute_command_and_check_cli_response
 from const.function_calls import EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN, ALTERNATIVE_SOLUTIONS
 from database.database import save_progress, get_progress_steps, update_app_status
 from utils.telemetry import telemetry
@@ -37,6 +37,7 @@ ENVIRONMENT_SETUP_STEP = 'environment_setup'
 class Developer(Agent):
     def __init__(self, project):
         super().__init__('full_stack_developer', project)
+        self.review_count = 0
         self.run_command = None
         self.save_dev_steps = True
         self.debugger = Debugger(self)
@@ -144,17 +145,20 @@ class Developer(Agent):
             convo_dev_task.messages = self.project.dev_steps_to_load[0]['messages']
             remove_last_x_messages = 1  # reason why 1 here is because in db we don't store llm_response in 'messages'
             # remove parse_task from the head of dev_steps_to_load; if it's last, record it in checkpoint
-            self.project.cleanup_list('dev_steps_to_load', int(self.project.dev_steps_to_load[0]['id']) + 1)
+            last_parse_task_id = int(self.project.dev_steps_to_load[0]['id'])
+            self.project.cleanup_list('dev_steps_to_load', last_parse_task_id + 1)
         else:
             response = convo_dev_task.send_message('development/parse_task.prompt', {
-                'running_processes': running_processes,
                 'os': platform.system(),
                 'instructions_prefix': instructions_prefix,
                 'instructions_postfix': instructions_postfix,
             }, IMPLEMENT_TASK)
             remove_last_x_messages = 2
+            last_parse_task_id = int(self.project.checkpoints.get('last_development_step', None))
 
         steps = response['tasks']
+        self.files_at_start_of_task = self.project.get_files_from_db_by_step_id(last_parse_task_id)
+        self.modified_files = []
         convo_dev_task.remove_last_x_messages(remove_last_x_messages)
 
         completed_steps = []
@@ -462,9 +466,11 @@ class Developer(Agent):
         convo.save_branch(function_uuid)
 
         for (i, step) in enumerate(task_steps):
+            if step['type'] in ['save_file', 'code_change', 'modify_file'] and 'path' in step[step['type']]:
+                self.modified_files.append(step[step['type']]['path'])
             # This means we are still loading the project and have all the steps until last iteration
             if self.project.last_iteration is not None or self.project.last_detailed_user_review_goal is not None:
-                break
+                continue
 
             # Skip steps before continue_from_step
             if i < continue_from_step:
@@ -549,6 +555,10 @@ class Developer(Agent):
         next_solution_to_try = None
         iteration_count = self.project.last_iteration['prompt_data']['iteration_count'] if (self.project.last_iteration and 'iteration_count' in self.project.last_iteration['prompt_data']) else 0
         while True:
+            self.user_feedback = llm_solutions[-1]['user_feedback'] if len(llm_solutions) > 0 else None
+            review_successful = self.project.skip_steps or self.review_task()
+            if not review_successful and self.review_count < 3:
+                continue
             iteration_count += 1
             logger.info('Continue development, last_branch_name: %s', last_branch_name)
             if last_branch_name in iteration_convo.branches.keys():  # if user_feedback is not None we create new convo
@@ -583,6 +593,7 @@ class Developer(Agent):
                 add_loop_button=iteration_count > 3)
 
             logger.info('response: %s', response)
+            self.review_count = 0
             user_feedback = response['user_input'] if 'user_input' in response else None
             if user_feedback == 'continue':
                 # self.project.remove_debugging_logs_from_all_files()
@@ -639,7 +650,6 @@ class Developer(Agent):
                 instructions_postfix = " ".join(iteration_description.split()[-5:])
 
                 llm_response = iteration_convo.send_message('development/parse_task.prompt', {
-                    'running_processes': running_processes,
                     'os': platform.system(),
                     'instructions_prefix': instructions_prefix,
                     'instructions_postfix': instructions_postfix,
@@ -648,6 +658,79 @@ class Developer(Agent):
 
                 task_steps = llm_response['tasks']
                 self.execute_task(iteration_convo, task_steps, is_root_task=True)
+
+    def review_task(self):
+        """
+        Review all task changes and refactor big files.
+        :return: bool - True if the task changes passed review, False if not
+        """
+        self.review_count += 1
+        review_result = self.review_code_changes()
+        refactoring_done = self.refactor_code()
+        if refactoring_done or review_result['implementation_needed']:
+            review_result = self.review_code_changes()
+
+        return review_result['success']
+
+    def review_code_changes(self):
+        """
+        Review the code changes and ask for human intervention if needed
+
+        :return: dict - {
+            'success': bool,
+            'implementation_needed': bool
+        }
+        """
+        review_convo = AgentConvo(self)
+        files = [
+            file_dict for file_dict in self.project.get_all_coded_files()
+            if any(file_dict['full_path'].endswith(modified_file) for modified_file in self.modified_files)
+        ]
+        files_at_start_of_task = [
+            file_dict for file_dict in self.files_at_start_of_task
+            if any(file_dict['full_path'].endswith(modified_file) for modified_file in self.modified_files)
+        ]
+        review = review_convo.send_message('development/review_task.prompt', {
+            "name": self.project.args['name'],
+            "app_summary": self.project.project_description,
+            "tasks": self.project.development_plan,
+            "current_task": self.project.current_task.data.get('task_description'),
+            "files": files,
+            "user_input": self.user_feedback,
+            "modified_files": self.modified_files,
+            "files_at_start_of_task": files_at_start_of_task,
+        })
+
+        instructions_prefix = " ".join(review.split()[:5])
+        instructions_postfix = " ".join(review.split()[-5:])
+
+        if 'DONE' in instructions_postfix:
+            return {
+                'success': True,
+                'implementation_needed': False,
+            }
+
+        review_convo.remove_last_x_messages(2)
+        llm_response = review_convo.send_message('development/parse_task.prompt', {
+            'os': platform.system(),
+            'instructions_prefix': instructions_prefix,
+            'instructions_postfix': instructions_postfix,
+        }, IMPLEMENT_TASK)
+
+        task_steps = llm_response['tasks']
+        result = self.execute_task(review_convo, task_steps)
+        return {
+            'success': result['success'] if 'success' in result else False,
+            'implementation_needed': True,
+        }
+
+    def refactor_code(self):
+        """
+        Refactor the code if needed
+        :return: bool - True if the code refactoring was done
+        """
+        # todo refactor code
+        return False
 
     def set_up_environment(self):
         self.project.current_step = ENVIRONMENT_SETUP_STEP
