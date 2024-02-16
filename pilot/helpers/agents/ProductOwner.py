@@ -6,8 +6,7 @@ from logger.logger import logger
 from database.database import get_app, save_progress, save_app, get_progress_steps
 from utils.utils import should_execute_step, generate_app_data, step_already_finished, clean_filename
 from utils.files import setup_workspace
-from prompts.prompts import ask_for_app_type, ask_for_main_app_definition, get_additional_info_from_openai, \
-    generate_messages_from_description, ask_user, get_prompt
+from prompts.prompts import ask_for_app_type, ask_for_main_app_definition, ask_user
 from const.llm import END_RESPONSE
 from const.messages import MAX_PROJECT_NAME_LENGTH
 
@@ -74,10 +73,6 @@ class ProductOwner(Agent):
 
         high_level_messages = []
         high_level_summary = self.project.main_prompt
-        if self.project.args.get('advanced', False):
-            high_level_messages = self.ask_clarifying_questions(self.project.main_prompt)
-
-            high_level_summary = self.generate_project_summary(high_level_messages)
 
         save_progress(self.project.args['app_id'], self.project.current_step, {
             "prompt": self.project.main_prompt,
@@ -90,23 +85,6 @@ class ProductOwner(Agent):
         self.project.project_description_messages = high_level_messages
         return
         # PROJECT DESCRIPTION END
-
-    def ask_clarifying_questions(self, main_prompt: str):
-        instructions = generate_messages_from_description(main_prompt,
-                                                          self.project.args['app_type'],
-                                                          self.project.args['name'])
-        return get_additional_info_from_openai(self.project, instructions)
-
-    def generate_project_summary(self, high_level_messages: list[dict]):
-        print(color_green_bold('Project Summary:\n'))
-        convo_project_description = AgentConvo(self)
-
-        convo_project_description.messages.append({'role': 'system',
-                                                   'content': get_prompt('components/summary_instructions.prompt')})
-        return convo_project_description.send_message('utils/summary.prompt',
-                                                      {'conversation': '\n'.join(
-                                                          [f"{msg['role']}: {msg['content']}" for msg in
-                                                           high_level_messages])}, should_log_message=False)
 
     def get_user_stories(self):
         if not self.project.args.get('advanced', False):
@@ -135,7 +113,6 @@ class ProductOwner(Agent):
         self.project.user_stories = self.convo_user_stories.continuous_conversation('user_stories/specs.prompt', {
             'name': self.project.args['name'],
             'prompt': self.project.project_description,
-            'clarifications': self.project.project_description_messages,
             'app_type': self.project.args['app_type'],
             'END_RESPONSE': END_RESPONSE
         })

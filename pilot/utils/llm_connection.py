@@ -97,9 +97,6 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
     Called from:
       - AgentConvo.send_message() - these calls often have `function_calls`, usually from `pilot/const/function_calls.py`
          - convo.continuous_conversation()
-      - prompts.get_additional_info_from_openai()
-      - prompts.get_additional_info_from_user() after the user responds to each
-            "Please check this message and say what needs to be changed... {message}"
     :param messages: [{ "role": "system"|"assistant"|"user", "content": string }, ... ]
     :param req_type: 'project_description' etc. See common.STEPS
     :param project: project

@@ -3,19 +3,6 @@ I want you to create {{ app_type }} (let's call it "{{ name }}") that can be des
 {{ prompt }}
 ```
 
-{% if clarifications and clarifications|length > 1 %}
-Here are some additional questions and answers to clarify the {{ app_type }} description:
-```
-{% for clarification in clarifications[2:] %}
-    {% if loop.index is odd %}
-    Q: {{ clarification.content }}
-    {% else %}
-    A: {{ clarification.content }}
-    {% endif %}
-{% endfor %}
-```
-{% endif %}
-
 Think step by step about the description for the {{ app_type }} "{{ name }}" and the additional questions and answers and break down user stories. You will think about the {{ app_type }} description and the answers listed and create a list of all user stories. A user story is a description of how a user can interact with the {{ app_type }}. For example, if an app's description is `Create a script that finds Youtube channels with the word "test" inside the channel name`, user stories could be:
 - `user will run the script from the CLI`
 - `user will get the list of all channels in a CSV file`

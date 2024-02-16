@@ -125,7 +125,6 @@ class Developer(Agent):
                 "name": self.project.args['name'],
                 "app_type": self.project.args['app_type'],
                 "app_summary": self.project.project_description,
-                "clarifications": self.project.clarifications,
                 "user_stories": self.project.user_stories,
                 "user_tasks": self.project.user_tasks,
                 "array_of_objects_to_string": array_of_objects_to_string,  # TODO check why is this here
@@ -623,7 +622,6 @@ class Developer(Agent):
                     "name": self.project.args['name'],
                     "app_type": self.project.args['app_type'],
                     "app_summary": self.project.project_description,
-                    "clarifications": self.project.clarifications,
                     "user_stories": self.project.user_stories,
                     "user_tasks": self.project.user_tasks,
                     "architecture": self.project.architecture,
