@@ -592,6 +592,7 @@ class Developer(Agent):
                 add_loop_button=iteration_count > 3)
 
             logger.info('response: %s', response)
+            self.review_count = 0
             user_feedback = response['user_input'] if 'user_input' in response else None
             if user_feedback == 'continue':
                 # self.project.remove_debugging_logs_from_all_files()
@@ -655,7 +656,6 @@ class Developer(Agent):
                 iteration_convo.remove_last_x_messages(2)
 
                 task_steps = llm_response['tasks']
-                self.review_count = 0
                 self.execute_task(iteration_convo, task_steps, is_root_task=True)
 
     def review_task(self):
