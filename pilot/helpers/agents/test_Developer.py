@@ -223,3 +223,14 @@ class TestDeveloper:
         # Then
         assert result == {'success': True}
         assert mock_requests_post.call_count == 0
+
+    def test_developer_model_override(self, monkeypatch):
+        # Given any project
+        project = create_project()
+
+        model = 'some_model'
+        monkeypatch.setenv('FULL_STACK_DEVELOPER_MODEL_NAME', model)
+
+        # and a developer who will execute any task
+        agent = Developer(project)
+        assert agent.model == model

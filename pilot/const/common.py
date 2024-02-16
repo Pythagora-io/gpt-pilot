@@ -49,3 +49,5 @@ IGNORE_PATHS = DEFAULT_IGNORE_PATHS + [
 ]
 IGNORE_SIZE_THRESHOLD = 50000  # 50K+ files are ignored by default
 PROMPT_DATA_TO_IGNORE = {'directory_tree', 'name'}
+
+DEFAULT_MODEL_NAME = 'gpt-4-turbo-preview'

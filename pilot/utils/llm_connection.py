@@ -8,6 +8,7 @@ import tiktoken
 from prompt_toolkit.styles import Style
 
 from jsonschema import validate, ValidationError
+from const.common import DEFAULT_MODEL_NAME
 from utils.style import color_red, color_yellow
 from typing import List
 from const.llm import MAX_GPT_MODEL_TOKENS, API_CONNECT_TIMEOUT, API_READ_TIMEOUT
@@ -76,9 +77,9 @@ def test_api_access(project) -> bool:
     ]
 
     endpoint = os.getenv('ENDPOINT')
-    model = os.getenv('MODEL_NAME', 'gpt-4')
+    model = os.getenv('DEFAULT_MODEL_NAME', DEFAULT_MODEL_NAME)
     try:
-        response = create_gpt_chat_completion(messages, 'project_description', project)
+        response = create_gpt_chat_completion(messages, 'project_description', project, model)
         if response is None or response == {}:
             print(color_red("Error connecting to the API. Please check your API key/endpoint and try again."))
             logger.error(f"The request to {endpoint} model {model} API failed.")
@@ -90,7 +91,7 @@ def test_api_access(project) -> bool:
         return False
 
 
-def create_gpt_chat_completion(messages: List[dict], req_type, project,
+def create_gpt_chat_completion(messages: List[dict], req_type, project, model:str,
                                function_calls: FunctionCallSet = None,
                                prompt_data: dict = None):
     """
@@ -109,7 +110,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
     """
 
     gpt_data = {
-        'model': os.getenv('MODEL_NAME', 'gpt-4'),
+        'model': model,
         'n': 1,
         'temperature': 0.7,
         'top_p': 1,
@@ -393,7 +394,7 @@ def stream_gpt_completion(data, req_type, project):
     # print(yellow("Stream response from OpenAI:"))
 
     # Configure for the selected ENDPOINT
-    model = os.getenv('MODEL_NAME', 'gpt-4')
+    model = os.getenv('DEFAULT_MODEL_NAME', DEFAULT_MODEL_NAME)
     endpoint = os.getenv('ENDPOINT')
 
     logger.info(f'> Request model: {model}')
