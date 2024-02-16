@@ -20,9 +20,9 @@ Here are files that were modified during this task implementation:
 {% if user_input -%}While working on this task, your colleague who is testing the app "{{ name }}" sent you some additional info. Here it is:
 ```
 {{ user_input }}
-```{% endif %}
+```
 
-After this info, you tried to fix it and files that were modified during implementation of the task are:
+After this info, you tried to fix it. {% endif %}Files that were modified during implementation of the task are:
 ```
 {{ modified_files }}
 ```

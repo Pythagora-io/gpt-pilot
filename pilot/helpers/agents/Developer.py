@@ -555,6 +555,7 @@ class Developer(Agent):
         next_solution_to_try = None
         iteration_count = self.project.last_iteration['prompt_data']['iteration_count'] if (self.project.last_iteration and 'iteration_count' in self.project.last_iteration['prompt_data']) else 0
         while True:
+            self.user_feedback = llm_solutions[-1]['user_feedback'] if len(llm_solutions) > 0 else None
             review_successful = self.project.skip_steps or self.review_task()
             if not review_successful and self.review_count < 3:
                 continue
@@ -695,7 +696,7 @@ class Developer(Agent):
             "tasks": self.project.development_plan,
             "current_task": self.project.current_task.data.get('task_description'),
             "files": files,
-            "user_input": None,
+            "user_input": self.user_feedback,
             "modified_files": self.modified_files,
             "files_at_start_of_task": files_at_start_of_task,
         })
