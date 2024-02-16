@@ -153,7 +153,7 @@ class Developer(Agent):
                 'instructions_postfix': instructions_postfix,
             }, IMPLEMENT_TASK)
             remove_last_x_messages = 2
-            last_parse_task_id = int(self.project.checkpoints.get('last_development_step', None))
+            last_parse_task_id = int(self.project.checkpoints['last_development_step']['id']) if self.project.checkpoints['last_development_step'] is not None else None
 
         steps = response['tasks']
         self.files_at_start_of_task = self.project.get_files_from_db_by_step_id(last_parse_task_id)
