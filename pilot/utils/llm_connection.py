@@ -134,7 +134,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project, model:st
         prompt_data['function_call_message'] = function_call_message
 
     try:
-        response = stream_gpt_completion(gpt_data, req_type, project)
+        response = stream_gpt_completion(gpt_data, req_type, project, model)
 
         # Remove JSON schema and any added retry messages
         while len(messages) > messages_length:
@@ -348,7 +348,7 @@ def trace_token_limit_error(request_tokens: int, messages: list[dict], err_str: 
 
 
 @retry_on_exception
-def stream_gpt_completion(data, req_type, project):
+def stream_gpt_completion(data, req_type, project, model):
     """
     Called from create_gpt_chat_completion()
     :param data:
@@ -370,12 +370,12 @@ def stream_gpt_completion(data, req_type, project):
     if 'functions' in data:
         expecting_json = data['functions']
         if 'function_buffer' in data:
-            incomplete_json = get_prompt('utils/incomplete_json.prompt', {'received_json': data['function_buffer']})
+            incomplete_json = get_prompt('utils/incomplete_json.prompt', model, {'received_json': data['function_buffer']})
             data['messages'].append({'role': 'user', 'content': incomplete_json})
             gpt_response = data['function_buffer']
             received_json = True
         elif 'function_error' in data:
-            invalid_json = get_prompt('utils/invalid_json.prompt', {'invalid_reason': data['function_error']})
+            invalid_json = get_prompt('utils/invalid_json.prompt', model, {'invalid_reason': data['function_error']})
             data['messages'].append({'role': 'user', 'content': invalid_json})
             received_json = True
 

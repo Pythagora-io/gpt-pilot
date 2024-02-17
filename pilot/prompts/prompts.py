@@ -74,7 +74,7 @@ def ask_user(project, question: str, require_some_input=True, hint: str = None, 
 
 
 # TODO refactor this to comply with AgentConvo class
-def generate_messages_from_description(description, app_type, name):
+def generate_messages_from_description(description, app_type, name, model):
     """
     Called by ProductOwner.get_description().
     :param description: "I want to build a cool app that will make me rich"
@@ -86,7 +86,7 @@ def generate_messages_from_description(description, app_type, name):
       ]
     """
     # "I want you to create the app {name} that can be described: ```{description}```
-    prompt = get_prompt('high_level_questions/specs.prompt', {
+    prompt = get_prompt('high_level_questions/specs.prompt', original_data={
         'name': name,
         'prompt': description,
         'app_type': app_type,
@@ -98,7 +98,7 @@ def generate_messages_from_description(description, app_type, name):
     # Start with Get additional answers
     # {prompts/components/no_microservices}
     # {prompts/components/single_question}
-    specs_instructions = get_prompt('high_level_questions/specs_instruction.prompt', {
+    specs_instructions = get_prompt('high_level_questions/specs_instruction.prompt', original_data= {
             'name': name,
             'app_type': app_type,
             # TODO: MAX_QUESTIONS should be configurable by ENV or CLI arg

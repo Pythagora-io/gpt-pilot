@@ -247,7 +247,7 @@ class AgentConvo:
         # Ideally, the LLM could do this, and we update it on load & whenever the file changes
         # ...or LLM generates a script for `.gpt-pilot/get_dependencies` that we run
         # https://github.com/Pythagora-io/gpt-pilot/issues/189
-        return get_prompt('development/context.prompt', {
+        return get_prompt('development/context.prompt', self.agent.model, {
             'directory_tree': self.agent.project.get_directory_tree(),
             'running_processes': running_processes,
         })
@@ -265,6 +265,6 @@ class AgentConvo:
 
     def construct_and_add_message_from_prompt(self, prompt_path, prompt_data):
         if prompt_path is not None and prompt_data is not None:
-            prompt = get_prompt(prompt_path, prompt_data)
+            prompt = get_prompt(prompt_path, self.agent.model, prompt_data)
             logger.info('\n>>>>>>>>>> User Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', prompt)
             self.messages.append({"role": "user", "content": prompt})

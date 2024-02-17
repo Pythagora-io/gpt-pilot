@@ -395,14 +395,15 @@ class TestLlmConnection:
 
         mock_post.side_effect = mock_responses
 
+        model= 'gpt-4'
         wrapper = retry_on_exception(stream_gpt_completion)
         data = {
-            'model': 'gpt-4',
+            'model': model,
             'messages': [{'role': 'user', 'content': 'testing'}]
         }
 
         # When
-        response = wrapper(data, 'test', project)
+        response = wrapper(data, 'test', project, model)
 
         # Then
         assert response == {'text': 'DONE'}
@@ -432,11 +433,12 @@ class TestLlmConnection:
         mock_post.return_value = mock_response
 
         with patch('utils.llm_connection.requests.post', return_value=mock_response):
+            model =' gpt-4'
             # When
             response = stream_gpt_completion({
-                'model': 'gpt-4',
+                'model': model,
                 'messages': [],
-            }, '', project)
+            }, '', project, model)
 
             # Then
             assert response == {'text': '{\n  "foo": "bar",\n  "prompt": "Hello",\n  "choices": []\n}'}
@@ -487,7 +489,7 @@ solution-oriented decision-making in areas where precise instructions were not p
         function_calls = ARCHITECTURE
 
         # When
-        response = create_gpt_chat_completion(convo.messages, '', project, modeel, function_calls=function_calls)
+        response = create_gpt_chat_completion(convo.messages, '', project, model, function_calls=function_calls)
 
         # Then
         assert convo.messages[0]['content'].startswith('You are an experienced software architect')
@@ -543,7 +545,7 @@ The development process will include the creation of user stories and tasks, bas
 
         # with patch('utils.llm_connection.questionary', mock_questionary):
         # When
-        response = create_gpt_chat_completion(convo.messages, '', project, function_calls=function_calls)
+        response = create_gpt_chat_completion(convo.messages, '', project, model, function_calls=function_calls)
 
         # Then
         assert convo.messages[0]['content'].startswith('You are a tech lead in a software development agency')

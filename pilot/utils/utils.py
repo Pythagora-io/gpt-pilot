@@ -16,9 +16,12 @@ from const.llm import MAX_QUESTIONS, END_RESPONSE
 from const.common import ROLES, STEPS
 from logger.logger import logger
 
-prompts_path = os.path.join(os.path.dirname(__file__), '..', 'prompts')
-file_loader = FileSystemLoader(prompts_path)
-env = Environment(loader=file_loader)
+primary_prompts_path = os.path.join(os.path.dirname(__file__), '..', 'prompts')
+override_prompts_path = os.getenv('PROMOTS_OVERRIDE_FOLDER', primary_prompts_path)
+primary_file_loader = FileSystemLoader(primary_prompts_path)
+override_file_loader = FileSystemLoader(override_prompts_path)
+primary_env = Environment(loader=primary_file_loader)
+override_env = Environment(loader=override_file_loader)
 
 
 def capitalize_first_word_with_underscores(s):
@@ -34,23 +37,39 @@ def capitalize_first_word_with_underscores(s):
     return capitalized_string
 
 
-def get_prompt(prompt_name, original_data=None):
+def get_prompt(prompt_name, model=None, original_data=None):
     data = copy.deepcopy(original_data) if original_data is not None else {}
 
-    get_prompt_components(data)
+    get_prompt_components(data, model)
 
     logger.info(f"Getting prompt for {prompt_name}")
 
-    # Load the template
-    template = env.get_template(prompt_name)
+    template = resolveTemplate(prompt_name, model)
 
     # Render the template with the provided data
     output = template.render(data)
 
     return output
 
+def resolveTemplate(prompt_name, model=None):
+    
+    logger.info('removing prompt', prompt_name)
 
-def get_prompt_components(data):
+    if(model != None) :
+        model_prompt_name = f'{model}/{prompt_name}'
+        model_override_prompt_path = os.path.join(override_prompts_path, model_prompt_name)
+        if(os.path.exists(model_override_prompt_path)):
+            return override_env.get_template(model_prompt_name)
+
+    override_prompt_path = os.path.join(override_prompts_path, prompt_name)
+    if(os.path.exists(override_prompt_path)):
+        return override_env.get_template(prompt_name)
+    else:
+        return primary_env.get_template(prompt_name)
+    
+
+
+def get_prompt_components(data, model):
     # This function reads and renders all prompts inside /prompts/components and returns them in dictionary
 
     # Create an empty dictionary to store the file contents.
@@ -75,8 +94,10 @@ def get_prompt_components(data):
         # Get the filename without extension as the dictionary key.
         file_key = os.path.splitext(template_name)[0]
 
+        template = resolveTemplate(template_name)
+
         # Load the template and render it with no variables
-        file_content = env.get_template(template_name).render(data)
+        file_content = template.render(data)
 
         # Store the file content in the dictionary
         prompts_components[file_key] = file_content
