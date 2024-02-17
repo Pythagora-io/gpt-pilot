@@ -37,6 +37,7 @@ def ask_for_app_type():
 
 def ask_for_main_app_definition(project):
     question = 'Describe your app in as much detail as possible.'
+    print('example project', type='button')
     print(question, type='ipc')
     description = ask_user(
         project,
