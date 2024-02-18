@@ -9,7 +9,7 @@ import json
 import hashlib
 import re
 import copy
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, Template
 from .style import color_green
 
 from const.llm import MAX_QUESTIONS, END_RESPONSE
@@ -51,20 +51,23 @@ def get_prompt(prompt_name, model=None, original_data=None):
 
     return output
 
-def resolveTemplate(prompt_name, model=None):
+def resolveTemplate(prompt_name, model=None) -> Template:
     
-    logger.info('removing prompt', prompt_name)
+    logger.info(f'resolving prompt: {prompt_name}')
 
     if(model != None) :
         model_prompt_name = f'{model}/{prompt_name}'
         model_override_prompt_path = os.path.join(override_prompts_path, model_prompt_name)
         if(os.path.exists(model_override_prompt_path)):
+            logger.info(f'resolved model specific prompt')
             return override_env.get_template(model_prompt_name)
 
     override_prompt_path = os.path.join(override_prompts_path, prompt_name)
     if(os.path.exists(override_prompt_path)):
+        logger.info(f'resolved model override prompt. path: {override_prompt_path}')
         return override_env.get_template(prompt_name)
     else:
+        logger.info(f'resolved model default prompt')
         return primary_env.get_template(prompt_name)
     
 
