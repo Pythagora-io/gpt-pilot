@@ -237,6 +237,7 @@ class Developer(Agent):
             "delete-file-stub",
             data,
         )
+        return {"success": True}
 
 
     def step_save_file(self, convo, step, i, test_after_code_changes):
@@ -465,7 +466,9 @@ class Developer(Agent):
         convo.save_branch(function_uuid)
 
         for (i, step) in enumerate(task_steps):
-            if step['type'] in ['save_file', 'code_change', 'modify_file'] and 'path' in step[step['type']]:
+            if (step['type'] in ['save_file', 'code_change', 'modify_file'] and
+                    'path' in step[step['type']] and
+                    step[step['type']]['path'] not in self.modified_files):
                 self.modified_files.append(step[step['type']]['path'])
             # This means we are still loading the project and have all the steps until last iteration
             if self.project.last_iteration is not None or self.project.last_detailed_user_review_goal is not None:
@@ -708,7 +711,6 @@ class Developer(Agent):
                 'implementation_needed': False,
             }
 
-        review_convo.remove_last_x_messages(2)
         llm_response = review_convo.send_message('development/parse_task.prompt', {
             'os': platform.system(),
             'instructions_prefix': instructions_prefix,
