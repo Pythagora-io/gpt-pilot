@@ -22,6 +22,7 @@ from helpers.agents.Developer import Developer
 from helpers.agents.Architect import Architect
 from helpers.agents.ProductOwner import ProductOwner
 from helpers.agents.TechnicalWriter import TechnicalWriter
+from helpers.agents.SpecWriter import SpecWriter
 
 from database.models.development_steps import DevelopmentSteps
 from database.models.file_snapshot import FileSnapshot
@@ -165,8 +166,9 @@ class Project:
             return False
 
         self.project_manager = ProductOwner(self)
-        self.project_manager.get_project_description()
+        self.spec_writer = SpecWriter(self)
 
+        self.project_manager.get_project_description(self.spec_writer)
         self.project_manager.get_user_stories()
         # self.user_tasks = self.project_manager.get_user_tasks()
 
