@@ -17,7 +17,7 @@ from const.common import ROLES, STEPS
 from logger.logger import logger
 
 primary_prompts_path = os.path.join(os.path.dirname(__file__), '..', 'prompts')
-override_prompts_path = os.getenv('PROMOTS_OVERRIDE_FOLDER', primary_prompts_path)
+override_prompts_path = os.getenv('PROMPTS_OVERRIDE_FOLDER', primary_prompts_path)
 primary_file_loader = FileSystemLoader(primary_prompts_path)
 override_file_loader = FileSystemLoader(override_prompts_path)
 primary_env = Environment(loader=primary_file_loader)
