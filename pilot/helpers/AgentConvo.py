@@ -26,13 +26,14 @@ class AgentConvo:
         agent: An instance of the agent participating in the conversation.
     """
 
-    def __init__(self, agent: Agent):
+    def __init__(self, agent: Agent, temperature: float = 0.7):
         # [{'role': 'system'|'user'|'assistant', 'content': ''}, ...]
         self.messages: list[dict] = []
         self.branches = {}
         self.log_to_user = True
         self.agent = agent
         self.high_level_step = self.agent.project.current_step
+        self.temperature = temperature
 
         # add system message
         system_message = get_sys_message(self.agent.role, self.agent.project.args)
@@ -65,7 +66,8 @@ class AgentConvo:
         try:
             self.replace_files()
             response = create_gpt_chat_completion(self.messages, self.high_level_step, self.agent.project, self.agent.model,
-                                                  function_calls=function_calls, prompt_data=prompt_data)
+                                                  function_calls=function_calls, prompt_data=prompt_data,
+                                                  temperature=self.temperature)
         except TokenLimitError as e:
             save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, '', str(e))
             raise e

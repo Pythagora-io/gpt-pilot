@@ -21,7 +21,7 @@ from utils.exit import exit_gpt_pilot
 from logger.logger import logger
 from database.database import database_exists, create_database, tables_exist, create_tables, get_created_apps_with_steps
 
-from utils.settings import settings, loader
+from utils.settings import settings, loader, get_version
 from utils.telemetry import telemetry
 from helpers.exceptions import ApiError, TokenLimitError, GracefulExit
 
@@ -70,6 +70,10 @@ if __name__ == "__main__":
                 print('\n'.join(f"{app['id']}: {app['status']:20}      "
                                 f"{'' if len(app['development_steps']) == 0 else app['development_steps'][-1]['id']:3}"
                                 f"  {app['name']}" for app in get_created_apps_with_steps()))
+
+        elif '--version' in args:
+            print(get_version())
+            run_exit_fn = False
 
         elif '--ux-test' in args:
             from test.ux_tests import run_test

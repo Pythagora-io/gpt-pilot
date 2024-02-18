@@ -19,7 +19,7 @@ class ProductOwner(Agent):
     def __init__(self, project):
         super().__init__('product_owner', project)
 
-    def get_project_description(self):
+    def get_project_description(self, spec_writer):
         print(json.dumps({
             "project_stage": "project_description"
         }), type='info')
@@ -72,7 +72,7 @@ class ProductOwner(Agent):
         }}), type='info')
 
         high_level_messages = []
-        high_level_summary = self.project.main_prompt
+        high_level_summary = spec_writer.create_spec(self.project.main_prompt)
 
         save_progress(self.project.args['app_id'], self.project.current_step, {
             "prompt": self.project.main_prompt,
