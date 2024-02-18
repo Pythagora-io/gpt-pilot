@@ -53,7 +53,7 @@ class SpecWriter(Agent):
             else:
                 print('skip questions', type='button')
                 user_response = ask_user(self.project, llm_response)
-                if user_response == 'skip questions':
+                if user_response and user_response.lower() == 'skip questions':
                     llm_response = convo.send_message(
                         'utils/python_string.prompt',
                         {
