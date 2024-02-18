@@ -53,21 +53,21 @@ def get_prompt(prompt_name, model=None, original_data=None):
 
 def resolveTemplate(prompt_name, model=None) -> Template:
     
-    logger.info(f'resolving prompt: {prompt_name}')
+    logger.debug(f'resolving prompt: {prompt_name}')
 
-    if(model != None) :
+    if(model is not None) :
         model_prompt_name = f'{model}/{prompt_name}'
         model_override_prompt_path = os.path.join(override_prompts_path, model_prompt_name)
         if(os.path.exists(model_override_prompt_path)):
-            logger.info(f'resolved model specific prompt')
+            logger.debug('resolved to model specific prompt')
             return override_env.get_template(model_prompt_name)
 
     override_prompt_path = os.path.join(override_prompts_path, prompt_name)
     if(os.path.exists(override_prompt_path)):
-        logger.info(f'resolved model override prompt. path: {override_prompt_path}')
+        logger.debug(f'resolved to model override prompt. path: {override_prompt_path}')
         return override_env.get_template(prompt_name)
     else:
-        logger.info(f'resolved model default prompt')
+        logger.debug('resolved to default prompt')
         return primary_env.get_template(prompt_name)
     
 
