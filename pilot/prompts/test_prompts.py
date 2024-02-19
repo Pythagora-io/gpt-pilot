@@ -3,7 +3,7 @@ from .prompts import get_prompt
 
 def test_prompt_ran_command_None_exit():
     # When
-    prompt = get_prompt('dev_ops/ran_command.prompt', {
+    prompt = get_prompt('dev_ops/ran_command.prompt', original_data={
         'cli_response': 'stdout:\n```\nsuccess\n```',
         'command': './scripts/run_tests',
         'additional_message': 'Some additional message\n',
@@ -29,7 +29,7 @@ Do not respond with anything other than these two keywords.
 
 def test_prompt_ran_command_0_exit():
     # When
-    prompt = get_prompt('dev_ops/ran_command.prompt', {
+    prompt = get_prompt('dev_ops/ran_command.prompt', original_data={
         'cli_response': 'stdout:\n```\nsuccess\n```',
         'command': './scripts/run_tests',
         'additional_message': 'Some additional message\n',
@@ -55,7 +55,7 @@ Do not respond with anything other than these two keywords.
 
 def test_parse_task_no_processes():
     # When
-    prompt = get_prompt('development/parse_task.prompt', {
+    prompt = get_prompt('development/parse_task.prompt', original_data={
         'running_processes': {}
     })
 

@@ -46,14 +46,14 @@ def get_prompt(prompt_name, model=None, original_data=None):
 
     template = resolveTemplate(prompt_name, model)
 
+    
+
     # Render the template with the provided data
     output = template.render(data)
 
     return output
 
 def resolveTemplate(prompt_name, model=None) -> Template:
-    
-    print('resolveTemplate: ' + prompt_name)
     logger.debug(f'resolving prompt: {prompt_name}')
 
     if(model is not None) :
@@ -117,7 +117,7 @@ def get_sys_message(role,args=None):
     :return: { "role": "system", "content": "You are a {role}... You do..." }
     """
 
-    content = get_prompt(f'system_messages/{role}.prompt',args)
+    content = get_prompt(f'system_messages/{role}.prompt', original_data=args)
 
     return {
         "role": "system",
