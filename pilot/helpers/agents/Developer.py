@@ -522,17 +522,20 @@ class Developer(Agent):
                         convo.load_branch(function_uuid)
 
                     if step['type'] == 'command':
+                        print('', type='verbose', category='command run')
                         result = self.step_command_run(convo, task_steps, i, success_with_cli_response=need_to_see_output)
                         # if need_to_see_output and 'cli_response' in result:
                         #     result['user_input'] = result['cli_response']
 
                     elif step['type'] in ['save_file', 'modify_file', 'code_change']:
+                        print('', type='verbose', category='save file')
                         result = self.step_save_file(convo, step, i, test_after_code_changes)
 
                     elif step['type'] == 'delete_file':
                         result = self.step_delete_file(convo, step, i, test_after_code_changes)
 
                     elif step['type'] == 'human_intervention':
+                        print('', type='verbose', category='human intervention')
                         result = self.step_human_intervention(convo, task_steps, i)
 
                     # TODO background_command - if we run commands in background we should have way to kill processes
@@ -541,6 +544,7 @@ class Developer(Agent):
                     #     terminate_named_process(step['kill_process'])
                     #     result = {'success': True}
 
+                    print('', type='verbose', category='agent:developer')
                     logger.info('  step result: %s', result)
 
                     if (not result['success']) or (need_to_see_output and result.get("user_input") != "SKIP"):

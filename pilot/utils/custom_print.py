@@ -18,6 +18,7 @@ def get_custom_print(args):
 
         ipc_client_instance.send({
             'type': MESSAGE_TYPE[kwargs['type']],
+            'category': kwargs['category'] if 'category' in kwargs else '',
             'content': message,
         })
         if kwargs['type'] == MESSAGE_TYPE['user_input_request']:
