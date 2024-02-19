@@ -54,6 +54,9 @@ class Renderer:
         Returns the resulting string
         """
 
+        # Jinja2 always uses /, even on Windows
+        template = template.replace('\\', '/')
+
         tpl_object = self.jinja_env.get_template(template)
         return tpl_object.render(context)
 
