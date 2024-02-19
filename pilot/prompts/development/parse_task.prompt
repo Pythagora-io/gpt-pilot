@@ -4,7 +4,6 @@ Each step can be either:
 
 * `command` - command to run (must be able to run on a {{ os }} machine, assume current working directory is project root folder)
 * `save_file` - create or update ONE file
-* `delete_file` - delete a file that is no longer used
 * `human_intervention` - if you need the human to do something, use this type of step and explain in details what you want the human to do. NEVER use `human_intervention` for testing, as testing will be done separately by a dedicated QA after all the steps are done.
 
 **IMPORTANT**: In `code_change_description` field of `save_file` step, you must provide empty string. If multiple changes are required for same file, you must provide single `save_file` step for each file.
@@ -30,13 +29,6 @@ Examples:
         "code_change_description": "",
       },
     },
-    {
-      "type": "delete_file",
-      "delete_file": {
-        "name": "some_old_unused_file.js",
-        "path": "some/path/to/some_old_unused_file.js",
-      }
-    }
     {
       "type": "command",
       "command": {
