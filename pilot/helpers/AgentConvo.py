@@ -24,13 +24,14 @@ class AgentConvo:
         agent: An instance of the agent participating in the conversation.
     """
 
-    def __init__(self, agent):
+    def __init__(self, agent, temperature: float = 0.7):
         # [{'role': 'system'|'user'|'assistant', 'content': ''}, ...]
         self.messages: list[dict] = []
         self.branches = {}
         self.log_to_user = True
         self.agent = agent
         self.high_level_step = self.agent.project.current_step
+        self.temperature = temperature
 
         # add system message
         system_message = get_sys_message(self.agent.role, self.agent.project.args)
@@ -63,7 +64,8 @@ class AgentConvo:
         try:
             self.replace_files()
             response = create_gpt_chat_completion(self.messages, self.high_level_step, self.agent.project,
-                                                  function_calls=function_calls, prompt_data=prompt_data)
+                                                  function_calls=function_calls, prompt_data=prompt_data,
+                                                  temperature=self.temperature)
         except TokenLimitError as e:
             save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, '', str(e))
             raise e
@@ -266,28 +268,3 @@ class AgentConvo:
             prompt = get_prompt(prompt_path, prompt_data)
             logger.info('\n>>>>>>>>>> User Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', prompt)
             self.messages.append({"role": "user", "content": prompt})
-
-    def get_additional_info_from_user(self, function_calls: FunctionCallSet = None):
-        """
-        Asks user if he wants to make any changes to last message in conversation.
-
-        Args:
-            function_calls: Optional function calls to be included in the message.
-
-        Returns:
-            The response from the agent OR None if user didn't ask for change.
-        """
-        llm_response = None
-        while True:
-            print(color_yellow(
-                "Please check this message and say what needs to be changed. If everything is ok just press ENTER", ))
-            changes = ask_user(self.agent.project, self.messages[-1]['content'], require_some_input=False)
-            if changes.lower() == '':
-                break
-
-            llm_response = self.send_message('utils/update.prompt',
-                                             {'changes': changes},
-                                             function_calls)
-
-        logger.info('Getting additional info from user done')
-        return llm_response

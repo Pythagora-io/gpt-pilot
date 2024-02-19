@@ -1,6 +1,7 @@
 from utils.utils import step_already_finished
 from helpers.Agent import Agent
 import json
+
 from utils.style import color_green_bold, color_yellow_bold
 from const.function_calls import ARCHITECTURE
 import platform
@@ -10,6 +11,7 @@ from database.database import save_progress, get_progress_steps
 from logger.logger import logger
 from helpers.AgentConvo import AgentConvo
 from prompts.prompts import ask_user
+from templates import PROJECT_TEMPLATES
 
 ARCHITECTURE_STEP = 'architecture'
 WARN_SYSTEM_DEPS = ["docker", "kubernetes", "microservices"]
@@ -36,12 +38,14 @@ class Architect(Agent):
             self.project.architecture = None
             self.project.system_dependencies = None
             self.project.package_dependencies = None
+            self.project.project_template = None
             db_data = step["architecture"]
             if db_data:
                 if isinstance(db_data, dict):
                     self.project.architecture = db_data["architecture"]
                     self.project.system_dependencies = db_data["system_dependencies"]
                     self.project.package_dependencies = db_data["package_dependencies"]
+                    self.project.project_template = db_data.get("project_template")
                 elif isinstance(db_data, list):
                     self.project.architecture = ""
                     self.project.system_dependencies = [
@@ -53,6 +57,7 @@ class Architect(Agent):
                         } for dep in db_data
                     ]
                     self.project.package_dependencies = []
+                    self.project.project_template = None
             return
 
         print(color_green_bold("Planning project architecture...\n"))
@@ -62,15 +67,19 @@ class Architect(Agent):
         llm_response = self.convo_architecture.send_message('architecture/technologies.prompt',
             {'name': self.project.args['name'],
              'app_summary': self.project.project_description,
-             'clarifications': self.project.clarifications,
              'user_stories': self.project.user_stories,
              'user_tasks': self.project.user_tasks,
              "os": platform.system(),
-             'app_type': self.project.args['app_type']}, ARCHITECTURE)
+             'app_type': self.project.args['app_type'],
+             "templates": PROJECT_TEMPLATES,
+            },
+            ARCHITECTURE
+        )
 
         self.project.architecture = llm_response["architecture"]
         self.project.system_dependencies = llm_response["system_dependencies"]
         self.project.package_dependencies = llm_response["package_dependencies"]
+        self.project.project_template = llm_response["template"]
 
         warn_system_deps = [dep["name"] for dep in self.project.system_dependencies if dep["name"].lower() in WARN_SYSTEM_DEPS]
         warn_package_deps = [dep["name"] for dep in self.project.package_dependencies if dep["name"].lower() in WARN_FRAMEWORKS]
@@ -91,14 +100,6 @@ class Architect(Agent):
             ))
             print('continue', type='buttons-only')
             ask_user(self.project, "Press ENTER if you still want to proceed. If you'd like to modify the project description, close the app and start a new one.", require_some_input=False)
-
-        # TODO: Project.args should be a defined class so that all of the possible args are more obvious
-        if self.project.args.get('advanced', False):
-            llm_response = self.convo_architecture.get_additional_info_from_user(ARCHITECTURE)
-            if llm_response is not None:
-                self.project.architecture = llm_response["architecture"]
-                self.project.system_dependencies = llm_response["system_dependencies"]
-                self.project.package_dependencies = llm_response["package_dependencies"]
 
         logger.info(f"Final architecture: {self.project.architecture}")
 

@@ -2,12 +2,8 @@ I need to modify file `{{ file_name }}` that currently looks like this:
 ```
 {{ file_content }}
 ```
-This file needs to be modified by these instructions:
----------------------start_of_instructions------------------------------
-{{ code_changes_description }}
-----------------------end_of_instructions-----------------------------
 
-I want you to implement the instructions and show me the COMPLETE NEW VERSION of this file in this format:
+I want you to implement changes described in previous message and show me the COMPLETE NEW VERSION of this file in this format:
 -----------------------format----------------------------
 ```
 the full contents of the updated file, without skipping over any content
@@ -15,5 +11,6 @@ the full contents of the updated file, without skipping over any content
 ------------------------end_of_format---------------------------
 
 **IMPORTANT**: Your reply MUST NOT omit any code in the new implementation or substitute anything with comments like `// .. rest of the code goes here ..` or `# insert existing code here`, because I will overwrite the existing file with the content you provide. Output ONLY the content for this file, without additional explanation, suggestions or notes. Your output MUST start with ``` and MUST end with ``` and include only the complete file contents.
+**IMPORTANT**: If the user must configure something manually, mark the line that needs user configuration with `INPUT_REQUIRED {input_description}` comment,  where `input_description` is a description of what needs to be added here by the user. Use appropriate syntax for comments in the file you're saving (for example `// INPUT_REQUIRED {input_description}` in JavaScript). If the file type doesn't support comments (eg JSON), don't add any.
 
 {{ logs_and_error_handling }}

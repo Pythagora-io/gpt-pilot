@@ -1,0 +1,64 @@
+You are working on a App called "{{ name }}" and you need to write code for the entire application.
+
+Here is a high level description of "{{ name }}":
+```
+{{ app_summary }}
+```
+
+Development process of this app was split into smaller tasks. Here is the list of all tasks:
+```{% for task in tasks %}
+{{ loop.index }}. {{ task['description'] }}
+{% endfor %}
+```
+You are currently working on task "{{ current_task }}" and you have to focus only on that task.
+
+A part of the app is already finished.
+Here are files that were modified during this task implementation:
+{% if files|length > 0 %}---start_of_current_files---
+{% for file in files %}
+**{{ file.path }}/{{ file.name }}** ({{ file.lines_of_code }} lines of code):
+```
+{{ file.content }}
+```
+{% endfor %}
+---end_of_current_files---
+{% endif -%}
+
+{% if user_input -%}While working on this task, your colleague who is testing the app "{{ name }}" sent you some additional info. Here it is:
+```
+{{ user_input }}
+```
+
+After this info, you tried to fix it. {% endif %}Files that were modified during implementation of the task are:
+```
+{{ modified_files }}
+```
+
+Now I will show you how those files looked before this task implementation started. If a file is listed as the file that changed but is not in this list that means it was created during this task. Here are files before implementation of this task:
+
+{% if files_at_start_of_task|length > 0 %}---start_of_files_at_start_of_task---
+{% for file in files_at_start_of_task %}
+**{{ file.path }}/{{ file.name }}** ({{ file.lines_of_code }} lines of code):
+```
+{{ file.content }}
+```
+{% endfor %}
+---end_of_files_at_start_of_task---
+{% endif -%}
+
+**IMPORTANT**
+You have to review this task implementation. You are known to be very strict with your reviews and very good at noticing bugs but you don't mind minor changes like refactoring, adding or removing logs and so on. You think twice through all information given before giving any conclusions.
+
+Each task goes through multiple reviews and you have to focus only on your part of review.
+Your goal is to check:
+1. If there are some functionalities that were removed but are still needed.
+2. If new files or functions are created but never called or used.
+3. If there is some "dead code" that should be removed.
+
+If everything is ok respond only with "DONE" and nothing else. Do NOT respond with thoughts, reasoning, explanations or anything similar if everything is ok, respond just with "DONE".
+
+If you find any of these 3 mistakes describe shortly what has to be changed.
+
+{{ execution_order }}
+
+{{ human_intervention_explanation }}

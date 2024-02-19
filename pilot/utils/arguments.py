@@ -64,7 +64,7 @@ def get_arguments():
         print(color_green_bold(f'{app.name} (app_id={arguments["app_id"]})'))
         print(color_green_bold('--------------------------------------------------------------\n'))
 
-    elif '--get-created-apps-with-steps' not in args:
+    elif '--get-created-apps-with-steps' not in args and '--version' not in args:
         arguments['app_id'] = str(uuid.uuid4())
         print(color_green_bold('\n------------------ STARTING NEW PROJECT ----------------------'))
         print("If you wish to continue with this project in future run:")
