@@ -39,7 +39,7 @@ def capitalize_first_word_with_underscores(s):
 
 def get_prompt(prompt_name, model=None, original_data=None):
     data = copy.deepcopy(original_data) if original_data is not None else {}
-
+    
     get_prompt_components(data, model)
 
     logger.info(f"Getting prompt for {prompt_name}")
@@ -53,6 +53,7 @@ def get_prompt(prompt_name, model=None, original_data=None):
 
 def resolveTemplate(prompt_name, model=None) -> Template:
     
+    print('resolveTemplate: ' + prompt_name)
     logger.debug(f'resolving prompt: {prompt_name}')
 
     if(model is not None) :
@@ -97,7 +98,9 @@ def get_prompt_components(data, model):
         # Get the filename without extension as the dictionary key.
         file_key = os.path.splitext(template_name)[0]
 
-        template = resolveTemplate(template_name)
+        # When resolving component templates we need to look for it from the base prompts dir as
+        # resolveTemplate uses the primary_env defined in this file
+        template = resolveTemplate(f'components/{template_name}', model)
 
         # Load the template and render it with no variables
         file_content = template.render(data)
@@ -113,6 +116,7 @@ def get_sys_message(role,args=None):
     :param role: 'product_owner', 'architect', 'dev_ops', 'tech_lead', 'full_stack_developer', 'code_monkey'
     :return: { "role": "system", "content": "You are a {role}... You do..." }
     """
+
     content = get_prompt(f'system_messages/{role}.prompt',args)
 
     return {
