@@ -31,6 +31,9 @@ def get_custom_print(args):
                 return
             del kwargs['type']
 
+        if 'category' in kwargs:
+            del kwargs['category']
+
         built_in_print(message, **kwargs)
 
     ipc_client_instance = None
