@@ -12,6 +12,7 @@ from helpers.exceptions import TooDeepRecursionError
 from logger.logger import logger
 from prompts.prompts import ask_user
 from utils.exit import trace_code_event
+from utils.print import print_task_progress
 
 
 class Debugger:
@@ -77,6 +78,7 @@ class Debugger:
                 DEBUG_STEPS_BREAKDOWN)
 
             completed_steps = []
+            print_task_progress(i+1, i+1, user_input, 'debugger', 'in_progress')
 
             try:
                 while True:
@@ -90,7 +92,8 @@ class Debugger:
                         test_after_code_changes=True,
                         continue_development=False,
                         is_root_task=is_root_task,
-                        continue_from_step=len(completed_steps)
+                        continue_from_step=len(completed_steps),
+                        task_source='debugger',
                     )
 
                     # in case one step failed or llm wants to see the output to determine the next steps

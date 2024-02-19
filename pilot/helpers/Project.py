@@ -192,7 +192,7 @@ class Project:
         print(json.dumps({
             "project_stage": "coding"
         }), type='info')
-        self.developer.start_coding()
+        self.developer.start_coding('app')
         return True
 
     def finish(self):
@@ -240,7 +240,7 @@ class Project:
                 feature_description = current_feature['prompt_data']['feature_description']
                 self.features_to_load = []
 
-            self.developer.start_coding()
+            self.developer.start_coding('feature')
             self.tech_lead.create_feature_summary(feature_description)
 
     def get_directory_tree(self, with_descriptions=False):
