@@ -109,34 +109,6 @@ def step_save_file_definition():
     }
 
 
-def step_delete_file_definition():
-    return {
-        "type": "object",
-        "properties": {
-            "type": {
-                "const": "delete_file",
-                "description": dev_step_type_description()
-            },
-            "delete_file": {
-                "type": "object",
-                "description": "A file that should be deleted. This should only be used for existing files that should get removed from the project.",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "description": "Name of the existing file that needs to be deleted."
-                    },
-                    "path": {
-                        "type": "string",
-                        "description": "Full path of the file with the file name that needs to be deleted."
-                    }
-                },
-                "required": ["name", "path"]
-            }
-        },
-        "required": ["type", "delete_file"]
-    }
-
-
 def step_human_intervention_definition():
     return {
         "type": "object",
@@ -303,7 +275,6 @@ IMPLEMENT_TASK = {
                             "oneOf": [
                                 step_command_definition(),
                                 step_save_file_definition(),
-                                step_delete_file_definition(),
                                 step_human_intervention_definition(),
                             ]
                         }
