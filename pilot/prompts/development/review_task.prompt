@@ -4,7 +4,7 @@ Here is a high level description of "{{ name }}":
 ```
 {{ app_summary }}
 ```
-
+{{ features_list }}
 Development process of this app was split into smaller tasks. Here is the list of all tasks:
 ```{% for task in tasks %}
 {{ loop.index }}. {{ task['description'] }}

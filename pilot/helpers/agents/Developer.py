@@ -134,7 +134,9 @@ class Developer(Agent):
                 "files": self.project.get_all_coded_files(),
                 "architecture": self.project.architecture,
                 "technologies": self.project.system_dependencies + self.project.package_dependencies,
-                "task_type": 'feature' if self.project.finished else 'app'
+                "task_type": 'feature' if self.project.finished else 'app',
+                "previous_features": self.project.previous_features,
+                "current_feature": self.project.current_feature,
             })
 
         instructions_prefix = " ".join(instructions.split()[:5])
@@ -639,7 +641,9 @@ class Developer(Agent):
                     "next_solution_to_try": next_solution_to_try,
                     "alternative_solutions_to_current_issue": alternative_solutions_to_current_issue,
                     "tried_alternative_solutions_to_current_issue": tried_alternative_solutions_to_current_issue,
-                    "iteration_count": iteration_count
+                    "iteration_count": iteration_count,
+                    "previous_features": self.project.previous_features,
+                    "current_feature": self.project.current_feature,
                 })
 
                 llm_solutions.append({
@@ -700,6 +704,8 @@ class Developer(Agent):
             "user_input": self.user_feedback,
             "modified_files": self.modified_files,
             "files_at_start_of_task": files_at_start_of_task,
+            "previous_features": self.project.previous_features,
+            "current_feature": self.project.current_feature,
         })
 
         instructions_prefix = " ".join(review.split()[:5])
@@ -867,6 +873,8 @@ class Developer(Agent):
             "user_input": user_feedback,
             "previous_solutions": previous_solutions,
             "tried_alternative_solutions_to_current_issue": tried_alternative_solutions_to_current_issue,
+            "previous_features": self.project.previous_features,
+            "current_feature": self.project.current_feature,
         }, ALTERNATIVE_SOLUTIONS)
 
         next_solution_to_try_index = self.ask_user_for_next_solution(response['alternative_solutions'])

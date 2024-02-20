@@ -5,6 +5,7 @@ If the project requirements call out for specific technology, use that. Otherwis
 Here are the details for the new project:
 -----------------------------
 {{ project_details }}
+{{ features_list }}
 -----------------------------
 
 Based on these details, think step by step to design the architecture for the project and choose technologies to use in building it.
