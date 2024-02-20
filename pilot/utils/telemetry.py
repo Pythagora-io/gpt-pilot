@@ -377,5 +377,20 @@ class Telemetry:
                 f"Telemetry.send(): failed to send telemetry data: {e}", exc_info=True
             )
 
+    def send_project_stats(self):
+        """
+        Send project statistics to the extension.
+
+        Note: this method does not clear any telemetry data.
+        """
+        if not self.enabled:
+            return
+
+        print({
+            "num_lines": self.data["num_lines"],
+            "num_files": self.data["num_files"],
+            "num_tokens": self.data["num_llm_tokens"],
+        }, type='projectStats')
+
 
 telemetry = Telemetry()
