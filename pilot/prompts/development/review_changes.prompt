@@ -15,11 +15,16 @@ Here is the diff of the changes:
 
 As you can see, there {% if hunks|length == 1 %}is only one hunk in this diff, and it{% else %}are {{hunks|length}} hunks in this diff, and each{% endif %} starts with the `@@` header line.
 
-Think carefully about the instructions and review the proposed changes. For each hunk of change, provide a detailed rationale, and decide whether it should be applied or should be ignored (for example if it is a code deletion or change that wasn't asked for). Finally, if the changes miss something that was in the instructions, mention that. Keep in mind you're just reviewing one file, `{{ file_name }}`. You don't need to consider if other files are created, dependent packages installed, etc. Focus only on reviewing the changes in this file based on the instructions in the previous message.
+Think carefully about the instructions and review the proposed changes. For each hunk of change, provide a detailed rationale, and decide whether it should be:
+* applied - if the change is correct
+* ignored - for example if it is a code deletion or change that wasn't asked for
+* reworked - if the change does something correctly but also makes a serious mistake, in which case both applying and ignoring the entire hunk would be incorrect
 
-Note that the developer may add, modify or delete logging (including `gpt_pilot_debugging_log`) or error handling that's not explicitly asked for, but is a part of good development practice. Unless these logging and error handling additions break something, you should not ignore those changes. Base your decision only on functional changes - comments or logging are less important.
+Finally, if the changes miss something that was in the instructions, mention that. Keep in mind you're just reviewing one file, `{{ file_name }}`. You don't need to consider if other files are created, dependent packages installed, etc. Focus only on reviewing the changes in this file based on the instructions in the previous message.
 
-Here is an example output if 3 of 4 hunks in the change should be applied and one of them should be ignored, and no other changes are needed:
+Note that the developer may add, modify or delete logging (including `gpt_pilot_debugging_log`) or error handling that's not explicitly asked for, but is a part of good development practice. Unless these logging and error handling additions break something, your decision to apply, ignore or rework the hunk should not be based on this. Base your decision only on functional changes - comments or logging are less important. Importantly, don't ask for a rework just because of logging or error handling changes. Also, take into account this is a junior developer and while the approach they take may not be the best practice, if it's not *wrong*, let it pass. Ask for rework only if the change is clearly bad and would break something.
+
+Here is an example output if 2 of 4 hunks in the change should be applied, one of them should be ignored, one should be reworked, and no other changes are needed:
 ```
 {
     "hunks": [
@@ -35,13 +40,13 @@ Here is an example output if 3 of 4 hunks in the change should be applied and on
         },
         {
             "number": 3,
-            "reason": "This hunk accidentally deletes important code",
+            "reason": "This hunk accidentally deletes important code without any useful change",
             "decision": "ignore"
         },
         {
             "number": 4,
-            "reason": "Explanation why the fourth hunk should be included in the change",
-            "decision": "apply"
+            "reason": "This hunk does something correctly but also does something really wrong. It would be incorrect to either apply or ignore it fully, so it should be reworked.",
+            "decision": "rework"
         },
     ],
     "review_notes": "General review notes, if something is missing from the change you can comment about it here"
