@@ -491,7 +491,7 @@ REVIEW_CHANGES = {
                             },
                             "reason": {
                                 "type": "string",
-                                "desciprion": "Reason for applying or ignoring this hunk."
+                                "description": "Reason for applying or ignoring this hunk."
                             },
                             "decision": {
                                 "type": "string",
@@ -508,6 +508,43 @@ REVIEW_CHANGES = {
                 }
             },
             "required": ["hunks", "review_notes"],
+            "additionalProperties": False
+        }
+    }],
+}
+
+GET_BUG_REPORT_MISSING_DATA = {
+    'definitions': [{
+        'name': 'bug_report_missing_data',
+        'description': 'Review bug report and identify missing data. List questions that need to be answered to proceed with the bug fix. If no additional questions are needed missing_data should be an empty array.',
+        'parameters': {
+            "type": "object",
+            "properties": {
+                "reasoning": {
+                    "type": "string",
+                    "description": "Reasoning for asking these questions or for not asking any questions."
+                },
+                "missing_data": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "category": {
+                                "type": "string",
+                                "enum": ["general", "frontend", "backend", "database", "devops", "other"],
+                                "description": "Category of the question."
+                            },
+                            "question": {
+                                "type": "string",
+                                "description": "Very clear question that needs to be answered to have good bug report.",
+                            },
+                        },
+                        "required": ["category", "question"],
+                        "additionalProperties": False
+                    },
+                }
+            },
+            "required": ["reasoning", "missing_data"],
             "additionalProperties": False
         }
     }],
