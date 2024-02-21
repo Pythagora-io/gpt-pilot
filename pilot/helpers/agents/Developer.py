@@ -26,7 +26,8 @@ from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
 from helpers.cli import run_command_until_success, execute_command_and_check_cli_response
-from const.function_calls import EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN, ALTERNATIVE_SOLUTIONS
+from const.function_calls import (EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN,
+                                  ALTERNATIVE_SOLUTIONS, GET_BUG_REPORT_MISSING_DATA)
 from database.database import save_progress, get_progress_steps, update_app_status
 from utils.telemetry import telemetry
 from prompts.prompts import ask_user
@@ -602,6 +603,7 @@ class Developer(Agent):
                 return {"success": True, "user_input": user_feedback}
 
             if user_feedback is not None:
+                user_feedback = self.bug_report_generator(user_feedback)
                 stuck_in_loop = user_feedback.startswith(STUCK_IN_LOOP)
                 if stuck_in_loop:
                     # Remove the STUCK_IN_LOOP prefix from the user feedback
@@ -659,6 +661,57 @@ class Developer(Agent):
 
                 task_steps = llm_response['tasks']
                 self.execute_task(iteration_convo, task_steps, is_root_task=True)
+
+    def bug_report_generator(self, user_feedback):
+        """
+        Generate a bug report from the user feedback.
+
+        :param user_feedback: The user feedback.
+        :return: The bug report.
+        """
+        bug_report_convo = AgentConvo(self)
+        function_uuid = str(uuid.uuid4())
+        bug_report_convo.save_branch(function_uuid)
+        questions_and_answers = []
+        while True:
+            llm_response = bug_report_convo.send_message('development/bug_report.prompt', {
+                "user_feedback": user_feedback,
+                "app_summary": self.project.project_description,
+                "files": self.project.get_all_coded_files(),
+                "questions_and_answers": questions_and_answers,
+            }, GET_BUG_REPORT_MISSING_DATA)
+
+            missing_data = llm_response['missing_data']
+            if len(missing_data) == 0:
+                break
+
+            for missing_data_item in missing_data:
+                if self.project.check_ipc():
+                    print(missing_data_item['question'], type='verbose')
+                    print('skip question', type='button')
+                    if self.run_command:
+                            print(self.run_command, type='run_command')
+
+                answer = ask_user(self.project, missing_data_item['question'])
+                if answer.lower() == 'skip question':
+                    continue
+
+                questions_and_answers.append({
+                    "question": missing_data_item['question'],
+                    "answer": answer
+                })
+
+            bug_report_convo.load_branch(function_uuid)
+
+        if len(questions_and_answers):
+            bug_report_summary_convo = AgentConvo(self)
+            user_feedback = bug_report_summary_convo.send_message('development/bug_report_summary.prompt', {
+                "app_summary": self.project.project_description,
+                "user_feedback": user_feedback,
+                "questions_and_answers": questions_and_answers,
+            })
+
+        return user_feedback
 
     def review_task(self):
         """
