@@ -10,7 +10,7 @@ from const.messages import CHECK_AND_CONTINUE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANS
 from utils.style import color_yellow_bold, color_cyan, color_white_bold, color_red_bold
 from const.common import STEPS
 from database.database import delete_unconnected_steps_from, delete_all_app_development_data, \
-    get_all_app_development_steps, delete_all_subsequent_steps
+    get_all_app_development_steps, delete_all_subsequent_steps, get_features_by_app_id
 from const.ipc import MESSAGE_TYPE
 from prompts.prompts import ask_user
 from helpers.exceptions import TokenLimitError, GracefulExit
@@ -88,6 +88,8 @@ class Project:
         self.package_dependencies = []
         self.project_template = None
         self.development_plan = None
+        self.previous_features = None
+        self.current_feature = None
         self.dot_pilot_gpt = DotGptPilot(log_chat_completions=True)
 
         if os.getenv("AUTOFIX_FILE_PATHS", "").lower() in ["true", "1", "yes"]:
@@ -203,6 +205,8 @@ class Project:
             feature_description = ''
             if not self.features_to_load:
                 self.finish_loading()
+
+            self.previous_features = get_features_by_app_id(self.args['app_id'])
             if not self.skip_steps:
                 feature_description = ask_user(self, "Project is finished! Do you want to add any features or changes? "
                                                      "If yes, describe it here and if no, just press ENTER",
@@ -240,6 +244,7 @@ class Project:
                 feature_description = current_feature['prompt_data']['feature_description']
                 self.features_to_load = []
 
+            self.current_feature = feature_description
             self.developer.start_coding()
             self.tech_lead.create_feature_summary(feature_description)
 
