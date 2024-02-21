@@ -97,13 +97,24 @@ class CodeMonkey(Agent):
             files,
         )
 
-        # Review the changes and only apply changes that are useful/approved
-        if content and content != file_content:
-            content = self.review_change(convo, code_change_description, file_name, file_content, content)
+        for i in range(MAX_REVIEW_RETRIES):
+            if not content or content == file_content:
+                # There are no changes or there was problem talking with the LLM, we're done here
+                break
+
+            content, rework_feedback = self.review_change(convo, code_change_description, file_name, file_content, content)
+            if not rework_feedback:
+                # No rework needed, we're done here
+                break
+
+            content = convo.send_message('development/review_feedback.prompt', {
+                "content": content,
+                "original_content": file_content,
+            })
+            if content:
+                content = self.remove_backticks(content)
 
         # If we have changes, update the file
-        # TODO: if we *don't* have changes, we might want to retry the whole process (eg. have the reviewer
-        # explicitly reject the whole PR and use that as feedback in implement_changes.prompt)
         if content and content != file_content:
             if not self.project.skip_steps:
                 delta_lines = len(content.splitlines()) - len(file_content.splitlines())
@@ -143,12 +154,22 @@ class CodeMonkey(Agent):
             "file_name": file_name,
             "files": files,
         })
+        convo.remove_last_x_messages(2)
+        return self.remove_backticks(llm_response)
+
+    @staticmethod
+    def remove_backticks(content: str) -> str:
+        """
+        Remove optional backticks from the beginning and end of the content.
+
+        :param content: content to remove backticks from
+        :return: content without backticks
+        """
         start_pattern = re.compile(r"^\s*```([a-z0-9]+)?\n")
         end_pattern = re.compile(r"\n```\s*$")
-        llm_response = start_pattern.sub("", llm_response)
-        llm_response = end_pattern.sub("", llm_response)
-        convo.remove_last_x_messages(2)
-        return llm_response
+        content = start_pattern.sub("", content)
+        content = end_pattern.sub("", content)
+        return content
 
     def identify_file_to_change(self, code_changes_description: str, files: list[dict]) -> str:
         """
@@ -172,7 +193,7 @@ class CodeMonkey(Agent):
         file_name: str,
         old_content: str,
         new_content: str
-    ) -> str:
+    ) -> tuple[str, str]:
         """
         Review changes that were applied to the file.
 
@@ -184,7 +205,7 @@ class CodeMonkey(Agent):
         :param file_name: name of the file being modified
         :param old_content: old file content
         :param new_content: new file content (with proposed changes)
-        :return: file content update with approved changes
+        :return: tuple with file content update with approved changes, and review feedback
 
         Diff hunk explanation: https://www.gnu.org/software/diffutils/manual/html_node/Hunks.html
         """
@@ -200,20 +221,25 @@ class CodeMonkey(Agent):
         messages_to_remove = 2
 
         for i in range(MAX_REVIEW_RETRIES):
+            reasons = {}
             ids_to_apply = set()
             ids_to_ignore = set()
+            ids_to_rework = set()
             for hunk in llm_response.get("hunks", []):
+                reasons[hunk["number"] - 1] = hunk["reason"]
                 if hunk.get("decision", "").lower() == "apply":
                     ids_to_apply.add(hunk["number"] - 1)
                 elif hunk.get("decision", "").lower() == "ignore":
                     ids_to_ignore.add(hunk["number"] - 1)
+                elif hunk.get("decision", "").lower() == "rework":
+                    ids_to_rework.add(hunk["number"] - 1)
 
             n_hunks = len(hunks)
-            n_review_hunks = len(ids_to_apply | ids_to_ignore)
+            n_review_hunks = len(reasons)
             if n_review_hunks == n_hunks:
                 break
             elif n_review_hunks < n_hunks:
-                error = "Not all hunks have been reviewed. Please review all hunks and add 'apply' or 'ignore' decision for each."
+                error = "Not all hunks have been reviewed. Please review all hunks and add 'apply', 'ignore' or 'rework' decision for each."
             elif n_review_hunks > n_hunks:
                 error = f"Your review contains more hunks ({n_review_hunks}) than in the original diff ({n_hunks}). Note that one hunk may have multiple changed lines."
 
@@ -235,23 +261,27 @@ class CodeMonkey(Agent):
         hunks_to_apply = [ h for i, h in enumerate(hunks) if i in ids_to_apply ]
         diff_log = f"--- {file_name}\n+++ {file_name}\n" + "\n".join(hunks_to_apply)
 
+        hunks_to_rework = [ (i, h) for i, h in enumerate(hunks) if i in ids_to_rework ]
+        review_log = "\n\n".join([
+            f"## Change\n```{hunk}```\nReviewer feedback:\n{reasons[i]}" for (i, hunk) in hunks_to_rework
+        ]) + "\n\nReview notes:\n" + llm_response["review_notes"]
+
         if len(hunks_to_apply) == len(hunks):
             print("Applying entire change")
-            return new_content
+            return new_content, None
         elif len(hunks_to_apply) == 0:
-            print("Reviewer has doubts, but applying all proposed changes anyway")
-            trace_code_event(
-                "modify-file-review-reject-all",
-                {
-                    "file": file_name,
-                    "original": old_content,
-                    "diff": f"--- {file_name}\n+++ {file_name}\n" + "\n".join(hunks),
-                }
-            )
-            return new_content
+            print(f"Rejecting entire change with reason: {llm_response['review_notes']}")
+            # If everything can be safely ignoring, it's probably because the files already implement the changes
+            # from previous tasks (which can happen often). Insisting on a change here is likely to cause problems.
+            return old_content, None
+
+        print("Applying code change:\n" + diff_log)
+        new_content = self.apply_diff(file_name, old_content, hunks_to_apply, new_content)
+        if hunks_to_rework:
+            print(f"Requesting rework for {len(hunks_to_rework)} changes with reason: {llm_response['review_notes']}")
+            return new_content, review_log
         else:
-            print("Applying code change:\n" + diff_log)
-            return self.apply_diff(file_name, old_content, hunks_to_apply, new_content)
+            return new_content, None
 
     @staticmethod
     def get_diff_hunks(file_name: str, old_content: str, new_content: str) -> list[str]:
