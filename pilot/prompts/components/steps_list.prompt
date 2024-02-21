@@ -2,7 +2,6 @@
 The current task has been split into multiple steps, and each step is one of the following:
 * `command` - command to run
 * `save_file` -  create or update a file
-* `delete_file` - delete a file that's no longer needed
 * `human_intervention` - if the human needs to do something
 
 {% if step_index > 0 %}Here is the list of steps that have been executed:
