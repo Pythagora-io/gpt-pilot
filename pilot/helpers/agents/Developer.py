@@ -689,6 +689,7 @@ class Developer(Agent):
             if len(missing_data) == 0:
                 break
 
+            length_before = len(questions_and_answers)
             for missing_data_item in missing_data:
                 if self.project.check_ipc():
                     print(missing_data_item['question'], type='verbose')
@@ -705,6 +706,9 @@ class Developer(Agent):
                     "answer": answer
                 })
 
+            # if user skips all questions, we don't want to get stuck in infinite loop
+            if length_before == len(questions_and_answers):
+                break
             bug_report_convo.load_branch(function_uuid)
 
         if len(questions_and_answers):
