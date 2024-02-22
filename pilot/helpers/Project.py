@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Tuple
 
 import peewee
+from playhouse.shortcuts import model_to_dict
 
 from const.messages import CHECK_AND_CONTINUE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS, STUCK_IN_LOOP
 from utils.style import color_yellow_bold, color_cyan, color_white_bold, color_red_bold
@@ -21,6 +22,7 @@ from helpers.agents.Developer import Developer
 from helpers.agents.Architect import Architect
 from helpers.agents.ProductOwner import ProductOwner
 from helpers.agents.TechnicalWriter import TechnicalWriter
+from helpers.agents.SpecWriter import SpecWriter
 
 from database.models.development_steps import DevelopmentSteps
 from database.models.file_snapshot import FileSnapshot
@@ -79,12 +81,12 @@ class Project:
         self.current_step = None
         self.name = None
         self.project_description = None
-        self.clarifications = None
         self.user_stories = None
         self.user_tasks = None
         self.architecture = ""
         self.system_dependencies = []
         self.package_dependencies = []
+        self.project_template = None
         self.development_plan = None
         self.dot_pilot_gpt = DotGptPilot(log_chat_completions=True)
 
@@ -164,8 +166,9 @@ class Project:
             return False
 
         self.project_manager = ProductOwner(self)
-        self.project_manager.get_project_description()
+        self.spec_writer = SpecWriter(self)
 
+        self.project_manager.get_project_description(self.spec_writer)
         self.project_manager.get_user_stories()
         # self.user_tasks = self.project_manager.get_user_tasks()
 
@@ -261,6 +264,29 @@ class Project:
         """
         # TODO remove hardcoded path
         return build_directory_tree(self.root_path + '/tests')
+
+    def get_files_from_db_by_step_id(self, step_id):
+        """
+        Get all coded files associated with a specific step_id.
+
+        Args:
+            step_id (int): The ID of the step.
+
+        Returns:
+            list: A list of coded files associated with the step_id.
+        """
+        if step_id is None:
+            return []
+
+        file_snapshots = FileSnapshot.select().where(FileSnapshot.development_step_id == step_id)
+
+        return [{
+            "name": item['file']['name'],
+            "path": item['file']['path'],
+            "full_path": item['file']['full_path'],
+            'content': item['content'],
+            "lines_of_code": len(item['content'].splitlines()),
+        } for item in [model_to_dict(file) for file in file_snapshots]]
 
     def get_all_coded_files(self):
         """
@@ -417,7 +443,7 @@ class Project:
             # - /pilot -> /pilot/
             # - \pilot\server.js -> \pilot\server.js
             # - \pilot -> \pilot\
-            KNOWN_FILES = ["makefile", "dockerfile", "readme", "license"]  # known exceptions that break the heuristic
+            KNOWN_FILES = ["makefile", "dockerfile", "procfile", "readme", "license"]  # known exceptions that break the heuristic
             KNOWN_DIRS = []  # known exceptions that break the heuristic
             base = os.path.basename(path)
             if (

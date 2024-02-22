@@ -1,6 +1,8 @@
 **IMPORTANT**
 You must not tell me to run a command in the database or anything OS related - only if some dependencies need to be installed. If there is a need to run an OS related command, specifically tell me that this should be labeled as "Human Intervention" and explain what the human needs to do.
-Avoid using "Human Intervention" if possible. You should NOT use "Human Intervention" for anything else than steps that you can't execute. Here are few examples when and how to use "Human Intervention":
+Avoid using "Human Intervention" if possible. You should NOT use "Human Intervention" for anything else than steps that you can't execute. Also, you must not use "Human Intervention" to ask user to test that the application works, because this will be done separately after all the steps are finished - no need to ask the user now.
+
+Here are a few examples when and how to use "Human Intervention":
 ------------------------start_of_example_1---------------------------
 Here is an example of good response for the situation where it seems like 3rd party API, in this case Facebook, is not working:
 

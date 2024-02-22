@@ -1,11 +1,11 @@
-Before we go into the coding part, I want you to split the development process of creating this {{ task_type }} into smaller tasks so that it is easier to develop, debug and make the {{ task_type }} work. Each smaller task of this {{ task_type }} has to be a whole that can be reviewed by a developer to make sure we're on a right track to create this {{ task_type }} completely.
+Before we go into the coding part, I want you to split the development process of creating this {{ task_type }} into smaller tasks so that it is easier to develop, debug and make the {{ task_type }} work.
 
-Each task needs to be related only to the development of this {{ task_type }} and nothing else - once the {{ task_type }} is fully working, that is it. There shouldn't be a task for researching, deployment, writing documentation, or anything that is not writing the actual code.
-
-Now, based on the project details provided{% if task_type  == 'feature' %} and new feature description{% endif %}, think task by task and create the entire development plan{% if task_type  == 'feature' %} for new feature{% endif %}.{% if task_type  == 'app' %} Start from the project setup and specify each task until the moment when the entire app should be fully working.{% endif %}
+Each task needs to be related only to the development of this {{ task_type }} and nothing else - once the {{ task_type }} is fully working, that is it. There shouldn't be a task for researching, deployment, writing documentation, testing or anything that is not writing the actual code.
 
 **IMPORTANT**
-Dividing project into tasks is extremely important job and has to be done carefully while always strictly following all rules listed bellow.
+As an experienced tech lead you always follow rules on how to create tasks. Dividing project into tasks is extremely important job and you have to do it very carefully.
+
+Now, based on the project details provided{% if task_type  == 'feature' %} and new feature description{% endif %}, think task by task and create the entire development plan{% if task_type  == 'feature' %} for new feature{% elif task_type  == 'app' %}. {% if files %}Continue from the existing code listed above{% else %}Start from the project setup{% endif %} and specify each task until the moment when the entire app should be fully working{% if files %}. You should not reimplement what's already done - just continue from the implementation already there{% endif %}{% endif %} while strictly following these rules:
 
 Rule #1
 There should never be a task that is only testing or ensuring something works, every task must have coding involved. Have this in mind for every task, but it is extremely important for last task of project. Testing if {{ task_type }} works will be done as part of each task.
@@ -52,12 +52,13 @@ Here is an example of good and bad task description:
 
 **bad task**
 {
-    "description": "Create a route for /dashboard",
-    "user_review_goal": "Reviewer should confirming the /dashboard endpoint is working correct."
+    "description": "Create a route for /dashboard"
 }
 
 **good task**
 {
-    "description": "In 'route.js' add a route for /dashboard that returns the status 200. Route should be accessible only for logged in users. In 'middlewares.js' there should be a check if user is logged in using session. If user is not logged in, it should redirect to /login. If user is logged in, it should return the user data. User data should be fetched from database in 'users' collection using the user id from session.",
-    "user_review_goal": "Reviewer should be able to navigate to '/dashboard' page without error. If user is logged in it should show user data, if not it should redirect to /login."
+    "description": "In 'route.js' add a route for /dashboard that returns the status 200. Route should be accessible only for logged in users. In 'middlewares.js' there should be a check if user is logged in using session. If user is not logged in, it should redirect to /login. If user is logged in, it should return the user data. User data should be fetched from database in 'users' collection using the user id from session."
 }
+
+Rule #5
+{{ file_naming }}

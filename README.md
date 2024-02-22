@@ -146,24 +146,6 @@ If not specified `email` will be parsed from `~/.gitconfig` if the file exists.
 See also [What's the purpose of arguments.password / User.password?](https://github.com/Pythagora-io/gpt-pilot/discussions/55)
 
 
-## `advanced`
-The Architect, by default, favors certain technologies, including:
-
-- Node.JS
-- MongoDB
-- PeeWee ORM
-- Jest & PyUnit
-- Bootstrap
-- Vanilla JavaScript
-- Socket.io
-
-If you have your own preferences, you can have a deeper conversation with the Architect.
-
-```bash
-python main.py advanced=True
-```
-
-
 ## `step`
 Continue working on an existing app from a specific **`step`** (eg: `user_tasks`)
 ```bash
