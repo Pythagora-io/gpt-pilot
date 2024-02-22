@@ -23,7 +23,7 @@ If you have enough information don't ask any questions.
 When thinking of questions, consider the following:
 - After getting answers to your questions, you must be able to solve the problem.
 - Category on which you need more information ("general", "frontend", "backend", "database", "devops", "other")
-- It is crucial that your questions can be answered without looking into code. Do not ask how something is implemented, how code works or for code snippets.
+- Client is not very technical person but understands basics. It is crucial that your questions can be answered without looking into code or knowing codebase. Do not ask how something is implemented, how code works or for code snippets.
 - Make sure to cover all categories that you need to solve the problem.
 - Ask only specific information that you need to solve the problem.
 - Ask clear, short and concise questions.

@@ -15,7 +15,7 @@ from utils.style import (
     color_white_bold
 )
 from helpers.exceptions import TokenLimitError
-from const.code_execution import MAX_COMMAND_DEBUG_TRIES
+from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_QUESTIONS_FOR_BUG_REPORT
 from helpers.exceptions import TooDeepRecursionError
 from helpers.Debugger import Debugger
 from utils.questionary import styled_text
@@ -693,12 +693,12 @@ class Developer(Agent):
             for missing_data_item in missing_data:
                 if self.project.check_ipc():
                     print(missing_data_item['question'], type='verbose')
-                    print('skip question', type='button')
+                    print('continue/skip question', type='button')
                     if self.run_command:
                             print(self.run_command, type='run_command')
 
-                answer = ask_user(self.project, missing_data_item['question'])
-                if answer.lower() == 'skip question':
+                answer = ask_user(self.project, missing_data_item['question'], require_some_input=False)
+                if answer.lower() == 'skip question' or answer.lower() == '' or answer.lower() == 'continue':
                     continue
 
                 questions_and_answers.append({
@@ -706,8 +706,8 @@ class Developer(Agent):
                     "answer": answer
                 })
 
-            # if user skips all questions, we don't want to get stuck in infinite loop
-            if length_before == len(questions_and_answers):
+            # if user skips all questions or if we got more than 4 answers, we don't want to get stuck in infinite loop
+            if length_before == len(questions_and_answers) or len(questions_and_answers) >= MAX_QUESTIONS_FOR_BUG_REPORT:
                 break
             bug_report_convo.load_branch(function_uuid)
 
