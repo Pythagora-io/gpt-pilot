@@ -8,6 +8,7 @@ from helpers.AgentConvo import AgentConvo
 from helpers.Agent import Agent
 from helpers.files import get_file_contents
 from const.function_calls import GET_FILE_TO_MODIFY, REVIEW_CHANGES
+from logger.logger import logger
 
 from utils.exit import trace_code_event
 from utils.telemetry import telemetry
@@ -269,17 +270,27 @@ class CodeMonkey(Agent):
 
         if len(hunks_to_apply) == len(hunks):
             print("Applying entire change")
+            logger.info(f"Applying entire change to {file_name}")
             return new_content, None
+
         elif len(hunks_to_apply) == 0:
-            print(f"Rejecting entire change with reason: {llm_response['review_notes']}")
-            # If everything can be safely ignoring, it's probably because the files already implement the changes
-            # from previous tasks (which can happen often). Insisting on a change here is likely to cause problems.
-            return old_content, None
+            if hunks_to_rework:
+                print(f"Requesting rework for {len(hunks_to_rework)} changes with reason: {llm_response['review_notes']}")
+                logger.info(f"Requesting rework for {len(hunks_to_rework)} changes to {file_name} (0 hunks to apply)")
+                return old_content, review_log
+            else:
+                # If everything can be safely ignored, it's probably because the files already implement the changes
+                # from previous tasks (which can happen often). Insisting on a change here is likely to cause problems.
+                print(f"Rejecting entire change with reason: {llm_response['review_notes']}")
+                logger.info(f"Rejecting entire change to {file_name} with reason: {llm_response['review_notes']}")
+                return old_content, None
 
         print("Applying code change:\n" + diff_log)
+        logger.info(f"Applying code change to {file_name}:\n{diff_log}")
         new_content = self.apply_diff(file_name, old_content, hunks_to_apply, new_content)
         if hunks_to_rework:
             print(f"Requesting rework for {len(hunks_to_rework)} changes with reason: {llm_response['review_notes']}")
+            logger.info(f"Requesting further rework for {len(hunks_to_rework)} changes to {file_name}")
             return new_content, review_log
         else:
             return new_content, None
