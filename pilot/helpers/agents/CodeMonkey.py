@@ -110,6 +110,7 @@ class CodeMonkey(Agent):
             content = convo.send_message('development/review_feedback.prompt', {
                 "content": content,
                 "original_content": file_content,
+                "rework_feedback": rework_feedback,
             })
             if content:
                 content = self.remove_backticks(content)
