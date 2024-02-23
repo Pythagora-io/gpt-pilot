@@ -1,0 +1,28 @@
+You are working on this app:
+```
+{{ app_summary }}
+```
+
+User came to you with this bug report:
+```
+{{ user_feedback }}
+```
+You didn't have enough information to start working on it, so you asked the user to provide more details.
+Here are questions and answers that you asked the user:
+```{% for row in questions_and_answers %}
+Q: {{ row.question }}
+A: {{ row.answer }}
+{% endfor %}
+```
+
+Your job is now to write issue explanation that will be sent to developer, strictly following these rules:
+- If there are some logs you MUST copy all logs in whole! Do not omit any logs! This is also true for code snippets or stack traces!
+- Explanation must be very clear and factual, keep it as short as possible.
+- When writing explanation of the issue, it is good to cover all categories that you have information on. If you don't have information about one category, then don't mention it. Here are categories: "general", "frontend", "backend", "database", "devops", "other".
+- Omit all information that turns out to be irrelevant for this issue (e.g. after asking additional questions it turns out that first user message is not relevant then you should ignore it)
+- Write issue explanation as if you are talking directly to developer (in first person). Do not mention "user", talk as if you found the the issue.
+- Do not use any subjective thoughts, just facts.
+- Write only issue explanation. Do not write any recap, summary or ideas how to solve the problem at the end. Do not write introduction at the start (e.g. "Issue Explanation for Developer:").
+- Do not write any new code, only if something is provided by user.
+- Have in mind that developer is smart and he will understand everything as long as you provide all information that you have and that is needed to fix this issue.
+- Have in mind that issue might not be related to your current development task.

@@ -1,0 +1,40 @@
+Here is description of app that you are working on:
+```
+{{ app_summary }}
+```
+
+{{ files_list }}
+
+Client wrote this feedback:
+```
+{{ user_feedback }}
+```
+{% if questions_and_answers|length > 0 %}
+Here are questions and answers that you already asked the client:
+```{% for row in questions_and_answers %}
+Q: {{ row.question }}
+A: {{ row.answer }}
+{% endfor %}
+```{% endif %}
+
+Your job is to identify if feedback is good enough for you to solve the problem. If not, what information you need to solve the problem. Ask for any information that you need to solve the problem.
+If you have enough information don't ask any questions.
+
+When thinking of questions, consider the following:
+- After getting answers to your questions, you must be able to solve the problem.
+- Category on which you need more information ("general", "frontend", "backend", "database", "devops", "other")
+- Client is not very technical person but understands basics. It is crucial that your questions can be answered without looking into code or knowing codebase. Do not ask how something is implemented, how code works or for code snippets.
+- Make sure to cover all categories that you need to solve the problem.
+- Ask only specific information that you need to solve the problem.
+- Ask clear, short and concise questions.
+- Ask only crucial questions. Do not ask for information that you do not need to solve the problem.
+- Ask least amount of questions to get the most information.
+- Ask least amount of questions to solve the problem.
+
+Here are some examples of good questions:
+"Are there any logs in browser?"
+"Can you provide logs from server?"
+"What is the error message?"
+"What is the expected behavior?"
+"What is the actual behavior?"
+"What is the stack trace?"

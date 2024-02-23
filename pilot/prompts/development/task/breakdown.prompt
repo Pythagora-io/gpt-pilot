@@ -1,7 +1,7 @@
 You are working on a {{ app_type }} called "{{ name }}" and you need to write code for the entire {{ task_type }} based on the tasks that the tech lead gives you. So that you understand better what you're working on, you're given other specs for "{{ name }}" as well.
 
 {{ project_details }}
-
+{{ features_list }}
 {{ files_list }}
 
 We've broken the development of this {{ task_type }} down to these tasks:

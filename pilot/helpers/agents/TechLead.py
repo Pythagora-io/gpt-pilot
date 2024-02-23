@@ -62,7 +62,6 @@ class TechLead(Agent):
     def create_feature_plan(self, feature_description):
         self.save_dev_steps = True
         self.convo_feature_plan = AgentConvo(self)
-        previous_features = get_features_by_app_id(self.project.args['app_id'])
 
         llm_response = self.convo_feature_plan.send_message('development/feature_plan.prompt',
             {
@@ -74,9 +73,8 @@ class TechLead(Agent):
                 "architecture": self.project.architecture,
                 "technologies": self.project.system_dependencies + self.project.package_dependencies,
                 "directory_tree": self.project.get_directory_tree(True),
-                "development_tasks": self.project.development_plan,
                 "files": self.project.get_all_coded_files(),
-                "previous_features": previous_features,
+                "previous_features": self.project.previous_features,
                 "feature_description": feature_description,
                 "task_type": 'feature',
             }, DEVELOPMENT_PLAN)
