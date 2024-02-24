@@ -109,34 +109,6 @@ def step_save_file_definition():
     }
 
 
-def step_delete_file_definition():
-    return {
-        "type": "object",
-        "properties": {
-            "type": {
-                "const": "delete_file",
-                "description": dev_step_type_description()
-            },
-            "delete_file": {
-                "type": "object",
-                "description": "A file that should be deleted. This should only be used for existing files that should get removed from the project.",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "description": "Name of the existing file that needs to be deleted."
-                    },
-                    "path": {
-                        "type": "string",
-                        "description": "Full path of the file with the file name that needs to be deleted."
-                    }
-                },
-                "required": ["name", "path"]
-            }
-        },
-        "required": ["type", "delete_file"]
-    }
-
-
 def step_human_intervention_definition():
     return {
         "type": "object",
@@ -303,7 +275,6 @@ IMPLEMENT_TASK = {
                             "oneOf": [
                                 step_command_definition(),
                                 step_save_file_definition(),
-                                step_delete_file_definition(),
                                 step_human_intervention_definition(),
                             ]
                         }
@@ -505,7 +476,7 @@ GET_DOCUMENTATION_FILE = {
 REVIEW_CHANGES = {
     'definitions': [{
         'name': 'review_diff',
-        'description': 'Review a unified diff and select hunks to apply.',
+        'description': 'Review a unified diff and select hunks to apply or rework.',
         'parameters': {
             "type": "object",
             "properties": {
@@ -520,12 +491,12 @@ REVIEW_CHANGES = {
                             },
                             "reason": {
                                 "type": "string",
-                                "desciprion": "Reason for applying or ignoring this hunk."
+                                "description": "Reason for applying or ignoring this hunk, or for asking for it to be reworked."
                             },
                             "decision": {
                                 "type": "string",
-                                "enum": ["apply", "ignore"],
-                                "description": "Whether to apply this hunk (if it's a valid change) or ignore it."
+                                "enum": ["apply", "ignore", "rework"],
+                                "description": "Whether to apply this hunk (if it's a valid change with no problems), rework (a valid change but does something incorrectly), or ignore it (unwanted change)."
                             }
                         },
                         "required": ["number", "reason", "decision"],
@@ -537,6 +508,43 @@ REVIEW_CHANGES = {
                 }
             },
             "required": ["hunks", "review_notes"],
+            "additionalProperties": False
+        }
+    }],
+}
+
+GET_BUG_REPORT_MISSING_DATA = {
+    'definitions': [{
+        'name': 'bug_report_missing_data',
+        'description': 'Review bug report and identify missing data. List questions that need to be answered to proceed with the bug fix. If no additional questions are needed missing_data should be an empty array.',
+        'parameters': {
+            "type": "object",
+            "properties": {
+                "reasoning": {
+                    "type": "string",
+                    "description": "Reasoning for asking these questions or for not asking any questions."
+                },
+                "missing_data": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "category": {
+                                "type": "string",
+                                "enum": ["general", "frontend", "backend", "database", "devops", "other"],
+                                "description": "Category of the question."
+                            },
+                            "question": {
+                                "type": "string",
+                                "description": "Very clear question that needs to be answered to have good bug report.",
+                            },
+                        },
+                        "required": ["category", "question"],
+                        "additionalProperties": False
+                    },
+                }
+            },
+            "required": ["reasoning", "missing_data"],
             "additionalProperties": False
         }
     }],

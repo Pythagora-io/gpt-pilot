@@ -1,7 +1,7 @@
 You are working in a software development agency and a project manager and software architect approach you telling you that you're assigned to work on a new project. You are working on a {{ app_type }} called "{{ name }}" and you need to create a detailed development plan so that developers can start developing the app.
 
 {{ project_details }}
-
+{{ features_list }}
 {% if files %}The developers have already used a project scaffolding tool that creates the initial boilerplate for the project:
 {{ existing_summary }}
 

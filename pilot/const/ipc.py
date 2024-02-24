@@ -21,6 +21,7 @@ MESSAGE_TYPE = {
 LOCAL_IGNORE_MESSAGE_TYPES = [
     'info',
     'project_folder_name',
+    'run_command',
     'button',
     'buttons-only',
     'exit',

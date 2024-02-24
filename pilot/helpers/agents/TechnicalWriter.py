@@ -38,6 +38,8 @@ class TechnicalWriter(Agent):
             "user_tasks": self.project.user_tasks,
             "directory_tree": self.project.get_directory_tree(True),
             "files": self.project.get_all_coded_files(),
+            "previous_features": self.project.previous_features,
+            "current_feature": self.project.current_feature,
         }, GET_DOCUMENTATION_FILE)
 
         self.project.save_file(llm_response)

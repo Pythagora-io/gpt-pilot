@@ -15,7 +15,7 @@ from utils.style import (
     color_white_bold
 )
 from helpers.exceptions import TokenLimitError
-from const.code_execution import MAX_COMMAND_DEBUG_TRIES
+from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_QUESTIONS_FOR_BUG_REPORT
 from helpers.exceptions import TooDeepRecursionError
 from helpers.Debugger import Debugger
 from utils.questionary import styled_text
@@ -26,7 +26,8 @@ from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
 from helpers.cli import run_command_until_success, execute_command_and_check_cli_response
-from const.function_calls import EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN, ALTERNATIVE_SOLUTIONS
+from const.function_calls import (EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN,
+                                  ALTERNATIVE_SOLUTIONS, GET_BUG_REPORT_MISSING_DATA)
 from database.database import save_progress, get_progress_steps, update_app_status
 from utils.telemetry import telemetry
 from prompts.prompts import ask_user
@@ -144,7 +145,9 @@ class Developer(Agent):
                 "files": self.project.get_all_coded_files(),
                 "architecture": self.project.architecture,
                 "technologies": self.project.system_dependencies + self.project.package_dependencies,
-                "task_type": 'feature' if self.project.finished else 'app'
+                "task_type": 'feature' if self.project.finished else 'app',
+                "previous_features": self.project.previous_features,
+                "current_feature": self.project.current_feature,
             })
 
         instructions_prefix = " ".join(instructions.split()[:5])
@@ -635,6 +638,7 @@ class Developer(Agent):
                 return {"success": True, "user_input": user_feedback}
 
             if user_feedback is not None:
+                user_feedback = self.bug_report_generator(user_feedback)
                 stuck_in_loop = user_feedback.startswith(STUCK_IN_LOOP)
                 if stuck_in_loop:
                     # Remove the STUCK_IN_LOOP prefix from the user feedback
@@ -673,7 +677,9 @@ class Developer(Agent):
                     "next_solution_to_try": next_solution_to_try,
                     "alternative_solutions_to_current_issue": alternative_solutions_to_current_issue,
                     "tried_alternative_solutions_to_current_issue": tried_alternative_solutions_to_current_issue,
-                    "iteration_count": iteration_count
+                    "iteration_count": iteration_count,
+                    "previous_features": self.project.previous_features,
+                    "current_feature": self.project.current_feature,
                 })
 
                 llm_solutions.append({
@@ -694,6 +700,61 @@ class Developer(Agent):
                 task_steps = llm_response['tasks']
                 self.execute_task(iteration_convo, task_steps, is_root_task=True, task_source='troubleshooting')
                 print_task_progress(1, 1, development_task['description'], 'troubleshooting', 'done')
+
+    def bug_report_generator(self, user_feedback):
+        """
+        Generate a bug report from the user feedback.
+
+        :param user_feedback: The user feedback.
+        :return: The bug report.
+        """
+        bug_report_convo = AgentConvo(self)
+        function_uuid = str(uuid.uuid4())
+        bug_report_convo.save_branch(function_uuid)
+        questions_and_answers = []
+        while True:
+            llm_response = bug_report_convo.send_message('development/bug_report.prompt', {
+                "user_feedback": user_feedback,
+                "app_summary": self.project.project_description,
+                "files": self.project.get_all_coded_files(),
+                "questions_and_answers": questions_and_answers,
+            }, GET_BUG_REPORT_MISSING_DATA)
+
+            missing_data = llm_response['missing_data']
+            if len(missing_data) == 0:
+                break
+
+            length_before = len(questions_and_answers)
+            for missing_data_item in missing_data:
+                if self.project.check_ipc():
+                    print(missing_data_item['question'], type='verbose')
+                    print('continue/skip question', type='button')
+                    if self.run_command:
+                            print(self.run_command, type='run_command')
+
+                answer = ask_user(self.project, missing_data_item['question'], require_some_input=False)
+                if answer.lower() == 'skip question' or answer.lower() == '' or answer.lower() == 'continue':
+                    continue
+
+                questions_and_answers.append({
+                    "question": missing_data_item['question'],
+                    "answer": answer
+                })
+
+            # if user skips all questions or if we got more than 4 answers, we don't want to get stuck in infinite loop
+            if length_before == len(questions_and_answers) or len(questions_and_answers) >= MAX_QUESTIONS_FOR_BUG_REPORT:
+                break
+            bug_report_convo.load_branch(function_uuid)
+
+        if len(questions_and_answers):
+            bug_report_summary_convo = AgentConvo(self)
+            user_feedback = bug_report_summary_convo.send_message('development/bug_report_summary.prompt', {
+                "app_summary": self.project.project_description,
+                "user_feedback": user_feedback,
+                "questions_and_answers": questions_and_answers,
+            })
+
+        return user_feedback
 
     def review_task(self):
         """
@@ -735,6 +796,8 @@ class Developer(Agent):
             "user_input": self.user_feedback,
             "modified_files": self.modified_files,
             "files_at_start_of_task": files_at_start_of_task,
+            "previous_features": self.project.previous_features,
+            "current_feature": self.project.current_feature,
         })
 
         instructions_prefix = " ".join(review.split()[:5])
@@ -902,6 +965,8 @@ class Developer(Agent):
             "user_input": user_feedback,
             "previous_solutions": previous_solutions,
             "tried_alternative_solutions_to_current_issue": tried_alternative_solutions_to_current_issue,
+            "previous_features": self.project.previous_features,
+            "current_feature": self.project.current_feature,
         }, ALTERNATIVE_SOLUTIONS)
 
         next_solution_to_try_index = self.ask_user_for_next_solution(response['alternative_solutions'])

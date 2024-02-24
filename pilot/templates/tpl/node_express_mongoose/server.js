@@ -36,7 +36,7 @@ mongoose
     process.exit(1);
   });
 
-  // Session configuration with connect-mongo
+// Session configuration with connect-mongo
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
@@ -54,13 +54,15 @@ app.on("error", (error) => {
 // Logging session creation and destruction
 app.use((req, res, next) => {
   const sess = req.session;
+  // Make session available to all views
+  res.locals.session = sess;
   if (!sess.views) {
     sess.views = 1;
     console.log("Session created at: ", new Date().toISOString());
   } else {
     sess.views++;
     console.log(
-      `Session accessed again at: ${new Date().toISOString()}, Views: ${sess.views}`,
+      `Session accessed again at: ${new Date().toISOString()}, Views: ${sess.views}, User ID: ${sess.userId || '(unauthenticated)'}`,
     );
   }
   next();

@@ -4,7 +4,7 @@ Here is a high level description of "{{ name }}":
 ```
 {{ app_summary }}
 ```
-
+{{ features_list }}
 Project architecture:
 {{ architecture }}
 
