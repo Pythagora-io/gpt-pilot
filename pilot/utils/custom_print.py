@@ -1,6 +1,7 @@
 import builtins
 from helpers.ipc import IPCClient
 from const.ipc import MESSAGE_TYPE, LOCAL_IGNORE_MESSAGE_TYPES
+from utils.print import remove_ansi_codes
 
 
 def get_custom_print(args):
@@ -19,7 +20,7 @@ def get_custom_print(args):
         ipc_client_instance.send({
             'type': MESSAGE_TYPE[kwargs['type']],
             'category': kwargs['category'] if 'category' in kwargs else '',
-            'content': message,
+            'content': remove_ansi_codes(message),
         })
         if kwargs['type'] == MESSAGE_TYPE['user_input_request']:
             return ipc_client_instance.listen()

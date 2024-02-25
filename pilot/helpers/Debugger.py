@@ -66,6 +66,7 @@ class Debugger:
                     user_input = answer
                     self.agent.project.current_task.add_user_input_to_debugging_task(user_input)
 
+            print('', type='verbose', category='agent:debugger')
             llm_response = convo.send_message('dev_ops/debug.prompt',
                 {
                     'command': command['command'] if command is not None else None,

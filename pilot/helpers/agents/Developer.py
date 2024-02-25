@@ -45,6 +45,7 @@ class Developer(Agent):
         self.debugger = Debugger(self)
 
     def start_coding(self, task_source):
+        print('', type='verbose', category='agent:developer')
         if not self.project.finished:
             self.project.current_step = 'coding'
             update_app_status(self.project.args['app_id'], self.project.current_step)
@@ -67,6 +68,7 @@ class Developer(Agent):
                     if current_progress_percent > threshold and threshold not in documented_thresholds:
                         if not self.project.skip_steps:
                             self.project.technical_writer.document_project(current_progress_percent)
+                            print('', type='verbose', category='agent:developer')
                         documented_thresholds.add(threshold)
 
             if self.project.tasks_to_load:
@@ -101,14 +103,14 @@ class Developer(Agent):
             update_app_status(self.project.args['app_id'], self.project.current_step)
             message = 'The app is DONE!!! Yay...you can use it now.\n'
             logger.info(message)
-            print(color_green_bold(message))
+            print(color_green_bold(message), category='success')
             if not self.project.skip_steps:
                 telemetry.set("end_result", "success:initial-project")
                 telemetry.send()
         else:
             message = 'Feature complete!\n'
             logger.info(message)
-            print(color_green_bold(message))
+            print(color_green_bold(message), category='success')
             if not self.project.skip_steps:
                 telemetry.set("end_result", "success:feature")
                 telemetry.send()
@@ -121,7 +123,7 @@ class Developer(Agent):
         :param task_source: The source of the task, one of: 'app', 'feature', 'debugger', 'iteration'.
         :param development_task: The task to implement.
         """
-        print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'))
+        print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'), category='agent:developer')
         self.project.dot_pilot_gpt.chat_log_folder(i + 1)
 
         convo_dev_task = AgentConvo(self)
@@ -495,6 +497,13 @@ class Developer(Agent):
         """
         function_uuid = str(uuid.uuid4())
         convo.save_branch(function_uuid)
+        agent_map = {
+            'app': 'agent:developer',
+            'feature': 'agent:developer',
+            'debugger': 'agent:debugger',
+            'troubleshooting': 'agent:troubleshooter',
+            'review': 'agent:reviewer',
+        }
 
         for (i, step) in enumerate(task_steps):
             print_step_progress(i+1, len(task_steps), step, task_source)
@@ -525,20 +534,19 @@ class Developer(Agent):
                         convo.load_branch(function_uuid)
 
                     if step['type'] == 'command':
-                        print('', type='verbose', category='command run')
                         result = self.step_command_run(convo, task_steps, i, success_with_cli_response=need_to_see_output)
                         # if need_to_see_output and 'cli_response' in result:
                         #     result['user_input'] = result['cli_response']
 
                     elif step['type'] in ['save_file', 'modify_file', 'code_change']:
-                        print('', type='verbose', category='save file')
+                        print('', type='verbose', category='agent:code-monkey')
                         result = self.step_save_file(convo, step, i, test_after_code_changes)
 
                     elif step['type'] == 'delete_file':
                         result = self.step_delete_file(convo, step, i, test_after_code_changes)
 
                     elif step['type'] == 'human_intervention':
-                        print('', type='verbose', category='human intervention')
+                        print('', type='verbose', category='human-intervention')
                         result = self.step_human_intervention(convo, task_steps, i)
 
                     # TODO background_command - if we run commands in background we should have way to kill processes
@@ -547,7 +555,7 @@ class Developer(Agent):
                     #     terminate_named_process(step['kill_process'])
                     #     result = {'success': True}
 
-                    print('', type='verbose', category='agent:developer')
+                    print('', type='verbose', category=agent_map[task_source])
                     logger.info('  step result: %s', result)
 
                     if (not result['success']) or (need_to_see_output and result.get("user_input") != "SKIP"):
@@ -628,7 +636,8 @@ class Developer(Agent):
                                                                   return_cli_response=True, is_root_task=True)},
                 convo=iteration_convo,
                 is_root_task=True,
-                add_loop_button=iteration_count > 3)
+                add_loop_button=iteration_count > 3,
+                category='human-test')
 
             logger.info('response: %s', response)
             self.review_count = 0
@@ -638,6 +647,7 @@ class Developer(Agent):
                 return {"success": True, "user_input": user_feedback}
 
             if user_feedback is not None:
+                print('', type='verbose', category='agent:troubleshooter')
                 user_feedback = self.bug_report_generator(user_feedback)
                 stuck_in_loop = user_feedback.startswith(STUCK_IN_LOOP)
                 if stuck_in_loop:
@@ -761,6 +771,7 @@ class Developer(Agent):
         Review all task changes and refactor big files.
         :return: bool - True if the task changes passed review, False if not
         """
+        print('', type='verbose', category='agent:reviewer')
         self.review_count += 1
         review_result = self.review_code_changes()
         refactoring_done = self.refactor_code()

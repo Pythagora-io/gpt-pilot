@@ -1,3 +1,6 @@
+import re
+
+
 def print_task_progress(index, num_of_tasks, description, task_source, status):
     """
     Print task progress in extension.
@@ -36,3 +39,13 @@ def print_step_progress(index, num_of_steps, step, task_source):
         'step': step,
         'source': task_source,
     }}, type='progress')
+
+
+def remove_ansi_codes(s: str) -> str:
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    # Check if the input is a string
+    if isinstance(s, str):
+        return ansi_escape.sub('', s)
+    else:
+        # If the input is not a string, return the input as is
+        return s

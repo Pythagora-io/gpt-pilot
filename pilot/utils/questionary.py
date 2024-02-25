@@ -1,14 +1,9 @@
 import platform
 import questionary
-import re
 import sys
 from database.database import save_user_input
 from utils.style import style_config
-
-
-def remove_ansi_codes(s: str) -> str:
-    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    return ansi_escape.sub('', s)
+from utils.print import remove_ansi_codes
 
 
 def styled_select(*args, **kwargs):
@@ -29,7 +24,6 @@ def styled_text(project, question, ignore_user_input_count=False, style=None, hi
 
     if project is not None and project.check_ipc():
         response = print(question, type='user_input_request')
-        print(response)
     else:
         used_style = style if style is not None else style_config.get_style()
         question = remove_ansi_codes(question)  # Colorama and questionary are not compatible and styling doesn't work
@@ -39,7 +33,8 @@ def styled_text(project, question, ignore_user_input_count=False, style=None, hi
     if not ignore_user_input_count:
         save_user_input(project, question, response, hint)
 
-    print('\n\n', end='')
+    if project is not None and not project.check_ipc():
+        print('\n\n', end='')
     return response
 
 

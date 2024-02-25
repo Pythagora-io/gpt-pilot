@@ -238,7 +238,8 @@ class AgentConvo:
         if self.log_to_user:
             if self.agent.project.checkpoints['last_development_step'] is not None:
                 dev_step_msg = f'\nDev step {str(self.agent.project.checkpoints["last_development_step"]["id"])}\n'
-                print(color_yellow_bold(dev_step_msg), end='')
+                if not self.agent.project.check_ipc():
+                    print(color_yellow_bold(dev_step_msg), end='')
                 logger.info(dev_step_msg)
             print(f"\n{content}\n", type='local')
         logger.info(f"{print_msg}: {content}\n")

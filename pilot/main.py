@@ -126,6 +126,7 @@ if __name__ == "__main__":
         print('Exit', type='exit')
 
     except Exception as err:
+        print('', type='verbose', category='error')
         print(color_red('---------- GPT PILOT EXITING WITH ERROR ----------'))
         traceback.print_exc()
         print(color_red('--------------------------------------------------'))
