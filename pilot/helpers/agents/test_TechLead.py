@@ -1,7 +1,7 @@
 import builtins
 import os
 import pytest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -63,9 +63,10 @@ The development process will include the creation of user stories and tasks, bas
             assert development_plan is not None
             assert_non_empty_string(development_plan[0]['description'])
             assert_non_empty_string(development_plan[0]['user_review_goal'])
+
     def test_tech_lead_model_override(self, monkeypatch):
         # Given any project
-        project = create_project()
+        project = MagicMock()
 
         model = 'some_model'
         monkeypatch.setenv('TECH_LEAD_MODEL_NAME', model)

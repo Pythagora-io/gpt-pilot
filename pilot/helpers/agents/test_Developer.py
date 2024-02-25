@@ -226,7 +226,7 @@ class TestDeveloper:
 
     def test_developer_model_override(self, monkeypatch):
         # Given any project
-        project = create_project()
+        project = MagicMock()
 
         model = 'some_model'
         monkeypatch.setenv('FULL_STACK_DEVELOPER_MODEL_NAME', model)
