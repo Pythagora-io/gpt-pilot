@@ -23,5 +23,6 @@ Your job is now to write issue explanation that will be sent to developer, stric
 - Write issue explanation as if you are talking directly to developer (in first person). Do not mention "user", talk as if you found the the issue.
 - Do not use any subjective thoughts, just facts.
 - Write only issue explanation. Do not write any recap, summary or ideas how to solve the problem at the end. Do not write introduction at the start (e.g. "Issue Explanation for Developer:").
+- Do not write any new code, only if something is provided by user.
 - Have in mind that developer is smart and he will understand everything as long as you provide all information that you have and that is needed to fix this issue.
 - Have in mind that issue might not be related to your current development task.

@@ -476,7 +476,7 @@ GET_DOCUMENTATION_FILE = {
 REVIEW_CHANGES = {
     'definitions': [{
         'name': 'review_diff',
-        'description': 'Review a unified diff and select hunks to apply.',
+        'description': 'Review a unified diff and select hunks to apply or rework.',
         'parameters': {
             "type": "object",
             "properties": {
@@ -491,12 +491,12 @@ REVIEW_CHANGES = {
                             },
                             "reason": {
                                 "type": "string",
-                                "description": "Reason for applying or ignoring this hunk."
+                                "description": "Reason for applying or ignoring this hunk, or for asking for it to be reworked."
                             },
                             "decision": {
                                 "type": "string",
-                                "enum": ["apply", "ignore"],
-                                "description": "Whether to apply this hunk (if it's a valid change) or ignore it."
+                                "enum": ["apply", "ignore", "rework"],
+                                "description": "Whether to apply this hunk (if it's a valid change with no problems), rework (a valid change but does something incorrectly), or ignore it (unwanted change)."
                             }
                         },
                         "required": ["number", "reason", "decision"],
