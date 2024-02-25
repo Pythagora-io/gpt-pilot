@@ -19,6 +19,7 @@ from helpers import Agent
 
 class AgentConvo:
     agent: Agent
+    model: str
     """
     Represents a conversation with an agent.
 
@@ -26,7 +27,7 @@ class AgentConvo:
         agent: An instance of the agent participating in the conversation.
     """
 
-    def __init__(self, agent: Agent, temperature: float = 0.7):
+    def __init__(self, agent: Agent, temperature: float = 0.7, model: str = None):
         # [{'role': 'system'|'user'|'assistant', 'content': ''}, ...]
         self.messages: list[dict] = []
         self.branches = {}
@@ -34,6 +35,11 @@ class AgentConvo:
         self.agent = agent
         self.high_level_step = self.agent.project.current_step
         self.temperature = temperature
+
+        if(model is None) :
+            self.model = agent.model
+        else :
+            self.model = model
 
         # add system message
         system_message = get_sys_message(self.agent.role, self.agent.project.args)
@@ -65,7 +71,7 @@ class AgentConvo:
 
         try:
             self.replace_files()
-            response = create_gpt_chat_completion(self.messages, self.high_level_step, self.agent.project, self.agent.model,
+            response = create_gpt_chat_completion(self.messages, self.high_level_step, self.agent.project, self.model,
                                                   function_calls=function_calls, prompt_data=prompt_data,
                                                   temperature=self.temperature)
         except TokenLimitError as e:
@@ -249,7 +255,7 @@ class AgentConvo:
         # Ideally, the LLM could do this, and we update it on load & whenever the file changes
         # ...or LLM generates a script for `.gpt-pilot/get_dependencies` that we run
         # https://github.com/Pythagora-io/gpt-pilot/issues/189
-        return get_prompt('development/context.prompt', self.agent.model, {
+        return get_prompt('development/context.prompt', self.model, {
             'directory_tree': self.agent.project.get_directory_tree(),
             'running_processes': running_processes,
         })
@@ -267,6 +273,6 @@ class AgentConvo:
 
     def construct_and_add_message_from_prompt(self, prompt_path, prompt_data):
         if prompt_path is not None and prompt_data is not None:
-            prompt = get_prompt(prompt_path, self.agent.model, prompt_data)
+            prompt = get_prompt(prompt_path, self.model, prompt_data)
             logger.info('\n>>>>>>>>>> User Prompt >>>>>>>>>>\n%s\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', prompt)
             self.messages.append({"role": "user", "content": prompt})

@@ -13,6 +13,25 @@ load_dotenv()
 builtins.print, ipc_client_instance = get_custom_print({})
 
 
+def test_agent_convo_model_resolve():
+    # Given
+    project = create_project()
+    developer = Developer(project)
+    convo = AgentConvo(developer)
+
+    # Then
+    assert convo.model == 'gpt-4-turbo-preview'
+
+def test_agent_convo_model_resolve():
+    # Given
+    model = "SOME_MODEL"
+    project = create_project()
+    developer = Developer(project)
+    convo = AgentConvo(developer, model=model)
+
+    # Then
+    assert convo.model == model
+
 # def test_format_message_content_json_response():
 #     # Given
 #     project = create_project()
