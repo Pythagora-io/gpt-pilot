@@ -9,7 +9,7 @@ import json
 import hashlib
 import re
 import copy
-from jinja2 import Environment, FileSystemLoader, Template
+from jinja2 import Environment, FileSystemLoader, Template, TemplateNotFound
 from .style import color_green
 
 from const.llm import MAX_QUESTIONS, END_RESPONSE
@@ -18,11 +18,8 @@ from logger.logger import logger
 
 primary_prompts_path = os.path.join(os.path.dirname(__file__), '..', 'prompts')
 override_prompts_path = os.getenv('PROMPTS_OVERRIDE_FOLDER', primary_prompts_path)
-primary_file_loader = FileSystemLoader(primary_prompts_path)
-override_file_loader = FileSystemLoader(override_prompts_path)
-primary_env = Environment(loader=primary_file_loader)
-override_env = Environment(loader=override_file_loader)
-
+file_loader = FileSystemLoader([override_prompts_path, primary_prompts_path])
+env = Environment(loader=file_loader)
 
 def capitalize_first_word_with_underscores(s):
     # Split the string into words based on underscores.
@@ -44,32 +41,27 @@ def get_prompt(prompt_name, model=None, original_data=None):
 
     logger.info(f"Getting prompt for {prompt_name}")
 
-    template = resolveTemplate(prompt_name, model)
-
-    
+    template = resolve_template(prompt_name, model)
 
     # Render the template with the provided data
     output = template.render(data)
 
     return output
 
-def resolveTemplate(prompt_name, model=None) -> Template:
+def resolve_template(prompt_name, model=None):
     logger.debug(f'resolving prompt: {prompt_name}')
 
-    if(model is not None) :
+    if model is not None:
         model_prompt_name = f'{model}/{prompt_name}'
-        model_override_prompt_path = os.path.join(override_prompts_path, model_prompt_name)
-        if(os.path.exists(model_override_prompt_path)):
-            logger.debug('resolved to model specific prompt')
-            return override_env.get_template(model_prompt_name)
+        try:
+            # Attempt to return the model-specific template
+            return env.get_template(model_prompt_name)
+        except TemplateNotFound:
+            # If the model-specific template is not found, log the event or handle accordingly
+            logger.debug(f'Model-specific template not found for {model_prompt_name}. Falling back to general template.')
 
-    override_prompt_path = os.path.join(override_prompts_path, prompt_name)
-    if(os.path.exists(override_prompt_path)):
-        logger.debug(f'resolved to model override prompt. path: {override_prompt_path}')
-        return override_env.get_template(prompt_name)
-    else:
-        logger.debug('resolved to default prompt')
-        return primary_env.get_template(prompt_name)
+    # If model is None or model-specific template is not found, fall back to the general template
+    return env.get_template(prompt_name)
     
 
 
@@ -100,7 +92,7 @@ def get_prompt_components(data, model):
 
         # When resolving component templates we need to look for it from the base prompts dir as
         # resolveTemplate uses the primary_env defined in this file
-        template = resolveTemplate(f'components/{template_name}', model)
+        template = resolve_template(f'components/{template_name}', model)
 
         # Load the template and render it with no variables
         file_content = template.render(data)
