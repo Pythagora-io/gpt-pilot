@@ -33,7 +33,7 @@ class TechLead(Agent):
         existing_summary = apply_project_template(self.project)
 
         # DEVELOPMENT PLANNING
-        print(color_green_bold("Starting to create the action plan for development...\n"))
+        print(color_green_bold("Starting to create the action plan for development...\n"), category='agent:tech-lead')
         logger.info("Starting to create the action plan for development...")
 
         llm_response = self.convo_development_plan.send_message('development/plan.prompt',

@@ -555,7 +555,7 @@ class Developer(Agent):
                     #     terminate_named_process(step['kill_process'])
                     #     result = {'success': True}
 
-                    print('', type='verbose', category=agent_map[task_source])
+                    print(f'Finishing up {step["type"]} step.', type='verbose', category=agent_map[task_source])
                     logger.info('  step result: %s', result)
 
                     if (not result['success']) or (need_to_see_output and result.get("user_input") != "SKIP"):
