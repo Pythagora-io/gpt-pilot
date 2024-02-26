@@ -41,24 +41,36 @@ class DotGptPilot:
         if task is not None:
             chat_log_path = os.path.join(chat_log_path, 'task_' + str(task))
 
-        os.makedirs(chat_log_path, exist_ok=True)
+        try:
+            os.makedirs(chat_log_path)
+        except OSError as e:
+            print(f"Error creating folder: {e}")
+            raise  
+
         self.chat_log_path = chat_log_path
         return chat_log_path
+
 
     def log_chat_completion(self, endpoint: str, model: str, req_type: str, messages: list[dict], response: str):
         if not USE_GPTPILOT_FOLDER:
             return
         if self.log_chat_completions:
             time = datetime.now().strftime('%Y-%m-%d_%H_%M_%S')
-            with open(os.path.join(self.chat_log_path, f'{time}-{req_type}.yaml'), 'w', encoding="utf-8") as file:
-                data = {
-                    'endpoint': endpoint,
-                    'model': model,
-                    'messages': messages,
-                    'response': response,
-                }
+            try:
+                with open(os.path.join(self.chat_log_path, f'{time}-{req_type}.yaml'), 'w', encoding="utf-8") as file:
+                    data = {
+                        'endpoint': endpoint,
+                        'model': model,
+                        'messages': messages,
+                        'response': response,
+                    }
 
-                yaml.safe_dump(data, file, width=120, indent=2, default_flow_style=False, sort_keys=False)
+                    try:
+                        yaml.safe_dump(data, file)
+                    except yaml.YAMLError as e:
+                        print(f"Error serializing YAML: {e}")
+            except Exception as e:
+                print(f"Error logging chat completion: {e}")
 
     def log_chat_completion_json(self, endpoint: str, model: str, req_type: str, functions: dict, json_response: str):
         if not USE_GPTPILOT_FOLDER:
