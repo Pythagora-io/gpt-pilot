@@ -13,7 +13,7 @@ GPT Pilot is the core technology for the [VS Code extension](https://marketplace
 
 ---
 
-📫 If you would like to get updates on future releases or just get in touch, you [can add your email here](http://eepurl.com/iD6Mpo). 📬
+📫 If you would like to get updates on future releases or just get in touch, join our [Discord server](https://discord.gg/HaqXugmxr9) or you [can add your email here](http://eepurl.com/iD6Mpo). 📬
 
 ---
 
@@ -40,13 +40,7 @@ GPT Pilot aims to research how much GPT-4 can be utilized to generate fully work
 
 **The main idea is that AI can write most of the code for an app (maybe 95%), but for the rest, 5%, a developer is and will be needed until we get full AGI**.
 
-I've broken down the idea behind GPT Pilot and how it works in the following blog posts:
-
-**[[Part 1/3] High-level concepts + GPT Pilot workflow until the coding part](https://blog.pythagora.ai/2023/08/23/430/)**
-
-**_[[Part 2/3] GPT Pilot coding workflow](https://blog.pythagora.ai/2023/09/04/gpt-pilot-coding-workflow-part-2-3/)_**
-
-**_[Part 3/3] Other important concepts and future plans (COMING UP)_**
+If you are interested in our learnings during this project, you can check [our latest blog posts](https://blog.pythagora.ai/2024/02/19/gpt-pilot-what-did-we-learn-in-6-months-of-working-on-a-codegen-pair-programmer/).
 
 ---
 
@@ -109,13 +103,13 @@ This will start two containers, one being a new image built by the `Dockerfile` 
 
 # 🧑‍💻️ CLI arguments
 
-## `app_type` and `name`
-If not provided, the ProductOwner will ask for these values:
 
-`app_type` is used as a hint to the LLM as to what kind of architecture, language options and conventions would apply. If not provided, `prompts.prompts.ask_for_app_type()` will ask for it.
+## `--get-created-apps-with-steps`
+Lists all existing apps.
 
-See `const.common.APP_TYPES`: 'Web App', 'Script', 'Mobile App', 'Chrome Extension'
-
+```bash
+python main.py --get-created-apps-with-steps
+```
 
 ## `app_id` and `workspace`
 Continue working on an existing app using **`app_id`**
@@ -132,22 +126,8 @@ python main.py workspace=<PATH_TO_PROJECT_WORKSPACE>
 Each user can have their own workspace path for each App.
 
 
-## `user_id`, `email`, and `password`
-These values will be saved to the User table in the DB.
-
-```bash
-python main.py user_id=me_at_work
-```
-
-If not specified, `user_id` defaults to the OS username but can be provided explicitly if your OS username differs from your GitHub or work username. This value is used to load the `App` config when the `workspace` arg is provided.
-
-If not specified `email` will be parsed from `~/.gitconfig` if the file exists.
-
-See also [What's the purpose of arguments.password / User.password?](https://github.com/Pythagora-io/gpt-pilot/discussions/55)
-
-
 ## `step`
-Continue working on an existing app from a specific **`step`** (eg: `user_tasks`)
+Continue working on an existing app from a specific **`step`** (eg: `development_planning`)
 ```bash
 python main.py app_id=<ID_OF_THE_APP> step=<STEP_FROM_CONST_COMMON>
 ```
@@ -178,14 +158,6 @@ python main.py theme=dark
 ```
 - Dark mode.
 ![屏幕截图 2023-10-15 104120](https://github.com/Pythagora-io/gpt-pilot/assets/138990495/942cd1c9-b774-498e-b72a-677b01be1ac3)
-
-
-## `delete_unrelated_steps`
-
-
-## `update_files_before_start`
-
-
 
 # 🔎 Examples
 ### Backend system for billing, admin, and user management
@@ -232,15 +204,16 @@ Here are the steps GPT Pilot takes to create an app:
 ![GPT Pilot workflow](https://github.com/Pythagora-io/gpt-pilot/assets/10895136/d89ba1d4-1208-4b7f-b3d4-76e3ccea584e)
 
 1. You enter the app name and the description.
-2. **Product Owner agent** asks a couple of questions to understand the requirements better.
-3. **Product Owner agent** writes user stories and asks you if they are all correct (this helps it create code later on).
-4. **Architect agent** writes up technologies that will be used for the app.
-5. **DevOps agent** checks if all technologies are installed on the machine and installs them if not.
-6. **Tech Lead agent** writes up development tasks that the Developer must implement. This is an important part because, for each step, the Tech Lead needs to specify how the user (real-world developer) can review if the task is done (e.g. open localhost:3000 and do something).
-7. **Developer agent** takes each task and writes up what needs to be done to implement it. The description is in human-readable form.
-8. Finally, **Code Monkey agent** takes the Developer's description and the existing file and implements the changes. We realized this works much better than giving it to the Developer right away to implement changes.
-
-For more details on the roles of agents employed by GPT Pilot, please take a look at [AGENTS.md](https://github.com/Pythagora-io/gpt-pilot/blob/main/pilot/helpers/agents/AGENTS.md)
+2. **Product Owner agent** like in real life, does nothing. :)
+3. **Specification Writer agent** asks a couple of questions to understand the requirements better if project description is not good enough.
+4. **Architect agent** writes up technologies that will be used for the app and checks if all technologies are installed on the machine and installs them if not.
+5. **Tech Lead agent** writes up development tasks that the Developer must implement.
+6. **Developer agent** takes each task and writes up what needs to be done to implement it. The description is in human-readable form.
+7. **Code Monkey agent** takes the Developer's description and the existing file and implements the changes.
+8. **Reviewer agent** reviews every step of the task and if something is done wrong Reviewer sends it back to Code Monkey.
+9. **Troubleshooter agent** helps you to give good feedback to GPT Pilot when something is wrong.
+10. **Debugger agent** hate to see him, but he is your best friend when things go south.
+11. **Technical Writer agent** writes documentation for the project.
 
 ![GPT Pilot Coding Workflow](https://github.com/Pythagora-io/gpt-pilot/assets/10895136/53ea246c-cefe-401c-8ba0-8e4dd49c987b)
 

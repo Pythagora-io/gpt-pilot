@@ -90,6 +90,7 @@ class SpecWriter(Agent):
         if len(initial_prompt) > 1500:
             return initial_prompt
 
+        print('', type='verbose', category='agent:spec-writer')
         spec = self.analyze_project(initial_prompt)
         missing_info = self.review_spec(initial_prompt, spec)
         if missing_info:

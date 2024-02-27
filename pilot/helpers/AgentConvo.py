@@ -15,6 +15,7 @@ from prompts.prompts import ask_user
 from const.llm import END_RESPONSE
 from helpers.cli import running_processes
 from helpers import Agent
+from utils.telemetry import telemetry
 
 
 class AgentConvo:
@@ -110,6 +111,8 @@ class AgentConvo:
         if should_log_message:
             self.log_message(message_content)
 
+        if self.agent.project.check_ipc():
+            telemetry.send_project_stats()
         return response
 
     def format_message_content(self, response, function_calls):
@@ -243,7 +246,8 @@ class AgentConvo:
         if self.log_to_user:
             if self.agent.project.checkpoints['last_development_step'] is not None:
                 dev_step_msg = f'\nDev step {str(self.agent.project.checkpoints["last_development_step"]["id"])}\n'
-                print(color_yellow_bold(dev_step_msg), end='')
+                if not self.agent.project.check_ipc():
+                    print(color_yellow_bold(dev_step_msg), end='')
                 logger.info(dev_step_msg)
             print(f"\n{content}\n", type='local')
         logger.info(f"{print_msg}: {content}\n")
