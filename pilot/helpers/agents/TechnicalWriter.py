@@ -12,12 +12,13 @@ class TechnicalWriter(Agent):
 
     def document_project(self, percent):
         files = self.project.get_all_coded_files()
-        print(f'{color_green_bold("CONGRATULATIONS!!!")}')
+        print(f'{color_green_bold("CONGRATULATIONS!!!")}', category='success')
         print(f'You reached {color_green(str(percent) + "%")} of your project generation!\n\n')
         print('For now, you have created:\n')
         print(f'{color_green(len(files))} files\n')
         print(f'{color_green(count_lines_of_code(files))} lines of code\n\n')
         print('Before continuing, GPT Pilot will create some documentation for the project...\n')
+        print('', type='verbose', category='agent:tech-writer')
         self.create_license()
         self.create_readme()
         self.create_api_documentation()
