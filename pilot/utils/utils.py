@@ -216,7 +216,10 @@ def is_extension_old_version(args):
     is_old_version = True
     if "extension_version" in args:
         arg_version_tuple = tuple(map(int, args["extension_version"].split('.')))
-        compare_version_tuple = (0, 0, 45)
+        compare_version_tuple = (0, 0, 47)
+        exception_version = (0, 0, 46)
+        if arg_version_tuple == exception_version:
+            return False
 
         is_old_version = arg_version_tuple <= compare_version_tuple
         print(is_old_version)
