@@ -34,7 +34,7 @@ from utils.ignore import IgnoreMatcher
 
 from utils.telemetry import telemetry
 from utils.task import Task
-from utils.utils import remove_lines_with_string
+from utils.utils import remove_lines_with_string, is_extension_old_version
 
 
 class Project:
@@ -58,6 +58,8 @@ class Project:
             current_step (str, optional): Current step in the project. Default is None.
         """
         self.args = args
+        # TODO remove everything related to is_extension_old_version once new version is released and everybody has to update core
+        self.is_extension_old_version = is_extension_old_version(args)
         self.llm_req_num = 0
         self.command_runs_count = 0
         self.user_inputs_count = 0
@@ -102,8 +104,6 @@ class Project:
         self.tasks_to_load = []
         self.features_to_load = []
         self.dev_steps_to_load = []
-        if self.continuing_project:
-            self.setup_loading()
         # end loading of project
 
     def set_root_path(self, root_path: str):
@@ -167,20 +167,27 @@ class Project:
         if not test_api_access(self):
             return False
 
+        if self.continuing_project:
+            self.setup_loading()
+
         self.project_manager = ProductOwner(self)
         self.spec_writer = SpecWriter(self)
 
+        print('', type='verbose', category='agent:product-owner')
         self.project_manager.get_project_description(self.spec_writer)
         self.project_manager.get_user_stories()
         # self.user_tasks = self.project_manager.get_user_tasks()
 
+        print('', type='verbose', category='agent:architect')
         self.architect = Architect(self)
         self.architect.get_architecture()
 
+        print('', type='verbose', category='agent:developer')
         self.developer = Developer(self)
         self.developer.set_up_environment()
         self.technical_writer = TechnicalWriter(self)
 
+        print('', type='verbose', category='agent:tech-lead')
         self.tech_lead = TechLead(self)
         self.tech_lead.create_development_plan()
 
@@ -194,7 +201,7 @@ class Project:
         print(json.dumps({
             "project_stage": "coding"
         }), type='info')
-        self.developer.start_coding()
+        self.developer.start_coding('app')
         return True
 
     def finish(self):
@@ -208,6 +215,7 @@ class Project:
 
             self.previous_features = get_features_by_app_id(self.args['app_id'])
             if not self.skip_steps:
+                print('', type='verbose', category='pythagora')
                 feature_description = ask_user(self, "Project is finished! Do you want to add any features or changes? "
                                                      "If yes, describe it here and if no, just press ENTER",
                                                require_some_input=False)
@@ -215,6 +223,7 @@ class Project:
                 if feature_description == '':
                     return
 
+                print('', type='verbose', category='agent:tech-lead')
                 self.tech_lead.create_feature_plan(feature_description)
 
             # loading of features
@@ -245,7 +254,8 @@ class Project:
                 self.features_to_load = []
 
             self.current_feature = feature_description
-            self.developer.start_coding()
+            self.developer.start_coding('feature')
+            print('', type='verbose', category='agent:tech-lead')
             self.tech_lead.create_feature_summary(feature_description)
 
     def get_directory_tree(self, with_descriptions=False):
@@ -542,7 +552,9 @@ class Project:
         delete_unconnected_steps_from(self.checkpoints['last_command_run'], 'previous_step')
         delete_unconnected_steps_from(self.checkpoints['last_user_input'], 'previous_step')
 
-    def ask_for_human_intervention(self, message, description=None, cbs={}, convo=None, is_root_task=False, add_loop_button=False):
+    def ask_for_human_intervention(self, message, description=None, cbs={}, convo=None, is_root_task=False,
+                                   add_loop_button=False, category='human-intervention'):
+        print('', type='verbose', category=category)
         answer = ''
         question = color_yellow_bold(message)
 

@@ -68,7 +68,7 @@ class TestDeveloper:
         developer.execute_task.return_value = {'success': True}
 
         # When
-        developer.implement_task(0, {'description': 'Do stuff'})
+        developer.implement_task(0, 'test', {'description': 'Do stuff'})
 
         # Then we parse the response correctly and send list of steps to execute_task()
         assert developer.execute_task.call_count == 1
@@ -97,7 +97,7 @@ class TestDeveloper:
         ]
 
         # When
-        developer.implement_task(0, {'description': 'Do stuff'})
+        developer.implement_task(0, 'test', {'description': 'Do stuff'})
 
         # Then we include the user input in the conversation to update the task list
         assert mock_completion.call_count == 3

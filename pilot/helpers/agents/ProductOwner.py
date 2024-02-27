@@ -23,7 +23,7 @@ class ProductOwner(Agent):
     def get_project_description(self, spec_writer):
         print(json.dumps({
             "project_stage": "project_description"
-        }), type='info')
+        }), type='info', category='agent:product-owner')
 
         self.project.app = get_app(self.project.args['app_id'], error_if_not_found=False)
 
