@@ -50,6 +50,7 @@ class Task:
             'task_description': '',
             'task_number': 0,
             'steps': 0,
+            'iterations': 0,
             'debugging': [],
         }
         self.data = self.initial_data.copy()
@@ -72,7 +73,7 @@ class Task:
         :param value: value to increment by
         """
         self.data[key] += value
-        if key == 'steps' and self.data[key] == LOOP_THRESHOLD + 1:
+        if key == 'iterations' and self.data[key] == LOOP_THRESHOLD + 1:
             self.send()
 
     def start_new_task(self, task_description: str, i: int):
@@ -129,7 +130,7 @@ class Task:
         :param name: name of the event
         :param force: force send the task data to telemetry
         """
-        if self.data['steps'] > LOOP_THRESHOLD or force:
+        if self.data['iterations'] > LOOP_THRESHOLD or force:
             full_data = telemetry.data.copy()
             full_data['task_with_loop'] = self.data.copy()
             trace_code_event(name=name, data=full_data)

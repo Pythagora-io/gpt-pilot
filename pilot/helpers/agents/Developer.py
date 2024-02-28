@@ -649,6 +649,7 @@ class Developer(Agent):
             if user_feedback is not None:
                 print('', type='verbose', category='agent:troubleshooter')
                 user_feedback = self.bug_report_generator(user_feedback)
+                self.project.current_task.inc('iterations')
                 stuck_in_loop = user_feedback.startswith(STUCK_IN_LOOP)
                 if stuck_in_loop:
                     # Remove the STUCK_IN_LOOP prefix from the user feedback
