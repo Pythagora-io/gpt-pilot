@@ -648,7 +648,6 @@ class Developer(Agent):
 
             if user_feedback is not None:
                 print('', type='verbose', category='agent:troubleshooter')
-                user_feedback = self.bug_report_generator(user_feedback)
                 self.project.current_task.inc('iterations')
                 stuck_in_loop = user_feedback.startswith(STUCK_IN_LOOP)
                 if stuck_in_loop:
@@ -667,6 +666,8 @@ class Developer(Agent):
                             tried_alternative_solutions_to_current_issue.append(description_of_tried_solutions)
 
                     tried_alternative_solutions_to_current_issue.append(next_solution_to_try)
+                else:
+                    user_feedback = self.bug_report_generator(user_feedback)
 
                 print_task_progress(1, 1, development_task['description'], 'troubleshooting', 'in_progress')
                 iteration_convo = AgentConvo(self)
