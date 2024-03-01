@@ -85,10 +85,12 @@ class CodeMonkey(Agent):
         files = self.project.get_all_coded_files()
         file_name, file_content = self.get_original_file(code_change_description, step, files)
 
+        print('', type='verbose', category='agent:code-monkey')
+
         if file_content:
-            print(f'Updating existing file {file_name}')
+            print(f'Updating existing file {file_name}:')
         else:
-            print(f'Creating new file {file_name}')
+            print(f'Creating new file {file_name}:')
 
         # Get the new version of the file
         content = self.replace_complete_file(
@@ -111,6 +113,7 @@ class CodeMonkey(Agent):
                 # No rework needed, we're done here
                 break
 
+            print('', type='verbose', category='agent:code-monkey')
             content = convo.send_message('development/review_feedback.prompt', {
                 "content": content,
                 "original_content": file_content,

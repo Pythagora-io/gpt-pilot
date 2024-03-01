@@ -408,6 +408,7 @@ class Project:
             inputs_required = self.find_input_required_lines(data['content'])
             for line_number, line_content in inputs_required:
                 user_input = None
+                print('', type='verbose', category='human-intervention')
                 print(color_yellow_bold(f'Input required on line {line_number}:\n{line_content}') + '\n')
                 while user_input is None or user_input.lower() not in AFFIRMATIVE_ANSWERS + ['continue']:
                     print({'path': full_path, 'line': line_number}, type='openFile')
