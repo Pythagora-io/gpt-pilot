@@ -145,10 +145,18 @@ def clear_directory(directory: str, ignore: Optional[list[str]] = None):
             if matcher.ignore(full_path):
                 continue
 
-            os.remove(full_path)
+            try:
+                os.remove(full_path)
+            except:  # noqa
+                # Gracefully handle some weird edge cases instead of crashing
+                pass
 
         # Delete empty subdirectories not in ignore list
         for d in dirs:
-            subdir_path = os.path.join(dpath, d)
-            if not os.listdir(subdir_path):
-                os.rmdir(subdir_path)
+            try:
+                subdir_path = os.path.join(dpath, d)
+                if not os.listdir(subdir_path):
+                    os.rmdir(subdir_path)
+            except:  # noqa
+                # Gracefully handle some weird edge cases instead of crashing
+                pass

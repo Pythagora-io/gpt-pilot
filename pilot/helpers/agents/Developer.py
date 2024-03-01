@@ -866,7 +866,13 @@ class Developer(Agent):
                 dep_text = dependency['name']
 
             logger.info('Checking %s', dependency)
-            llm_response = self.check_system_dependency(dependency)
+            try:
+                llm_response = self.check_system_dependency(dependency)
+            except Exception as err:
+                # This catches weird errors like people removing or renaming the workspace
+                # folder while we're trying to run system commands. Since these commands don't
+                # care about folders they run in, we don't want to crash just because of that.
+                llm_response = str(err)
 
             if llm_response == 'DONE':
                 print(color_green_bold(f"✅ {dep_text} is available."))

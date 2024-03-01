@@ -75,7 +75,9 @@ def apply_project_template(
     print(color_green_bold(f"Applying project template {template['description']}...\n"))
     logger.info(f"Applying project template {template_name}...")
 
-    project.save_files_snapshot(project.checkpoints['last_development_step']['id'])
+    last_development_step = project.checkpoints.get('last_development_step')
+    if last_development_step:
+        project.save_files_snapshot(last_development_step['id'])
 
     try:
         if install_hook:

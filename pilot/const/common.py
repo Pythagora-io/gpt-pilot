@@ -29,6 +29,7 @@ DEFAULT_IGNORE_PATHS = [
     '.next',
     '.DS_Store',
     '__pycache__',
+    "site-packages",
     'node_modules',
     'package-lock.json',
     'venv',
