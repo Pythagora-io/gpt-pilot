@@ -34,7 +34,7 @@ from utils.ignore import IgnoreMatcher
 
 from utils.telemetry import telemetry
 from utils.task import Task
-from utils.utils import remove_lines_with_string, is_extension_old_version
+from utils.utils import remove_lines_with_string
 
 
 class Project:
@@ -58,8 +58,6 @@ class Project:
             current_step (str, optional): Current step in the project. Default is None.
         """
         self.args = args
-        # TODO remove everything related to is_extension_old_version once new version is released and everybody has to update core
-        self.is_extension_old_version = is_extension_old_version(args)
         self.llm_req_num = 0
         self.command_runs_count = 0
         self.user_inputs_count = 0
