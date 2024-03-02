@@ -103,9 +103,10 @@ class CodeMonkey(Agent):
                 # There are no changes or there was problem talking with the LLM, we're done here
                 break
 
+            print('Sending code for review...', type='verbose', category='agent:code-monkey')
             print('', type='verbose', category='agent:reviewer')
             content, rework_feedback = self.review_change(convo, code_change_description, file_name, file_content, content)
-            print('', type='verbose', category='agent:code-monkey')
+            print('Review finished. Continuing...', type='verbose', category='agent:code-monkey')
             if not rework_feedback:
                 # No rework needed, we're done here
                 break
