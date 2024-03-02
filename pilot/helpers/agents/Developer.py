@@ -45,14 +45,13 @@ class Developer(Agent):
         self.debugger = Debugger(self)
 
     def start_coding(self, task_source):
-        print('', type='verbose', category='agent:developer')
+        print('Starting development...', type='verbose', category='agent:developer')
         if not self.project.finished:
             self.project.current_step = 'coding'
             update_app_status(self.project.args['app_id'], self.project.current_step)
 
         # DEVELOPMENT
         if not self.project.skip_steps:
-            print(color_green_bold("🚀 Now for the actual development...\n"))
             logger.info("Starting to create the actual code...")
 
         total_tasks = len(self.project.development_plan)
@@ -123,7 +122,8 @@ class Developer(Agent):
         :param task_source: The source of the task, one of: 'app', 'feature', 'debugger', 'iteration'.
         :param development_task: The task to implement.
         """
-        print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'), category='agent:developer')
+        print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'), category='pythagora')
+        print(f'Starting task #{i + 1} implementation...', type='verbose', category='agent:developer')
         self.project.dot_pilot_gpt.chat_log_folder(i + 1)
 
         convo_dev_task = AgentConvo(self)
@@ -636,7 +636,7 @@ class Developer(Agent):
                                                                   return_cli_response=True, is_root_task=True)},
                 convo=iteration_convo,
                 is_root_task=True,
-                add_loop_button=iteration_count > 3,
+                add_loop_button=iteration_count > 2,
                 category='human-test')
 
             logger.info('response: %s', response)
@@ -667,7 +667,7 @@ class Developer(Agent):
 
                     tried_alternative_solutions_to_current_issue.append(next_solution_to_try)
                 else:
-                    user_feedback = self.bug_report_generator(user_feedback)
+                    user_feedback = self.bug_report_generator(user_feedback, user_description)
 
                 print_task_progress(1, 1, development_task['description'], 'troubleshooting', 'in_progress')
                 iteration_convo = AgentConvo(self)
@@ -713,11 +713,12 @@ class Developer(Agent):
                 self.execute_task(iteration_convo, task_steps, is_root_task=True, task_source='troubleshooting')
                 print_task_progress(1, 1, development_task['description'], 'troubleshooting', 'done')
 
-    def bug_report_generator(self, user_feedback):
+    def bug_report_generator(self, user_feedback, task_review_description):
         """
         Generate a bug report from the user feedback.
 
         :param user_feedback: The user feedback.
+        :param task_review_description: The task review description.
         :return: The bug report.
         """
         bug_report_convo = AgentConvo(self)
@@ -729,6 +730,7 @@ class Developer(Agent):
                 "user_feedback": user_feedback,
                 "app_summary": self.project.project_description,
                 "files": self.project.get_all_coded_files(),
+                "task_review_description": task_review_description,
                 "questions_and_answers": questions_and_answers,
             }, GET_BUG_REPORT_MISSING_DATA)
 
@@ -762,6 +764,7 @@ class Developer(Agent):
             bug_report_summary_convo = AgentConvo(self)
             user_feedback = bug_report_summary_convo.send_message('development/bug_report_summary.prompt', {
                 "app_summary": self.project.project_description,
+                "task_review_description": task_review_description,
                 "user_feedback": user_feedback,
                 "questions_and_answers": questions_and_answers,
             })
@@ -773,7 +776,7 @@ class Developer(Agent):
         Review all task changes and refactor big files.
         :return: bool - True if the task changes passed review, False if not
         """
-        print('', type='verbose', category='agent:reviewer')
+        print('Starting review of all changes made in this task...', type='verbose', category='agent:reviewer')
         self.review_count += 1
         review_result = self.review_code_changes()
         refactoring_done = self.refactor_code()
