@@ -111,6 +111,14 @@ if __name__ == "__main__":
         telemetry.record_crash(err, end_result="failure:api-error")
         telemetry.send()
         run_exit_fn = False
+        if isinstance(err, TokenLimitError):
+            print('', type='verbose', category='error')
+            print(color_red(
+                "We sent too large request to the LLM, resulting in an error. "
+                "This is usually caused by including framework files in an LLM request. "
+                "Here's how you can get GPT Pilot to ignore those extra files: "
+                "https://bit.ly/faq-token-limit-error"
+            ))
         print('Exit', type='exit')
 
     except KeyboardInterrupt:

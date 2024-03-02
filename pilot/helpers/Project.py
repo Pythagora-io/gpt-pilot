@@ -408,6 +408,7 @@ class Project:
             inputs_required = self.find_input_required_lines(data['content'])
             for line_number, line_content in inputs_required:
                 user_input = None
+                print('', type='verbose', category='human-intervention')
                 print(color_yellow_bold(f'Input required on line {line_number}:\n{line_content}') + '\n')
                 while user_input is None or user_input.lower() not in AFFIRMATIVE_ANSWERS + ['continue']:
                     print({'path': full_path, 'line': line_number}, type='openFile')
@@ -475,7 +476,7 @@ class Project:
             # - /pilot -> /pilot/
             # - \pilot\server.js -> \pilot\server.js
             # - \pilot -> \pilot\
-            KNOWN_FILES = ["makefile", "dockerfile", "procfile", "readme", "license"]  # known exceptions that break the heuristic
+            KNOWN_FILES = ["makefile", "dockerfile", "procfile", "readme", "license", "podfile"]  # known exceptions that break the heuristic
             KNOWN_DIRS = []  # known exceptions that break the heuristic
             base = os.path.basename(path)
             if (
@@ -560,7 +561,10 @@ class Project:
 
         clear_directory(self.root_path, ignore=self.files)
         for file_snapshot in file_snapshots:
-            update_file(file_snapshot.file.full_path, file_snapshot.content, project=self)
+            try:
+                update_file(file_snapshot.file.full_path, file_snapshot.content, project=self)
+            except (PermissionError, NotADirectoryError) as err:  # noqa
+                print(f"Error restoring file {file_snapshot.file.full_path}: {err}")
             if file_snapshot.file.full_path not in self.files:
                 self.files.append(file_snapshot.file.full_path)
 
