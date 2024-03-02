@@ -242,8 +242,3 @@ To improve GPT Pilot, we are tracking some events from which you can opt out at 
 🌟 As an open-source tool, it would mean the world to us if you starred the GPT-pilot repo 🌟
 
 💬 Join [the Discord server](https://discord.gg/HaqXugmxr9) to get in touch.
-
-
-# 🌟 Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=Pythagora-io/gpt-pilot&type=Date)](https://star-history.com/#Pythagora-io/gpt-pilot&Date)
