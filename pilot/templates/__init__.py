@@ -1,5 +1,6 @@
 import os
 from typing import TYPE_CHECKING, Optional
+from uuid import uuid4
 
 from utils.style import color_green_bold
 from logger.logger import logger
@@ -51,6 +52,7 @@ def apply_project_template(
         {
             "project_name": project_name,
             "project_description": project_description,
+            "random_secret": uuid4().hex,
         },
     )
 

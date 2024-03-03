@@ -14,11 +14,14 @@ MESSAGE_TYPE = {
     'openFile': 'openFile',                # Open a file in extension
     'loadingFinished': 'loadingFinished',  # Marks end of loading project
     'loopTrigger': 'loopTrigger',          # Trigger loop feedback popup in extension
+    'progress': 'progress',                # Progress bar for extension only
+    'projectStats': 'projectStats',        # Project stats for extension only
 }
 
 LOCAL_IGNORE_MESSAGE_TYPES = [
     'info',
     'project_folder_name',
+    'run_command',
     'button',
     'buttons-only',
     'exit',
@@ -26,4 +29,6 @@ LOCAL_IGNORE_MESSAGE_TYPES = [
     'openFile',
     'loadingFinished',
     'loopTrigger',
+    'progress',
+    'projectStats',
 ]

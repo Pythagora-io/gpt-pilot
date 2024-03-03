@@ -194,6 +194,7 @@ def execute_command(project, command, timeout=None, success_message=None, comman
                             If `cli_response` not None: 'was interrupted by user', 'timed out' or `None` - caller should send `cli_response` to LLM
         exit_code (int): The exit code of the process.
     """
+    print('', type='verbose', category='exec-command')
     project.finish_loading()
     if timeout is not None:
         if timeout < 0:
@@ -216,7 +217,6 @@ def execute_command(project, command, timeout=None, success_message=None, comman
         logger.info('--------- EXECUTE COMMAND ---------- : %s', question)
         answer = ask_user(project, question, False, hint='If yes, just press ENTER. Otherwise, type "no" but it will be processed as successfully executed.')
         # TODO can we use .confirm(question, default='yes').ask()  https://questionary.readthedocs.io/en/stable/pages/types.html#confirmation
-        print('answer: ' + answer)
         if answer.lower() in NEGATIVE_ANSWERS:
             return None, 'SKIP', None
         elif answer.lower() not in AFFIRMATIVE_ANSWERS:

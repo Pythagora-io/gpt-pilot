@@ -84,12 +84,12 @@ def get_prompt_components(data):
     return data.update(prompts_components)
 
 
-def get_sys_message(role,args=None):
+def get_sys_message(role, args=None):
     """
     :param role: 'product_owner', 'architect', 'dev_ops', 'tech_lead', 'full_stack_developer', 'code_monkey'
     :return: { "role": "system", "content": "You are a {role}... You do..." }
     """
-    content = get_prompt(f'system_messages/{role}.prompt',args)
+    content = get_prompt(f'system_messages/{role}.prompt', args)
 
     return {
         "role": "system",
@@ -195,6 +195,7 @@ def clean_filename(filename):
 
     return cleaned_filename
 
+
 def json_serial(obj):
     """JSON serializer for objects not serializable by default json code"""
     if isinstance(obj, (datetime.datetime, datetime.date)):
@@ -204,7 +205,23 @@ def json_serial(obj):
     else:
         return str(obj)
 
+
 def remove_lines_with_string(file_content, matching_string):
     lines = file_content.split('\n')
     new_lines = [line for line in lines if matching_string not in line.lower()]
     return '\n'.join(new_lines)
+
+
+def is_extension_old_version(args):
+    is_old_version = True
+    if "extension_version" in args:
+        arg_version_tuple = tuple(map(int, args["extension_version"].split('.')))
+        compare_version_tuple = (0, 0, 47)
+        exception_version = (0, 0, 46)
+        if arg_version_tuple == exception_version:
+            return False
+
+        is_old_version = arg_version_tuple <= compare_version_tuple
+        print(is_old_version)
+
+    return is_old_version

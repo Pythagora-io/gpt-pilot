@@ -1,0 +1,13 @@
+{% if previous_features %}
+Here is the list of features that were previously implemented on top of initial high level description of "{{ name }}":
+```
+{% for feature in previous_features %}
+- {{ loop.index }}. {{ feature['summary'] }}
+{% endfor %}
+```
+
+{% endif %}{% if current_feature %}Here is the feature that you are implementing right now:
+```
+{{ current_feature }}
+```
+{% endif %}

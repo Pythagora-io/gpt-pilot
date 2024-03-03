@@ -58,20 +58,81 @@ def get_created_apps_with_steps():
     for app in apps:
         app['id'] = str(app['id'])
         app['steps'] = [step for step in STEPS[:STEPS.index(app['status']) + 1]] if app['status'] is not None else []
-        app['development_steps'] = get_all_app_development_steps(app['id'])
-        # TODO this is a quick way to remove the unnecessary fields from the response
-        app['development_steps'] = [{k: v for k, v in dev_step.items() if k in {'id', 'created_at'}} for dev_step in
-                                    app['development_steps']]
+        app['development_steps'] = get_all_app_development_steps(app['id'], loading_steps_only=True)
+
+        task_counter = 1
+        troubleshooting_counter = 1
+        feature_counter = 1
+        feature_end_counter = 1
+        new_development_steps = []
+
+        for dev_step in app['development_steps']:
+            # Filter out unwanted keys first
+            filtered_step = {k: v for k, v in dev_step.items() if k in {'id', 'prompt_path'}}
+
+            if 'breakdown' in filtered_step['prompt_path']:
+                filtered_step['name'] = f"Task {task_counter}"
+                task_counter += 1
+                # Reset troubleshooting counter on finding 'breakdown'
+                troubleshooting_counter = 1
+
+            elif 'iteration' in filtered_step['prompt_path']:
+                filtered_step['name'] = f"Troubleshooting {troubleshooting_counter}"
+                troubleshooting_counter += 1
+
+            elif 'feature_plan' in filtered_step['prompt_path']:
+                filtered_step['name'] = f"Feature {feature_counter}"
+                feature_counter += 1
+                # Reset task and troubleshooting counters on finding 'feature_plan'
+                task_counter = 1
+                troubleshooting_counter = 1
+
+            elif 'feature_summary' in filtered_step['prompt_path']:
+                filtered_step['name'] = f"Feature {feature_end_counter} end"
+                feature_end_counter += 1
+
+            # Update the dev_step in the list
+            new_development_steps.append(filtered_step)
+
+        last_step = get_last_development_step(app['id'])
+        if last_step:
+            new_development_steps.append({
+                'id': last_step['id'],
+                'prompt_path': last_step['prompt_path'],
+                'name': 'Latest Step',
+            })
+        app['development_steps'] = new_development_steps
+
     return apps
 
 
-def get_all_app_development_steps(app_id, last_step=None):
+def get_all_app_development_steps(app_id, last_step=None, loading_steps_only=False):
     query = DevelopmentSteps.select().where(DevelopmentSteps.app == app_id)
 
     if last_step is not None:
         query = query.where(DevelopmentSteps.id <= last_step)
 
+    if loading_steps_only:
+        query = query.where((DevelopmentSteps.prompt_path.contains('breakdown')) |
+                            # (DevelopmentSteps.prompt_path.contains('parse_task')) | Not needed for extension users but we can load this steps if needed
+                            (DevelopmentSteps.prompt_path.contains('iteration')) |
+                            # (DevelopmentSteps.prompt_path.contains('create_readme')) | Not needed for extension users but we can load this steps if needed
+                            (DevelopmentSteps.prompt_path.contains('feature_plan')) |
+                            (DevelopmentSteps.prompt_path.contains('feature_summary')))
+
     return [model_to_dict(dev_step) for dev_step in query]
+
+
+def get_last_development_step(app_id, last_step=None):
+    last_dev_step_query = DevelopmentSteps.select().where(DevelopmentSteps.app == app_id)
+    if last_step is not None:
+        last_dev_step_query = last_dev_step_query.where(DevelopmentSteps.id <= last_step)
+
+    # Order by ID in descending order to get the last step and fetch the first result
+    last_dev_step = last_dev_step_query.order_by(DevelopmentSteps.id.desc()).first()
+
+    # If a step is found, convert it to a dictionary, otherwise return None
+    return model_to_dict(last_dev_step) if last_dev_step else None
 
 
 def save_user(user_id, email, password):
