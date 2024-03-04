@@ -440,6 +440,10 @@ def stream_gpt_completion(data, req_type, project):
         timeout=(API_CONNECT_TIMEOUT, API_READ_TIMEOUT),
     )
 
+    if response.status_code == 401 and 'BricksLLM' in response.text:
+        print("", type='keyExpired')
+        raise ApiError(f"Trial Expired", response=response)
+
     if response.status_code != 200:
         project.dot_pilot_gpt.log_chat_completion(endpoint, model, req_type, data['messages'], response.text)
         logger.info(f'problem with request (status {response.status_code}): {response.text}')
