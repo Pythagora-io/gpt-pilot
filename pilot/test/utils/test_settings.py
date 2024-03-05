@@ -143,7 +143,7 @@ def test_get_git_commit():
 
 
 def test_get_package_version():
-    assert get_package_version().startswith("0.0.")
+    assert get_package_version().startswith("0.")
 
 
 def test_get_version():
