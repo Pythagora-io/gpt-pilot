@@ -391,6 +391,8 @@ class Developer(Agent):
         elif single_match:
             self.run_command = single_match.group(1).strip()
 
+        self.project.run_command = self.run_command
+
     def task_postprocessing(self, convo, development_task, continue_development, task_result, last_branch_name):
         if self.project.last_detailed_user_review_goal is None:
             self.get_run_command(convo)

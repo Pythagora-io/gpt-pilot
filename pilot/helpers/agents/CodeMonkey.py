@@ -262,7 +262,7 @@ class CodeMonkey(Agent):
         else:
             # The reviewer failed to review all the hunks in 3 attempts, let's just use all the new content
             convo.remove_last_x_messages(messages_to_remove)
-            return new_content
+            return new_content, None
 
         convo.remove_last_x_messages(messages_to_remove)
 

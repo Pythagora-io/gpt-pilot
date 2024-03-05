@@ -101,6 +101,7 @@ if __name__ == "__main__":
             started = project.start()
             if started:
                 project.finish()
+                print('Thank you for using Pythagora!', type='ipc', category='pythagora')
                 telemetry.set("end_result", "success:exit")
             else:
                 run_exit_fn = False
@@ -143,6 +144,8 @@ if __name__ == "__main__":
 
     finally:
         if project is not None:
+            if project.check_ipc():
+                ask_feedback = False
             project.current_task.exit()
             project.finish_loading(do_cleanup=False)
         if run_exit_fn:
