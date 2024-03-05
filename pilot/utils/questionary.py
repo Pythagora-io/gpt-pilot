@@ -24,8 +24,6 @@ def styled_text(project, question, ignore_user_input_count=False, style=None, hi
 
     if project is not None and project.check_ipc():
         response = print(question, type='user_input_request')
-        if project.is_extension_old_version:
-            print(response)
     else:
         used_style = style if style is not None else style_config.get_style()
         question = remove_ansi_codes(question)  # Colorama and questionary are not compatible and styling doesn't work

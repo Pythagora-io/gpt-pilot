@@ -369,7 +369,7 @@ def save_command_run(project, command, cli_response, done_or_error_response, exi
     unique_data = {
         'app': project.args['app_id'],
         'previous_step': project.checkpoints['last_command_run'],
-        'high_level_step': project.current_step,
+        'high_level_step': str(project.checkpoints['last_development_step']['id']) if project.checkpoints['last_development_step'] else None,
     }
 
     data_fields = {
@@ -391,7 +391,7 @@ def save_user_input(project, query, user_input, hint):
     unique_data = {
         'app': project.args['app_id'],
         'previous_step': project.checkpoints['last_user_input'],
-        'high_level_step': project.current_step,
+        'high_level_step': str(project.checkpoints['last_development_step']['id']) if project.checkpoints['last_development_step'] else None,
     }
     data_fields = {
         'query': query,

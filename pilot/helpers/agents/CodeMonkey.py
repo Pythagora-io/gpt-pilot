@@ -85,10 +85,12 @@ class CodeMonkey(Agent):
         files = self.project.get_all_coded_files()
         file_name, file_content = self.get_original_file(code_change_description, step, files)
 
+        print('', type='verbose', category='agent:code-monkey')
+
         if file_content:
-            print(f'Updating existing file {file_name}')
+            print(f'Updating existing file {file_name}:')
         else:
-            print(f'Creating new file {file_name}')
+            print(f'Creating new file {file_name}:')
 
         # Get the new version of the file
         content = self.replace_complete_file(
@@ -103,13 +105,15 @@ class CodeMonkey(Agent):
                 # There are no changes or there was problem talking with the LLM, we're done here
                 break
 
+            print('Sending code for review...', type='verbose', category='agent:code-monkey')
             print('', type='verbose', category='agent:reviewer')
             content, rework_feedback = self.review_change(convo, code_change_description, file_name, file_content, content)
-            print('', type='verbose', category='agent:code-monkey')
+            print('Review finished. Continuing...', type='verbose', category='agent:code-monkey')
             if not rework_feedback:
                 # No rework needed, we're done here
                 break
 
+            print('', type='verbose', category='agent:code-monkey')
             content = convo.send_message('development/review_feedback.prompt', {
                 "content": content,
                 "original_content": file_content,
@@ -258,7 +262,7 @@ class CodeMonkey(Agent):
         else:
             # The reviewer failed to review all the hunks in 3 attempts, let's just use all the new content
             convo.remove_last_x_messages(messages_to_remove)
-            return new_content
+            return new_content, None
 
         convo.remove_last_x_messages(messages_to_remove)
 
