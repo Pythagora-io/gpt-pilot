@@ -54,9 +54,9 @@ if __name__ == "__main__":
         builtins.print, ipc_client_instance = get_custom_print(args)
 
         if '--api-key' in args:
-            os.environ["OPENAI_API_KEY"] = args['--api-key']
+            os.environ["OPENAI_API_KEY"] = os.getenv('OPENAI_API_KEY') or args['--api-key']
         if '--api-endpoint' in args:
-            os.environ["OPENAI_ENDPOINT"] = args['--api-endpoint']
+            os.environ["OPENAI_ENDPOINT"] = os.getenv('OPENAI_ENDPOINT') or args['--api-endpoint']
 
         if '--get-created-apps-with-steps' in args:
             run_exit_fn = False
