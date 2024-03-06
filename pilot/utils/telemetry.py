@@ -184,9 +184,6 @@ class Telemetry:
 
         Note: only known data fields may be set, see `Telemetry.clear_data()` for a list.
         """
-        if not self.enabled:
-            return
-
         if name not in self.data:
             log.error(
                 f"Telemetry.record(): ignoring unknown telemetry data field: {name}"
@@ -204,9 +201,6 @@ class Telemetry:
 
         Note: only known data fields may be increased, see `Telemetry.clear_data()` for a list.
         """
-        if not self.enabled:
-            return
-
         if name not in self.data:
             log.error(
                 f"Telemetry.increase(): ignoring unknown telemetry data field: {name}"
@@ -219,9 +213,6 @@ class Telemetry:
         """
         Record start of application creation process.
         """
-        if not self.enabled:
-            return
-
         self.start_time = time.time()
         self.end_time = None
 
@@ -229,9 +220,6 @@ class Telemetry:
         """
         Record end of application creation process.
         """
-        if not self.enabled:
-            return
-
         if self.start_time is None:
             log.error("Telemetry.stop(): cannot stop telemetry, it was never started")
             return
@@ -302,9 +290,6 @@ class Telemetry:
         :param elapsed_time: time elapsed for the request
         :param is_error: whether the request resulted in an error
         """
-        if not self.enabled:
-            return
-
         self.inc("num_llm_requests")
 
         if is_error:
@@ -377,14 +362,12 @@ class Telemetry:
                 f"Telemetry.send(): failed to send telemetry data: {e}", exc_info=True
             )
 
-    def send_project_stats(self):
+    def output_project_stats(self):
         """
-        Send project statistics to the extension.
+        Output project statistics to the extension.
 
-        Note: this method does not clear any telemetry data.
+        This does not send the stats to any server.
         """
-        if not self.enabled:
-            return
 
         print({
             "num_lines": self.data["num_lines"],

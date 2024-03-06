@@ -104,7 +104,7 @@ class AgentConvo:
             self.log_message(message_content)
 
         if self.agent.project.check_ipc():
-            telemetry.send_project_stats()
+            telemetry.output_project_stats()
         return response
 
     def format_message_content(self, response, function_calls):
