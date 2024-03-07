@@ -66,6 +66,8 @@ if __name__ == "__main__":
 
         if '--api-key' in args:
             os.environ["OPENAI_API_KEY"] = args['--api-key']
+        if '--model-name' in args:
+            os.environ['MODEL_NAME'] = args['--model-name']
         if '--api-endpoint' in args:
             os.environ["OPENAI_ENDPOINT"] = args['--api-endpoint']
 
