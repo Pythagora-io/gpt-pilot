@@ -68,7 +68,7 @@ class AgentConvo:
                                                   function_calls=function_calls, prompt_data=prompt_data,
                                                   temperature=self.temperature)
         except TokenLimitError as e:
-            save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, '', str(e))
+            save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, {"text": ""}, str(e))
             raise e
 
         # TODO: move this code to Developer agent - https://github.com/Pythagora-io/gpt-pilot/issues/91#issuecomment-1751964079
@@ -104,7 +104,7 @@ class AgentConvo:
             self.log_message(message_content)
 
         if self.agent.project.check_ipc():
-            telemetry.send_project_stats()
+            telemetry.output_project_stats()
         return response
 
     def format_message_content(self, response, function_calls):

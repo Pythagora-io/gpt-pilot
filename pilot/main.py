@@ -54,9 +54,9 @@ if __name__ == "__main__":
         builtins.print, ipc_client_instance = get_custom_print(args)
 
         if '--api-key' in args:
-            os.environ["OPENAI_API_KEY"] = args['--api-key']
+            os.environ["OPENAI_API_KEY"] = os.getenv('OPENAI_API_KEY') or args['--api-key']
         if '--api-endpoint' in args:
-            os.environ["OPENAI_ENDPOINT"] = args['--api-endpoint']
+            os.environ["OPENAI_ENDPOINT"] = os.getenv('OPENAI_ENDPOINT') or args['--api-endpoint']
 
         if '--get-created-apps-with-steps' in args:
             run_exit_fn = False
@@ -101,6 +101,7 @@ if __name__ == "__main__":
             started = project.start()
             if started:
                 project.finish()
+                print('Thank you for using Pythagora!', type='ipc', category='pythagora')
                 telemetry.set("end_result", "success:exit")
             else:
                 run_exit_fn = False
@@ -111,6 +112,14 @@ if __name__ == "__main__":
         telemetry.record_crash(err, end_result="failure:api-error")
         telemetry.send()
         run_exit_fn = False
+        if isinstance(err, TokenLimitError):
+            print('', type='verbose', category='error')
+            print(color_red(
+                "We sent too large request to the LLM, resulting in an error. "
+                "This is usually caused by including framework files in an LLM request. "
+                "Here's how you can get GPT Pilot to ignore those extra files: "
+                "https://bit.ly/faq-token-limit-error"
+            ))
         print('Exit', type='exit')
 
     except KeyboardInterrupt:
@@ -135,6 +144,8 @@ if __name__ == "__main__":
 
     finally:
         if project is not None:
+            if project.check_ipc():
+                ask_feedback = False
             project.current_task.exit()
             project.finish_loading(do_cleanup=False)
         if run_exit_fn:

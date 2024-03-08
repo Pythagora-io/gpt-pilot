@@ -123,15 +123,7 @@ def test_telemetry_setup_enable(mock_uuid4, mock_settings):
 
 
 @patch("utils.telemetry.settings")
-def test_set_ignores_data_if_disabled(mock_settings):
-    mock_settings.telemetry = {"id": "existing-id", "enabled": False}
-    telemetry = Telemetry()
-    telemetry.set("model", "fake-model")
-    assert telemetry.data.get("model") != "fake-model"
-
-
-@patch("utils.telemetry.settings")
-def test_set_updates_data_if_enabled(mock_settings):
+def test_set_updates_data(mock_settings):
     mock_settings.telemetry = {
         "id": "test-id",
         "endpoint": "test-endpoint",
@@ -167,14 +159,6 @@ def test_inc_increments_known_data_field(mock_settings):
 
 
 @patch("utils.telemetry.settings")
-def test_inc_does_not_increment_when_disabled(mock_settings):
-    mock_settings.telemetry = {"id": "existing-id", "enabled": False}
-    telemetry = Telemetry()
-    telemetry.inc("num_llm_requests", 42)
-    assert telemetry.data["num_llm_requests"] == 0
-
-
-@patch("utils.telemetry.settings")
 def test_inc_ignores_unknown_data_field(mock_settings):
     mock_settings.telemetry = {
         "id": "test-id",
@@ -184,14 +168,6 @@ def test_inc_ignores_unknown_data_field(mock_settings):
     telemetry = Telemetry()
     telemetry.inc("unknown_field")
     assert "unknown_field" not in telemetry.data
-
-
-@patch("utils.telemetry.settings")
-def test_start_with_telemetry_disabled(mock_settings):
-    mock_settings.telemetry = {"id": "existing-id", "enabled": False}
-    telemetry = Telemetry()
-    telemetry.start()
-    assert telemetry.start_time is None
 
 
 @patch("utils.telemetry.time")
