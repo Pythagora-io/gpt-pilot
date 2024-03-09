@@ -1,31 +1,13 @@
-You are working on a {{ app_type }} called "{{ name }}" and you need to write code for the entire {{ task_type }} based on the tasks that the tech lead gives you. So that you understand better what you're working on, you're given other specs for "{{ name }}" as well.
+You are starting work on a {{ app_type }} called "{{ name }}". Another developer has been working on it and is handing over their work-in-progress implementation to you so you can continue the project.
 
 {{ project_details }}
 
-{% if current_task_index != 0 or task_type == 'feature' %}
-So far, this code has been implemented:
-{% for file in files %}
-**{{ file.path }}/{{ file.name }}**:
-```{# file.language #}
-{{ file.content }}
-```
+{{ files }}
 
-{% endfor %}
-{% endif %}
-
-We've broken the development of this {{ task_type }} down to these tasks:
-```{% for task in development_tasks %}
-{{ loop.index }}. {{ task['description'] }}
-{% endfor %}
-```
-
-You are currently working on task #{{ current_task_index + 1 }} with the following description:
-```
-{{ development_tasks[current_task_index]['description'] }}
-```
-{% if current_task_index != 0 %}All previous tasks are finished and you don't have to work on them.{% endif %}
-Summarize all {len(files)} files already created in this project. For each file, output a  detailed description (1-3 paragraphs) of what it is about. The description of every source code file MUST INCLUDE:
+Summarize all {len(files)} files already created in this project. For each file, output a  detailed description (1-3 paragraphs) of what the file is about. The description of every source code file MUST INCLUDE:
 * names of any top-level classes,  functions or constants defined in the file
 * functionality implemented, such as routes, views, controllers, database models, signal handlers, background jobs, UI layout or style, API endpoints, documentation, etc
 
-*IMPORTANT*: Remember, you MUST output description for all 65 files,  and the file paths must be relative to the project root.
+*IMPORTANT*: Remember, you MUST output description for all {{files|length}} files, and the file paths must be relative to the project root.
+
+Finally, based on the project details and the files already implemented, give a summary (2-3 paragraphs) of what's currently implemented (current state of the project).
