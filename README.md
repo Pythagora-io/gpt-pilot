@@ -17,7 +17,11 @@
 ---
 
 <div align="center">
-<a href="https://trendshift.io/repositories/466" target="_blank"><img src="https://trendshift.io/api/badge/repositories/466" alt="Pythagora-io%2Fgpt-pilot | Trendshift" style="width: 250px; height: 55px; margin-right: 10px; margin-bottom: 19px;" width="250" height="55"/></a>
+<a href="https://www.ycombinator.com/" target="_blank"><img src="./media/backed-by-YC-black.png" alt="Pythagora-io%2Fgpt-pilot | Trendshift" style="width: 250px; height: 93px;"/></a>
+</div>
+<br>
+<div align="center">
+<a href="https://trendshift.io/repositories/466" target="_blank"><img src="https://trendshift.io/api/badge/repositories/466" alt="Pythagora-io%2Fgpt-pilot | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 </div>
 
 <br>
