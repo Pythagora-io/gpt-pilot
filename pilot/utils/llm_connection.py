@@ -444,9 +444,12 @@ def stream_gpt_completion(data, req_type, project):
         print("", type='keyExpired')
         msg = "Trial Expired"
         key = os.getenv("OPENAI_API_KEY")
+        endpoint = os.getenv("OPENAI_ENDPOINT")
         if key:
-            msg += f" (using key ending in ...{key[-4:]}):"
-        msg += f"Error details: {response.text}"
+            msg += f"\n\n(using key ending in ...{key[-4:]}):"
+        if endpoint:
+            msg += f"\n(using endpoint: {endpoint}):"
+        msg += f"\n\nError details: {response.text}"
         raise ApiError(msg, response=response)
 
     if response.status_code != 200:
