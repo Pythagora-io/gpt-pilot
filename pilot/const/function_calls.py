@@ -520,31 +520,22 @@ GET_BUG_REPORT_MISSING_DATA = {
         'parameters': {
             "type": "object",
             "properties": {
-                "reasoning": {
-                    "type": "string",
-                    "description": "Reasoning for asking these questions or for not asking any questions."
-                },
                 "missing_data": {
                     "type": "array",
                     "items": {
                         "type": "object",
                         "properties": {
-                            "category": {
-                                "type": "string",
-                                "enum": ["general", "frontend", "backend", "database", "devops", "other"],
-                                "description": "Category of the question."
-                            },
                             "question": {
                                 "type": "string",
                                 "description": "Very clear question that needs to be answered to have good bug report.",
                             },
                         },
-                        "required": ["category", "question"],
+                        "required": ["question"],
                         "additionalProperties": False
                     },
                 }
             },
-            "required": ["reasoning", "missing_data"],
+            "required": ["missing_data"],
             "additionalProperties": False
         }
     }],
