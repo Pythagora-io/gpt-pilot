@@ -239,6 +239,7 @@ class Project:
                 print('', type='verbose', category='pythagora')
                 if self.run_command and self.check_ipc():
                     print(self.run_command, type='run_command')
+                print('continue', type='button')
                 feature_description = ask_user(self, "Project is finished! Do you want to add any features or changes? "
                                                      "If yes, describe it here and if no, just press ENTER",
                                                require_some_input=False)

@@ -652,6 +652,7 @@ class Developer(Agent):
                 print('', type='verbose', category='agent:troubleshooter')
                 self.project.current_task.inc('iterations')
                 stuck_in_loop = user_feedback.startswith(STUCK_IN_LOOP)
+                user_feedback_qa = None
                 if stuck_in_loop:
                     # Remove the STUCK_IN_LOOP prefix from the user feedback
                     user_feedback = user_feedback[len(STUCK_IN_LOOP):]
@@ -669,9 +670,9 @@ class Developer(Agent):
 
                     tried_alternative_solutions_to_current_issue.append(next_solution_to_try)
                 else:
-                    user_feedback = self.bug_report_generator(user_feedback, user_description)
+                    user_feedback, user_feedback_qa = self.bug_report_generator(user_feedback, user_description)
 
-                print_task_progress(1, 1, development_task['description'], 'troubleshooting', 'in_progress')
+                print_task_progress(1, 1, development_task['description'], 'troubleshooting', 'in_progress', len(llm_solutions) + 1)
                 iteration_convo = AgentConvo(self)
                 iteration_description = iteration_convo.send_message('development/iteration.prompt', {
                     "name": self.project.args['name'],
@@ -686,7 +687,8 @@ class Developer(Agent):
                     "current_task": development_task,
                     "development_tasks": self.project.development_plan,
                     "files": self.project.get_all_coded_files(),
-                    "user_input": user_feedback,
+                    "user_feedback": user_feedback,
+                    "user_feedback_qa": user_feedback_qa,
                     "previous_solutions": llm_solutions[-3:],
                     "next_solution_to_try": next_solution_to_try,
                     "alternative_solutions_to_current_issue": alternative_solutions_to_current_issue,
@@ -713,7 +715,7 @@ class Developer(Agent):
 
                 task_steps = llm_response['tasks']
                 self.execute_task(iteration_convo, task_steps, is_root_task=True, task_source='troubleshooting')
-                print_task_progress(1, 1, development_task['description'], 'troubleshooting', 'done')
+                print_task_progress(1, 1, development_task['description'], 'troubleshooting', 'done', len(llm_solutions) + 1)
 
     def bug_report_generator(self, user_feedback, task_review_description):
         """
@@ -721,57 +723,42 @@ class Developer(Agent):
 
         :param user_feedback: The user feedback.
         :param task_review_description: The task review description.
-        :return: The bug report.
+        :return: The user feedback and the questions and answers.
         """
         bug_report_convo = AgentConvo(self)
         function_uuid = str(uuid.uuid4())
         bug_report_convo.save_branch(function_uuid)
         questions_and_answers = []
-        while True:
-            llm_response = bug_report_convo.send_message('development/bug_report.prompt', {
-                "user_feedback": user_feedback,
-                "app_summary": self.project.project_description,
-                "files": self.project.get_all_coded_files(),
-                "task_review_description": task_review_description,
-                "questions_and_answers": questions_and_answers,
-            }, GET_BUG_REPORT_MISSING_DATA)
 
-            missing_data = llm_response['missing_data']
-            if len(missing_data) == 0:
-                break
+        llm_response = bug_report_convo.send_message('development/bug_report.prompt', {
+            "user_feedback": user_feedback,
+            "app_summary": self.project.project_description,
+            "files": self.project.get_all_coded_files(),
+            "task_review_description": task_review_description,
+            "questions_and_answers": questions_and_answers,
+        }, GET_BUG_REPORT_MISSING_DATA)
 
-            length_before = len(questions_and_answers)
-            for missing_data_item in missing_data:
-                if self.project.check_ipc():
-                    print(missing_data_item['question'], type='verbose')
-                    print('continue/skip question', type='button')
-                    if self.run_command:
-                            print(self.run_command, type='run_command')
+        missing_data = llm_response['missing_data']
+        if len(missing_data) == 0:
+            return user_feedback, None
 
-                answer = ask_user(self.project, missing_data_item['question'], require_some_input=False)
-                if answer.lower() == 'skip question' or answer.lower() == '' or answer.lower() == 'continue':
-                    continue
+        for missing_data_item in missing_data:
+            if self.project.check_ipc():
+                print(missing_data_item['question'], type='verbose')
+                print('continue/skip question', type='button')
+                if self.run_command:
+                    print(self.run_command, type='run_command')
 
-                questions_and_answers.append({
-                    "question": missing_data_item['question'],
-                    "answer": answer
-                })
+            answer = ask_user(self.project, missing_data_item['question'], require_some_input=False)
+            if answer.lower() == 'skip question' or answer.lower() == '' or answer.lower() == 'continue':
+                continue
 
-            # if user skips all questions or if we got more than 4 answers, we don't want to get stuck in infinite loop
-            if length_before == len(questions_and_answers) or len(questions_and_answers) >= MAX_QUESTIONS_FOR_BUG_REPORT:
-                break
-            bug_report_convo.load_branch(function_uuid)
-
-        if len(questions_and_answers):
-            bug_report_summary_convo = AgentConvo(self)
-            user_feedback = bug_report_summary_convo.send_message('development/bug_report_summary.prompt', {
-                "app_summary": self.project.project_description,
-                "task_review_description": task_review_description,
-                "user_feedback": user_feedback,
-                "questions_and_answers": questions_and_answers,
+            questions_and_answers.append({
+                "question": missing_data_item['question'],
+                "answer": answer
             })
 
-        return user_feedback
+        return user_feedback, questions_and_answers
 
     def review_task(self):
         """

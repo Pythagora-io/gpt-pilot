@@ -1,7 +1,7 @@
 import re
 
 
-def print_task_progress(index, num_of_tasks, description, task_source, status):
+def print_task_progress(index, num_of_tasks, description, task_source, status, source_index=1):
     """
     Print task progress in extension.
 
@@ -10,6 +10,7 @@ def print_task_progress(index, num_of_tasks, description, task_source, status):
     :param description: Description of the task.
     :param task_source: Source of the task, one of: 'app', 'feature', 'debugger', 'troubleshooting', 'review'.
     :param status: Status of the task, can be 'in_progress' or 'done'.
+    :param source_index: Index of the source.
 
     :return: None
     """
@@ -19,6 +20,7 @@ def print_task_progress(index, num_of_tasks, description, task_source, status):
         'description': description,
         'source': task_source,
         'status': status,
+        'source_index': source_index,
     }}, type='progress')
 
 
