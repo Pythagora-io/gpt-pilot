@@ -5,7 +5,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 from utils.custom_print import get_custom_print
 from helpers.agents.Developer import Developer
 from helpers.AgentConvo import AgentConvo

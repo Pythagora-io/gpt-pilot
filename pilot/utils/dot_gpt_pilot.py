@@ -4,7 +4,7 @@ import yaml
 from datetime import datetime
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 USE_GPTPILOT_FOLDER = os.getenv('USE_GPTPILOT_FOLDER') == 'true'
 

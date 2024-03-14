@@ -11,7 +11,7 @@ try:
 except ImportError:
     raise RuntimeError('Python environment for GPT Pilot is not completely set up: required package "python-dotenv" is missing.') from None
 
-load_dotenv()
+load_dotenv(override=True)
 
 from utils.style import color_red
 from utils.custom_print import get_custom_print
