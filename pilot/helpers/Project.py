@@ -203,7 +203,6 @@ class Project:
         self.architect = Architect(self)
         self.architect.get_architecture()
 
-        print('', type='verbose', category='agent:developer')
         self.developer = Developer(self)
         self.developer.set_up_environment()
         self.technical_writer = TechnicalWriter(self)

@@ -864,13 +864,13 @@ class Developer(Agent):
                 llm_response = str(err)
 
             if llm_response == 'DONE':
-                print(color_green_bold(f"✅ {dep_text} is available."))
+                print(color_green_bold(f"✅ {dep_text} is available."), category='agent:architect')
             else:
                 if dependency["required_locally"]:
                     remedy_text = "Please install it before proceeding with your app."
                 else:
                     remedy_text = "If you want to use it locally, you should install it before proceeding."
-                print(color_red_bold(f"❌ {dep_text} is not available. {remedy_text}"))
+                print(color_red_bold(f"❌ {dep_text} is not available. {remedy_text}"), category='agent:architect')
 
                 print('continue', type='buttons-only')
                 ask_user(
