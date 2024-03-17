@@ -9,7 +9,18 @@ import traceback
 try:
     from dotenv import load_dotenv
 except ImportError:
-    raise RuntimeError('Python environment for GPT Pilot is not completely set up: required package "python-dotenv" is missing.') from None
+    gpt_pilot_root = os.path.dirname(os.path.dirname(__file__))
+    venv_path = os.path.join(gpt_pilot_root, 'pilot-env')
+    requirements_path = os.path.join(gpt_pilot_root, 'requirements.txt')
+    if sys.prefix == sys.base_prefix:
+        venv_python_path = os.path.join(venv_path, 'scripts' if sys.platform == 'win32' else 'bin', 'python')
+        print('Python environment for GPT Pilot is not set up.')
+        print(f'Please create Python virtual environment: {sys.executable} -m venv {venv_path}')
+        print(f'Then install the required dependencies with: {venv_python_path} -m pip install -r {requirements_path}')
+    else:
+        print('Python environment for GPT Pilot is not completely set up.')
+        print(f'Please run `{sys.executable} -m pip install -r {requirements_path}` to finish Python setup, and rerun GPT Pilot.')
+    sys.exit(-1)
 
 load_dotenv()
 

@@ -48,8 +48,10 @@ class ProductOwner(Agent):
             while True:
                 question = 'What is the project name?'
                 print(question, type='ipc')
-                print('start an example project', type='button')
+                print('continue/start an example project', type='button')
                 project_name = ask_user(self.project, question)
+                if project_name is not None and project_name.lower() == 'continue':
+                    continue
                 if len(project_name) <= MAX_PROJECT_NAME_LENGTH:
                     break
                 else:
