@@ -1,3 +1,4 @@
+from unittest.mock import MagicMock, patch
 from .utils import should_execute_step
 
 
@@ -17,3 +18,5 @@ class TestShouldExecuteStep:
         assert should_execute_step('unknown', 'project_description') is False
         assert should_execute_step('unknown', None) is False
         assert should_execute_step(None, None) is False
+
+    

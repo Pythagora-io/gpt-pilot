@@ -1,17 +1,33 @@
 import builtins
-import os.path
+from unittest.mock import MagicMock
 from dotenv import load_dotenv
-from database.database import database
-from const.function_calls import IMPLEMENT_TASK
 from helpers.agents.Developer import Developer
 from helpers.AgentConvo import AgentConvo
 from utils.custom_print import get_custom_print
-from .test_Project import create_project
 
 load_dotenv()
 
 builtins.print, ipc_client_instance = get_custom_print({})
 
+
+def test_agent_convo_model_resolve():
+    # Given
+    project = MagicMock()
+    developer = Developer(project)
+    convo = AgentConvo(developer)
+
+    # Then
+    assert convo.model == 'gpt-4-turbo-preview'
+
+def test_agent_convo_model_resolve_model_as_constructor_arg():
+    # Given
+    model = "SOME_MODEL"
+    project = MagicMock()
+    developer = Developer(project)
+    convo = AgentConvo(developer, model=model)
+
+    # Then
+    assert convo.model == model
 
 # def test_format_message_content_json_response():
 #     # Given

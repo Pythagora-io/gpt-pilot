@@ -9,17 +9,17 @@ import json
 import hashlib
 import re
 import copy
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, Template, TemplateNotFound
 from .style import color_green
 
 from const.llm import MAX_QUESTIONS, END_RESPONSE
 from const.common import ROLES, STEPS
 from logger.logger import logger
 
-prompts_path = os.path.join(os.path.dirname(__file__), '..', 'prompts')
-file_loader = FileSystemLoader(prompts_path)
+primary_prompts_path = os.path.join(os.path.dirname(__file__), '..', 'prompts')
+override_prompts_path = os.getenv('PROMPTS_OVERRIDE_FOLDER', primary_prompts_path)
+file_loader = FileSystemLoader([override_prompts_path, primary_prompts_path])
 env = Environment(loader=file_loader)
-
 
 def capitalize_first_word_with_underscores(s):
     # Split the string into words based on underscores.
@@ -34,23 +34,38 @@ def capitalize_first_word_with_underscores(s):
     return capitalized_string
 
 
-def get_prompt(prompt_name, original_data=None):
+def get_prompt(prompt_name, model=None, original_data=None):
     data = copy.deepcopy(original_data) if original_data is not None else {}
-
-    get_prompt_components(data)
+    
+    get_prompt_components(data, model)
 
     logger.info(f"Getting prompt for {prompt_name}")
 
-    # Load the template
-    template = env.get_template(prompt_name)
+    template = resolve_template(prompt_name, model)
 
     # Render the template with the provided data
     output = template.render(data)
 
     return output
 
+def resolve_template(prompt_name, model=None):
+    logger.debug(f'resolving prompt: {prompt_name}')
 
-def get_prompt_components(data):
+    if model is not None:
+        model_prompt_name = f'{model}/{prompt_name}'
+        try:
+            # Attempt to return the model-specific template
+            return env.get_template(model_prompt_name)
+        except TemplateNotFound:
+            # If the model-specific template is not found, log the event or handle accordingly
+            logger.debug(f'Model-specific template not found for {model_prompt_name}. Falling back to general template.')
+
+    # If model is None or model-specific template is not found, fall back to the general template
+    return env.get_template(prompt_name)
+    
+
+
+def get_prompt_components(data, model):
     # This function reads and renders all prompts inside /prompts/components and returns them in dictionary
 
     # Create an empty dictionary to store the file contents.
@@ -75,8 +90,12 @@ def get_prompt_components(data):
         # Get the filename without extension as the dictionary key.
         file_key = os.path.splitext(template_name)[0]
 
+        # When resolving component templates we need to look for it from the base prompts dir as
+        # resolveTemplate uses the primary_env defined in this file
+        template = resolve_template(f'components/{template_name}', model)
+
         # Load the template and render it with no variables
-        file_content = env.get_template(template_name).render(data)
+        file_content = template.render(data)
 
         # Store the file content in the dictionary
         prompts_components[file_key] = file_content
@@ -89,7 +108,7 @@ def get_sys_message(role, args=None):
     :param role: 'product_owner', 'architect', 'dev_ops', 'tech_lead', 'full_stack_developer', 'code_monkey'
     :return: { "role": "system", "content": "You are a {role}... You do..." }
     """
-    content = get_prompt(f'system_messages/{role}.prompt', args)
+    content = get_prompt(f'system_messages/{role}.prompt', original_data=args)
 
     return {
         "role": "system",

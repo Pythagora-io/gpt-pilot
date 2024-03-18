@@ -41,7 +41,7 @@ def test_init():
 def test_end_to_end(endpoint, model, monkeypatch):
     # Given
     monkeypatch.setenv('ENDPOINT', endpoint)
-    monkeypatch.setenv('MODEL_NAME', model)
+    monkeypatch.setenv('DEFAULT_MODEL_NAME', model)
 
     create_tables()
     args = init()
