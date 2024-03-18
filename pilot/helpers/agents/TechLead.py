@@ -29,13 +29,11 @@ class TechLead(Agent):
             step_already_finished(self.project.args, step)
             self.project.development_plan = step['development_plan']
             return
-
+        
         existing_summary = apply_project_template(self.project)
-
         # DEVELOPMENT PLANNING
         print(color_green_bold("Starting to create the action plan for development...\n"), category='agent:tech-lead')
-        logger.info("Starting to create the action plan for development...")
-
+        logger.info("Starting to create the action plan for development...") 
         llm_response = self.convo_development_plan.send_message('development/plan.prompt',
             {
                 "name": self.project.args['name'],
@@ -48,6 +46,7 @@ class TechLead(Agent):
                 "existing_summary": existing_summary,
                 "files": self.project.get_all_coded_files(),
                 "task_type": 'app',
+                "is_react": self.project.project_template == 'javascript_react' or self.project.project_template == 'javascript_react_vite',
             }, DEVELOPMENT_PLAN)
         self.project.development_plan = llm_response['plan']
 

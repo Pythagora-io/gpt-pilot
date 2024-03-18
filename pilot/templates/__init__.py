@@ -9,13 +9,14 @@ from utils.exit import trace_code_event
 from .node_express_mongoose import NODE_EXPRESS_MONGOOSE
 from .render import Renderer
 from .javascript_react import JAVASCRIPT_REACT
-
+from .javascript_react_vite import JAVASCRIPT_REACT_VITE
 if TYPE_CHECKING:  # noqa
     from helpers.Project import Project  # noqa
 
 PROJECT_TEMPLATES = {
     "node_express_mongoose": NODE_EXPRESS_MONGOOSE,
-    "javascript_react": JAVASCRIPT_REACT
+    "javascript_react": JAVASCRIPT_REACT,
+    "javascript_react_vite":  JAVASCRIPT_REACT_VITE
 }
 
 

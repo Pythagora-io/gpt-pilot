@@ -2,9 +2,8 @@ You are working in a software development agency and a project manager and softw
 
 {{ project_details }}
 {{ features_list }}
-{% if files %}The developers have already used a project scaffolding tool that creates the initial boilerplate for the project:
+{% if files or is_react %}The developers have already used a project scaffolding tool that creates the initial boilerplate for the project:
 {{ existing_summary }}
-
 {{ files_list }}{% endif %}
 
 {{ project_tasks }}

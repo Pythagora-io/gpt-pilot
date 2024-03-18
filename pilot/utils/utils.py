@@ -192,8 +192,9 @@ def clean_filename(filename):
 
     # Replace whitespace with underscore
     cleaned_filename = re.sub(r'\s', '_', cleaned_filename)
-
-    return cleaned_filename
+     # Convert to lowercase
+    lowercase_filename = cleaned_filename.lower()
+    return lowercase_filename
 
 
 def json_serial(obj):
