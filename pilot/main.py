@@ -22,7 +22,7 @@ except ImportError:
         print(f'Please run `{sys.executable} -m pip install -r {requirements_path}` to finish Python setup, and rerun GPT Pilot.')
     sys.exit(-1)
 
-load_dotenv()
+load_dotenv(override=True)
 
 from utils.style import color_red
 from utils.custom_print import get_custom_print
