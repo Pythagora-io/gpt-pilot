@@ -8,7 +8,7 @@ from helpers.AgentConvo import AgentConvo
 from utils.custom_print import get_custom_print
 from .test_Project import create_project
 
-load_dotenv()
+load_dotenv(override=True)
 
 builtins.print, ipc_client_instance = get_custom_print({})
 
