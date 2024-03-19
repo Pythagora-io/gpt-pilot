@@ -2,6 +2,8 @@ version: '3'
 services:
     gpt-pilot:
         environment:
+                      - name: Deploy to Cloudflare Workers with Wrangler
+                uses: cloudflare/wrangler-action@v3.4.1
             # OPENAI/AZURE/OPENROUTER
             - ENDPOINT=OPENAI
             - OPENAI_API_KEY=
