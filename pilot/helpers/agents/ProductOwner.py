@@ -74,7 +74,7 @@ class ProductOwner(Agent):
             print(color_green_bold(
                 "GPT Pilot currently works best for web app projects using Node, Express and MongoDB. "
                 "You can use it with other technologies, but you may run into problems "
-                "(eg. React might not work as expected).\n"
+                "(eg. Svelte might not work as expected).\n"
             ))
             self.project.main_prompt = ask_for_main_app_definition(self.project)
 
