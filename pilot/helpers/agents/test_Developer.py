@@ -8,7 +8,7 @@ import requests
 
 from helpers.AgentConvo import AgentConvo
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(override=True)
 
 from main import get_custom_print
 from .Developer import Developer, ENVIRONMENT_SETUP_STEP

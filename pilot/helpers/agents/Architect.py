@@ -15,7 +15,7 @@ from templates import PROJECT_TEMPLATES
 
 ARCHITECTURE_STEP = 'architecture'
 WARN_SYSTEM_DEPS = ["docker", "kubernetes", "microservices"]
-WARN_FRAMEWORKS = ["react", "react.js", "next.js", "vue", "vue.js", "svelte", "angular"]
+WARN_FRAMEWORKS = ["next.js", "vue", "vue.js", "svelte", "angular"]
 WARN_FRAMEWORKS_URL = "https://github.com/Pythagora-io/gpt-pilot/wiki/Using-GPT-Pilot-with-frontend-frameworks"
 
 
