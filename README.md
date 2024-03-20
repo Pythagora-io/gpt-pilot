@@ -17,7 +17,7 @@
 ---
 
 <div align="center">
-<a href="https://www.ycombinator.com/" target="_blank"><img src="./media/backed-by-YC-black.png" alt="Pythagora-io%2Fgpt-pilot | Trendshift" style="width: 250px; height: 93px;"/></a>
+<a href="https://www.ycombinator.com/" target="_blank"><img src="https://s3.amazonaws.com/assets.pythagora.ai/yc/PNG/Black.png" alt="Pythagora-io%2Fgpt-pilot | Trendshift" style="width: 250px; height: 93px;"/></a>
 </div>
 <br>
 <div align="center">

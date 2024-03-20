@@ -39,6 +39,5 @@ Here is the list of questions you can ask:
 "Can you please provide more information on what exactly you mean?"
 "Can you please provide logs from the frontend?"
 "Can you please provide logs from the backend?"
-"What is the expected behavior?"
-"What is the actual behavior?"
+"What is the expected behavior and what is current behaviour?"
 "On what page does the issue happen?"
