@@ -496,7 +496,7 @@ REVIEW_CHANGES = {
                             "decision": {
                                 "type": "string",
                                 "enum": ["apply", "ignore", "rework"],
-                                "description": "Whether to apply this hunk (if it's a valid change with no problems), rework (a valid change but does something incorrectly), or ignore it (unwanted change)."
+                                "description": "Whether to apply this hunk, rework, or ignore it."
                             }
                         },
                         "required": ["number", "reason", "decision"],

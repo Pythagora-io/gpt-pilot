@@ -140,7 +140,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
         model_provider = 'openai'
 
     try:
-        if model_provider == 'anthropic':
+        if model_provider == 'anthropic' and os.getenv('ENDPOINT') != 'OPENROUTER':
             if not os.getenv('ANTHROPIC_API_KEY'):
                 os.environ['ANTHROPIC_API_KEY'] = os.getenv('OPENAI_API_KEY')
             response = stream_anthropic(messages, function_call_message, gpt_data, model_name)
@@ -486,13 +486,13 @@ def stream_gpt_completion(data, req_type, project):
             try:
                 json_line = json.loads(line)
 
-                if len(json_line['choices']) == 0:
-                    continue
-
                 if 'error' in json_line:
                     logger.error(f'Error in LLM response: {json_line}')
                     telemetry.record_llm_request(token_count, time.time() - request_start_time, is_error=True)
                     raise ValueError(f'Error in LLM response: {json_line["error"]["message"]}')
+
+                if 'choices' not in json_line or len(json_line['choices']) == 0:
+                    continue
 
                 choice = json_line['choices'][0]
 
@@ -609,7 +609,7 @@ def stream_anthropic(messages, function_call_message, gpt_data, model_name = "cl
         raise RuntimeError("The 'anthropic' package is required to use the Anthropic Claude LLM.") from err
 
     client = anthropic.Anthropic(
-        base_url=os.getenv('ANTHROPIC_ENDPOINT'),
+        base_url=os.getenv('ANTHROPIC_ENDPOINT') or None,
     )
 
     claude_system = "You are a software development AI assistant."
