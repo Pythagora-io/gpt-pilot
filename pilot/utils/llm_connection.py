@@ -486,13 +486,13 @@ def stream_gpt_completion(data, req_type, project):
             try:
                 json_line = json.loads(line)
 
-                if len(json_line['choices']) == 0:
-                    continue
-
                 if 'error' in json_line:
                     logger.error(f'Error in LLM response: {json_line}')
                     telemetry.record_llm_request(token_count, time.time() - request_start_time, is_error=True)
                     raise ValueError(f'Error in LLM response: {json_line["error"]["message"]}')
+
+                if 'choices' not in json_line or len(json_line['choices']) == 0:
+                    continue
 
                 choice = json_line['choices'][0]
 
