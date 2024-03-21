@@ -140,7 +140,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
         model_provider = 'openai'
 
     try:
-        if model_provider == 'anthropic':
+        if model_provider == 'anthropic' and os.getenv('ENDPOINT') != 'OPENROUTER':
             if not os.getenv('ANTHROPIC_API_KEY'):
                 os.environ['ANTHROPIC_API_KEY'] = os.getenv('OPENAI_API_KEY')
             response = stream_anthropic(messages, function_call_message, gpt_data, model_name)
@@ -609,7 +609,7 @@ def stream_anthropic(messages, function_call_message, gpt_data, model_name = "cl
         raise RuntimeError("The 'anthropic' package is required to use the Anthropic Claude LLM.") from err
 
     client = anthropic.Anthropic(
-        base_url=os.getenv('ANTHROPIC_ENDPOINT'),
+        base_url=os.getenv('ANTHROPIC_ENDPOINT') or None,
     )
 
     claude_system = "You are a software development AI assistant."
