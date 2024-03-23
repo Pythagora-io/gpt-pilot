@@ -31,7 +31,7 @@ Examples:
       "type": "command",
       "command": {
         "command": "ls",
-        "timeout": "5000",
+        "timeout": 5000,
         "success_message": "README.md",
         "command_id": "check_existence_of_readme_file"
       }
