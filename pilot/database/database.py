@@ -448,6 +448,16 @@ def delete_all_app_development_data(app):
         model.delete().where(model.app == app).execute()
 
 
+def delete_app(app_id):
+    app = get_app(app_id, False)
+    if not app:
+        return
+
+    delete_all_app_development_data(app)
+    App.delete().where(App.id == app.id).execute()
+    print(color_yellow(f"Deleted app {app_id} from GPT Pilot database. Project files were NOT deleted."))
+
+
 def delete_unconnected_steps_from(step, previous_step_field_name):
     if step is None:
         return
