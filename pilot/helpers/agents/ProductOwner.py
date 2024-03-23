@@ -19,6 +19,7 @@ USER_TASKS_STEP = 'user_tasks'
 class ProductOwner(Agent):
     def __init__(self, project):
         super().__init__('product_owner', project)
+        self.is_example_project = False
 
     def get_project_description(self, spec_writer):
         print(json.dumps({
@@ -40,7 +41,7 @@ class ProductOwner(Agent):
 
         # PROJECT DESCRIPTION
         self.project.current_step = PROJECT_DESCRIPTION_STEP
-        is_example_project = False
+        self.is_example_project = False
 
         if 'app_type' not in self.project.args:
             self.project.args['app_type'] = ask_for_app_type()
@@ -58,7 +59,7 @@ class ProductOwner(Agent):
                     print(f"Hold your horses cowboy! Please, give project NAME with max {MAX_PROJECT_NAME_LENGTH} characters.")
 
             if project_name.lower() == 'start an example project':
-                is_example_project = True
+                self.is_example_project = True
                 project_name = 'Example Project'
 
             self.project.args['name'] = clean_filename(project_name)
@@ -67,7 +68,7 @@ class ProductOwner(Agent):
 
         self.project.set_root_path(setup_workspace(self.project.args))
 
-        if is_example_project:
+        if self.is_example_project:
             print(EXAMPLE_PROJECT_DESCRIPTION)
             self.project.main_prompt = EXAMPLE_PROJECT_DESCRIPTION
         else:
