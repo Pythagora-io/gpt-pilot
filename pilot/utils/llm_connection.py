@@ -93,7 +93,7 @@ def test_api_access(project) -> bool:
 def create_gpt_chat_completion(messages: List[dict], req_type, project,
                                function_calls: FunctionCallSet = None,
                                prompt_data: dict = None,
-                               temperature: float = os.getenv('TEMPERATURE', 0.7)):
+                               temperature: float = -1):  
     """
     Called from:
       - AgentConvo.send_message() - these calls often have `function_calls`, usually from `pilot/const/function_calls.py`
@@ -108,6 +108,8 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
         or if `function_calls` param provided
              {'function_calls': {'name': str, arguments: {...}}}
     """
+    if (temperature < 0.0): 
+        temperature = os.getenv('TEMPERATURE', 0.7)
 
     model_name = os.getenv('MODEL_NAME', 'gpt-4')
     gpt_data = {
