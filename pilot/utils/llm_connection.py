@@ -128,7 +128,14 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
 
     # delete some keys if using "OpenRouter" API
     if os.getenv('ENDPOINT') == 'OPENROUTER':
-        keys_to_delete = ['n', 'max_tokens', 'temperature', 'top_p', 'presence_penalty', 'frequency_penalty']
+        keys_to_delete = ['n', 'max_tokens', 'temperature', 'top_p', 'top_k', 'repetition_penalty', 'presence_penalty', 'frequency_penalty', 'guidance_scale']
+        for key in keys_to_delete:
+            if key in gpt_data:
+                del gpt_data[key]
+
+    # delete some keys if using "Groq" API
+    if os.getenv('ENDPOINT') == 'GROQ':
+        keys_to_delete = ['n', 'max_tokens', 'temperature', 'top_p', 'top_k', 'repetition_penalty', 'presence_penalty', 'frequency_penalty', 'guidance_scale']
         for key in keys_to_delete:
             if key in gpt_data:
                 del gpt_data[key]
