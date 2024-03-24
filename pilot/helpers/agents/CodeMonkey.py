@@ -19,7 +19,7 @@ NO_EOL = "\ No newline at end of file"
 # Regular expression pattern for matching hunk headers
 PATCH_HEADER_PATTERN = re.compile(r"^@@ -(\d+),?(\d+)? \+(\d+),?(\d+)? @@")
 
-MAX_REVIEW_RETRIES = 3
+MAX_REVIEW_RETRIES = 2
 
 class CodeMonkey(Agent):
     save_dev_steps = True
@@ -80,6 +80,8 @@ class CodeMonkey(Agent):
         :param convo: conversation to continue (must contain file coding/modification instructions)
         :param step: information about the step being implemented
         """
+        previous_temperature = convo.temperature
+        convo.temperature = 0.0
         code_change_description = step.get('code_change_description')
 
         files = self.project.get_all_coded_files()
@@ -121,6 +123,7 @@ class CodeMonkey(Agent):
             })
             if content:
                 content = self.remove_backticks(content)
+            convo.remove_last_x_messages(2)
 
         # If we have changes, update the file
         if content and content != file_content:
@@ -133,6 +136,7 @@ class CodeMonkey(Agent):
                 'content': content,
             })
 
+        convo.temperature = previous_temperature
         return convo
 
     def replace_complete_file(
@@ -157,10 +161,15 @@ class CodeMonkey(Agent):
 
         Note: if even this fails for any reason, the original content is returned instead.
         """
+        prev_message = convo.messages[-1]['content']
+        prev_message_prefix = " ".join(prev_message.split()[:5])
+        prev_message_postfix = " ".join(prev_message.split()[-5:])
         llm_response = convo.send_message('development/implement_changes.prompt', {
             "file_content": file_content,
             "file_name": file_name,
             "files": files,
+            "prev_message_prefix": prev_message_prefix,
+            "prev_message_postfix": prev_message_postfix,
         })
         convo.remove_last_x_messages(2)
         return self.remove_backticks(llm_response)

@@ -22,7 +22,7 @@ except ImportError:
         print(f'Please run `{sys.executable} -m pip install -r {requirements_path}` to finish Python setup, and rerun GPT Pilot.')
     sys.exit(-1)
 
-load_dotenv()
+load_dotenv(override=True)
 
 from utils.style import color_red
 from utils.custom_print import get_custom_print
@@ -66,6 +66,8 @@ if __name__ == "__main__":
 
         if '--api-key' in args:
             os.environ["OPENAI_API_KEY"] = args['--api-key']
+        if '--model-name' in args:
+            os.environ['MODEL_NAME'] = args['--model-name']
         if '--api-endpoint' in args:
             os.environ["OPENAI_ENDPOINT"] = args['--api-endpoint']
 

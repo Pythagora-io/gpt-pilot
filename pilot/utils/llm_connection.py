@@ -109,8 +109,9 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
              {'function_calls': {'name': str, arguments: {...}}}
     """
 
+    model_name = os.getenv('MODEL_NAME', 'gpt-4')
     gpt_data = {
-        'model': os.getenv('MODEL_NAME', 'gpt-4'),
+        'model': model_name,
         'n': 1,
         'temperature': temperature,
         'top_p': 1,
@@ -133,8 +134,18 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
     if prompt_data is not None and function_call_message is not None:
         prompt_data['function_call_message'] = function_call_message
 
+    if '/' in model_name:
+        model_provider, model_name = model_name.split('/', 1)
+    else:
+        model_provider = 'openai'
+
     try:
-        response = stream_gpt_completion(gpt_data, req_type, project)
+        if model_provider == 'anthropic' and os.getenv('ENDPOINT') != 'OPENROUTER':
+            if not os.getenv('ANTHROPIC_API_KEY'):
+                os.environ['ANTHROPIC_API_KEY'] = os.getenv('OPENAI_API_KEY')
+            response = stream_anthropic(messages, function_call_message, gpt_data, model_name)
+        else:
+            response = stream_gpt_completion(gpt_data, req_type, project)
 
         # Remove JSON schema and any added retry messages
         while len(messages) > messages_length:
@@ -143,7 +154,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
     except TokenLimitError as e:
         raise e
     except Exception as e:
-        logger.error(f'The request to {os.getenv("ENDPOINT")} API failed: %s', e)
+        logger.error(f'The request to {os.getenv("ENDPOINT")} API for {model_provider}/{model_name} failed: %s', e, exc_info=True)
         print(color_red(f'The request to {os.getenv("ENDPOINT")} API failed with error: {e}. Please try again later.'))
         if isinstance(e, ApiError):
             raise e
@@ -475,13 +486,13 @@ def stream_gpt_completion(data, req_type, project):
             try:
                 json_line = json.loads(line)
 
-                if len(json_line['choices']) == 0:
-                    continue
-
                 if 'error' in json_line:
                     logger.error(f'Error in LLM response: {json_line}')
                     telemetry.record_llm_request(token_count, time.time() - request_start_time, is_error=True)
                     raise ValueError(f'Error in LLM response: {json_line["error"]["message"]}')
+
+                if 'choices' not in json_line or len(json_line['choices']) == 0:
+                    continue
 
                 choice = json_line['choices'][0]
 
@@ -588,3 +599,48 @@ def postprocessing(gpt_response: str, req_type) -> str:
 
 def load_data_to_json(string):
     return json.loads(fix_json(string))
+
+
+
+def stream_anthropic(messages, function_call_message, gpt_data, model_name = "claude-3-sonnet-20240229"):
+    try:
+        import anthropic
+    except ImportError as err:
+        raise RuntimeError("The 'anthropic' package is required to use the Anthropic Claude LLM.") from err
+
+    client = anthropic.Anthropic(
+        base_url=os.getenv('ANTHROPIC_ENDPOINT') or None,
+    )
+
+    claude_system = "You are a software development AI assistant."
+    claude_messages = messages
+    if messages[0]["role"] == "system":
+        claude_system = messages[0]["content"]
+        claude_messages = messages[1:]
+
+    if len(claude_messages):
+        cm2 = [claude_messages[0]]
+        for i in range(1, len(claude_messages)):
+            if cm2[-1]["role"] == claude_messages[i]["role"]:
+                cm2[-1]["content"] += "\n\n" + claude_messages[i]["content"]
+            else:
+                cm2.append(claude_messages[i])
+        claude_messages = cm2
+
+    response = ""
+    with client.messages.stream(
+        model=model_name,
+        max_tokens=4096,
+        temperature=0.5,
+        system=claude_system,
+        messages=claude_messages,
+    ) as stream:
+        for chunk in stream.text_stream:
+            print(chunk, type='stream', end='', flush=True)
+            response += chunk
+
+    if function_call_message is not None:
+        response = clean_json_response(response)
+        assert_json_schema(response, gpt_data["functions"])
+
+    return {"text": response}
