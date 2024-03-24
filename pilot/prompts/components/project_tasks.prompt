@@ -61,4 +61,5 @@ Here is an example of good and bad task description:
 }
 
 Rule #5
-{{ file_naming }}
+When creating and naming new files, ensure the file naming (camelCase, kebab-case, underscore_case, etc) is consistent with the best practices and coding style of the language.
+Pay attention to file paths: if the command or argument is a file or folder from the project, use paths relative to the project root (for example, use `./somefile` instead of `/somefile`).
