@@ -397,7 +397,7 @@ class Developer(Agent):
 
     def task_postprocessing(self, convo, development_task, continue_development, task_result, last_branch_name, task_source):
         if self.project.last_detailed_user_review_goal is None:
-            if task_source in ['app', 'feature']:
+            if self.run_command is None or task_source in ['app', 'feature']:
                 self.get_run_command(convo)
 
             if development_task is not None:
