@@ -1,4 +1,4 @@
-You are working on a App called "{{ name }}" and you need to write code for the entire application.
+You are working on a App called "{{ name }}" and your job is to review changes made.
 
 Here is a high level description of "{{ name }}":
 ```
@@ -62,4 +62,4 @@ If you find any of these 4 mistakes, describe in detail what has to be changed.
 
 {{ execution_order }}
 
-{{ human_intervention_explanation }}
+{{ relative_paths }}
