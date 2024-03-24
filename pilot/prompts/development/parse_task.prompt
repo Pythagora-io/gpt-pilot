@@ -33,8 +33,8 @@ Examples:
       "command": {
         "command": "mv ./index.js ./public/index.js"",
         "timeout": "5000",
-        "success_message": "README.md",
-        "command_id": "check_existence_of_readme_file"
+        "success_message": "",
+        "command_id": "move_index_file"
       }
     }
   ]
