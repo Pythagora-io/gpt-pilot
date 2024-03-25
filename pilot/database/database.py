@@ -120,7 +120,7 @@ def get_all_app_development_steps(app_id, last_step=None, loading_steps_only=Fal
                             (DevelopmentSteps.prompt_path.contains('feature_plan')) |
                             (DevelopmentSteps.prompt_path.contains('feature_summary')))
 
-    return [model_to_dict(dev_step) for dev_step in query]
+    return [model_to_dict(dev_step, recurse=False) for dev_step in query]
 
 
 def get_last_development_step(app_id, last_step=None):
@@ -132,7 +132,7 @@ def get_last_development_step(app_id, last_step=None):
     last_dev_step = last_dev_step_query.order_by(DevelopmentSteps.id.desc()).first()
 
     # If a step is found, convert it to a dictionary, otherwise return None
-    return model_to_dict(last_dev_step) if last_dev_step else None
+    return model_to_dict(last_dev_step, recurse=False) if last_dev_step else None
 
 
 def save_user(user_id, email, password):
