@@ -30,7 +30,14 @@ from helpers.Project import Project
 from utils.arguments import get_arguments
 from utils.exit import exit_gpt_pilot
 from logger.logger import logger
-from database.database import database_exists, create_database, tables_exist, create_tables, get_created_apps_with_steps
+from database.database import (
+    database_exists,
+    create_database,
+    tables_exist,
+    create_tables,
+    get_created_apps_with_steps,
+    delete_app,
+)
 
 from utils.settings import settings, loader, get_version
 from utils.telemetry import telemetry
@@ -83,6 +90,11 @@ if __name__ == "__main__":
                 print('\n'.join(f"{app['id']}: {app['status']:20}      "
                                 f"{'' if len(app['development_steps']) == 0 else app['development_steps'][-1]['id']:3}"
                                 f"  {app['name']}" for app in get_created_apps_with_steps()))
+
+        elif '--delete-app' in args:
+            run_exit_fn = False
+            app_id = args['--delete-app']
+            delete_app(app_id)
 
         elif '--version' in args:
             print(get_version())

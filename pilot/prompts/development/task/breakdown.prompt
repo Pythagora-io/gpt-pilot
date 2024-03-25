@@ -22,7 +22,10 @@ Now, tell me all the code that needs to be written to implement ONLY this task a
 {%- if task_type == 'app' %}
 Remember, I created an empty folder where I will start writing files that you tell me and that are needed for this app.
 {% endif %}
-DO NOT specify commands to create any folders or files, they will be created automatically - just specify the relative path to each file that needs to be written. {{ file_naming }}
+{{ relative_paths }}
+DO NOT specify commands to create any folders or files, they will be created automatically - just specify the relative path to each file that needs to be written.
+
+{{ file_naming }}
 
 {{ execution_order }}
 

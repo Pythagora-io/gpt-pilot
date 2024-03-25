@@ -152,7 +152,7 @@ def read_queue_line(q, stdout=True):
         return ''
 
     if stdout:
-        print(color_green('CLI OUTPUT:') + line, end='')
+        print(color_green(line))
         logger.info('CLI OUTPUT: ' + line)
         # if success_message is not None and success_message in line:
         #     logger.info('Success message found: %s', success_message)
@@ -160,7 +160,7 @@ def read_queue_line(q, stdout=True):
         #     raise CommandFinishedEarly()
 
     if not stdout:  # stderr
-        print(color_red('CLI ERROR:') + line, end='')
+        print(color_red(line))
         logger.error('CLI ERROR: ' + line)
 
     return line
@@ -206,16 +206,23 @@ def execute_command(project, command, timeout=None, success_message=None, comman
             timeout = min(max(timeout, MIN_COMMAND_RUN_TIME), MAX_COMMAND_RUN_TIME)
 
     if not force:
-        print(color_yellow_bold('\n--------- EXECUTE COMMAND ----------'))
         question = f'Can I execute the command: `{color_yellow_bold(command)}`'
         if timeout is not None:
             question += f' with {timeout}ms timeout?'
         else:
             question += '?'
 
+        if project.check_ipc():
+            print(question, type='ipc', category='exec-command')
+            print('If yes, just press ENTER. Otherwise, type "no" but it will be processed as successfully executed.', type='hint')
+            hint=None
+        else:
+            print(color_yellow_bold('\n--------- EXECUTE COMMAND ----------'))
+            hint = 'If yes, just press ENTER. Otherwise, type "no" but it will be processed as successfully executed.'
+
         print('yes/no', type='buttons-only')
         logger.info('--------- EXECUTE COMMAND ---------- : %s', question)
-        answer = ask_user(project, question, False, hint='If yes, just press ENTER. Otherwise, type "no" but it will be processed as successfully executed.')
+        answer = ask_user(project, question, False, hint=hint)
         # TODO can we use .confirm(question, default='yes').ask()  https://questionary.readthedocs.io/en/stable/pages/types.html#confirmation
         if answer.lower() in NEGATIVE_ANSWERS:
             return None, 'SKIP', None

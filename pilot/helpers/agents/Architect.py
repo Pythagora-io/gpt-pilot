@@ -4,6 +4,7 @@ import json
 
 from utils.style import color_green_bold, color_yellow_bold
 from const.function_calls import ARCHITECTURE
+from const.common import EXAMPLE_PROJECT_ARCHITECTURE
 import platform
 
 from utils.utils import should_execute_step, generate_app_data
@@ -64,17 +65,20 @@ class Architect(Agent):
         logger.info("Planning project architecture...")
 
         self.convo_architecture = AgentConvo(self)
-        llm_response = self.convo_architecture.send_message('architecture/technologies.prompt',
-            {'name': self.project.args['name'],
-             'app_summary': self.project.project_description,
-             'user_stories': self.project.user_stories,
-             'user_tasks': self.project.user_tasks,
-             "os": platform.system(),
-             'app_type': self.project.args['app_type'],
-             "templates": PROJECT_TEMPLATES,
-            },
-            ARCHITECTURE
-        )
+        if self.project.project_manager.is_example_project:
+            llm_response = EXAMPLE_PROJECT_ARCHITECTURE
+        else:
+            llm_response = self.convo_architecture.send_message('architecture/technologies.prompt',
+                {'name': self.project.args['name'],
+                'app_summary': self.project.project_description,
+                'user_stories': self.project.user_stories,
+                'user_tasks': self.project.user_tasks,
+                "os": platform.system(),
+                'app_type': self.project.args['app_type'],
+                "templates": PROJECT_TEMPLATES,
+                },
+                ARCHITECTURE
+            )
 
         self.project.architecture = llm_response["architecture"]
         self.project.system_dependencies = llm_response["system_dependencies"]
