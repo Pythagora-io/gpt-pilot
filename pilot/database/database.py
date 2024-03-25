@@ -254,6 +254,35 @@ def save_progress(app_id, step, data):
     return progress
 
 
+def edit_development_plan(app_id, update_data):
+    try:
+        dev_plan = DevelopmentPlanning.get(app=app_id)
+    except DevelopmentPlanning.DoesNotExist:
+        raise None
+
+    for key, value in update_data.items():
+        setattr(dev_plan, key, value)
+
+    dev_plan.save()
+    return dev_plan
+
+
+def edit_feature_plan(app_id, update_data):
+    try:
+        dev_plan = (DevelopmentSteps.select()
+                    .where((DevelopmentSteps.app == app_id) & (DevelopmentSteps.prompt_path.contains('feature_plan')))
+                    .order_by(DevelopmentSteps.created_at.desc())
+                    .get())
+    except DevelopmentPlanning.DoesNotExist:
+        raise None
+
+    for key, value in update_data.items():
+        setattr(dev_plan, key, value)
+
+    dev_plan.save()
+    return dev_plan
+
+
 def get_app(app_id, error_if_not_found=True):
     try:
         app = App.get(App.id == app_id)

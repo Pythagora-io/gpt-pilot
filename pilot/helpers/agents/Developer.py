@@ -16,7 +16,7 @@ from utils.style import (
     color_white_bold
 )
 from helpers.exceptions import TokenLimitError
-from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_QUESTIONS_FOR_BUG_REPORT
+from const.code_execution import MAX_COMMAND_DEBUG_TRIES
 from helpers.exceptions import TooDeepRecursionError
 from helpers.Debugger import Debugger
 from utils.questionary import styled_text
@@ -29,7 +29,7 @@ from utils.utils import should_execute_step, array_of_objects_to_string, generat
 from helpers.cli import run_command_until_success, execute_command_and_check_cli_response
 from const.function_calls import (EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN,
                                   ALTERNATIVE_SOLUTIONS, GET_BUG_REPORT_MISSING_DATA)
-from database.database import save_progress, get_progress_steps, update_app_status
+from database.database import save_progress, edit_development_plan, edit_feature_plan, get_progress_steps, update_app_status
 from utils.telemetry import telemetry
 from prompts.prompts import ask_user
 from utils.print import print_task_progress, print_step_progress
@@ -123,6 +123,9 @@ class Developer(Agent):
         :param task_source: The source of the task, one of: 'app', 'feature', 'debugger', 'iteration'.
         :param development_task: The task to implement.
         """
+        should_execute_task = self.edit_task(i, task_source, development_task)
+        if not should_execute_task:
+            return
         print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'), category='pythagora')
         print(f'Starting task #{i + 1} implementation...', type='verbose', category='agent:developer')
         self.project.dot_pilot_gpt.chat_log_folder(i + 1)
@@ -241,6 +244,41 @@ class Developer(Agent):
             else:
                 logger.warning('Testing at end of task failed')
                 break
+
+    def edit_task(self, i, task_source, task):
+        if self.project.skip_steps or task_source not in ['app', 'feature']:
+            return
+
+        execute_question = 'Do you want to execute this task?'
+        if self.project.check_ipc():
+            print(execute_question, category='pythagora')
+        else:
+            execute_question += ' [yes/edit task/skip task]'
+        print('')
+        print(task['description'])
+        print('yes/edit task/skip task', type='buttons-only')
+        response = ask_user(self.project, execute_question)
+        if response.lower() in NEGATIVE_ANSWERS + ['skip task']:
+            # remove task from development plan if it is being skipped
+            new_plan = [element for index, element in enumerate(self.project.development_plan) if index != i]
+            if task_source == 'app':
+                edit_development_plan(self.project.args['app_id'], {'development_plan': new_plan})
+            else:
+                edit_feature_plan(self.project.args['app_id'], {'llm_response': {'text': {'plan': new_plan}}})
+            return False
+        elif response.lower() == 'edit task':
+            edit_question = 'Write full edited description of the task here:'
+            if self.project.check_ipc():
+                print(edit_question, type='ipc')
+            edited_task = ask_user(self.project, edit_question)
+            task['description'] = edited_task
+            if task_source == 'app':
+                edit_development_plan(self.project.args['app_id'], {'development_plan': self.project.development_plan})
+            else:
+                edit_feature_plan(self.project.args['app_id'],
+                                  {'llm_response': {'text': {'plan': self.project.development_plan}}})
+
+        return True
 
     def step_delete_file(self, convo, step, i, test_after_code_changes):
         """
