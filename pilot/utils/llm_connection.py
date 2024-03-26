@@ -144,6 +144,8 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
             if not os.getenv('ANTHROPIC_API_KEY'):
                 os.environ['ANTHROPIC_API_KEY'] = os.getenv('OPENAI_API_KEY')
             response = stream_anthropic(messages, function_call_message, gpt_data, model_name)
+        elif model_provider == 'groq':
+            response = stream_groq(messages, function_call_message, gpt_data, model_name)
         else:
             response = stream_gpt_completion(gpt_data, req_type, project)
 
@@ -601,6 +603,18 @@ def load_data_to_json(string):
     return json.loads(fix_json(string))
 
 
+def collapse_messages_from_same_role(messages):
+    if not len(messages):
+        return []
+
+    fixed_messages = [messages[0]]
+    for i in range(1, len(messages)):
+        if fixed_messages[-1]["role"] == messages[i]["role"]:
+            fixed_messages[-1]["content"] += "\n\n" + messages[i]["content"]
+        else:
+            fixed_messages.append(messages[i])
+    return fixed_messages
+
 
 def stream_anthropic(messages, function_call_message, gpt_data, model_name = "claude-3-sonnet-20240229"):
     try:
@@ -618,15 +632,7 @@ def stream_anthropic(messages, function_call_message, gpt_data, model_name = "cl
         claude_system = messages[0]["content"]
         claude_messages = messages[1:]
 
-    if len(claude_messages):
-        cm2 = [claude_messages[0]]
-        for i in range(1, len(claude_messages)):
-            if cm2[-1]["role"] == claude_messages[i]["role"]:
-                cm2[-1]["content"] += "\n\n" + claude_messages[i]["content"]
-            else:
-                cm2.append(claude_messages[i])
-        claude_messages = cm2
-
+    claude_messages = collapse_messages_from_same_role(claude_messages)
     response = ""
     with client.messages.stream(
         model=model_name,
@@ -640,6 +646,83 @@ def stream_anthropic(messages, function_call_message, gpt_data, model_name = "cl
             response += chunk
 
     if function_call_message is not None:
+        response = clean_json_response(response)
+        assert_json_schema(response, gpt_data["functions"])
+
+    return {"text": response}
+
+
+def fix_numbers(data, schema):
+
+    def descend(obj, path):
+        for part in path:
+            obj = obj[part]
+        return obj
+
+    while True:
+        try:
+            validate(data, schema)
+            return data
+        except ValidationError as e:
+            if "is not of type 'number'" in e.message and isinstance(e.instance, str):
+                prefix = list(e.absolute_path)[:-1]
+                name = e.absolute_path[-1]
+                parent = descend(data, prefix)
+                parent[name] = float(e.instance)
+                continue
+            else:
+                return data
+
+
+
+def stream_groq(messages, function_call_message, gpt_data, model_name = "mixtral-8x7b-32768"):
+    try:
+        import groq
+    except ImportError as err:
+        raise RuntimeError("The 'groq' package is required to use the Groq LLM.") from err
+    from copy import deepcopy
+
+    client = groq.Groq(api_key=os.getenv('GROQ_API_KEY'))
+
+    if False and function_call_message:
+        schema_message = deepcopy(messages[-1])
+        schema_message['role'] = 'system'
+        messages = messages[:-1]
+        if messages[0]['role'] == 'system':
+            messages.insert(1, schema_message)
+        else:
+            messages.insert(0, schema_message)
+
+    messages = collapse_messages_from_same_role(messages)
+
+    if function_call_message:
+        # JSON mode doesn't support streaming yet
+        completion = client.chat.completions.create(
+            messages=messages,
+            model=model_name,
+            temperature=0.5,
+            max_tokens=2047,
+            response_format={"type": "json_object"},
+        )
+        response = completion.choices[0].message.content
+    else:
+        stream = client.chat.completions.create(
+            messages=messages,
+            model=model_name,
+            temperature=0.5,
+            max_tokens=2047,
+            stream=True,
+        )
+        response = ""
+        for chunk in stream:
+            c = chunk.choices[0].delta.content
+            if c:
+                print(c, type='stream', end='', flush=True)
+                response += c
+
+    if function_call_message is not None:
+        import json5
+        response = json.dumps(fix_numbers(json5.loads(response), gpt_data["functions"][0]['parameters']))
         response = clean_json_response(response)
         assert_json_schema(response, gpt_data["functions"])
 
