@@ -364,8 +364,8 @@ class CodeMonkey(Agent):
         """
         diff = "\n".join(
             [
-                "--- " + file_name,
-                "+++ " + file_name,
+                f"--- {file_name}",
+                f"+++ {file_name}",
             ] + hunks
         ) + "\n"
         try:
