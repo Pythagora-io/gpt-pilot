@@ -319,20 +319,26 @@ DEVELOPMENT_PLAN = {
         'parameters': {
             'type': 'object',
             "properties": {
+                "thoughts": {
+                    "type": "string",
+                    "description": "Explanation of thoughts behind the plan.",
+                },
                 "plan": {
                     "type": "array",
-                    "description": 'List of development tasks that need to be done to implement the entire plan.',
+                    "description": "List of development tasks that need to be done to finish the entire project.",
                     "items": {
                         "type": "object",
-                        'description': 'Development task that needs to be done to implement the entire plan. It contains all details that developer who is not familiar with project needs to know to implement the task.',
-                        'properties': {
-                            'description': {
-                                'type': 'string',
-                                'description': 'Very detailed description of the development task that needs to be done to implement the entire plan.',
+                        "description": "Development task that needs to be done to finish the entire project.",
+                        "properties": {
+                            "description": {
+                                "type": "string",
+                                "description": "High level description of the development task that needs to be done to implement the entire plan."
                             }
                         },
-                        'required': ['description'],
-                    },
+                        "required": [
+                            "description"
+                        ]
+                    }
                 },
             },
             "required": ['plan'],
