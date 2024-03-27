@@ -16,7 +16,7 @@ from utils.style import (
     color_white_bold
 )
 from helpers.exceptions import TokenLimitError
-from const.code_execution import MAX_COMMAND_DEBUG_TRIES, MAX_QUESTIONS_FOR_BUG_REPORT
+from const.code_execution import MAX_COMMAND_DEBUG_TRIES
 from helpers.exceptions import TooDeepRecursionError
 from helpers.Debugger import Debugger
 from utils.questionary import styled_text
@@ -29,7 +29,7 @@ from utils.utils import should_execute_step, array_of_objects_to_string, generat
 from helpers.cli import run_command_until_success, execute_command_and_check_cli_response
 from const.function_calls import (EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN,
                                   ALTERNATIVE_SOLUTIONS, GET_BUG_REPORT_MISSING_DATA)
-from database.database import save_progress, get_progress_steps, update_app_status
+from database.database import save_progress, edit_development_plan, edit_feature_plan, get_progress_steps, update_app_status
 from utils.telemetry import telemetry
 from prompts.prompts import ask_user
 from utils.print import print_task_progress, print_step_progress
@@ -55,14 +55,17 @@ class Developer(Agent):
         if not self.project.skip_steps:
             logger.info("Starting to create the actual code...")
 
-        total_tasks = len(self.project.development_plan)
         progress_thresholds = [50]  # Percentages of progress when documentation is created
         documented_thresholds = set()
 
-        for i, dev_task in enumerate(self.project.development_plan):
+        finished_tasks = []
+        while len(finished_tasks) < len(self.project.development_plan):
+            i = len(finished_tasks)
+            dev_task = self.project.development_plan[i]
+            num_of_tasks = len(self.project.development_plan)
             # don't create documentation for features
             if not self.project.finished:
-                current_progress_percent = round((i / total_tasks) * 100, 2)
+                current_progress_percent = round(((i + 1) / num_of_tasks) * 100, 2)
 
                 for threshold in progress_thresholds:
                     if current_progress_percent > threshold and threshold not in documented_thresholds:
@@ -76,6 +79,7 @@ class Developer(Agent):
                 self.project.cleanup_list('dev_steps_to_load', task['id'])
 
                 if len(self.project.tasks_to_load):
+                    finished_tasks.append(dev_task)
                     continue
                 # if it is last task to load, execute it to check if it's finished
                 else:
@@ -83,15 +87,18 @@ class Developer(Agent):
                     readme_dev_step = next((el for el in self.project.dev_steps_to_load if
                                                    'create_readme.prompt' in el.get('prompt_path', '')), None)
 
-                    if len(self.project.development_plan) - 1 == i and readme_dev_step is not None:
+                    if num_of_tasks - 1 == i and readme_dev_step is not None:
                         self.project.cleanup_list('dev_steps_to_load', readme_dev_step['id'])
+                        finished_tasks.append(dev_task)
                         continue
 
             self.project.current_task.start_new_task(dev_task['description'], i + 1)
-            print_task_progress(i+1, len(self.project.development_plan), dev_task['description'], task_source, 'in_progress')
-            self.implement_task(i, task_source, dev_task)
-            print_task_progress(i+1, len(self.project.development_plan), dev_task['description'], task_source, 'done')
-            telemetry.inc("num_tasks")
+            print_task_progress(i+1, num_of_tasks, dev_task['description'], task_source, 'in_progress')
+            task_finished = self.implement_task(i, task_source, dev_task)
+            if task_finished:
+                finished_tasks.append(dev_task)
+                telemetry.inc("num_tasks")
+            print_task_progress(i+1, num_of_tasks, dev_task['description'], task_source, 'done')
 
         # DEVELOPMENT END
         if not self.project.skip_steps:
@@ -123,6 +130,10 @@ class Developer(Agent):
         :param task_source: The source of the task, one of: 'app', 'feature', 'debugger', 'iteration'.
         :param development_task: The task to implement.
         """
+        should_execute_task = self.edit_task(task_source, development_task)
+        if not should_execute_task:
+            return False
+
         print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'), category='pythagora')
         print(f'Starting task #{i + 1} implementation...', type='verbose', category='agent:developer')
         self.project.dot_pilot_gpt.chat_log_folder(i + 1)
@@ -241,6 +252,64 @@ class Developer(Agent):
             else:
                 logger.warning('Testing at end of task failed')
                 break
+
+        return True
+
+    def edit_task(self, task_source, task):
+        """
+        Allow the user to edit a task before executing it.
+
+        :param task_source: The source of the task, it can be only 'app' or 'feature'.
+        :param task: The task to edit.
+
+        :return: True if the task should be executed, False if it should be skipped.
+        """
+        if self.project.skip_steps or task_source not in ['app', 'feature']:
+            return True
+
+        execute_question = 'Do you want to execute this task?'
+        if self.project.check_ipc():
+            print(execute_question, category='pythagora')
+        else:
+            execute_question += ' [yes/edit task/skip task]'
+        print('')
+        print(task['description'])
+        print('yes/edit task/skip task', type='buttons-only')
+        response = ask_user(self.project, execute_question)
+        if response.lower() in NEGATIVE_ANSWERS + ['skip task']:
+            # remove task from development plan if it is being skipped
+            self.project.development_plan = [
+                element for element in self.project.development_plan
+                if element['description'] != task['description']
+            ]
+            if task_source == 'app':
+                db_task_skip = edit_development_plan(self.project.args['app_id'], {'development_plan': self.project.development_plan})
+            else:
+                db_task_skip = edit_feature_plan(self.project.args['app_id'], {'llm_response': {'text': json.dumps({'plan': self.project.development_plan})}})
+
+            if db_task_skip:
+                print('Successfully skipped task.', category='Pythagora')
+            return False
+        elif response.lower() == 'edit task':
+            edit_question = 'Write full edited description of the task here:'
+            if self.project.check_ipc():
+                print('continue/cancel', type='button')
+                print(edit_question, type='ipc')
+                print(task['description'], type='inputPrefill')
+            edited_task = ask_user(self.project, edit_question)
+            if edited_task.lower() in NEGATIVE_ANSWERS + ['', 'continue']:
+                return True
+
+            task['description'] = edited_task
+            if task_source == 'app':
+                db_task_edit = edit_development_plan(self.project.args['app_id'], {'development_plan': self.project.development_plan})
+            else:
+                db_task_edit = edit_feature_plan(self.project.args['app_id'], {'llm_response': {'text': json.dumps({'plan': self.project.development_plan})}})
+
+            if db_task_edit:
+                print('Successfully edited task.', category='Pythagora')
+
+        return True
 
     def step_delete_file(self, convo, step, i, test_after_code_changes):
         """
