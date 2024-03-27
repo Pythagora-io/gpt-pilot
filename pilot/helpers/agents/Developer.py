@@ -283,21 +283,31 @@ class Developer(Agent):
                 if element['description'] != task['description']
             ]
             if task_source == 'app':
-                edit_development_plan(self.project.args['app_id'], {'development_plan': self.project.development_plan})
+                db_task_skip = edit_development_plan(self.project.args['app_id'], {'development_plan': self.project.development_plan})
             else:
-                edit_feature_plan(self.project.args['app_id'], {'llm_response': {'text': json.dumps({'plan': self.project.development_plan})}})
+                db_task_skip = edit_feature_plan(self.project.args['app_id'], {'llm_response': {'text': json.dumps({'plan': self.project.development_plan})}})
+
+            if db_task_skip:
+                print('Successfully skipped task.', category='Pythagora')
             return False
         elif response.lower() == 'edit task':
             edit_question = 'Write full edited description of the task here:'
             if self.project.check_ipc():
+                print('continue/cancel', type='button')
                 print(edit_question, type='ipc')
                 print(task['description'], type='inputPrefill')
             edited_task = ask_user(self.project, edit_question)
+            if edited_task.lower() in NEGATIVE_ANSWERS + ['', 'continue']:
+                return True
+
             task['description'] = edited_task
             if task_source == 'app':
-                edit_development_plan(self.project.args['app_id'], {'development_plan': self.project.development_plan})
+                db_task_edit = edit_development_plan(self.project.args['app_id'], {'development_plan': self.project.development_plan})
             else:
-                edit_feature_plan(self.project.args['app_id'], {'llm_response': {'text': json.dumps({'plan': self.project.development_plan})}})
+                db_task_edit = edit_feature_plan(self.project.args['app_id'], {'llm_response': {'text': json.dumps({'plan': self.project.development_plan})}})
+
+            if db_task_edit:
+                print('Successfully edited task.', category='Pythagora')
 
         return True
 

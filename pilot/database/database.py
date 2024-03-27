@@ -258,7 +258,8 @@ def edit_development_plan(app_id, update_data):
     try:
         dev_plan = DevelopmentPlanning.get(app=app_id)
     except DevelopmentPlanning.DoesNotExist:
-        raise None
+        print(color_red(f"No development plan found for app {app_id}"), category='error')
+        return None
 
     for key, value in update_data.items():
         setattr(dev_plan, key, value)
@@ -274,7 +275,8 @@ def edit_feature_plan(app_id, update_data):
                     .order_by(DevelopmentSteps.created_at.desc())
                     .get())
     except DevelopmentPlanning.DoesNotExist:
-        raise None
+        print(color_red(f"No feature plan found for app {app_id}"), category='error')
+        return None
 
     for key, value in update_data.items():
         setattr(dev_plan, key, value)
