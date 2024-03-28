@@ -172,3 +172,4 @@ pilot-env/
 
 # Other
 brija.py
+/pilot/.vs
