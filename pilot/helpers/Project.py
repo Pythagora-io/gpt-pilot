@@ -203,7 +203,6 @@ class Project:
         self.architect = Architect(self)
         self.architect.get_architecture()
 
-        print('', type='verbose', category='agent:developer')
         self.developer = Developer(self)
         self.developer.set_up_environment()
         self.technical_writer = TechnicalWriter(self)
@@ -404,6 +403,8 @@ class Project:
         if full_path not in self.files:
             self.files.append(full_path)
 
+        if path and path[0] == '/':
+            path = path.lstrip('/')
         (File.insert(app=self.app, path=path, name=name, full_path=full_path)
          .on_conflict(
             conflict_target=[File.app, File.name, File.path],
@@ -540,6 +541,8 @@ class Project:
             if not self.check_ipc():
                 print(color_cyan(f'Saving file {file["full_path"]}'))
             # TODO this can be optimized so we don't go to the db each time
+            if file['path'] and file['path'][0] == '/':
+                file['path'] = file['path'].lstrip('/')
             file_in_db, created = File.get_or_create(
                 app=self.app,
                 name=file['name'],

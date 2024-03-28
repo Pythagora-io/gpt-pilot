@@ -1,0 +1,1 @@
+**IMPORTANT**: Pay attention to file paths: if the command or argument is a file or folder from the project, use paths relative to the project root (for example, use `./somefile` instead of `/somefile`).

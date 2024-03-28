@@ -34,6 +34,7 @@ code_change_description: `{{ step.code_change_description }}`{% endif %}
 Now, think step by step and create a new list of task steps to complete this task based on the output we got from running `{{ current_step.command.command }}`. It will either be the same as it is now or any of the Next Task Steps may or may not be needed anymore.
 
 {{ file_naming }}
+{{ relative_paths }}
 
 {{ execution_order }}
 
