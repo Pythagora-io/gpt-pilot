@@ -46,6 +46,9 @@ class Developer(Agent):
         self.debugger = Debugger(self)
 
     def start_coding(self, task_source):
+        for task in self.project.development_plan:
+            task['finished'] = False
+
         print('Starting development...', type='verbose', category='agent:developer')
         if not self.project.finished:
             self.project.current_step = 'coding'
@@ -58,9 +61,8 @@ class Developer(Agent):
         progress_thresholds = [50]  # Percentages of progress when documentation is created
         documented_thresholds = set()
 
-        finished_tasks = []
-        while len(finished_tasks) < len(self.project.development_plan):
-            i = len(finished_tasks)
+        while sum(task.get('finished', False) for task in self.project.development_plan) < len(self.project.development_plan):
+            i = sum(task.get('finished', False) for task in self.project.development_plan)
             dev_task = self.project.development_plan[i]
             num_of_tasks = len(self.project.development_plan)
             # don't create documentation for features
@@ -79,7 +81,7 @@ class Developer(Agent):
                 self.project.cleanup_list('dev_steps_to_load', task['id'])
 
                 if len(self.project.tasks_to_load):
-                    finished_tasks.append(dev_task)
+                    self.project.development_plan[i]['finished'] = True
                     continue
                 # if it is last task to load, execute it to check if it's finished
                 else:
@@ -89,16 +91,20 @@ class Developer(Agent):
 
                     if num_of_tasks - 1 == i and readme_dev_step is not None:
                         self.project.cleanup_list('dev_steps_to_load', readme_dev_step['id'])
-                        finished_tasks.append(dev_task)
+                        self.project.development_plan[i]['finished'] = True
                         continue
 
             self.project.current_task.start_new_task(dev_task['description'], i + 1)
-            print_task_progress(i+1, num_of_tasks, dev_task['description'], task_source, 'in_progress')
-            task_finished = self.implement_task(i, task_source, dev_task)
-            if task_finished:
-                finished_tasks.append(dev_task)
+            print_task_progress(i + 1, num_of_tasks, dev_task['description'], task_source, 'in_progress')
+            task_executed = self.implement_task(i, task_source, dev_task)
+            if task_executed:
+                self.project.development_plan[i]['finished'] = True
                 telemetry.inc("num_tasks")
-            print_task_progress(i+1, num_of_tasks, dev_task['description'], task_source, 'done')
+                num_of_finished_tasks = sum(task.get('finished', False) for task in self.project.development_plan)
+                if (num_of_finished_tasks < len(self.project.development_plan) and
+                        ('llm_solutions' in task_executed and task_executed['llm_solutions'])):
+                    self.project.tech_lead.update_plan(task_source, task_executed['llm_solutions'], self.modified_files)
+            print_task_progress(i + 1, num_of_tasks, dev_task['description'], task_source, 'done')
 
         # DEVELOPMENT END
         if not self.project.skip_steps:
@@ -253,7 +259,7 @@ class Developer(Agent):
                 logger.warning('Testing at end of task failed')
                 break
 
-        return True
+        return result
 
     def edit_task(self, task_source, task):
         """
@@ -718,7 +724,7 @@ class Developer(Agent):
             user_feedback = response['user_input'] if 'user_input' in response else None
             if user_feedback == 'continue':
                 # self.project.remove_debugging_logs_from_all_files()
-                return {"success": True, "user_input": user_feedback}
+                return {"success": True, "user_input": user_feedback, "llm_solutions": llm_solutions}
 
             if user_feedback is not None:
                 print('', type='verbose', category='agent:troubleshooter')

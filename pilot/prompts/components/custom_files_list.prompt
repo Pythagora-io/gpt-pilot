@@ -1,0 +1,9 @@
+{% if files|length > 0 %}Here are files that were modified during this task implementation:
+---start_of_current_files---
+{% for file in files %}
+**{{ file.path }}/{{ file.name }}** ({{ file.lines_of_code }} lines of code):
+```
+{{ file.content }}
+```
+{% endfor %}
+---end_of_current_files---{% endif %}

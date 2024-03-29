@@ -329,6 +329,10 @@ DEVELOPMENT_PLAN = {
                             'description': {
                                 'type': 'string',
                                 'description': 'Very detailed description of the development task that needs to be done to implement the entire plan.',
+                            },
+                            'finished': {
+                                'type': 'boolean',
+                                'description': 'Flag that indicates if the task is finished or not. If the task is finished, set this flag to `true`, otherwise set it to `false`. When creating plan for the first time all tasks should have flag set to `false`.',
                             }
                         },
                         'required': ['description'],

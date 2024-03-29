@@ -1,0 +1,32 @@
+You are working on an {{ app_type }} called "{{ name }}". To give you a better idea of what you are working on, here is a description of the {{ app_type }}:
+```
+{{ app_summary }}
+```
+
+Development plan for that {{ task_source }} was created and the {{ task_source }} was then broken down to smaller tasks so that it's easier for development. Here is development plan broken down in tasks:
+```{% for task in development_tasks %}
+- Task #{{ loop.index }}
+Description: {{ task['description'] }}
+Finished: {{ task['finished'] }}
+{% endfor %}```
+
+As you can see in the list above, tasks that have flag "finished == True" are already finished and tasks with flag "finished == False" still have to be done. Last task you were working on has this description:
+```
+{{ last_finished_task['description'] }}
+```
+While working on that last task, you were iterating based on user feedbacks for this {{ task_source }}. Here is list of all iterations:
+```{% for iteration in llm_solutions %}
+- Iteration #{{ loop.index }}:
+
+User feedback: {{ iteration['user_feedback'] }}
+Developer solution: {{ iteration['llm_proposal'] }}
+{% endfor %}```
+
+{{ custom_files_list }}
+
+You need to think step by step what was done in last task and update development plan if needed. All iterations that were mentioned were executed and finished successfully and that needs to be reflected in updated development plan. Give me updated list of tasks strictly following these rules:
+- All previous tasks should be the same as they were before, keeping flag "finished==True".
+- Last task should be updated based on what is implemented so far.
+- Tasks that are not finished can be completely edited or removed if needed, based on what is implemented so far.
+- New tasks can be added if needed, based on what is implemented so far.
+- There should be minimum possible number of tasks that still have to be executed to finish the {{ task_source }}.
