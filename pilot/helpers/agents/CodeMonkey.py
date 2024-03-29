@@ -178,12 +178,13 @@ class CodeMonkey(Agent):
     def remove_backticks(content: str) -> str:
         """
         Remove optional backticks from the beginning and end of the content.
+        Remove non-necessary explanation from LLM before or after the code.
 
         :param content: content to remove backticks from
         :return: content without backticks
         """
-        start_pattern = re.compile(r"^\s*```([a-z0-9]+)?\n")
-        end_pattern = re.compile(r"\n```\s*$")
+        start_pattern = re.compile(r"^.*?```([a-z0-9]+)?\n")
+        end_pattern = re.compile(r"\n```.*?$")
         content = start_pattern.sub("", content)
         content = end_pattern.sub("", content)
         return content
