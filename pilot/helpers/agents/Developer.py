@@ -97,12 +97,12 @@ class Developer(Agent):
             self.project.current_task.start_new_task(dev_task['description'], i + 1)
             print_task_progress(i + 1, num_of_tasks, dev_task['description'], task_source, 'in_progress')
             task_executed = self.implement_task(i, task_source, dev_task)
-            if task_executed:
+            if task_executed is not None:
                 self.project.development_plan[i]['finished'] = True
                 telemetry.inc("num_tasks")
                 num_of_finished_tasks = sum(task.get('finished', False) for task in self.project.development_plan)
-                if (num_of_finished_tasks < len(self.project.development_plan) and
-                        ('llm_solutions' in task_executed and task_executed['llm_solutions'])):
+                should_update_plan = 'llm_solutions' in task_executed and task_executed['llm_solutions']
+                if num_of_finished_tasks < len(self.project.development_plan) and should_update_plan:
                     self.project.tech_lead.update_plan(task_source, task_executed['llm_solutions'], self.modified_files)
             print_task_progress(i + 1, num_of_tasks, dev_task['description'], task_source, 'done')
 
@@ -135,10 +135,12 @@ class Developer(Agent):
         :param i: The index of the task in the development plan.
         :param task_source: The source of the task, one of: 'app', 'feature', 'debugger', 'iteration'.
         :param development_task: The task to implement.
+
+        :return: The result of the task execution. If task was not executed, return None, otherwise return result.
         """
         should_execute_task = self.edit_task(task_source, development_task)
         if not should_execute_task:
-            return False
+            return None
 
         print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'), category='pythagora')
         print(f'Starting task #{i + 1} implementation...', type='verbose', category='agent:developer')
