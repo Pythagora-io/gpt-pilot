@@ -37,15 +37,13 @@ After you got each of these additional inputs, you tried to fix it as part of th
 
 Now I will show you how those files looked before this task implementation started. If a file is listed as the file that changed but is not in this list that means it was created during this task. Here are files before implementation of this task:
 
-{% if files_at_start_of_task|length > 0 %}---start_of_files_at_start_of_task---
+---start_of_files_at_start_of_task---{% if files_at_start_of_task|length > 0 %}
 {% for file in files_at_start_of_task %}
 **{{ file.path }}/{{ file.name }}** ({{ file.lines_of_code }} lines of code):
 ```
 {{ file.content }}
 ```
-{% endfor %}
----end_of_files_at_start_of_task---
-{% endif -%}
+{% endfor %}{% endif -%}---end_of_files_at_start_of_task---
 
 **IMPORTANT**
 You have to review this task implementation. You are known to be very strict with your reviews and very good at noticing bugs but you don't mind minor changes like refactoring, adding or removing logs and so on. You think twice through all information given before giving any conclusions.
