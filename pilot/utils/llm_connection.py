@@ -264,7 +264,12 @@ def retry_on_exception(func):
                     print(color_red(f"Error calling LLM API: The request exceeded the maximum token limit (request size: {n_tokens}) tokens."))
                     trace_token_limit_error(n_tokens, args[0]['messages'], err_str)
                     raise TokenLimitError(n_tokens, MAX_GPT_MODEL_TOKENS)
-                if "rate_limit_exceeded" in err_str:
+                if "rate_limit_exceeded" in err_str or "rate_limit_error" in err_str:
+                    # Retry the attempt if the current account's tier reaches the API limits
+                    rate_limit_exceeded_sleep(e, err_str)
+                    continue
+                if "overloaded_error" in err_str:
+                    # Retry the attempt if the Anthropic servers are overloaded
                     rate_limit_exceeded_sleep(e, err_str)
                     continue
 
@@ -601,7 +606,7 @@ def load_data_to_json(string):
     return json.loads(fix_json(string))
 
 
-
+@retry_on_exception
 def stream_anthropic(messages, function_call_message, gpt_data, model_name = "claude-3-sonnet-20240229"):
     try:
         import anthropic
