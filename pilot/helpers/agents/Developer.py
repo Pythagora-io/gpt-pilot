@@ -864,11 +864,13 @@ class Developer(Agent):
         review_convo = AgentConvo(self)
         files = [
             file_dict for file_dict in self.project.get_all_coded_files()
-            if any(file_dict['full_path'].endswith(modified_file.lstrip('.')) for modified_file in self.modified_files)
+            if any(os.path.normpath(file_dict['full_path']).endswith(os.path.normpath(modified_file.lstrip('.'))) for
+                   modified_file in self.modified_files)
         ]
         files_at_start_of_task = [
             file_dict for file_dict in self.files_at_start_of_task
-            if any(file_dict['full_path'].endswith(modified_file.lstrip('.')) for modified_file in self.modified_files)
+            if any(os.path.normpath(file_dict['full_path']).endswith(os.path.normpath(modified_file.lstrip('.'))) for
+                   modified_file in self.modified_files)
         ]
         # TODO instead of sending files before and after maybe add nice way to show diff for multiple files
         review = review_convo.send_message('development/review_task.prompt', {
