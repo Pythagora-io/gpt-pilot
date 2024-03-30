@@ -71,7 +71,15 @@ def parse_agent_response(response, function_calls: Union[FunctionCallSet, None])
     """
     if function_calls:
         text = response['text']
-        return json.loads(text)
+        try:
+            return json.loads(text)
+        except:
+            pattern = r'```(.*)\n(.*?)```'
+            match = re.search(pattern, text, re.DOTALL)
+   
+            if match:
+                code = match.group(1)
+                return json.loads(code.strip())
 
     return response['text']
 

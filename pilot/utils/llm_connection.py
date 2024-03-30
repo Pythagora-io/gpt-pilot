@@ -112,9 +112,14 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
         temperature = os.getenv('TEMPERATURE', 0.7)
 
     model_name = os.getenv('MODEL_NAME', 'gpt-4')
+    if '/' in model_name:
+        model_provider, model_name = model_name.split('/', 1)
+    else:
+        model_provider = 'openai'
+
     gpt_data = {
         'model': model_name,
-        'n': 1,
+        'n': os.getenv('N', 1),
         'temperature': temperature,
         'top_p': os.getenv('TOP_P', 1),
         'top_k': os.getenv('TOP_K', 0),
@@ -133,26 +138,17 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
             if key in gpt_data:
                 del gpt_data[key]
 
-    # delete some keys if using "Groq" API
-    if os.getenv('ENDPOINT') == 'GROQ':
-        keys_to_delete = ['n', 'max_tokens', 'temperature', 'top_p', 'top_k', 'repetition_penalty', 'presence_penalty', 'frequency_penalty', 'guidance_scale']
-        for key in keys_to_delete:
-            if key in gpt_data:
-                del gpt_data[key]
-
     # Advise the LLM of the JSON response schema we are expecting
     messages_length = len(messages)
     function_call_message = add_function_calls_to_request(gpt_data, function_calls)
     if prompt_data is not None and function_call_message is not None:
         prompt_data['function_call_message'] = function_call_message
-
-    if '/' in model_name:
-        model_provider, model_name = model_name.split('/', 1)
-    else:
-        model_provider = 'openai'
+        gpt_data['response_format'] = {"type": "json_object"}
 
     try:
-        if model_provider == 'anthropic' and os.getenv('ENDPOINT') != 'OPENROUTER':
+        if model_provider == 'groq' and os.getenv('ENDPOINT') != 'OPENROUTER':
+            response = stream_groq(gpt_data, req_type, project)
+        elif model_provider == 'anthropic' and os.getenv('ENDPOINT') != 'OPENROUTER':
             if not os.getenv('ANTHROPIC_API_KEY'):
                 os.environ['ANTHROPIC_API_KEY'] = os.getenv('OPENAI_API_KEY')
             response = stream_anthropic(messages, function_call_message, gpt_data, model_name)
@@ -656,3 +652,57 @@ def stream_anthropic(messages, function_call_message, gpt_data, model_name = "cl
         assert_json_schema(response, gpt_data["functions"])
 
     return {"text": response}
+
+def stream_groq(data, req_type, project):
+    try:
+        from groq import Groq
+    except ImportError as err:
+        raise RuntimeError("The 'groq' package is required to use the Groq LLM.") from err
+
+    client = Groq(
+        # This is the default and can be omitted
+        # api_key=os.environ.get("GROQ_API_KEY"),
+        # base_url=os.environ.get("GROQ_BASE_URL"),
+        timeout=(API_CONNECT_TIMEOUT, API_READ_TIMEOUT),        
+    )
+
+    response=""
+    if (data.get("response_format",)):
+        response=client.chat.completions.create(
+            messages=data["messages"],
+            model=data.get("model","mixtral-8x7b-32768"),
+            n=data.get("n",1),
+            # temperature=data.get("temperature",0.7),
+            # top_p=data.get("top_p",1.0),
+            # frequency_penalty=data.get("frequency_penalty",1),
+            # presence_penalty=data.get("presence_penalty",0),        
+            max_tokens=data.get("max_tokens",4096),
+            response_format=data.get("response_format",),
+            stream=False
+        ).choices[0].message.content;
+    else:
+        with client.chat.completions.with_streaming_response.create(        
+            messages=data["messages"],
+            model=data.get("model","mixtral-8x7b-32768"),
+            n=data.get("n",1),
+            # temperature=data.get("temperature",0.7),
+            # top_p=data.get("top_p",1.0),
+            # frequency_penalty=data.get("frequency_penalty",),
+            # presence_penalty=data.get("presence_penalty",0),        
+            max_tokens=data.get("max_tokens",4096),
+            stream=True
+        ) as stream:
+            for chunk in stream.iter_lines():
+                if chunk=='':
+                    continue
+                if chunk!='[DONE]':
+                    o=json.loads(chunk.split(': ', 1)[1])
+                    if (o['choices'][0]['finish_reason']=='stop'):
+                        break
+                    print (o['choices'][0]['delta']['content'],type='stream',end='', flush=True)
+                    response+=o['choices'][0]['delta']['content']
+    
+    return {"text": response}
+
+
+

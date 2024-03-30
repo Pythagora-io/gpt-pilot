@@ -26,3 +26,4 @@ urllib3==1.26.7
 wcwidth==0.2.8
 yaspin==2.5.0
 anthropic==0.19.1
+groq==0.4.2
