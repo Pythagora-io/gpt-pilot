@@ -119,7 +119,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
 
     gpt_data = {
         'model': model_name,
-        'n': os.getenv('N', 1),
+        'n': int(os.getenv('N', 1)),
         'temperature': temperature,
         'top_p': float(os.getenv('TOP_P', 1)),
         'top_k': float(os.getenv('TOP_K', 0)),
@@ -147,12 +147,11 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
     try:
         if model_provider == 'groq' and os.getenv('ENDPOINT') != 'OPENROUTER':
             response = stream_groq(gpt_data, req_type, project)
+            #response = stream_groq(messages, function_call_message, gpt_data, model_name)
         elif model_provider == 'anthropic' and os.getenv('ENDPOINT') != 'OPENROUTER':
             if not os.getenv('ANTHROPIC_API_KEY'):
                 os.environ['ANTHROPIC_API_KEY'] = os.getenv('OPENAI_API_KEY')
             response = stream_anthropic(messages, function_call_message, gpt_data, model_name)
-        elif model_provider == 'groq':
-            response = stream_groq(messages, function_call_message, gpt_data, model_name)
         else:
             response = stream_gpt_completion(gpt_data, req_type, project)
 
@@ -658,6 +657,8 @@ def stream_anthropic(messages, function_call_message, gpt_data, model_name = "cl
 
     return {"text": response}
 
+
+@retry_on_exception
 def stream_groq(data, req_type, project):
     try:
         from groq import Groq
@@ -671,10 +672,11 @@ def stream_groq(data, req_type, project):
         timeout=(API_CONNECT_TIMEOUT, API_READ_TIMEOUT),        
     )
 
+    messages = collapse_messages_from_same_role(data["messages"])
     response=""
     if (data.get("response_format",)):
         response=client.chat.completions.create(
-            messages=data["messages"],
+            messages=messages,
             model=data.get("model","mixtral-8x7b-32768"),
             n=data.get("n",1),
             temperature=data.get("temperature",0.7),
@@ -685,9 +687,12 @@ def stream_groq(data, req_type, project):
             response_format=data.get("response_format",),
             stream=False
         ).choices[0].message.content;
+        response = json.dumps(fix_numbers(json.loads(response), data["functions"][0]['parameters']))
+        response = clean_json_response(response)
+        assert_json_schema(response, data["functions"])
     else:
         with client.chat.completions.with_streaming_response.create(        
-            messages=data["messages"],
+            messages=messages,
             model=data.get("model","mixtral-8x7b-32768"),
             n=data.get("n",1),
             temperature=data.get("temperature",0.7),
@@ -710,10 +715,6 @@ def stream_groq(data, req_type, project):
                     response+=o['choices'][0]['delta']['content']
     
     return {"text": response}
-
-
-
-=======
 
 def fix_numbers(data, schema):
 
@@ -738,55 +739,55 @@ def fix_numbers(data, schema):
 
 
 
-def stream_groq(messages, function_call_message, gpt_data, model_name = "mixtral-8x7b-32768"):
-    try:
-        import groq
-    except ImportError as err:
-        raise RuntimeError("The 'groq' package is required to use the Groq LLM.") from err
-    from copy import deepcopy
+# def stream_groq(messages, function_call_message, gpt_data, model_name = "mixtral-8x7b-32768"):
+#     try:
+#         import groq
+#     except ImportError as err:
+#         raise RuntimeError("The 'groq' package is required to use the Groq LLM.") from err
+#     from copy import deepcopy
 
-    client = groq.Groq(api_key=os.getenv('GROQ_API_KEY'))
+#     client = groq.Groq(api_key=os.getenv('GROQ_API_KEY'))
 
-    if False and function_call_message:
-        schema_message = deepcopy(messages[-1])
-        schema_message['role'] = 'system'
-        messages = messages[:-1]
-        if messages[0]['role'] == 'system':
-            messages.insert(1, schema_message)
-        else:
-            messages.insert(0, schema_message)
+#     if False and function_call_message:
+#         schema_message = deepcopy(messages[-1])
+#         schema_message['role'] = 'system'
+#         messages = messages[:-1]
+#         if messages[0]['role'] == 'system':
+#             messages.insert(1, schema_message)
+#         else:
+#             messages.insert(0, schema_message)
 
-    messages = collapse_messages_from_same_role(messages)
+#     messages = collapse_messages_from_same_role(messages)
 
-    if function_call_message:
-        # JSON mode doesn't support streaming yet
-        completion = client.chat.completions.create(
-            messages=messages,
-            model=model_name,
-            temperature=0.5,
-            max_tokens=2047,
-            response_format={"type": "json_object"},
-        )
-        response = completion.choices[0].message.content
-    else:
-        stream = client.chat.completions.create(
-            messages=messages,
-            model=model_name,
-            temperature=0.5,
-            max_tokens=2047,
-            stream=True,
-        )
-        response = ""
-        for chunk in stream:
-            c = chunk.choices[0].delta.content
-            if c:
-                print(c, type='stream', end='', flush=True)
-                response += c
+#     if function_call_message:
+#         # JSON mode doesn't support streaming yet
+#         completion = client.chat.completions.create(
+#             messages=messages,
+#             model=model_name,
+#             temperature=0.5,
+#             max_tokens=2047,
+#             response_format={"type": "json_object"},
+#         )
+#         response = completion.choices[0].message.content
+#     else:
+#         stream = client.chat.completions.create(
+#             messages=messages,
+#             model=model_name,
+#             temperature=0.5,
+#             max_tokens=2047,
+#             stream=True,
+#         )
+#         response = ""
+#         for chunk in stream:
+#             c = chunk.choices[0].delta.content
+#             if c:
+#                 print(c, type='stream', end='', flush=True)
+#                 response += c
 
-    if function_call_message is not None:
-        import json5
-        response = json.dumps(fix_numbers(json5.loads(response), gpt_data["functions"][0]['parameters']))
-        response = clean_json_response(response)
-        assert_json_schema(response, gpt_data["functions"])
+#     if function_call_message is not None:
+#         import json5
+#         response = json.dumps(fix_numbers(json5.loads(response), gpt_data["functions"][0]['parameters']))
+#         response = clean_json_response(response)
+#         assert_json_schema(response, gpt_data["functions"])
 
-    return {"text": response}
+#     return {"text": response}
