@@ -89,10 +89,6 @@ def step_save_file_definition():
                 "type": "object",
                 "description": "A file that should be created or updated.",
                 "properties": {
-                    "name": {
-                        "type": "string",
-                        "description": "Name of the file that will be created (if it doesn't exist) or updated (if it already exists)."
-                    },
                     "path": {
                         "type": "string",
                         "description": "Full path of the file with the file name."
@@ -102,7 +98,7 @@ def step_save_file_definition():
                         "description": "Empty string"
                     }
                 },
-                "required": ["name", "path", "code_change_description"]
+                "required": ["path", "code_change_description"]
             }
         },
         "required": ["type", "save_file"]
@@ -455,10 +451,6 @@ GET_DOCUMENTATION_FILE = {
         'parameters': {
             'type': 'object',
             'properties': {
-                'name': {
-                    'type': 'string',
-                    'description': 'Name of the documentation file that needs to be saved on the disk.',
-                },
                 'path': {
                     'type': 'string',
                     'description': 'Relative path of the documentation file with the file name that needs to be saved.',
@@ -468,7 +460,7 @@ GET_DOCUMENTATION_FILE = {
                     'description': 'Full content of the documentation file that needs to be saved on the disk.',
                 },
             },
-            'required': ['name', 'path', 'content'],
+            'required': ['path', 'content'],
         },
     }],
 }

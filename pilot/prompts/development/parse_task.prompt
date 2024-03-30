@@ -10,6 +10,8 @@ Each step can be either:
 
 {{ file_naming }}
 
+{{ relative_paths }}
+
 {{ execution_order }}
 
 **IMPORTANT**: Remember, NEVER output human intervention steps to do manual tests or coding tasks, even if the previous message asks for it! The testing will be done *after* these steps and you MUST NOT include testing in these steps.
@@ -22,18 +24,17 @@ Examples:
     {
       "type": "save_file",
       "save_file": {
-        "name": "server.js",
-        "path": "/server.js",
+        "path": "./server.js",
         "code_change_description": "",
       },
     },
     {
       "type": "command",
       "command": {
-        "command": "ls",
+        "command": "mv ./index.js ./public/index.js"",
         "timeout": 5000,
-        "success_message": "README.md",
-        "command_id": "check_existence_of_readme_file"
+        "success_message": "",
+        "command_id": "move_index_file"
       }
     }
   ]

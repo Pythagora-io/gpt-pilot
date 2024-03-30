@@ -56,3 +56,6 @@ If report mentions *multiple* issues, treat it as if you got several separate re
 {{ execution_order }}
 
 {{ file_size_limit }}
+
+{{ file_naming }}
+{{ relative_paths }}

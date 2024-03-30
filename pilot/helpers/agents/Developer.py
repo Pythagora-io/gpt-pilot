@@ -1,3 +1,4 @@
+import os.path
 import platform
 import uuid
 import re
@@ -263,6 +264,7 @@ class Developer(Agent):
         elif 'code_change' in step:
             step['save_file'] = step.pop('code_change')
 
+        step['save_file']['name'] = os.path.basename(step['save_file']['path'])
         data = step['save_file']
         code_monkey = CodeMonkey(self.project)
         code_monkey.implement_code_changes(convo, data)
@@ -393,9 +395,10 @@ class Developer(Agent):
 
         self.project.run_command = self.run_command
 
-    def task_postprocessing(self, convo, development_task, continue_development, task_result, last_branch_name):
+    def task_postprocessing(self, convo, development_task, continue_development, task_result, last_branch_name, task_source):
         if self.project.last_detailed_user_review_goal is None:
-            self.get_run_command(convo)
+            if self.run_command is None or task_source in ['app', 'feature']:
+                self.get_run_command(convo)
 
             if development_task is not None:
                 convo.remove_last_x_messages(2)
@@ -594,7 +597,7 @@ class Developer(Agent):
 
         result = {"success": True}  # if all steps are finished, the task has been successfully implemented... NOT!
         convo.load_branch(function_uuid)
-        return self.task_postprocessing(convo, development_task, continue_development, result, function_uuid)
+        return self.task_postprocessing(convo, development_task, continue_development, result, function_uuid, task_source)
 
     def continue_development(self, iteration_convo, last_branch_name, continue_description='', development_task=None):
         llm_solutions = self.project.last_iteration['prompt_data']['previous_solutions'] if (self.project.last_iteration and 'previous_solutions' in self.project.last_iteration['prompt_data']) else []
@@ -713,6 +716,8 @@ class Developer(Agent):
                 }, IMPLEMENT_TASK)
                 iteration_convo.remove_last_x_messages(2)
 
+                self.files_at_start_of_task = self.project.get_all_coded_files()
+                self.modified_files = []
                 task_steps = llm_response['tasks']
                 self.execute_task(iteration_convo, task_steps, is_root_task=True, task_source='troubleshooting')
                 print_task_progress(1, 1, development_task['description'], 'troubleshooting', 'done', len(llm_solutions) + 1)
@@ -786,12 +791,13 @@ class Developer(Agent):
         review_convo = AgentConvo(self)
         files = [
             file_dict for file_dict in self.project.get_all_coded_files()
-            if any(file_dict['full_path'].endswith(modified_file) for modified_file in self.modified_files)
+            if any(file_dict['full_path'].endswith(modified_file.lstrip('.')) for modified_file in self.modified_files)
         ]
         files_at_start_of_task = [
             file_dict for file_dict in self.files_at_start_of_task
-            if any(file_dict['full_path'].endswith(modified_file) for modified_file in self.modified_files)
+            if any(file_dict['full_path'].endswith(modified_file.lstrip('.')) for modified_file in self.modified_files)
         ]
+        # TODO instead of sending files before and after maybe add nice way to show diff for multiple files
         review = review_convo.send_message('development/review_task.prompt', {
             "name": self.project.args['name'],
             "app_summary": self.project.project_description,
@@ -864,13 +870,13 @@ class Developer(Agent):
                 llm_response = str(err)
 
             if llm_response == 'DONE':
-                print(color_green_bold(f"✅ {dep_text} is available."))
+                print(color_green_bold(f"✅ {dep_text} is available."), category='agent:architect')
             else:
                 if dependency["required_locally"]:
                     remedy_text = "Please install it before proceeding with your app."
                 else:
                     remedy_text = "If you want to use it locally, you should install it before proceeding."
-                print(color_red_bold(f"❌ {dep_text} is not available. {remedy_text}"))
+                print(color_red_bold(f"❌ {dep_text} is not available. {remedy_text}"), category='agent:architect')
 
                 print('continue', type='buttons-only')
                 ask_user(

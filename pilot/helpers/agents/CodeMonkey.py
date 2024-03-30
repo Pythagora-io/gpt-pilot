@@ -14,7 +14,7 @@ from utils.exit import trace_code_event
 from utils.telemetry import telemetry
 
 # Constant for indicating missing new line at the end of a file in a unified diff
-NO_EOL = "\ No newline at end of file"
+NO_EOL = "\\ No newline at end of file"
 
 # Regular expression pattern for matching hunk headers
 PATCH_HEADER_PATTERN = re.compile(r"^@@ -(\d+),?(\d+)? \+(\d+),?(\d+)? @@")
