@@ -55,7 +55,9 @@ def add_function_calls_to_request(gpt_data, function_calls: Union[FunctionCallSe
         'content': prompter.prompt('', function_calls['definitions'], function_call)
     }
     gpt_data['messages'].append(function_call_message)
-
+    
+    gpt_data['response_format'] = {"type": "json_object"}
+    
     return function_call_message
 
 

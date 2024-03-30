@@ -109,7 +109,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
              {'function_calls': {'name': str, arguments: {...}}}
     """
     if (temperature < 0.0): 
-        temperature = os.getenv('TEMPERATURE', 0.7)
+        temperature = float(os.getenv('TEMPERATURE', 0.7))
 
     model_name = os.getenv('MODEL_NAME', 'gpt-4')
     if '/' in model_name:
@@ -121,12 +121,12 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
         'model': model_name,
         'n': os.getenv('N', 1),
         'temperature': temperature,
-        'top_p': os.getenv('TOP_P', 1),
-        'top_k': os.getenv('TOP_K', 0),
-        'repetition_penalty': os.getenv('REPETITION_PENALTY', 1),
-        'presence_penalty': os.getenv('PRESENCE_PENALTY', 0),
-        'frequency_penalty': os.getenv('FREQUENCY_PENALTY', 0),
-        'guidance_scale': os.getenv('GUIDANCE_SCALE', 1.5),
+        'top_p': float(os.getenv('TOP_P', 1)),
+        'top_k': float(os.getenv('TOP_K', 0)),
+        'repetition_penalty': float(os.getenv('REPETITION_PENALTY', 1)),
+        'presence_penalty': float(os.getenv('PRESENCE_PENALTY', 0)),
+        'frequency_penalty': float(os.getenv('FREQUENCY_PENALTY', 0)),
+        'guidance_scale': float(os.getenv('GUIDANCE_SCALE', 1.5)),
         'messages': messages,
         'stream': True
     }
@@ -142,8 +142,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
     messages_length = len(messages)
     function_call_message = add_function_calls_to_request(gpt_data, function_calls)
     if prompt_data is not None and function_call_message is not None:
-        prompt_data['function_call_message'] = function_call_message
-        gpt_data['response_format'] = {"type": "json_object"}
+        prompt_data['function_call_message'] = function_call_message        
 
     try:
         if model_provider == 'groq' and os.getenv('ENDPOINT') != 'OPENROUTER':
@@ -672,10 +671,10 @@ def stream_groq(data, req_type, project):
             messages=data["messages"],
             model=data.get("model","mixtral-8x7b-32768"),
             n=data.get("n",1),
-            # temperature=data.get("temperature",0.7),
-            # top_p=data.get("top_p",1.0),
-            # frequency_penalty=data.get("frequency_penalty",1),
-            # presence_penalty=data.get("presence_penalty",0),        
+            temperature=data.get("temperature",0.7),
+            top_p=data.get("top_p",1.0),
+            frequency_penalty=data.get("frequency_penalty",1),
+            presence_penalty=data.get("presence_penalty",0),        
             max_tokens=data.get("max_tokens",4096),
             response_format=data.get("response_format",),
             stream=False
@@ -685,10 +684,10 @@ def stream_groq(data, req_type, project):
             messages=data["messages"],
             model=data.get("model","mixtral-8x7b-32768"),
             n=data.get("n",1),
-            # temperature=data.get("temperature",0.7),
-            # top_p=data.get("top_p",1.0),
-            # frequency_penalty=data.get("frequency_penalty",),
-            # presence_penalty=data.get("presence_penalty",0),        
+            temperature=data.get("temperature",0.7),
+            top_p=data.get("top_p",1.0),
+            frequency_penalty=data.get("frequency_penalty",),
+            presence_penalty=data.get("presence_penalty",0),        
             max_tokens=data.get("max_tokens",4096),
             stream=True
         ) as stream:
@@ -698,6 +697,8 @@ def stream_groq(data, req_type, project):
                 if chunk!='[DONE]':
                     o=json.loads(chunk.split(': ', 1)[1])
                     if (o['choices'][0]['finish_reason']=='stop'):
+                        print ('\n', type='stream')
+                        response+='\n'
                         break
                     print (o['choices'][0]['delta']['content'],type='stream',end='', flush=True)
                     response+=o['choices'][0]['delta']['content']
