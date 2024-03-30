@@ -88,7 +88,7 @@ def apply_project_template(
 
     last_development_step = project.checkpoints.get('last_development_step')
     if last_development_step:
-        project.save_files_snapshot(last_development_step['id'])
+        project.save_files_snapshot(last_development_step['id'], summaries=template.get("files"))
 
     trace_code_event('project-template', {'template': template_name})
     summary = "The code so far includes:\n" + template["summary"]

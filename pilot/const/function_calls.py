@@ -532,3 +532,49 @@ GET_BUG_REPORT_MISSING_DATA = {
         }
     }],
 }
+
+LIST_RELEVANT_FILES = {
+    'definitions': [{
+        'name': 'list_relevant_files',
+        'description': 'List of relevant files for the current task.',
+        'parameters': {
+            "type": "object",
+            "properties": {
+                "relevant_files": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "description": "Path to the file that is relevant for the current task."
+                    },
+                }
+            },
+            "required": ["relevant_files"],
+            "additionalProperties": False
+        }
+    }],
+}
+
+DESCRIBE_FILE = {
+    'definitions': [{
+        'name': 'describe_file',
+        'description': 'Describe the content of the file.',
+        'parameters': {
+            "type": "object",
+            "properties": {
+                "summary": {
+                "type": "string",
+                "description": "Describe in detail the functionality being defined or implemented in this file. Be as detailed as possible."
+                },
+                "references": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "List of file references."
+                }
+            },
+            "required": ["summary", "references"],
+            "additionalProperties": False,
+        }
+    }]
+}

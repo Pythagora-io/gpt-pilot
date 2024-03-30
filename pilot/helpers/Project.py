@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional, Union
 
 import peewee
 from playhouse.shortcuts import model_to_dict
@@ -35,6 +35,9 @@ from utils.ignore import IgnoreMatcher
 from utils.telemetry import telemetry
 from utils.task import Task
 from utils.utils import remove_lines_with_string
+
+from utils.describe import describe_file
+from os.path import abspath, relpath
 
 
 class Project:
@@ -326,14 +329,29 @@ class Project:
             "lines_of_code": len(item['content'].splitlines()),
         } for item in [model_to_dict(file) for file in file_snapshots]]
 
-    def get_all_coded_files(self):
+    @staticmethod
+    def relpath(file: Union[File, str]) -> str:
         """
-        Get all coded files in the project.
+        Return relative file path (including the name) within a project
 
-        Returns:
-            list: A list of coded files.
+        :param file: File object or file path
+        :return: Relative file path
         """
-        files = (
+        if isinstance(file, File):
+            fpath = f"{file.path}/{file.name}"
+        else:
+            fpath = file
+        if fpath.startswith("/"):
+            fpath = fpath[1:]
+        elif fpath.startswith("./"):
+            fpath = fpath[2:]
+        return fpath
+
+    def get_all_database_files(self) -> list[File]:
+        """
+        Get all project files from the database.
+        """
+        return (
             File
             .select()
             .where(
@@ -342,7 +360,34 @@ class Project:
             )
         )
 
+    def get_all_coded_files(self, relevant_files=None):
+        """
+        Get all coded files in the project.
+
+        Returns:
+            list: A list of coded files.
+        """
+        files = self.get_all_database_files()
+        if relevant_files:
+            n_files0 = len(files)
+            files = [file for file in files if self.relpath(file) in relevant_files]
+            n_files1 = len(files)
+            rel_txt = ",".join(relevant_files) if relevant_files else "(none)"
+            logger.debug(f"[get_all_coded_files] reduced context from {n_files0} to {n_files1} files, using: {rel_txt}")
+
         return self.get_files([file.path + '/' + file.name for file in files])
+
+    def get_file_summaries(self) -> Optional[dict[str, str]]:
+        """
+        Get summaries of all coded files in the project.
+
+        :returns: A dictionary of file summaries, or None if file filtering is not enabled.
+        """
+        if os.getenv('FILTER_RELEVANT_FILES', '').lower().strip() not in ['true', '1', 'yes', 'on']:
+            return None
+
+        files = self.get_all_database_files()
+        return {self.relpath(file): file.description or "(unknown)" for file in files}
 
     def get_files(self, files):
         """
@@ -405,11 +450,14 @@ class Project:
 
         if path and path[0] == '/':
             path = path.lstrip('/')
-        (File.insert(app=self.app, path=path, name=name, full_path=full_path)
+
+        description = describe_file(self, relpath(abspath(full_path), abspath(self.root_path)), data['content'])
+
+        (File.insert(app=self.app, path=path, name=name, full_path=full_path, description=description)
          .on_conflict(
             conflict_target=[File.app, File.name, File.path],
             preserve=[],
-            update={'name': name, 'path': path, 'full_path': full_path})
+            update={'name': name, 'path': path, 'full_path': full_path, 'description': description})
          .execute())
 
         if not self.skip_steps:
@@ -530,7 +578,10 @@ class Project:
         final_absolute_path = os.path.join(self.root_path, final_file_path[1:], final_file_name)
         return final_file_path, final_absolute_path
 
-    def save_files_snapshot(self, development_step_id):
+    def save_files_snapshot(self, development_step_id, summaries=None):
+        if summaries is None:
+            summaries = {}
+
         files = get_directory_contents(self.root_path)
         development_step, created = DevelopmentSteps.get_or_create(id=development_step_id)
 
@@ -547,16 +598,26 @@ class Project:
                 app=self.app,
                 name=file['name'],
                 path=file['path'],
-                defaults={'full_path': file['full_path']},
+                defaults={
+                    'full_path': file['full_path'],
+                    'description': summaries.get(os.path.relpath(file['full_path'], self.root_path), ''),
+                },
             )
 
-            file_snapshot, created = FileSnapshot.get_or_create(
+            file_snapshot, _ = FileSnapshot.get_or_create(
                 app=self.app,
                 development_step=development_step,
                 file=file_in_db,
                 defaults={'content': file.get('content', '')}
             )
             file_snapshot.content = file['content']
+
+            # For a non-empty file, if we don't have a description, and the file is either new or
+            # we're loading a project, create the description.
+            if file['content'] and not file_in_db.description:
+                file_in_db.description = describe_file(self, relpath(abspath(file['full_path']), abspath(self.root_path)), file['content'])
+                file_in_db.save()
+
             file_snapshot.save()
             total_files += 1
             if isinstance(file['content'], str):

@@ -59,7 +59,7 @@ class TestDeveloper:
             'description': 'Do stuff',
             'user_review_goal': 'Do stuff',
         }]
-        project.get_all_coded_files = lambda: []
+        project.get_all_coded_files = lambda **kwargs: []
         project.current_step = 'test'
 
         # and a developer who will execute any task
@@ -85,7 +85,7 @@ class TestDeveloper:
             'description': 'Do stuff',
             'user_review_goal': 'Do stuff',
         }]
-        project.get_all_coded_files = lambda: []
+        project.get_all_coded_files = lambda **kwargs: []
         project.current_step = 'test'
 
         # and a developer who will execute any task except for `ls -al test`
