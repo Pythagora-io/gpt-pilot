@@ -22,5 +22,3 @@ Each step can be either:
 Also, make sure that at least the last step has `check_if_fixed` set to TRUE.
 
 {{ file_size_limit }}
-
-{# After this, you need to decide what to do next. You can rerun the command `{{ command }}` to check if the problem is fixed or run another command with `run_command` or change more code with `save_file`. #}
