@@ -55,7 +55,9 @@ def add_function_calls_to_request(gpt_data, function_calls: Union[FunctionCallSe
         'content': prompter.prompt('', function_calls['definitions'], function_call)
     }
     gpt_data['messages'].append(function_call_message)
-
+    
+    gpt_data['response_format'] = {"type": "json_object"}
+    
     return function_call_message
 
 
@@ -71,7 +73,15 @@ def parse_agent_response(response, function_calls: Union[FunctionCallSet, None])
     """
     if function_calls:
         text = response['text']
-        return json.loads(text)
+        try:
+            return json.loads(text)
+        except:
+            pattern = r'```(.*)\n(.*?)```'
+            match = re.search(pattern, text, re.DOTALL)
+   
+            if match:
+                code = match.group(1)
+                return json.loads(code.strip())
 
     return response['text']
 

@@ -2,6 +2,7 @@ import json
 import re
 import subprocess
 import uuid
+import os
 from os.path import sep
 
 from utils.style import color_yellow, color_yellow_bold, color_red_bold
@@ -25,14 +26,17 @@ class AgentConvo:
         agent: An instance of the agent participating in the conversation.
     """
 
-    def __init__(self, agent, temperature: float = 0.7):
+    def __init__(self, agent, temperature: float = -1):
         # [{'role': 'system'|'user'|'assistant', 'content': ''}, ...]
         self.messages: list[dict] = []
         self.branches = {}
         self.log_to_user = True
         self.agent = agent
         self.high_level_step = self.agent.project.current_step
-        self.temperature = temperature
+        if (temperature < 0.0): 
+            self.temperature = float(os.getenv('TEMPERATURE', 0.7))
+        else:
+            self.temperature = temperature
 
         # add system message
         system_message = get_sys_message(self.agent.role, self.agent.project.args)
