@@ -241,7 +241,13 @@ class AgentConvo:
                 if not self.agent.project.check_ipc():
                     print(color_yellow_bold(dev_step_msg), end='')
                 logger.info(dev_step_msg)
-            print(f"\n{content}\n", type='local')
+            try:
+                print(f"\n{content}\n", type='local')
+            except Exception:  # noqa
+                # Workaround for Windows encoding crash: https://github.com/Pythagora-io/gpt-pilot/issues/509
+                safe_content = content.encode('ascii', 'ignore').decode('ascii')
+                print(f"\n{safe_content}\n", type='local')
+
         logger.info(f"{print_msg}: {content}\n")
 
     def to_context_prompt(self):
