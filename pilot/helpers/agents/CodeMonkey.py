@@ -182,10 +182,11 @@ class CodeMonkey(Agent):
         :param content: content to remove backticks from
         :return: content without backticks
         """
-        start_pattern = re.compile(r"^\s*```([a-z0-9]+)?\n")
-        end_pattern = re.compile(r"\n```\s*$")
-        content = start_pattern.sub("", content)
-        content = end_pattern.sub("", content)
+        pattern = r"^.*```([a-z0-9]+)?\n(.*)?```.*$"
+        match = re.search(pattern, content, re.DOTALL)
+        if match:
+            code = match.group(2)
+            return code.strip()
         return content
 
     def identify_file_to_change(self, code_changes_description: str, files: list[dict]) -> str:

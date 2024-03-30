@@ -109,19 +109,24 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
              {'function_calls': {'name': str, arguments: {...}}}
     """
     if (temperature < 0.0): 
-        temperature = os.getenv('TEMPERATURE', 0.7)
+        temperature = float(os.getenv('TEMPERATURE', 0.7))
 
     model_name = os.getenv('MODEL_NAME', 'gpt-4')
+    if '/' in model_name:
+        model_provider, model_name = model_name.split('/', 1)
+    else:
+        model_provider = 'openai'
+
     gpt_data = {
         'model': model_name,
-        'n': 1,
+        'n': int(os.getenv('N', 1)),
         'temperature': temperature,
-        'top_p': os.getenv('TOP_P', 1),
-        'top_k': os.getenv('TOP_K', 0),
-        'repetition_penalty': os.getenv('REPETITION_PENALTY', 1),
-        'presence_penalty': os.getenv('PRESENCE_PENALTY', 0),
-        'frequency_penalty': os.getenv('FREQUENCY_PENALTY', 0),
-        'guidance_scale': os.getenv('GUIDANCE_SCALE', 1.5),
+        'top_p': float(os.getenv('TOP_P', 1)),
+        'top_k': float(os.getenv('TOP_K', 0)),
+        'repetition_penalty': float(os.getenv('REPETITION_PENALTY', 1)),
+        'presence_penalty': float(os.getenv('PRESENCE_PENALTY', 0)),
+        'frequency_penalty': float(os.getenv('FREQUENCY_PENALTY', 0)),
+        'guidance_scale': float(os.getenv('GUIDANCE_SCALE', 1.5)),
         'messages': messages,
         'stream': True
     }
@@ -129,13 +134,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
     # delete some keys if using "OpenRouter" API
     if os.getenv('ENDPOINT') == 'OPENROUTER':
         keys_to_delete = ['n', 'max_tokens', 'temperature', 'top_p', 'top_k', 'repetition_penalty', 'presence_penalty', 'frequency_penalty', 'guidance_scale']
-        for key in keys_to_delete:
-            if key in gpt_data:
-                del gpt_data[key]
 
-    # delete some keys if using "Groq" API
-    if os.getenv('ENDPOINT') == 'GROQ':
-        keys_to_delete = ['n', 'max_tokens', 'temperature', 'top_p', 'top_k', 'repetition_penalty', 'presence_penalty', 'frequency_penalty', 'guidance_scale']
         for key in keys_to_delete:
             if key in gpt_data:
                 del gpt_data[key]
@@ -144,15 +143,13 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
     messages_length = len(messages)
     function_call_message = add_function_calls_to_request(gpt_data, function_calls)
     if prompt_data is not None and function_call_message is not None:
-        prompt_data['function_call_message'] = function_call_message
-
-    if '/' in model_name:
-        model_provider, model_name = model_name.split('/', 1)
-    else:
-        model_provider = 'openai'
+        prompt_data['function_call_message'] = function_call_message        
 
     try:
-        if model_provider == 'anthropic' and os.getenv('ENDPOINT') != 'OPENROUTER':
+        if model_provider == 'groq' and os.getenv('ENDPOINT') != 'OPENROUTER':
+            response = stream_groq(gpt_data, req_type, project)
+            #response = stream_groq(messages, function_call_message, gpt_data, model_name)
+        elif model_provider == 'anthropic' and os.getenv('ENDPOINT') != 'OPENROUTER':
             if not os.getenv('ANTHROPIC_API_KEY'):
                 os.environ['ANTHROPIC_API_KEY'] = os.getenv('OPENAI_API_KEY')
             response = stream_anthropic(messages, function_call_message, gpt_data, model_name)
@@ -613,6 +610,18 @@ def load_data_to_json(string):
     return json.loads(fix_json(string))
 
 
+def collapse_messages_from_same_role(messages):
+    if not len(messages):
+        return []
+
+    fixed_messages = [messages[0]]
+    for i in range(1, len(messages)):
+        if fixed_messages[-1]["role"] == messages[i]["role"]:
+            fixed_messages[-1]["content"] += "\n\n" + messages[i]["content"]
+        else:
+            fixed_messages.append(messages[i])
+    return fixed_messages
+
 
 def stream_anthropic(messages, function_call_message, gpt_data, model_name = "claude-3-sonnet-20240229"):
     try:
@@ -630,15 +639,7 @@ def stream_anthropic(messages, function_call_message, gpt_data, model_name = "cl
         claude_system = messages[0]["content"]
         claude_messages = messages[1:]
 
-    if len(claude_messages):
-        cm2 = [claude_messages[0]]
-        for i in range(1, len(claude_messages)):
-            if cm2[-1]["role"] == claude_messages[i]["role"]:
-                cm2[-1]["content"] += "\n\n" + claude_messages[i]["content"]
-            else:
-                cm2.append(claude_messages[i])
-        claude_messages = cm2
-
+    claude_messages = collapse_messages_from_same_role(claude_messages)
     response = ""
     with client.messages.stream(
         model=model_name,
@@ -656,3 +657,138 @@ def stream_anthropic(messages, function_call_message, gpt_data, model_name = "cl
         assert_json_schema(response, gpt_data["functions"])
 
     return {"text": response}
+
+
+@retry_on_exception
+def stream_groq(data, req_type, project):
+    try:
+        from groq import Groq
+    except ImportError as err:
+        raise RuntimeError("The 'groq' package is required to use the Groq LLM.") from err
+
+    client = Groq(
+        # This is the default and can be omitted
+        # api_key=os.environ.get("GROQ_API_KEY"),
+        # base_url=os.environ.get("GROQ_BASE_URL"),
+        timeout=(API_CONNECT_TIMEOUT, API_READ_TIMEOUT),        
+    )
+
+    messages = collapse_messages_from_same_role(data["messages"])
+    response=""
+    if (data.get("response_format",)):
+        response=client.chat.completions.create(
+            messages=messages,
+            model=data.get("model","mixtral-8x7b-32768"),
+            n=data.get("n",1),
+            temperature=data.get("temperature",0.7),
+            top_p=data.get("top_p",1.0),
+            frequency_penalty=data.get("frequency_penalty",1),
+            presence_penalty=data.get("presence_penalty",0),        
+            max_tokens=data.get("max_tokens",4096),
+            response_format=data.get("response_format",),
+            stream=False
+        ).choices[0].message.content;
+        response = json.dumps(fix_numbers(json.loads(response), data["functions"][0]['parameters']))
+        response = clean_json_response(response)
+        assert_json_schema(response, data["functions"])
+    else:
+        with client.chat.completions.with_streaming_response.create(        
+            messages=messages,
+            model=data.get("model","mixtral-8x7b-32768"),
+            n=data.get("n",1),
+            temperature=data.get("temperature",0.7),
+            top_p=data.get("top_p",1.0),
+            frequency_penalty=data.get("frequency_penalty",),
+            presence_penalty=data.get("presence_penalty",0),        
+            max_tokens=data.get("max_tokens",4096),
+            stream=True
+        ) as stream:
+            for chunk in stream.iter_lines():
+                if chunk=='':
+                    continue
+                if chunk!='[DONE]':
+                    o=json.loads(chunk.split(': ', 1)[1])
+                    if (o['choices'][0]['finish_reason']=='stop'):
+                        print ('\n', type='stream')
+                        response+='\n'
+                        break
+                    print (o['choices'][0]['delta']['content'],type='stream',end='', flush=True)
+                    response+=o['choices'][0]['delta']['content']
+    
+    return {"text": response}
+
+def fix_numbers(data, schema):
+
+    def descend(obj, path):
+        for part in path:
+            obj = obj[part]
+        return obj
+
+    while True:
+        try:
+            validate(data, schema)
+            return data
+        except ValidationError as e:
+            if "is not of type 'number'" in e.message and isinstance(e.instance, str):
+                prefix = list(e.absolute_path)[:-1]
+                name = e.absolute_path[-1]
+                parent = descend(data, prefix)
+                parent[name] = float(e.instance)
+                continue
+            else:
+                return data
+
+
+
+# def stream_groq(messages, function_call_message, gpt_data, model_name = "mixtral-8x7b-32768"):
+#     try:
+#         import groq
+#     except ImportError as err:
+#         raise RuntimeError("The 'groq' package is required to use the Groq LLM.") from err
+#     from copy import deepcopy
+
+#     client = groq.Groq(api_key=os.getenv('GROQ_API_KEY'))
+
+#     if False and function_call_message:
+#         schema_message = deepcopy(messages[-1])
+#         schema_message['role'] = 'system'
+#         messages = messages[:-1]
+#         if messages[0]['role'] == 'system':
+#             messages.insert(1, schema_message)
+#         else:
+#             messages.insert(0, schema_message)
+
+#     messages = collapse_messages_from_same_role(messages)
+
+#     if function_call_message:
+#         # JSON mode doesn't support streaming yet
+#         completion = client.chat.completions.create(
+#             messages=messages,
+#             model=model_name,
+#             temperature=0.5,
+#             max_tokens=2047,
+#             response_format={"type": "json_object"},
+#         )
+#         response = completion.choices[0].message.content
+#     else:
+#         stream = client.chat.completions.create(
+#             messages=messages,
+#             model=model_name,
+#             temperature=0.5,
+#             max_tokens=2047,
+#             stream=True,
+#         )
+#         response = ""
+#         for chunk in stream:
+#             c = chunk.choices[0].delta.content
+#             if c:
+#                 print(c, type='stream', end='', flush=True)
+#                 response += c
+
+#     if function_call_message is not None:
+#         import json5
+#         response = json.dumps(fix_numbers(json5.loads(response), gpt_data["functions"][0]['parameters']))
+#         response = clean_json_response(response)
+#         assert_json_schema(response, gpt_data["functions"])
+
+#     return {"text": response}
