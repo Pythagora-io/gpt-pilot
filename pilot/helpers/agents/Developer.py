@@ -67,7 +67,7 @@ class Developer(Agent):
             num_of_tasks = len(self.project.development_plan)
             # don't create documentation for features
             if not self.project.finished:
-                current_progress_percent = round(((i + 1) / num_of_tasks) * 100, 2)
+                current_progress_percent = round(((i) / num_of_tasks) * 100, 2)
 
                 for threshold in progress_thresholds:
                     if current_progress_percent > threshold and threshold not in documented_thresholds:
@@ -103,7 +103,7 @@ class Developer(Agent):
                 num_of_finished_tasks = sum(task.get('finished', False) for task in self.project.development_plan)
                 should_update_plan = 'llm_solutions' in task_executed and task_executed['llm_solutions']
                 if num_of_finished_tasks < len(self.project.development_plan) and should_update_plan:
-                    self.project.tech_lead.update_plan(task_source, task_executed['llm_solutions'], self.modified_files)
+                    self.project.tech_lead.update_plan(task_source, task_executed['llm_solutions'], self.modified_files, i)
             print_task_progress(i + 1, num_of_tasks, dev_task['description'], task_source, 'done')
 
         # DEVELOPMENT END
@@ -682,9 +682,11 @@ class Developer(Agent):
         tried_alternative_solutions_to_current_issue = self.project.last_iteration['prompt_data']['tried_alternative_solutions_to_current_issue'] if (self.project.last_iteration and 'tried_alternative_solutions_to_current_issue' in self.project.last_iteration['prompt_data']) else []
         next_solution_to_try = None
         iteration_count = self.project.last_iteration['prompt_data']['iteration_count'] if (self.project.last_iteration and 'iteration_count' in self.project.last_iteration['prompt_data']) else 0
+        # should_review is used to block review if CLI user input is "r" (run command) and we after execution we go back to while loop
+        should_review = True
         while True:
             self.user_feedback = llm_solutions[-1]['user_feedback'] if len(llm_solutions) > 0 else None
-            review_successful = self.project.skip_steps or self.review_task()
+            review_successful = self.project.skip_steps or not should_review or (should_review and self.review_task())
             if not review_successful and self.review_count < 3:
                 continue
             iteration_count += 1
@@ -728,7 +730,10 @@ class Developer(Agent):
                 # self.project.remove_debugging_logs_from_all_files()
                 return {"success": True, "user_input": user_feedback, "llm_solutions": llm_solutions}
 
-            if user_feedback is not None:
+            if user_feedback is None:
+                should_review = False
+            else:
+                should_review = True
                 print('', type='verbose', category='agent:troubleshooter')
                 self.project.current_task.inc('iterations')
                 stuck_in_loop = user_feedback.startswith(STUCK_IN_LOOP)
@@ -769,7 +774,7 @@ class Developer(Agent):
                     "files": self.project.get_all_coded_files(),
                     "user_feedback": user_feedback,
                     "user_feedback_qa": user_feedback_qa,
-                    "previous_solutions": llm_solutions[-3:],
+                    "previous_solutions": llm_solutions,
                     "next_solution_to_try": next_solution_to_try,
                     "alternative_solutions_to_current_issue": alternative_solutions_to_current_issue,
                     "tried_alternative_solutions_to_current_issue": tried_alternative_solutions_to_current_issue,
@@ -794,7 +799,6 @@ class Developer(Agent):
                 iteration_convo.remove_last_x_messages(2)
 
                 self.files_at_start_of_task = self.project.get_all_coded_files()
-                self.modified_files = []
                 task_steps = llm_response['tasks']
                 self.execute_task(iteration_convo, task_steps, is_root_task=True, task_source='troubleshooting')
                 print_task_progress(1, 1, development_task['description'], 'troubleshooting', 'done', len(llm_solutions) + 1)
@@ -858,7 +862,7 @@ class Developer(Agent):
 
     def review_code_changes(self):
         """
-        Review the code changes and ask for human intervention if needed
+        Review all the code changes during current task.
 
         :return: dict - {
             'success': bool,

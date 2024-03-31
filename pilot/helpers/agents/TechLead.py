@@ -1,4 +1,5 @@
 import json
+import os
 
 from utils.utils import step_already_finished
 from helpers.Agent import Agent
@@ -8,7 +9,7 @@ from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, generate_app_data
 from database.database import save_progress, get_progress_steps, save_feature, edit_development_plan, edit_feature_plan
 from logger.logger import logger
-from const.function_calls import DEVELOPMENT_PLAN
+from const.function_calls import DEVELOPMENT_PLAN, UPDATE_DEVELOPMENT_PLAN
 from const.common import EXAMPLE_PROJECT_PLAN
 from templates import apply_project_template
 
@@ -113,36 +114,41 @@ class TechLead(Agent):
         logger.info('Summary for new feature is created.')
         return
 
-    def update_plan(self, task_source, llm_solutions, modified_files):
+    def update_plan(self, task_source, llm_solutions, modified_files, i):
         """
         Update the development plan after a task is finished.
 
         :param task_source: The source of the task, one of: 'app', 'feature'.
         :param llm_solutions: The LLM solutions (iterations) for the last finished task.
         :param modified_files: The files that were modified during the last task.
+        :param i: The index of the last finished task in the development plan.
 
         :return: True if the task was successfully updated, False otherwise.
         """
         self.save_dev_steps = True
         print('Updating development plan...', category='agent:tech-lead')
-        last_finished_task = next((task for task in reversed(self.project.development_plan) if task.get('finished', False)), None)
+        finished_tasks = [task for task in self.project.development_plan if task.get('finished', False)]
+        not_finished_tasks = [task for task in self.project.development_plan if not task.get('finished', False)]
         files = [
             file_dict for file_dict in self.project.get_all_coded_files()
-            if any(file_dict['full_path'].endswith(modified_file.lstrip('.')) for modified_file in modified_files)
+            if any(os.path.normpath(file_dict['full_path']).endswith(os.path.normpath(modified_file.lstrip('.'))) for
+                   modified_file in modified_files)
         ]
         update_task_convo = AgentConvo(self, temperature=0)
-        new_development_plan = update_task_convo.send_message('development/update_plan.prompt', {
+        llm_response = update_task_convo.send_message('development/update_plan.prompt', {
             "name": self.project.args['name'],
             "app_type": self.project.args['app_type'],
             "app_summary": self.project.project_description,
-            "development_tasks": self.project.development_plan,
-            "last_finished_task": last_finished_task,
+            "finished_tasks": finished_tasks,
+            "not_finished_tasks": not_finished_tasks,
+            "last_finished_task": self.project.development_plan[i],
             "task_source": task_source,
             "llm_solutions": llm_solutions,
             "files": files,
-        }, DEVELOPMENT_PLAN)
+        }, UPDATE_DEVELOPMENT_PLAN)
 
-        self.project.development_plan = new_development_plan['plan']
+        finished_tasks[-1]['description'] = llm_response['updated_current_task']['description']
+        self.project.development_plan = finished_tasks + llm_response['plan']
         if task_source == 'app':
             db_task_update = edit_development_plan(self.project.args['app_id'], {'development_plan': self.project.development_plan})
         else:

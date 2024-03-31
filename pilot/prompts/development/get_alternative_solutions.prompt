@@ -35,7 +35,7 @@ Here are the alternative solutions that you tried to solve the issue:
 {% endfor %}
 {% elif previous_solutions|length > 0 %}
 First time, your colleague gave you this report:
-{% for solution in previous_solutions %}
+{% for solution in previous_solutions[-3:] %}
 ----------------------------start_of_report_{{ loop.index }}----------------------------
 {{ solution['user_feedback'] }}
 ----------------------------end_of_report_{{ loop.index }}----------------------------
@@ -45,7 +45,7 @@ Then, you gave the following proposal (proposal_{{ loop.index }}) of what needs 
 {{ solution['llm_proposal'] }}
 ----------------------------end_of_of_proposal_{{ loop.index }}----------------------------
 
-{% if loop.index < previous_solutions|length %}
+{% if loop.index < 3 %}
 Then, upon implementing these changes, your colleague came back with the following report:
 {% endif %}
 {% endfor %}

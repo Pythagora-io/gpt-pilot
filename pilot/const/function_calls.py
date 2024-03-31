@@ -329,10 +329,6 @@ DEVELOPMENT_PLAN = {
                             'description': {
                                 'type': 'string',
                                 'description': 'Very detailed description of the development task that needs to be done to implement the entire plan.',
-                            },
-                            'finished': {
-                                'type': 'boolean',
-                                'description': 'Flag that indicates if the task is finished or not. If the task is finished, set this flag to `true`, otherwise set it to `false`. When creating plan for the first time all tasks should have flag set to `false`.',
                             }
                         },
                         'required': ['description'],
@@ -340,6 +336,48 @@ DEVELOPMENT_PLAN = {
                 },
             },
             "required": ['plan'],
+        },
+    }],
+    'functions': {
+        'implement_development_plan': lambda plan: plan
+    },
+}
+
+UPDATE_DEVELOPMENT_PLAN = {
+    'definitions': [{
+        'name': 'implement_development_plan',
+        'description': 'Implements the development plan.',
+        'parameters': {
+            'type': 'object',
+            "properties": {
+                "updated_current_task": {
+                    "type": "object",
+                    'description': 'Updated current task.',
+                    'properties': {
+                        'description': {
+                            'type': 'string',
+                            'description': 'Updated detailed description of what was implemented while working on the current development task.',
+                        }
+                    },
+                    'required': ['description'],
+                },
+                "plan": {
+                    "type": "array",
+                    "description": 'List of development tasks that still need to be done to implement the entire plan.',
+                    "items": {
+                        "type": "object",
+                        'description': 'Development task that needs to be implemented to finish the entire plan.',
+                        'properties': {
+                            'description': {
+                                'type': 'string',
+                                'description': 'Very detailed description of the development task that needs to be done to implement the entire plan.',
+                            }
+                        },
+                        'required': ['description'],
+                    },
+                },
+            },
+            "required": ['updated_current_task', 'plan'],
         },
     }],
     'functions': {
