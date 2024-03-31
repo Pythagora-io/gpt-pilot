@@ -345,8 +345,8 @@ DEVELOPMENT_PLAN = {
 
 UPDATE_DEVELOPMENT_PLAN = {
     'definitions': [{
-        'name': 'implement_development_plan',
-        'description': 'Implements the development plan.',
+        'name': 'update_development_plan',
+        'description': 'Updates the development plan.',
         'parameters': {
             'type': 'object',
             "properties": {
@@ -380,9 +380,6 @@ UPDATE_DEVELOPMENT_PLAN = {
             "required": ['updated_current_task', 'plan'],
         },
     }],
-    'functions': {
-        'implement_development_plan': lambda plan: plan
-    },
 }
 
 EXECUTE_COMMANDS = {

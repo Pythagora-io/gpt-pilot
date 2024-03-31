@@ -45,7 +45,7 @@ Then, you gave the following proposal (proposal_{{ loop.index }}) of what needs 
 {{ solution['llm_proposal'] }}
 ----------------------------end_of_of_proposal_{{ loop.index }}----------------------------
 
-{% if loop.index < 3 %}
+{% if not loop.last %}
 Then, upon implementing these changes, your colleague came back with the following report:
 {% endif %}
 {% endfor %}

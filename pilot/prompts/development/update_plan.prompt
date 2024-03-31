@@ -14,7 +14,7 @@ Description: {{ task }}
 
 Here are tasks that still have to be implemented:
 ```{% for task in not_finished_tasks %}
-- Task #{{ loop.index }}
+- Task #{{ finished|length + loop.index }}
 Description: {{ task }}
 
 {% endfor %}```

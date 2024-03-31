@@ -67,7 +67,7 @@ class Developer(Agent):
             num_of_tasks = len(self.project.development_plan)
             # don't create documentation for features
             if not self.project.finished:
-                current_progress_percent = round(((i) / num_of_tasks) * 100, 2)
+                current_progress_percent = round((i / num_of_tasks) * 100, 2)
 
                 for threshold in progress_thresholds:
                     if current_progress_percent > threshold and threshold not in documented_thresholds:
@@ -577,6 +577,9 @@ class Developer(Agent):
 
         :return: The result of the task execution.
         """
+        if not task_steps:
+            return {"success": True}
+
         function_uuid = str(uuid.uuid4())
         convo.save_branch(function_uuid)
         agent_map = {
@@ -682,8 +685,8 @@ class Developer(Agent):
         tried_alternative_solutions_to_current_issue = self.project.last_iteration['prompt_data']['tried_alternative_solutions_to_current_issue'] if (self.project.last_iteration and 'tried_alternative_solutions_to_current_issue' in self.project.last_iteration['prompt_data']) else []
         next_solution_to_try = None
         iteration_count = self.project.last_iteration['prompt_data']['iteration_count'] if (self.project.last_iteration and 'iteration_count' in self.project.last_iteration['prompt_data']) else 0
-        # should_review is used to block review if CLI user input is "r" (run command) and we after execution we go back to while loop
-        should_review = True
+        # should_review is used to block review if CLI user input is "r" (run command). After execution of command we go back to while loop
+        should_review = bool(self.modified_files)
         while True:
             self.user_feedback = llm_solutions[-1]['user_feedback'] if len(llm_solutions) > 0 else None
             review_successful = self.project.skip_steps or not should_review or (should_review and self.review_task())
