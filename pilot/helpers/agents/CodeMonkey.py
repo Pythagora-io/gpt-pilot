@@ -122,7 +122,7 @@ class CodeMonkey(Agent):
                 "rework_feedback": rework_feedback,
             })
             if content:
-                content = self.remove_backticks(content)
+                content = self.extract_code(content)
             convo.remove_last_x_messages(2)
 
         # If we have changes, update the file
@@ -172,20 +172,37 @@ class CodeMonkey(Agent):
             "prev_message_postfix": prev_message_postfix,
         })
         convo.remove_last_x_messages(2)
-        return self.remove_backticks(llm_response)
+        return self.extract_code(llm_response)
 
     @staticmethod
-    def remove_backticks(content: str) -> str:
+    def extract_code(content: str) -> str:
         """
-        Remove optional backticks from the beginning and end of the content.
+        Extracts the code block from the given content by removing any surrounding text,
+        triple backticks, language specifiers, and extra whitespace.
 
-        :param content: content to remove backticks from
-        :return: content without backticks
+        :param content: The content containing the code block to be extracted.
+        :return: The extracted code block with a single trailing newline.
         """
-        start_pattern = re.compile(r"^\s*```([a-z0-9]+)?\n")
-        end_pattern = re.compile(r"\n```\s*$")
+
+        # Remove any text before the code block
+        start_index = content.find("```")
+        if start_index != -1:
+            content = content[start_index:]
+
+        # Remove the opening triple backticks and any language specifier
+        start_pattern = re.compile(r"^```(?:[a-z0-9]+)?\s*\n?", re.IGNORECASE)
         content = start_pattern.sub("", content)
+
+        # Remove the closing triple backticks and any following text
+        end_pattern = re.compile(r"\n?```\s*[\s\S]*$")
         content = end_pattern.sub("", content)
+
+        # Remove any leading/trailing whitespace
+        content = content.strip()
+
+        # Add a single trailing newline to meet coding standards
+        content += "\n"
+
         return content
 
     def identify_file_to_change(self, code_changes_description: str, files: list[dict]) -> str:
