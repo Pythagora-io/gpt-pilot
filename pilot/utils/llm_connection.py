@@ -606,7 +606,6 @@ def load_data_to_json(string):
     return json.loads(fix_json(string))
 
 
-@retry_on_exception
 def stream_anthropic(messages, function_call_message, gpt_data, model_name = "claude-3-sonnet-20240229"):
     try:
         import anthropic
