@@ -15,12 +15,13 @@ You are currently working on task "{{ current_task }}" and you have to focus onl
 A part of the app is already finished.
 {{ custom_files_list }}
 
-{% if user_input -%}While working on this task, your colleague who is testing the app "{{ name }}" sent you some additional info. Here it is:
-```
-{{ user_input }}
+{% if all_feedbacks -%}While working on this task, your colleague who is testing the app "{{ name }}" sent you some additional information on what doesn't work as intended or what should be added. Here are all the inputs he sent you:
+```{% for feedback in all_feedbacks %}
+{{ loop.index }}. {{ feedback }}
+{% endfor %}
 ```
 
-After this info, you tried to fix it. {% endif %}Files that were modified during implementation of the task are:
+After you got each of these additional inputs, you tried to fix it as part of this task. {% endif %}Files that were modified during implementation of the task are:
 ```
 {{ modified_files }}
 ```
@@ -33,8 +34,7 @@ Now I will show you how those files looked before this task implementation start
 ```
 {{ file.content }}
 ```
-{% endfor %}
-{% endif -%}---end_of_files_at_start_of_task---
+{% endfor %}{% endif -%}---end_of_files_at_start_of_task---
 
 **IMPORTANT**
 You have to review this task implementation. You are known to be very strict with your reviews and very good at noticing bugs but you don't mind minor changes like refactoring, adding or removing logs and so on. You think twice through all information given before giving any conclusions.

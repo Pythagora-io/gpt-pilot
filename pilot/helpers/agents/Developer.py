@@ -689,7 +689,7 @@ class Developer(Agent):
         should_review = bool(self.modified_files)
         while True:
             self.user_feedback = llm_solutions[-1]['user_feedback'] if len(llm_solutions) > 0 else None
-            review_successful = self.project.skip_steps or not should_review or (should_review and self.review_task())
+            review_successful = self.project.skip_steps or not should_review or (should_review and self.review_task(llm_solutions))
             if not review_successful and self.review_count < 3:
                 continue
             iteration_count += 1
@@ -849,23 +849,28 @@ class Developer(Agent):
 
         return user_feedback, questions_and_answers
 
-    def review_task(self):
+    def review_task(self, llm_solutions):
         """
         Review all task changes and refactor big files.
+
+        :param llm_solutions: List of all user feedbacks and LLM solutions (to those feedbacks) for current task.
+
         :return: bool - True if the task changes passed review, False if not
         """
         print('Starting review of all changes made in this task...', type='verbose', category='agent:reviewer')
         self.review_count += 1
-        review_result = self.review_code_changes()
+        review_result = self.review_code_changes(llm_solutions)
         refactoring_done = self.refactor_code()
         if refactoring_done or review_result['implementation_needed']:
-            review_result = self.review_code_changes()
+            review_result = self.review_code_changes(llm_solutions)
 
         return review_result['success']
 
-    def review_code_changes(self):
+    def review_code_changes(self, llm_solutions):
         """
         Review all the code changes during current task.
+
+        :param llm_solutions: List of all user feedbacks and LLM solutions (to those feedbacks) for current task.
 
         :return: dict - {
             'success': bool,
@@ -875,11 +880,13 @@ class Developer(Agent):
         review_convo = AgentConvo(self)
         files = [
             file_dict for file_dict in self.project.get_all_coded_files()
-            if any(file_dict['full_path'].endswith(modified_file.lstrip('.')) for modified_file in self.modified_files)
+            if any(os.path.normpath(file_dict['full_path']).endswith(os.path.normpath(modified_file.lstrip('.'))) for
+                   modified_file in self.modified_files)
         ]
         files_at_start_of_task = [
             file_dict for file_dict in self.files_at_start_of_task
-            if any(file_dict['full_path'].endswith(modified_file.lstrip('.')) for modified_file in self.modified_files)
+            if any(os.path.normpath(file_dict['full_path']).endswith(os.path.normpath(modified_file.lstrip('.'))) for
+                   modified_file in self.modified_files)
         ]
         # TODO instead of sending files before and after maybe add nice way to show diff for multiple files
         review = review_convo.send_message('development/review_task.prompt', {
@@ -888,7 +895,7 @@ class Developer(Agent):
             "tasks": self.project.development_plan,
             "current_task": self.project.current_task.data.get('task_description'),
             "files": files,
-            "user_input": self.user_feedback,
+            "all_feedbacks": [solution["user_feedback"].replace("```", "") for solution in llm_solutions],
             "modified_files": self.modified_files,
             "files_at_start_of_task": files_at_start_of_task,
             "previous_features": self.project.previous_features,
