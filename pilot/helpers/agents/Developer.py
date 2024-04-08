@@ -3,6 +3,7 @@ import platform
 import uuid
 import re
 import json
+from typing import Optional
 
 from const.messages import WHEN_USER_DONE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS, STUCK_IN_LOOP, NONE_OF_THESE
 from utils.exit import trace_code_event
@@ -27,12 +28,20 @@ from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
 from helpers.cli import run_command_until_success, execute_command_and_check_cli_response
-from const.function_calls import (EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN,
-                                  ALTERNATIVE_SOLUTIONS, GET_BUG_REPORT_MISSING_DATA)
+from const.function_calls import (
+    EXECUTE_COMMANDS,
+    GET_TEST_TYPE,
+    IMPLEMENT_TASK,
+    COMMAND_TO_RUN,
+    ALTERNATIVE_SOLUTIONS,
+    GET_BUG_REPORT_MISSING_DATA,
+    LIST_RELEVANT_FILES,
+)
 from database.database import save_progress, edit_development_plan, edit_feature_plan, get_progress_steps, update_app_status
 from utils.telemetry import telemetry
 from prompts.prompts import ask_user
 from utils.print import print_task_progress, print_step_progress
+from utils.describe import describe_file
 
 ENVIRONMENT_SETUP_STEP = 'environment_setup'
 
@@ -44,6 +53,7 @@ class Developer(Agent):
         self.run_command = None
         self.save_dev_steps = True
         self.debugger = Debugger(self)
+        self.relevant_files = None
 
     def start_coding(self, task_source):
         for task in self.project.development_plan:
@@ -154,6 +164,8 @@ class Developer(Agent):
             # remove breakdown from the head of dev_steps_to_load; if it's last, record it in checkpoint
             self.project.cleanup_list('dev_steps_to_load', int(self.project.dev_steps_to_load[0]['id']) + 1)
         else:
+            file_summaries = self.project.get_file_summaries()
+            self.relevant_files = self.filter_relevant_files(file_summaries, current_task=development_task)
             instructions = convo_dev_task.send_message('development/task/breakdown.prompt', {
                 "name": self.project.args['name'],
                 "app_type": self.project.args['app_type'],
@@ -164,7 +176,8 @@ class Developer(Agent):
                 "directory_tree": self.project.get_directory_tree(True),
                 "current_task_index": i,
                 "development_tasks": self.project.development_plan,
-                "files": self.project.get_all_coded_files(),
+                "file_summaries": file_summaries,
+                "files": self.project.get_all_coded_files(relevant_files=self.relevant_files),
                 "architecture": self.project.architecture,
                 "technologies": self.project.system_dependencies + self.project.package_dependencies,
                 "task_type": 'feature' if self.project.finished else 'app',
@@ -230,6 +243,10 @@ class Developer(Agent):
                 # remove latest ID (which can be last_iteration or last_detailed_user_review_goal) from the head of
                 # dev_steps_to_load; if it's last, record it in checkpoint
                 self.project.cleanup_list('dev_steps_to_load', max(id for id in ids if id is not None))
+
+        if self.relevant_files is None:
+            # Recompute relevant files after project load
+            self.relevant_files = self.filter_relevant_files(self.project.get_file_summaries(), current_task=development_task)
 
         while True:
             result = self.execute_task(convo_dev_task,
@@ -345,6 +362,8 @@ class Developer(Agent):
         data = step['save_file']
         code_monkey = CodeMonkey(self.project)
         code_monkey.implement_code_changes(convo, data)
+        if self.relevant_files is not None:
+            self.relevant_files.add(data['path'])
         return {"success": True}
 
     def step_command_run(self, convo, task_steps, i, success_with_cli_response=False):
@@ -596,6 +615,8 @@ class Developer(Agent):
                     'path' in step[step['type']] and
                     step[step['type']]['path'] not in self.modified_files):
                 self.modified_files.append(step[step['type']]['path'])
+                if self.relevant_files is not None:
+                    self.relevant_files.add(self.project.relpath(step[step['type']]['path']))
             # This means we are still loading the project and have all the steps until last iteration
             if self.project.last_iteration is not None or self.project.last_detailed_user_review_goal is not None:
                 continue
@@ -774,7 +795,8 @@ class Developer(Agent):
                     "directory_tree": self.project.get_directory_tree(True),
                     "current_task": development_task,
                     "development_tasks": self.project.development_plan,
-                    "files": self.project.get_all_coded_files(),
+                    "files": self.project.get_all_coded_files(relevant_files=self.relevant_files),
+                    "file_summaries": self.project.get_file_summaries(),
                     "user_feedback": user_feedback,
                     "user_feedback_qa": user_feedback_qa,
                     "previous_solutions": llm_solutions,
@@ -878,11 +900,7 @@ class Developer(Agent):
         }
         """
         review_convo = AgentConvo(self)
-        files = [
-            file_dict for file_dict in self.project.get_all_coded_files()
-            if any(os.path.normpath(file_dict['full_path']).endswith(os.path.normpath(modified_file.lstrip('.'))) for
-                   modified_file in self.modified_files)
-        ]
+        files = self.project.get_all_coded_files(relevant_files=self.relevant_files)
         files_at_start_of_task = [
             file_dict for file_dict in self.files_at_start_of_task
             if any(os.path.normpath(file_dict['full_path']).endswith(os.path.normpath(modified_file.lstrip('.'))) for
@@ -895,6 +913,7 @@ class Developer(Agent):
             "tasks": self.project.development_plan,
             "current_task": self.project.current_task.data.get('task_description'),
             "files": files,
+            "file_summaries": self.project.get_file_summaries(),
             "all_feedbacks": [solution["user_feedback"].replace("```", "") for solution in llm_solutions],
             "modified_files": self.modified_files,
             "files_at_start_of_task": files_at_start_of_task,
@@ -1103,3 +1122,49 @@ class Developer(Agent):
             next_solution_to_try_index = 1
 
         return next_solution_to_try_index
+
+    def filter_relevant_files(self, file_summaries, current_task=None, user_input=None) -> Optional[set[str]]:
+        """
+        Filter task/iteration relevant files.
+
+        Asks the LLM to determine which files are relevant to the current task
+        based on the user input and the current task.
+
+        Only enabled if FILTER_RELEVANT_FILES feature flag is set, otherwise returns None.
+
+        :param file_summaries: The file summaries.
+        :param current_task: The current task.
+        :param user_input: The user input.
+        :returns: Set of relevant file paths.
+        """
+
+        if not file_summaries:
+            return None
+
+        if os.getenv('FILTER_RELEVANT_FILES', '').lower().strip() in ['false', '0', 'no', 'off']:
+            return None
+
+        convo = AgentConvo(self)
+        response = convo.send_message('development/filter_files.prompt', {
+            "name": self.project.args['name'],
+            "app_type": self.project.args['app_type'],
+            "app_summary": self.project.project_description,
+            "architecture": self.project.architecture,
+            "technologies": self.project.system_dependencies + self.project.package_dependencies,
+            "directory_tree": self.project.get_directory_tree(True),
+            "current_task": current_task,
+            "development_tasks": self.project.development_plan,
+            "user_input": user_input,
+            "previous_features": self.project.previous_features,
+            "current_feature": self.project.current_feature,
+            "file_summaries": file_summaries,
+        }, LIST_RELEVANT_FILES)
+
+        relevant_files = set()
+        for file in response['relevant_files']:
+            if file.startswith("./"):
+                file = file[2:]
+            if file in file_summaries:
+                relevant_files.add(file)
+
+        return relevant_files

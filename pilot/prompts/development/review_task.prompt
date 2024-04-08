@@ -13,7 +13,7 @@ Development process of this app was split into smaller tasks. Here is the list o
 You are currently working on task "{{ current_task }}" and you have to focus only on that task.
 
 A part of the app is already finished.
-{{ custom_files_list }}
+{{ files_list }}
 
 {% if all_feedbacks -%}While working on this task, your colleague who is testing the app "{{ name }}" sent you some additional information on what doesn't work as intended or what should be added. Here are all the inputs he sent you:
 ```{% for feedback in all_feedbacks %}

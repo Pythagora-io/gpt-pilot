@@ -179,7 +179,8 @@ class AgentConvo:
             self.replace_files()
 
     def replace_files(self):
-        files = self.agent.project.get_all_coded_files()
+        relevant_files = getattr(self.agent, 'relevant_files', None)
+        files = self.agent.project.get_all_coded_files(relevant_files=relevant_files)
         for msg in self.messages:
             if msg['role'] == 'user':
                 new_content = self.replace_files_in_one_message(files, msg["content"])
