@@ -343,6 +343,45 @@ DEVELOPMENT_PLAN = {
     },
 }
 
+UPDATE_DEVELOPMENT_PLAN = {
+    'definitions': [{
+        'name': 'update_development_plan',
+        'description': 'Updates the development plan.',
+        'parameters': {
+            'type': 'object',
+            "properties": {
+                "updated_current_task": {
+                    "type": "object",
+                    'description': 'Updated current task.',
+                    'properties': {
+                        'description': {
+                            'type': 'string',
+                            'description': 'Updated detailed description of what was implemented while working on the current development task.',
+                        }
+                    },
+                    'required': ['description'],
+                },
+                "plan": {
+                    "type": "array",
+                    "description": 'List of development tasks that still need to be done to implement the entire plan.',
+                    "items": {
+                        "type": "object",
+                        'description': 'Development task that needs to be implemented to finish the entire plan.',
+                        'properties': {
+                            'description': {
+                                'type': 'string',
+                                'description': 'Very detailed description of the development task that needs to be done to implement the entire plan.',
+                            }
+                        },
+                        'required': ['description'],
+                    },
+                },
+            },
+            "required": ['updated_current_task', 'plan'],
+        },
+    }],
+}
+
 EXECUTE_COMMANDS = {
     'definitions': [{
         'name': 'execute_commands',
