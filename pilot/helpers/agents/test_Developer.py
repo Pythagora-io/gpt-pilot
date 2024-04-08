@@ -59,6 +59,7 @@ class TestDeveloper:
             'description': 'Do stuff',
             'user_review_goal': 'Do stuff',
         }]
+        project.get_file_summaries = lambda: None
         project.get_all_coded_files = lambda **kwargs: []
         project.current_step = 'test'
 
@@ -85,6 +86,7 @@ class TestDeveloper:
             'description': 'Do stuff',
             'user_review_goal': 'Do stuff',
         }]
+        project.get_file_summaries = lambda: None
         project.get_all_coded_files = lambda **kwargs: []
         project.current_step = 'test'
 
