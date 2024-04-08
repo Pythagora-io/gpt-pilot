@@ -387,7 +387,7 @@ class Project:
             return None
 
         files = self.get_all_database_files()
-        return {self.relpath(file): file.description or "(unknown)" for file in files}
+        return {self.relpath(file): file.description or "(unknown)" for file in files if os.path.exists(file.full_path)}
 
     def get_files(self, files):
         """
