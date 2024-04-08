@@ -93,7 +93,8 @@ def test_api_access(project) -> bool:
 def create_gpt_chat_completion(messages: List[dict], req_type, project,
                                function_calls: FunctionCallSet = None,
                                prompt_data: dict = None,
-                               temperature: float = 0.7):
+                               temperature: float = 0.7,
+                               model_name: str = None):
     """
     Called from:
       - AgentConvo.send_message() - these calls often have `function_calls`, usually from `pilot/const/function_calls.py`
@@ -109,7 +110,9 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
              {'function_calls': {'name': str, arguments: {...}}}
     """
 
-    model_name = os.getenv('MODEL_NAME', 'gpt-4')
+    if model_name is None:
+        model_name = os.getenv('MODEL_NAME', 'gpt-4')
+
     gpt_data = {
         'model': model_name,
         'n': 1,
@@ -145,7 +148,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
                 os.environ['ANTHROPIC_API_KEY'] = os.getenv('OPENAI_API_KEY')
             response = stream_anthropic(messages, function_call_message, gpt_data, model_name)
         else:
-            response = stream_gpt_completion(gpt_data, req_type, project)
+            response = stream_gpt_completion(gpt_data, req_type, project, model_name)
 
         # Remove JSON schema and any added retry messages
         while len(messages) > messages_length:
@@ -364,12 +367,13 @@ def trace_token_limit_error(request_tokens: int, messages: list[dict], err_str: 
 
 
 @retry_on_exception
-def stream_gpt_completion(data, req_type, project):
+def stream_gpt_completion(data, req_type, project, model=None):
     """
     Called from create_gpt_chat_completion()
     :param data:
     :param req_type: 'project_description' etc. See common.STEPS
     :param project: NEEDED FOR WRAPPER FUNCTION retry_on_exception
+    :param model: (optional) model name
     :return: {'text': str} or {'function_calls': {'name': str, arguments: '{...}'}}
     """
     # TODO add type dynamically - this isn't working when connected to the external process
@@ -410,7 +414,8 @@ def stream_gpt_completion(data, req_type, project):
     # print(yellow("Stream response from OpenAI:"))
 
     # Configure for the selected ENDPOINT
-    model = os.getenv('MODEL_NAME', 'gpt-4')
+    if model is None:
+        model = os.getenv('MODEL_NAME', 'gpt-4')
     endpoint = os.getenv('ENDPOINT')
 
     logger.info(f'> Request model: {model}')

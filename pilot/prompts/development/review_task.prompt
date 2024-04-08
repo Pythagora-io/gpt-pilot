@@ -13,16 +13,7 @@ Development process of this app was split into smaller tasks. Here is the list o
 You are currently working on task "{{ current_task }}" and you have to focus only on that task.
 
 A part of the app is already finished.
-Here are files that were modified during this task implementation:
-{% if files|length > 0 %}---start_of_current_files---
-{% for file in files %}
-**{{ file.path }}/{{ file.name }}** ({{ file.lines_of_code }} lines of code):
-```
-{{ file.content }}
-```
-{% endfor %}
----end_of_current_files---
-{% endif -%}
+{{ files_list }}
 
 {% if all_feedbacks -%}While working on this task, your colleague who is testing the app "{{ name }}" sent you some additional information on what doesn't work as intended or what should be added. Here are all the inputs he sent you:
 ```{% for feedback in all_feedbacks %}
