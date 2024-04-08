@@ -325,7 +325,8 @@ class TestProject:
     ])
     @patch('helpers.Project.update_file')
     @patch('helpers.Project.File')
-    def test_save_file(self, mock_file_insert, mock_update_file, test_data):
+    @patch('helpers.Project.describe_file')
+    def test_save_file(self, mock_describe_file, mock_file_insert, mock_update_file, test_data):
         # Given
         data = {'content': 'Hello World!'}
         if test_data['name'] is not None:
@@ -333,6 +334,7 @@ class TestProject:
         if test_data['path'] is not None:
             data['path'] = str(Path(test_data['path']))
 
+        mock_describe_file.return_value = "test description"
         project = create_project()
 
         # When
@@ -341,7 +343,7 @@ class TestProject:
         # Then assert that update_file with the correct path
         expected_saved_to = str(Path(test_data['saved_to']))
         mock_update_file.assert_called_once_with(expected_saved_to, 'Hello World!', project=project)
-
+        mock_describe_file.assert_called_once()
         # Also assert that File.insert was called with the expected arguments
         # expected_file_data = {'app': project.app, 'path': test_data['path'], 'name': test_data['name'],
         #                       'full_path': expected_saved_to}
@@ -408,7 +410,7 @@ class TestProjectFileLists:
 '''.lstrip()
 
     @patch('helpers.Project.DevelopmentSteps.get_or_create', return_value=('test', True))
-    @patch('helpers.Project.File.get_or_create', return_value=('test', True))
+    @patch('helpers.Project.File.get_or_create', return_value=(MagicMock(), True))
     @patch('helpers.Project.FileSnapshot.get_or_create', return_value=(MagicMock(), True))
     def test_save_files_snapshot(self, mock_snap, mock_file, mock_step):
         # Given a snapshot of the files in the project

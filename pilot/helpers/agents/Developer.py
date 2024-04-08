@@ -3,6 +3,7 @@ import platform
 import uuid
 import re
 import json
+from typing import Optional
 
 from const.messages import WHEN_USER_DONE, AFFIRMATIVE_ANSWERS, NEGATIVE_ANSWERS, STUCK_IN_LOOP, NONE_OF_THESE
 from utils.exit import trace_code_event
@@ -27,12 +28,20 @@ from helpers.Agent import Agent
 from helpers.AgentConvo import AgentConvo
 from utils.utils import should_execute_step, array_of_objects_to_string, generate_app_data
 from helpers.cli import run_command_until_success, execute_command_and_check_cli_response
-from const.function_calls import (EXECUTE_COMMANDS, GET_TEST_TYPE, IMPLEMENT_TASK, COMMAND_TO_RUN,
-                                  ALTERNATIVE_SOLUTIONS, GET_BUG_REPORT_MISSING_DATA)
+from const.function_calls import (
+    EXECUTE_COMMANDS,
+    GET_TEST_TYPE,
+    IMPLEMENT_TASK,
+    COMMAND_TO_RUN,
+    ALTERNATIVE_SOLUTIONS,
+    GET_BUG_REPORT_MISSING_DATA,
+    LIST_RELEVANT_FILES,
+)
 from database.database import save_progress, edit_development_plan, edit_feature_plan, get_progress_steps, update_app_status
 from utils.telemetry import telemetry
 from prompts.prompts import ask_user
 from utils.print import print_task_progress, print_step_progress
+from utils.describe import describe_file
 
 ENVIRONMENT_SETUP_STEP = 'environment_setup'
 
@@ -44,8 +53,12 @@ class Developer(Agent):
         self.run_command = None
         self.save_dev_steps = True
         self.debugger = Debugger(self)
+        self.relevant_files = None
 
     def start_coding(self, task_source):
+        for task in self.project.development_plan:
+            task['finished'] = False
+
         print('Starting development...', type='verbose', category='agent:developer')
         if not self.project.finished:
             self.project.current_step = 'coding'
@@ -58,14 +71,13 @@ class Developer(Agent):
         progress_thresholds = [50]  # Percentages of progress when documentation is created
         documented_thresholds = set()
 
-        finished_tasks = []
-        while len(finished_tasks) < len(self.project.development_plan):
-            i = len(finished_tasks)
+        while sum(task.get('finished', False) for task in self.project.development_plan) < len(self.project.development_plan):
+            i = sum(task.get('finished', False) for task in self.project.development_plan)
             dev_task = self.project.development_plan[i]
             num_of_tasks = len(self.project.development_plan)
             # don't create documentation for features
             if not self.project.finished:
-                current_progress_percent = round(((i + 1) / num_of_tasks) * 100, 2)
+                current_progress_percent = round((i / num_of_tasks) * 100, 2)
 
                 for threshold in progress_thresholds:
                     if current_progress_percent > threshold and threshold not in documented_thresholds:
@@ -79,7 +91,7 @@ class Developer(Agent):
                 self.project.cleanup_list('dev_steps_to_load', task['id'])
 
                 if len(self.project.tasks_to_load):
-                    finished_tasks.append(dev_task)
+                    self.project.development_plan[i]['finished'] = True
                     continue
                 # if it is last task to load, execute it to check if it's finished
                 else:
@@ -89,16 +101,20 @@ class Developer(Agent):
 
                     if num_of_tasks - 1 == i and readme_dev_step is not None:
                         self.project.cleanup_list('dev_steps_to_load', readme_dev_step['id'])
-                        finished_tasks.append(dev_task)
+                        self.project.development_plan[i]['finished'] = True
                         continue
 
             self.project.current_task.start_new_task(dev_task['description'], i + 1)
-            print_task_progress(i+1, num_of_tasks, dev_task['description'], task_source, 'in_progress')
-            task_finished = self.implement_task(i, task_source, dev_task)
-            if task_finished:
-                finished_tasks.append(dev_task)
+            print_task_progress(i + 1, num_of_tasks, dev_task['description'], task_source, 'in_progress')
+            task_executed = self.implement_task(i, task_source, dev_task)
+            if task_executed is not None:
+                self.project.development_plan[i]['finished'] = True
                 telemetry.inc("num_tasks")
-            print_task_progress(i+1, num_of_tasks, dev_task['description'], task_source, 'done')
+                num_of_finished_tasks = sum(task.get('finished', False) for task in self.project.development_plan)
+                should_update_plan = 'llm_solutions' in task_executed and task_executed['llm_solutions']
+                if num_of_finished_tasks < len(self.project.development_plan) and should_update_plan:
+                    self.project.tech_lead.update_plan(task_source, task_executed['llm_solutions'], self.modified_files, i)
+            print_task_progress(i + 1, num_of_tasks, dev_task['description'], task_source, 'done')
 
         # DEVELOPMENT END
         if not self.project.skip_steps:
@@ -129,10 +145,12 @@ class Developer(Agent):
         :param i: The index of the task in the development plan.
         :param task_source: The source of the task, one of: 'app', 'feature', 'debugger', 'iteration'.
         :param development_task: The task to implement.
+
+        :return: The result of the task execution. If task was not executed, return None, otherwise return result.
         """
         should_execute_task = self.edit_task(task_source, development_task)
         if not should_execute_task:
-            return False
+            return None
 
         print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'), category='pythagora')
         print(f'Starting task #{i + 1} implementation...', type='verbose', category='agent:developer')
@@ -146,6 +164,8 @@ class Developer(Agent):
             # remove breakdown from the head of dev_steps_to_load; if it's last, record it in checkpoint
             self.project.cleanup_list('dev_steps_to_load', int(self.project.dev_steps_to_load[0]['id']) + 1)
         else:
+            file_summaries = self.project.get_file_summaries()
+            self.relevant_files = self.filter_relevant_files(file_summaries, current_task=development_task)
             instructions = convo_dev_task.send_message('development/task/breakdown.prompt', {
                 "name": self.project.args['name'],
                 "app_type": self.project.args['app_type'],
@@ -156,7 +176,8 @@ class Developer(Agent):
                 "directory_tree": self.project.get_directory_tree(True),
                 "current_task_index": i,
                 "development_tasks": self.project.development_plan,
-                "files": self.project.get_all_coded_files(),
+                "file_summaries": file_summaries,
+                "files": self.project.get_all_coded_files(relevant_files=self.relevant_files),
                 "architecture": self.project.architecture,
                 "technologies": self.project.system_dependencies + self.project.package_dependencies,
                 "task_type": 'feature' if self.project.finished else 'app',
@@ -223,6 +244,10 @@ class Developer(Agent):
                 # dev_steps_to_load; if it's last, record it in checkpoint
                 self.project.cleanup_list('dev_steps_to_load', max(id for id in ids if id is not None))
 
+        if self.relevant_files is None:
+            # Recompute relevant files after project load
+            self.relevant_files = self.filter_relevant_files(self.project.get_file_summaries(), current_task=development_task)
+
         while True:
             result = self.execute_task(convo_dev_task,
                                        steps,
@@ -253,7 +278,7 @@ class Developer(Agent):
                 logger.warning('Testing at end of task failed')
                 break
 
-        return True
+        return result
 
     def edit_task(self, task_source, task):
         """
@@ -337,6 +362,8 @@ class Developer(Agent):
         data = step['save_file']
         code_monkey = CodeMonkey(self.project)
         code_monkey.implement_code_changes(convo, data)
+        if self.relevant_files is not None:
+            self.relevant_files.add(data['path'])
         return {"success": True}
 
     def step_command_run(self, convo, task_steps, i, success_with_cli_response=False):
@@ -569,6 +596,9 @@ class Developer(Agent):
 
         :return: The result of the task execution.
         """
+        if not task_steps:
+            return {"success": True}
+
         function_uuid = str(uuid.uuid4())
         convo.save_branch(function_uuid)
         agent_map = {
@@ -585,6 +615,8 @@ class Developer(Agent):
                     'path' in step[step['type']] and
                     step[step['type']]['path'] not in self.modified_files):
                 self.modified_files.append(step[step['type']]['path'])
+                if self.relevant_files is not None:
+                    self.relevant_files.add(self.project.relpath(step[step['type']]['path']))
             # This means we are still loading the project and have all the steps until last iteration
             if self.project.last_iteration is not None or self.project.last_detailed_user_review_goal is not None:
                 continue
@@ -674,8 +706,11 @@ class Developer(Agent):
         tried_alternative_solutions_to_current_issue = self.project.last_iteration['prompt_data']['tried_alternative_solutions_to_current_issue'] if (self.project.last_iteration and 'tried_alternative_solutions_to_current_issue' in self.project.last_iteration['prompt_data']) else []
         next_solution_to_try = None
         iteration_count = self.project.last_iteration['prompt_data']['iteration_count'] if (self.project.last_iteration and 'iteration_count' in self.project.last_iteration['prompt_data']) else 0
+        # should_review is used to block review if CLI user input is "r" (run command). After execution of command we go back to while loop
+        should_review = bool(self.modified_files)
         while True:
-            review_successful = self.project.skip_steps or self.review_task(llm_solutions)
+            self.user_feedback = llm_solutions[-1]['user_feedback'] if len(llm_solutions) > 0 else None
+            review_successful = self.project.skip_steps or not should_review or (should_review and self.review_task(llm_solutions))
             if not review_successful and self.review_count < 3:
                 continue
             iteration_count += 1
@@ -717,9 +752,12 @@ class Developer(Agent):
             user_feedback = response['user_input'] if 'user_input' in response else None
             if user_feedback == 'continue':
                 # self.project.remove_debugging_logs_from_all_files()
-                return {"success": True, "user_input": user_feedback}
+                return {"success": True, "user_input": user_feedback, "llm_solutions": llm_solutions}
 
-            if user_feedback is not None:
+            if user_feedback is None:
+                should_review = False
+            else:
+                should_review = True
                 print('', type='verbose', category='agent:troubleshooter')
                 self.project.current_task.inc('iterations')
                 stuck_in_loop = user_feedback.startswith(STUCK_IN_LOOP)
@@ -757,10 +795,11 @@ class Developer(Agent):
                     "directory_tree": self.project.get_directory_tree(True),
                     "current_task": development_task,
                     "development_tasks": self.project.development_plan,
-                    "files": self.project.get_all_coded_files(),
+                    "files": self.project.get_all_coded_files(relevant_files=self.relevant_files),
+                    "file_summaries": self.project.get_file_summaries(),
                     "user_feedback": user_feedback,
                     "user_feedback_qa": user_feedback_qa,
-                    "previous_solutions": llm_solutions[-3:],
+                    "previous_solutions": llm_solutions,
                     "next_solution_to_try": next_solution_to_try,
                     "alternative_solutions_to_current_issue": alternative_solutions_to_current_issue,
                     "tried_alternative_solutions_to_current_issue": tried_alternative_solutions_to_current_issue,
@@ -785,7 +824,6 @@ class Developer(Agent):
                 iteration_convo.remove_last_x_messages(2)
 
                 self.files_at_start_of_task = self.project.get_all_coded_files()
-                self.modified_files = []
                 task_steps = llm_response['tasks']
                 self.execute_task(iteration_convo, task_steps, is_root_task=True, task_source='troubleshooting')
                 print_task_progress(1, 1, development_task['description'], 'troubleshooting', 'done', len(llm_solutions) + 1)
@@ -852,7 +890,7 @@ class Developer(Agent):
 
     def review_code_changes(self, llm_solutions):
         """
-        Review the code changes and ask for human intervention if needed
+        Review all the code changes during current task.
 
         :param llm_solutions: List of all user feedbacks and LLM solutions (to those feedbacks) for current task.
 
@@ -862,11 +900,7 @@ class Developer(Agent):
         }
         """
         review_convo = AgentConvo(self)
-        files = [
-            file_dict for file_dict in self.project.get_all_coded_files()
-            if any(os.path.normpath(file_dict['full_path']).endswith(os.path.normpath(modified_file.lstrip('.'))) for
-                   modified_file in self.modified_files)
-        ]
+        files = self.project.get_all_coded_files(relevant_files=self.relevant_files)
         files_at_start_of_task = [
             file_dict for file_dict in self.files_at_start_of_task
             if any(os.path.normpath(file_dict['full_path']).endswith(os.path.normpath(modified_file.lstrip('.'))) for
@@ -879,6 +913,7 @@ class Developer(Agent):
             "tasks": self.project.development_plan,
             "current_task": self.project.current_task.data.get('task_description'),
             "files": files,
+            "file_summaries": self.project.get_file_summaries(),
             "all_feedbacks": [solution["user_feedback"].replace("```", "") for solution in llm_solutions],
             "modified_files": self.modified_files,
             "files_at_start_of_task": files_at_start_of_task,
@@ -1087,3 +1122,49 @@ class Developer(Agent):
             next_solution_to_try_index = 1
 
         return next_solution_to_try_index
+
+    def filter_relevant_files(self, file_summaries, current_task=None, user_input=None) -> Optional[set[str]]:
+        """
+        Filter task/iteration relevant files.
+
+        Asks the LLM to determine which files are relevant to the current task
+        based on the user input and the current task.
+
+        Only enabled if FILTER_RELEVANT_FILES feature flag is set, otherwise returns None.
+
+        :param file_summaries: The file summaries.
+        :param current_task: The current task.
+        :param user_input: The user input.
+        :returns: Set of relevant file paths.
+        """
+
+        if not file_summaries:
+            return None
+
+        if os.getenv('FILTER_RELEVANT_FILES', '').lower().strip() in ['false', '0', 'no', 'off']:
+            return None
+
+        convo = AgentConvo(self)
+        response = convo.send_message('development/filter_files.prompt', {
+            "name": self.project.args['name'],
+            "app_type": self.project.args['app_type'],
+            "app_summary": self.project.project_description,
+            "architecture": self.project.architecture,
+            "technologies": self.project.system_dependencies + self.project.package_dependencies,
+            "directory_tree": self.project.get_directory_tree(True),
+            "current_task": current_task,
+            "development_tasks": self.project.development_plan,
+            "user_input": user_input,
+            "previous_features": self.project.previous_features,
+            "current_feature": self.project.current_feature,
+            "file_summaries": file_summaries,
+        }, LIST_RELEVANT_FILES)
+
+        relevant_files = set()
+        for file in response['relevant_files']:
+            if file.startswith("./"):
+                file = file[2:]
+            if file in file_summaries:
+                relevant_files.add(file)
+
+        return relevant_files
