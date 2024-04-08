@@ -1125,7 +1125,7 @@ class Developer(Agent):
         if not file_summaries:
             return None
 
-        if os.getenv('FILTER_RELEVANT_FILES', '').lower().strip() not in ['true', '1', 'yes', 'on']:
+        if os.getenv('FILTER_RELEVANT_FILES', '').lower().strip() in ['false', '0', 'no', 'off']:
             return None
 
         convo = AgentConvo(self)

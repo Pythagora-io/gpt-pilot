@@ -45,7 +45,7 @@ def _get_describe_messages(fpath: str, content: str) -> list[dict[str, str]]:
 
 
 def describe_file(project, fpath: str, content: str) -> str:
-    if os.getenv('FILTER_RELEVANT_FILES', '').lower().strip() not in ['true', '1', 'yes', 'on']:
+    if os.getenv('FILTER_RELEVANT_FILES', '').lower().strip() in ['false', '0', 'no', 'off']:
         return ''
 
     model_name = os.getenv("MODEL_NAME")

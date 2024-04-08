@@ -383,7 +383,7 @@ class Project:
 
         :returns: A dictionary of file summaries, or None if file filtering is not enabled.
         """
-        if os.getenv('FILTER_RELEVANT_FILES', '').lower().strip() not in ['true', '1', 'yes', 'on']:
+        if os.getenv('FILTER_RELEVANT_FILES', '').lower().strip() in ['false', '0', 'no', 'off']:
             return None
 
         files = self.get_all_database_files()

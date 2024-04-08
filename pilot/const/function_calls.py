@@ -544,7 +544,7 @@ LIST_RELEVANT_FILES = {
                     "type": "array",
                     "items": {
                         "type": "string",
-                        "description": "Path to the file that is relevant for the current task."
+                        "description": "Path to the file that is relevant for the current task, relative to the project root."
                     },
                 }
             },
@@ -562,15 +562,16 @@ DESCRIBE_FILE = {
             "type": "object",
             "properties": {
                 "summary": {
-                "type": "string",
-                "description": "Describe in detail the functionality being defined or implemented in this file. Be as detailed as possible."
+                    "type": "string",
+                    "description": "Describe in detail the functionality being defined or implemented in this file. Be as detailed as possible."
                 },
                 "references": {
-                "type": "array",
-                "items": {
-                    "type": "string"
-                },
-                "description": "List of file references."
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "description": "Path to a file that is referenced in the current file, relative to the project root.",
+                    },
+                    "description": "List of file references."
                 }
             },
             "required": ["summary", "references"],
