@@ -4,7 +4,7 @@ Use either of these step types:
 
 * [command]: a command executable on a {{ os }} OS with the project root folder as the current working directory. Use commands for tasks that require package management, building software, deployment, analysis, and others. 
 * [save_file]: creates or updates ONE file. Output an empty string in `code_change_description` field. When a file needs multiple edits, combine all changes into a single 'save_file' step.
-* [human_intervention]: a request for a human to perform steps that cannot be done by executing commands. Explain in details what you want the human to do. ALWAYS abstain from using `human_intervention` for testing, writing code, or reviewing code.
+* [human_intervention]: steps requiring actions impossible to execute with automated commands, such as managing credentials for cloud services. Explain in details what you want the human to do. ALWAYS abstain from using `human_intervention` for testing, writing code, or reviewing code.
 
 {{ file_naming }}
 
