@@ -1,1 +1,1 @@
-All the steps will be executed in order in which you give them, so it is very important that you think about all steps before you start listing them. For example, you should never code something before you install dependencies or you should never try access a file before it exists in project.
+The order which you define for the steps is critical. Think ahead to avoid common pitfalls, like coding before installing dependencies or accessing non-existent files.
