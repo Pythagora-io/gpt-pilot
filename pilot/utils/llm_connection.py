@@ -77,7 +77,7 @@ def test_api_access(project) -> bool:
     ]
 
     endpoint = os.getenv('ENDPOINT')
-    model = os.getenv('DEFAULT_MODEL_NAME', DEFAULT_MODEL_NAME)
+    model = os.getenv('MODEL_NAME', DEFAULT_MODEL_NAME)
     try:
         response = create_gpt_chat_completion(messages, 'project_description', project, model)
         if response is None or response == {}:
@@ -417,7 +417,7 @@ def stream_gpt_completion(data, req_type, project, model=None):
 
     # Configure for the selected ENDPOINT
     if model is None:
-        model = os.getenv('DEFAULT_MODEL_NAME', DEFAULT_MODEL_NAME)
+        model = os.getenv('MODEL_NAME', DEFAULT_MODEL_NAME)
     endpoint = os.getenv('ENDPOINT')
 
     logger.info(f'> Request model: {model}')

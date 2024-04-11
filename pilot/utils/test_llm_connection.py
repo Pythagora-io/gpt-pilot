@@ -455,7 +455,7 @@ class TestLlmConnection:
     def test_chat_completion_Architect(self, endpoint, model, monkeypatch):
         # Given
         monkeypatch.setenv('ENDPOINT', endpoint)
-        monkeypatch.setenv('DEFAULT_MODEL_NAME', model)
+        monkeypatch.setenv('MODEL_NAME', model)
         project = Project({'app_id': 'test-app'})
 
         agent = Architect(project)
@@ -513,7 +513,7 @@ solution-oriented decision-making in areas where precise instructions were not p
     def test_chat_completion_TechLead(self, endpoint, model, monkeypatch):
         # Given
         monkeypatch.setenv('ENDPOINT', endpoint)
-        monkeypatch.setenv('DEFAULT_MODEL_NAME', model)
+        monkeypatch.setenv('MODEL_NAME', model)
         project = Project({'app_id': 'test-app'})
 
         agent = TechLead(project)
