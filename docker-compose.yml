@@ -5,6 +5,7 @@ services:
             # OPENAI/AZURE/OPENROUTER
             - ENDPOINT=OPENAI
             - OPENAI_API_KEY=
+            - OPENAI_ENDPOINT=
             # - AZURE_API_KEY=
             # - AZURE_ENDPOINT=
             # - OPENROUTER_API_KEY=

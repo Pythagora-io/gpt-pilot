@@ -6,6 +6,8 @@ You are working on a {{ app_type }} called "{{ name }}" and you need to create a
 
 DO NOT specify commands to create any folders or files, they will be created automatically - just specify the relative path to file that needs to be written.
 
+{{ relative_paths }}
+
 Now, based on the project details provided, think step by step and create README.md file for this project. The file should have the following format:
 
 # Project name

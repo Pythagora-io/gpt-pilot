@@ -6,6 +6,7 @@ from utils.style import color_green_bold
 from logger.logger import logger
 from utils.exit import trace_code_event
 
+from .javascript_react import JAVASCRIPT_REACT
 from .node_express_mongoose import NODE_EXPRESS_MONGOOSE
 from .render import Renderer
 
@@ -14,6 +15,7 @@ if TYPE_CHECKING:  # noqa
 
 PROJECT_TEMPLATES = {
     "node_express_mongoose": NODE_EXPRESS_MONGOOSE,
+    "javascript_react": JAVASCRIPT_REACT,
 }
 
 
@@ -75,8 +77,6 @@ def apply_project_template(
     print(color_green_bold(f"Applying project template {template['description']}...\n"))
     logger.info(f"Applying project template {template_name}...")
 
-    project.save_files_snapshot(project.checkpoints['last_development_step']['id'])
-
     try:
         if install_hook:
             install_hook(project)
@@ -85,6 +85,10 @@ def apply_project_template(
             f"Error running install hook for project template '{template_name}': {err}",
             exc_info=True,
         )
+
+    last_development_step = project.checkpoints.get('last_development_step')
+    if last_development_step:
+        project.save_files_snapshot(last_development_step['id'], summaries=template.get("files"))
 
     trace_code_event('project-template', {'template': template_name})
     summary = "The code so far includes:\n" + template["summary"]

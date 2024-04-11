@@ -1,0 +1,36 @@
+You are working on a {{ app_type }} called "{{ name }}", writing the code for the entire application.
+
+Here is a high level description of "{{ name }}":
+```
+{{ app_summary }}
+```
+{{ features_list }}
+
+{% if development_tasks and current_task %}
+Development process of this app was split into smaller tasks. Here is the list of all tasks:
+```{% for task in development_tasks %}
+{{ loop.index }}. {{ task['description'] }}
+{% endfor %}
+```
+You are currently working on task "{{ current_task.description }}" and you have to focus only on that task.
+
+{% endif %}
+A part of the app is already finished.
+
+The app currently contains the following files:
+{% for fpath, summary in file_summaries.items() %}
+* `{{ fpath }}`: {{ summary }}{% endfor %}
+
+{% if user_feedback %}User who was using the app "{{ name }}" sent you this feedback:
+```
+{{ user_feedback }}
+```
+{% endif %}{% if next_solution_to_try %}
+Focus on solving this issue in the following way:
+```
+{{ next_solution_to_try }}
+```
+{% endif %}
+Now, before you can work on this, you need to select which files from the above list are relevant to this task. Output the relevant files in a JSON list.
+
+{{ relative_paths }}

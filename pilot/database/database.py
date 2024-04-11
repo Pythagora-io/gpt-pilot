@@ -120,7 +120,7 @@ def get_all_app_development_steps(app_id, last_step=None, loading_steps_only=Fal
                             (DevelopmentSteps.prompt_path.contains('feature_plan')) |
                             (DevelopmentSteps.prompt_path.contains('feature_summary')))
 
-    return [model_to_dict(dev_step) for dev_step in query]
+    return [model_to_dict(dev_step, recurse=False) for dev_step in query]
 
 
 def get_last_development_step(app_id, last_step=None):
@@ -132,7 +132,7 @@ def get_last_development_step(app_id, last_step=None):
     last_dev_step = last_dev_step_query.order_by(DevelopmentSteps.id.desc()).first()
 
     # If a step is found, convert it to a dictionary, otherwise return None
-    return model_to_dict(last_dev_step) if last_dev_step else None
+    return model_to_dict(last_dev_step, recurse=False) if last_dev_step else None
 
 
 def save_user(user_id, email, password):
@@ -254,6 +254,37 @@ def save_progress(app_id, step, data):
     return progress
 
 
+def edit_development_plan(app_id, update_data):
+    try:
+        dev_plan = DevelopmentPlanning.get(app=app_id)
+    except DevelopmentPlanning.DoesNotExist:
+        print(color_red(f"No development plan found for app {app_id}"), category='error')
+        return None
+
+    for key, value in update_data.items():
+        setattr(dev_plan, key, value)
+
+    dev_plan.save()
+    return dev_plan
+
+
+def edit_feature_plan(app_id, update_data):
+    try:
+        dev_plan = (DevelopmentSteps.select()
+                    .where((DevelopmentSteps.app == app_id) & (DevelopmentSteps.prompt_path.contains('feature_plan')))
+                    .order_by(DevelopmentSteps.created_at.desc())
+                    .get())
+    except DevelopmentPlanning.DoesNotExist:
+        print(color_red(f"No feature plan found for app {app_id}"), category='error')
+        return None
+
+    for key, value in update_data.items():
+        setattr(dev_plan, key, value)
+
+    dev_plan.save()
+    return dev_plan
+
+
 def get_app(app_id, error_if_not_found=True):
     try:
         app = App.get(App.id == app_id)
@@ -369,7 +400,7 @@ def save_command_run(project, command, cli_response, done_or_error_response, exi
     unique_data = {
         'app': project.args['app_id'],
         'previous_step': project.checkpoints['last_command_run'],
-        'high_level_step': project.current_step,
+        'high_level_step': str(project.checkpoints['last_development_step']['id']) if project.checkpoints['last_development_step'] else None,
     }
 
     data_fields = {
@@ -391,7 +422,7 @@ def save_user_input(project, query, user_input, hint):
     unique_data = {
         'app': project.args['app_id'],
         'previous_step': project.checkpoints['last_user_input'],
-        'high_level_step': project.current_step,
+        'high_level_step': str(project.checkpoints['last_development_step']['id']) if project.checkpoints['last_development_step'] else None,
     }
     data_fields = {
         'query': query,
@@ -446,6 +477,16 @@ def delete_all_app_development_data(app):
     models = [DevelopmentSteps, CommandRuns, UserInputs, UserApps, File, FileSnapshot]
     for model in models:
         model.delete().where(model.app == app).execute()
+
+
+def delete_app(app_id):
+    app = get_app(app_id, False)
+    if not app:
+        return
+
+    delete_all_app_development_data(app)
+    App.delete().where(App.id == app.id).execute()
+    print(color_yellow(f"Deleted app {app_id} from GPT Pilot database. Project files were NOT deleted."))
 
 
 def delete_unconnected_steps_from(step, previous_step_field_name):

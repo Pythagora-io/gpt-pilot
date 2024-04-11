@@ -76,7 +76,7 @@ class AgentConvo:
                                                   function_calls=function_calls, prompt_data=prompt_data,
                                                   temperature=self.temperature)
         except TokenLimitError as e:
-            save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, '', str(e))
+            save_development_step(self.agent.project, prompt_path, prompt_data, self.messages, {"text": ""}, str(e))
             raise e
 
         # TODO: move this code to Developer agent - https://github.com/Pythagora-io/gpt-pilot/issues/91#issuecomment-1751964079
@@ -112,7 +112,7 @@ class AgentConvo:
             self.log_message(message_content)
 
         if self.agent.project.check_ipc():
-            telemetry.send_project_stats()
+            telemetry.output_project_stats()
         return response
 
     def format_message_content(self, response, function_calls):
@@ -187,7 +187,8 @@ class AgentConvo:
             self.replace_files()
 
     def replace_files(self):
-        files = self.agent.project.get_all_coded_files()
+        relevant_files = getattr(self.agent, 'relevant_files', None)
+        files = self.agent.project.get_all_coded_files(relevant_files=relevant_files)
         for msg in self.messages:
             if msg['role'] == 'user':
                 new_content = self.replace_files_in_one_message(files, msg["content"])
@@ -249,7 +250,13 @@ class AgentConvo:
                 if not self.agent.project.check_ipc():
                     print(color_yellow_bold(dev_step_msg), end='')
                 logger.info(dev_step_msg)
-            print(f"\n{content}\n", type='local')
+            try:
+                print(f"\n{content}\n", type='local')
+            except Exception:  # noqa
+                # Workaround for Windows encoding crash: https://github.com/Pythagora-io/gpt-pilot/issues/509
+                safe_content = content.encode('ascii', 'ignore').decode('ascii')
+                print(f"\n{safe_content}\n", type='local')
+
         logger.info(f"{print_msg}: {content}\n")
 
     def to_context_prompt(self):

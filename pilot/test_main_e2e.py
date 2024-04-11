@@ -3,7 +3,7 @@ import builtins
 import pytest
 from unittest.mock import patch
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(override=True)
 
 from database.database import create_tables
 from helpers.Project import Project

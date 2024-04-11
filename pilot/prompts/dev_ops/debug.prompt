@@ -14,7 +14,7 @@ I want you to create a list of steps that are needed to debug this issue.
 Each step can be either:
 
 * `command` - command to run (must be able to run on a {{ os }} machine, assume current working directory is project root folder)
-* `code_change` -  step will change the code and you need to thoroughly describe what needs to be implemented. I will implement the requested changes and let you know.
+* `save_file` - step will create or update a file, and you need to thoroughly describe what needs to be implemented. I will implement the requested changes and let you know.
 * `human_intervention` - if you need the human to do something, use this type of step and explain in details what you want the human to do. NEVER use `human_intervention` for testing, as testing will be done separately by a dedicated QA after all the steps are done.
 
 {{ execution_order }}
@@ -22,5 +22,3 @@ Each step can be either:
 Also, make sure that at least the last step has `check_if_fixed` set to TRUE.
 
 {{ file_size_limit }}
-
-{# After this, you need to decide what to do next. You can rerun the command `{{ command }}` to check if the problem is fixed or run another command with `run_command` or change more code with `implement_code_changes`. #}

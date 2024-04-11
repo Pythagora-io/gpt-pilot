@@ -3,7 +3,7 @@ import os
 import pytest
 from unittest.mock import MagicMock, patch
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(override=True)
 
 from main import get_custom_print
 from helpers.agents.TechLead import TechLead, DEVELOPMENT_PLANNING_STEP

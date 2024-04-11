@@ -16,6 +16,8 @@ MESSAGE_TYPE = {
     'loopTrigger': 'loopTrigger',          # Trigger loop feedback popup in extension
     'progress': 'progress',                # Progress bar for extension only
     'projectStats': 'projectStats',        # Project stats for extension only
+    'keyExpired': 'keyExpired',            # (Free trial) key expired message - for extension only
+    'inputPrefill': 'inputPrefill',        # Prefill input field with text in extension
 }
 
 LOCAL_IGNORE_MESSAGE_TYPES = [
@@ -31,4 +33,6 @@ LOCAL_IGNORE_MESSAGE_TYPES = [
     'loopTrigger',
     'progress',
     'projectStats',
+    'keyExpired',
+    'inputPrefill',
 ]

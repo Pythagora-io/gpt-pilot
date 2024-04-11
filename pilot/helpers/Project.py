@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional, Union
 
 import peewee
 from playhouse.shortcuts import model_to_dict
@@ -34,7 +34,10 @@ from utils.ignore import IgnoreMatcher
 
 from utils.telemetry import telemetry
 from utils.task import Task
-from utils.utils import remove_lines_with_string, is_extension_old_version
+from utils.utils import remove_lines_with_string
+
+from utils.describe import describe_file
+from os.path import abspath, relpath
 
 
 class Project:
@@ -58,8 +61,6 @@ class Project:
             current_step (str, optional): Current step in the project. Default is None.
         """
         self.args = args
-        # TODO remove everything related to is_extension_old_version once new version is released and everybody has to update core
-        self.is_extension_old_version = is_extension_old_version(args)
         self.llm_req_num = 0
         self.command_runs_count = 0
         self.user_inputs_count = 0
@@ -98,12 +99,13 @@ class Project:
             File.update_paths()
 
         # start loading of project (since backwards compatibility)
-        self.should_overwrite_files = False
+        self.should_overwrite_files = None
         self.last_detailed_user_review_goal = None
         self.last_iteration = None
         self.tasks_to_load = []
         self.features_to_load = []
         self.dev_steps_to_load = []
+        self.run_command = None
         # end loading of project
 
     def set_root_path(self, root_path: str):
@@ -118,22 +120,41 @@ class Project:
             return
 
         self.skip_steps = True
-        should_overwrite_files = None
-        while should_overwrite_files is None or should_overwrite_files.lower() not in AFFIRMATIVE_ANSWERS + NEGATIVE_ANSWERS:
-            print('Use GPT Pilot\'s code/Keep my changes', type='buttons-only')
-            should_overwrite_files = styled_text(
+        while self.should_overwrite_files is None:
+            changes_made_question = f'Did you make any changes to "{self.args["name"]}" project files since last time you used Pythagora?'
+            print(changes_made_question, type='ipc', category='pythagora')
+            print('yes/no', type='buttons-only')
+            # must use styled_text() instead of ask_user() here to avoid finish_loading() call
+            changes_made = styled_text(
                 self,
-                "Can GPT Pilot overwrite code changes you made since last running GPT Pilot?",
-                ignore_user_input_count=True
+                changes_made_question,
+                ignore_user_input_count=True,
             )
 
-            logger.info('should_overwrite_files: %s', should_overwrite_files)
-            if should_overwrite_files in NEGATIVE_ANSWERS:
-                self.should_overwrite_files = False
-                break
-            elif should_overwrite_files in AFFIRMATIVE_ANSWERS:
+            # if there were no changes just load files from db
+            if changes_made.lower() in NEGATIVE_ANSWERS:
                 self.should_overwrite_files = True
                 break
+            # otherwise ask user if they want to use those changes
+            elif changes_made.lower() in AFFIRMATIVE_ANSWERS:
+                use_changes_question = 'Do you want to use those changes you made?'
+                use_changes_msg = 'yes'
+                dont_use_changes_msg = 'no, restore last pythagora state'
+                print(use_changes_question, type='ipc', category='pythagora')
+                print(f'{use_changes_msg}/{dont_use_changes_msg}', type='buttons-only')
+                print(f'"{dont_use_changes_msg}" means Pythagora will restore (overwrite) all files to last stored state.\n'
+                      f'"{use_changes_msg}" means Pythagora will continue working on project using current state of files.', type='hint')
+                use_changes = styled_text(
+                    self,
+                    use_changes_question,
+                    ignore_user_input_count=True
+                )
+
+                logger.info('Use changes: %s', use_changes)
+                if use_changes.lower() in NEGATIVE_ANSWERS + [dont_use_changes_msg]:
+                    self.should_overwrite_files = True
+                elif use_changes.lower() in AFFIRMATIVE_ANSWERS + [use_changes_msg]:
+                    self.should_overwrite_files = False
 
         load_step_before_coding = ('step' in self.args and
                                    self.args['step'] is not None and
@@ -155,6 +176,9 @@ class Project:
             self.checkpoints['last_development_step'] = self.dev_steps_to_load[-1]
             self.tasks_to_load = [el for el in self.dev_steps_to_load if 'breakdown.prompt' in el.get('prompt_path', '')]
             self.features_to_load = [el for el in self.dev_steps_to_load if 'feature_plan.prompt' in el.get('prompt_path', '')]
+            self.run_command = next((el for el in reversed(self.dev_steps_to_load) if 'get_run_command.prompt' in el.get('prompt_path', '')), None)
+            if self.run_command is not None:
+                self.run_command = json.loads(self.run_command['llm_response']['text'])['command']
 
     def start(self):
         """
@@ -182,7 +206,6 @@ class Project:
         self.architect = Architect(self)
         self.architect.get_architecture()
 
-        print('', type='verbose', category='agent:developer')
         self.developer = Developer(self)
         self.developer.set_up_environment()
         self.technical_writer = TechnicalWriter(self)
@@ -216,11 +239,14 @@ class Project:
             self.previous_features = get_features_by_app_id(self.args['app_id'])
             if not self.skip_steps:
                 print('', type='verbose', category='pythagora')
+                if self.run_command and self.check_ipc():
+                    print(self.run_command, type='run_command')
+                print('continue', type='button')
                 feature_description = ask_user(self, "Project is finished! Do you want to add any features or changes? "
                                                      "If yes, describe it here and if no, just press ENTER",
                                                require_some_input=False)
 
-                if feature_description == '':
+                if feature_description == '' or feature_description == 'continue':
                     return
 
                 print('', type='verbose', category='agent:tech-lead')
@@ -303,14 +329,29 @@ class Project:
             "lines_of_code": len(item['content'].splitlines()),
         } for item in [model_to_dict(file) for file in file_snapshots]]
 
-    def get_all_coded_files(self):
+    @staticmethod
+    def relpath(file: Union[File, str]) -> str:
         """
-        Get all coded files in the project.
+        Return relative file path (including the name) within a project
 
-        Returns:
-            list: A list of coded files.
+        :param file: File object or file path
+        :return: Relative file path
         """
-        files = (
+        if isinstance(file, File):
+            fpath = f"{file.path}/{file.name}"
+        else:
+            fpath = file
+        if fpath.startswith("/"):
+            fpath = fpath[1:]
+        elif fpath.startswith("./"):
+            fpath = fpath[2:]
+        return fpath
+
+    def get_all_database_files(self) -> list[File]:
+        """
+        Get all project files from the database.
+        """
+        return (
             File
             .select()
             .where(
@@ -319,7 +360,34 @@ class Project:
             )
         )
 
+    def get_all_coded_files(self, relevant_files=None):
+        """
+        Get all coded files in the project.
+
+        Returns:
+            list: A list of coded files.
+        """
+        files = self.get_all_database_files()
+        if relevant_files:
+            n_files0 = len(files)
+            files = [file for file in files if self.relpath(file) in relevant_files]
+            n_files1 = len(files)
+            rel_txt = ",".join(relevant_files) if relevant_files else "(none)"
+            logger.debug(f"[get_all_coded_files] reduced context from {n_files0} to {n_files1} files, using: {rel_txt}")
+
         return self.get_files([file.path + '/' + file.name for file in files])
+
+    def get_file_summaries(self) -> Optional[dict[str, str]]:
+        """
+        Get summaries of all coded files in the project.
+
+        :returns: A dictionary of file summaries, or None if file filtering is not enabled.
+        """
+        if os.getenv('FILTER_RELEVANT_FILES', '').lower().strip() in ['false', '0', 'no', 'off']:
+            return None
+
+        files = self.get_all_database_files()
+        return {self.relpath(file): file.description or "(unknown)" for file in files if os.path.exists(file.full_path)}
 
     def get_files(self, files):
         """
@@ -380,24 +448,30 @@ class Project:
         if full_path not in self.files:
             self.files.append(full_path)
 
-        (File.insert(app=self.app, path=path, name=name, full_path=full_path)
+        if path and path[0] == '/':
+            path = path.lstrip('/')
+
+        description = describe_file(self, relpath(abspath(full_path), abspath(self.root_path)), data['content'])
+
+        (File.insert(app=self.app, path=path, name=name, full_path=full_path, description=description)
          .on_conflict(
             conflict_target=[File.app, File.name, File.path],
             preserve=[],
-            update={'name': name, 'path': path, 'full_path': full_path})
+            update={'name': name, 'path': path, 'full_path': full_path, 'description': description})
          .execute())
 
         if not self.skip_steps:
             inputs_required = self.find_input_required_lines(data['content'])
             for line_number, line_content in inputs_required:
                 user_input = None
+                print('', type='verbose', category='human-intervention')
                 print(color_yellow_bold(f'Input required on line {line_number}:\n{line_content}') + '\n')
                 while user_input is None or user_input.lower() not in AFFIRMATIVE_ANSWERS + ['continue']:
                     print({'path': full_path, 'line': line_number}, type='openFile')
                     print('continue', type='buttons-only')
                     user_input = ask_user(
                         self,
-                        f'Please open the file {data["path"]} on the line {line_number} and add the required input. Once you\'re done, type "y" to continue.',
+                        f'Please open the file {data["path"]} on the line {line_number} and add the required input. Please, also remove "// INPUT_REQUIRED" comment and once you\'re done, press "continue".',
                         require_some_input=False,
                         ignore_user_input_count=True
                     )
@@ -458,7 +532,7 @@ class Project:
             # - /pilot -> /pilot/
             # - \pilot\server.js -> \pilot\server.js
             # - \pilot -> \pilot\
-            KNOWN_FILES = ["makefile", "dockerfile", "procfile", "readme", "license"]  # known exceptions that break the heuristic
+            KNOWN_FILES = ["makefile", "dockerfile", "procfile", "readme", "license", "podfile", "gemfile"]  # known exceptions that break the heuristic
             KNOWN_DIRS = []  # known exceptions that break the heuristic
             base = os.path.basename(path)
             if (
@@ -504,7 +578,10 @@ class Project:
         final_absolute_path = os.path.join(self.root_path, final_file_path[1:], final_file_name)
         return final_file_path, final_absolute_path
 
-    def save_files_snapshot(self, development_step_id):
+    def save_files_snapshot(self, development_step_id, summaries=None):
+        if summaries is None:
+            summaries = {}
+
         files = get_directory_contents(self.root_path)
         development_step, created = DevelopmentSteps.get_or_create(id=development_step_id)
 
@@ -515,20 +592,32 @@ class Project:
             if not self.check_ipc():
                 print(color_cyan(f'Saving file {file["full_path"]}'))
             # TODO this can be optimized so we don't go to the db each time
+            if file['path'] and file['path'][0] == '/':
+                file['path'] = file['path'].lstrip('/')
             file_in_db, created = File.get_or_create(
                 app=self.app,
                 name=file['name'],
                 path=file['path'],
-                defaults={'full_path': file['full_path']},
+                defaults={
+                    'full_path': file['full_path'],
+                    'description': summaries.get(os.path.relpath(file['full_path'], self.root_path), ''),
+                },
             )
 
-            file_snapshot, created = FileSnapshot.get_or_create(
+            file_snapshot, _ = FileSnapshot.get_or_create(
                 app=self.app,
                 development_step=development_step,
                 file=file_in_db,
                 defaults={'content': file.get('content', '')}
             )
             file_snapshot.content = file['content']
+
+            # For a non-empty file, if we don't have a description, and the file is either new or
+            # we're loading a project, create the description.
+            if file['content'] and not file_in_db.description:
+                file_in_db.description = describe_file(self, relpath(abspath(file['full_path']), abspath(self.root_path)), file['content'])
+                file_in_db.save()
+
             file_snapshot.save()
             total_files += 1
             if isinstance(file['content'], str):
@@ -543,7 +632,10 @@ class Project:
 
         clear_directory(self.root_path, ignore=self.files)
         for file_snapshot in file_snapshots:
-            update_file(file_snapshot.file.full_path, file_snapshot.content, project=self)
+            try:
+                update_file(file_snapshot.file.full_path, file_snapshot.content, project=self)
+            except (PermissionError, NotADirectoryError) as err:  # noqa
+                print(f"Error restoring file {file_snapshot.file.full_path}: {err}")
             if file_snapshot.file.full_path not in self.files:
                 self.files.append(file_snapshot.file.full_path)
 

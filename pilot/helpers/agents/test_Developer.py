@@ -8,7 +8,7 @@ import requests
 
 from helpers.AgentConvo import AgentConvo
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(override=True)
 
 from main import get_custom_print
 from .Developer import Developer, ENVIRONMENT_SETUP_STEP
@@ -59,7 +59,8 @@ class TestDeveloper:
             'description': 'Do stuff',
             'user_review_goal': 'Do stuff',
         }]
-        project.get_all_coded_files = lambda: []
+        project.get_file_summaries = lambda: None
+        project.get_all_coded_files = lambda **kwargs: []
         project.current_step = 'test'
 
         # and a developer who will execute any task
@@ -85,7 +86,8 @@ class TestDeveloper:
             'description': 'Do stuff',
             'user_review_goal': 'Do stuff',
         }]
-        project.get_all_coded_files = lambda: []
+        project.get_file_summaries = lambda: None
+        project.get_all_coded_files = lambda **kwargs: []
         project.current_step = 'test'
 
         # and a developer who will execute any task except for `ls -al test`

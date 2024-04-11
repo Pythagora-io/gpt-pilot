@@ -9,9 +9,20 @@ import traceback
 try:
     from dotenv import load_dotenv
 except ImportError:
-    raise RuntimeError('Python environment for GPT Pilot is not completely set up: required package "python-dotenv" is missing.') from None
+    gpt_pilot_root = os.path.dirname(os.path.dirname(__file__))
+    venv_path = os.path.join(gpt_pilot_root, 'pilot-env')
+    requirements_path = os.path.join(gpt_pilot_root, 'requirements.txt')
+    if sys.prefix == sys.base_prefix:
+        venv_python_path = os.path.join(venv_path, 'scripts' if sys.platform == 'win32' else 'bin', 'python')
+        print('Python environment for GPT Pilot is not set up.')
+        print(f'Please create Python virtual environment: {sys.executable} -m venv {venv_path}')
+        print(f'Then install the required dependencies with: {venv_python_path} -m pip install -r {requirements_path}')
+    else:
+        print('Python environment for GPT Pilot is not completely set up.')
+        print(f'Please run `{sys.executable} -m pip install -r {requirements_path}` to finish Python setup, and rerun GPT Pilot.')
+    sys.exit(-1)
 
-load_dotenv()
+load_dotenv(override=True)
 
 from utils.style import color_red
 from utils.custom_print import get_custom_print
@@ -19,7 +30,14 @@ from helpers.Project import Project
 from utils.arguments import get_arguments
 from utils.exit import exit_gpt_pilot
 from logger.logger import logger
-from database.database import database_exists, create_database, tables_exist, create_tables, get_created_apps_with_steps
+from database.database import (
+    database_exists,
+    create_database,
+    tables_exist,
+    create_tables,
+    get_created_apps_with_steps,
+    delete_app,
+)
 
 from utils.settings import settings, loader, get_version
 from utils.telemetry import telemetry
@@ -55,6 +73,8 @@ if __name__ == "__main__":
 
         if '--api-key' in args:
             os.environ["OPENAI_API_KEY"] = args['--api-key']
+        if '--model-name' in args:
+            os.environ['MODEL_NAME'] = args['--model-name']
         if '--api-endpoint' in args:
             os.environ["OPENAI_ENDPOINT"] = args['--api-endpoint']
 
@@ -70,6 +90,11 @@ if __name__ == "__main__":
                 print('\n'.join(f"{app['id']}: {app['status']:20}      "
                                 f"{'' if len(app['development_steps']) == 0 else app['development_steps'][-1]['id']:3}"
                                 f"  {app['name']}" for app in get_created_apps_with_steps()))
+
+        elif '--delete-app' in args:
+            run_exit_fn = False
+            app_id = args['--delete-app']
+            delete_app(app_id)
 
         elif '--version' in args:
             print(get_version())
@@ -101,6 +126,7 @@ if __name__ == "__main__":
             started = project.start()
             if started:
                 project.finish()
+                print('Thank you for using Pythagora!', type='ipc', category='pythagora')
                 telemetry.set("end_result", "success:exit")
             else:
                 run_exit_fn = False
@@ -111,6 +137,14 @@ if __name__ == "__main__":
         telemetry.record_crash(err, end_result="failure:api-error")
         telemetry.send()
         run_exit_fn = False
+        if isinstance(err, TokenLimitError):
+            print('', type='verbose', category='error')
+            print(color_red(
+                "We sent too large request to the LLM, resulting in an error. "
+                "This is usually caused by including framework files in an LLM request. "
+                "Here's how you can get GPT Pilot to ignore those extra files: "
+                "https://bit.ly/faq-token-limit-error"
+            ))
         print('Exit', type='exit')
 
     except KeyboardInterrupt:
@@ -135,6 +169,8 @@ if __name__ == "__main__":
 
     finally:
         if project is not None:
+            if project.check_ipc():
+                ask_feedback = False
             project.current_task.exit()
             project.finish_loading(do_cleanup=False)
         if run_exit_fn:

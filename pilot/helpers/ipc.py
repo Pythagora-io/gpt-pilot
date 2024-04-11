@@ -28,8 +28,17 @@ class IPCClient:
             return
 
         while True:
-            data = self.client.recv(65536)
-            message = json.loads(data)
+
+            data = b''
+            while True:
+                data = data + self.client.recv(512 * 1024)
+                try:
+                    message = json.loads(data)
+                    break
+                except json.JSONDecodeError:
+                    # This means we still got an incomplete message, so
+                    # we should continue to receive more data.
+                    continue
 
             if message['type'] == 'response':
                 # self.client.close()

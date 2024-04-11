@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 log = getLogger(__name__)
 

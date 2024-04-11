@@ -94,7 +94,8 @@ def test_api_access(project) -> bool:
 def create_gpt_chat_completion(messages: List[dict], req_type, project, model:str,
                                function_calls: FunctionCallSet = None,
                                prompt_data: dict = None,
-                               temperature: float = 0.7):
+                               temperature: float = 0.7,
+                               model_name: str = None):
     """
     Called from:
       - AgentConvo.send_message() - these calls often have `function_calls`, usually from `pilot/const/function_calls.py`
@@ -110,8 +111,11 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project, model:st
              {'function_calls': {'name': str, arguments: {...}}}
     """
 
+    if model_name is None:
+        model_name = os.getenv('MODEL_NAME', 'gpt-4')
+
     gpt_data = {
-        'model': model,
+        'model': model_name,
         'n': 1,
         'temperature': temperature,
         'top_p': 1,
@@ -134,8 +138,18 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project, model:st
     if prompt_data is not None and function_call_message is not None:
         prompt_data['function_call_message'] = function_call_message
 
+    if '/' in model_name:
+        model_provider, model_name = model_name.split('/', 1)
+    else:
+        model_provider = 'openai'
+
     try:
-        response = stream_gpt_completion(gpt_data, req_type, project, model)
+        if model_provider == 'anthropic' and os.getenv('ENDPOINT') != 'OPENROUTER':
+            if not os.getenv('ANTHROPIC_API_KEY'):
+                os.environ['ANTHROPIC_API_KEY'] = os.getenv('OPENAI_API_KEY')
+            response = stream_anthropic(messages, function_call_message, gpt_data, model_name)
+        else:
+            response = stream_gpt_completion(gpt_data, req_type, project, model_name)
 
         # Remove JSON schema and any added retry messages
         while len(messages) > messages_length:
@@ -144,7 +158,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project, model:st
     except TokenLimitError as e:
         raise e
     except Exception as e:
-        logger.error(f'The request to {os.getenv("ENDPOINT")} API failed: %s', e)
+        logger.error(f'The request to {os.getenv("ENDPOINT")} API for {model_provider}/{model_name} failed: %s', e, exc_info=True)
         print(color_red(f'The request to {os.getenv("ENDPOINT")} API failed with error: {e}. Please try again later.'))
         if isinstance(e, ApiError):
             raise e
@@ -254,7 +268,12 @@ def retry_on_exception(func):
                     print(color_red(f"Error calling LLM API: The request exceeded the maximum token limit (request size: {n_tokens}) tokens."))
                     trace_token_limit_error(n_tokens, args[0]['messages'], err_str)
                     raise TokenLimitError(n_tokens, MAX_GPT_MODEL_TOKENS)
-                if "rate_limit_exceeded" in err_str:
+                if "rate_limit_exceeded" in err_str or "rate_limit_error" in err_str:
+                    # Retry the attempt if the current account's tier reaches the API limits
+                    rate_limit_exceeded_sleep(e, err_str)
+                    continue
+                if "overloaded_error" in err_str:
+                    # Retry the attempt if the Anthropic servers are overloaded
                     rate_limit_exceeded_sleep(e, err_str)
                     continue
 
@@ -349,12 +368,14 @@ def trace_token_limit_error(request_tokens: int, messages: list[dict], err_str: 
 
 
 @retry_on_exception
-def stream_gpt_completion(data, req_type, project, model):
+def stream_gpt_completion(data, req_type, project, model=None):
+
     """
     Called from create_gpt_chat_completion()
     :param data:
     :param req_type: 'project_description' etc. See common.STEPS
     :param project: NEEDED FOR WRAPPER FUNCTION retry_on_exception
+    :param model: (optional) model name
     :return: {'text': str} or {'function_calls': {'name': str, arguments: '{...}'}}
     """
     # TODO add type dynamically - this isn't working when connected to the external process
@@ -395,7 +416,8 @@ def stream_gpt_completion(data, req_type, project, model):
     # print(yellow("Stream response from OpenAI:"))
 
     # Configure for the selected ENDPOINT
-    model = os.getenv('DEFAULT_MODEL_NAME', DEFAULT_MODEL_NAME)
+    if model is None:
+        model = os.getenv('DEFAULT_MODEL_NAME', DEFAULT_MODEL_NAME)
     endpoint = os.getenv('ENDPOINT')
 
     logger.info(f'> Request model: {model}')
@@ -441,6 +463,18 @@ def stream_gpt_completion(data, req_type, project, model):
         timeout=(API_CONNECT_TIMEOUT, API_READ_TIMEOUT),
     )
 
+    if response.status_code == 401 and 'BricksLLM' in response.text:
+        print("", type='keyExpired')
+        msg = "Trial Expired"
+        key = os.getenv("OPENAI_API_KEY")
+        endpoint = os.getenv("OPENAI_ENDPOINT")
+        if key:
+            msg += f"\n\n(using key ending in ...{key[-4:]}):"
+        if endpoint:
+            msg += f"\n(using endpoint: {endpoint}):"
+        msg += f"\n\nError details: {response.text}"
+        raise ApiError(msg, response=response)
+
     if response.status_code != 200:
         project.dot_pilot_gpt.log_chat_completion(endpoint, model, req_type, data['messages'], response.text)
         logger.info(f'problem with request (status {response.status_code}): {response.text}')
@@ -464,13 +498,13 @@ def stream_gpt_completion(data, req_type, project, model):
             try:
                 json_line = json.loads(line)
 
-                if len(json_line['choices']) == 0:
-                    continue
-
                 if 'error' in json_line:
                     logger.error(f'Error in LLM response: {json_line}')
                     telemetry.record_llm_request(token_count, time.time() - request_start_time, is_error=True)
                     raise ValueError(f'Error in LLM response: {json_line["error"]["message"]}')
+
+                if 'choices' not in json_line or len(json_line['choices']) == 0:
+                    continue
 
                 choice = json_line['choices'][0]
 
@@ -577,3 +611,47 @@ def postprocessing(gpt_response: str, req_type) -> str:
 
 def load_data_to_json(string):
     return json.loads(fix_json(string))
+
+
+def stream_anthropic(messages, function_call_message, gpt_data, model_name = "claude-3-sonnet-20240229"):
+    try:
+        import anthropic
+    except ImportError as err:
+        raise RuntimeError("The 'anthropic' package is required to use the Anthropic Claude LLM.") from err
+
+    client = anthropic.Anthropic(
+        base_url=os.getenv('ANTHROPIC_ENDPOINT') or None,
+    )
+
+    claude_system = "You are a software development AI assistant."
+    claude_messages = messages
+    if messages[0]["role"] == "system":
+        claude_system = messages[0]["content"]
+        claude_messages = messages[1:]
+
+    if len(claude_messages):
+        cm2 = [claude_messages[0]]
+        for i in range(1, len(claude_messages)):
+            if cm2[-1]["role"] == claude_messages[i]["role"]:
+                cm2[-1]["content"] += "\n\n" + claude_messages[i]["content"]
+            else:
+                cm2.append(claude_messages[i])
+        claude_messages = cm2
+
+    response = ""
+    with client.messages.stream(
+        model=model_name,
+        max_tokens=4096,
+        temperature=0.5,
+        system=claude_system,
+        messages=claude_messages,
+    ) as stream:
+        for chunk in stream.text_stream:
+            print(chunk, type='stream', end='', flush=True)
+            response += chunk
+
+    if function_call_message is not None:
+        response = clean_json_response(response)
+        assert_json_schema(response, gpt_data["functions"])
+
+    return {"text": response}

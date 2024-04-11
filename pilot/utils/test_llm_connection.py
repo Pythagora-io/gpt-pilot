@@ -18,7 +18,7 @@ from utils.llm_connection import create_gpt_chat_completion, stream_gpt_completi
     assert_json_response, assert_json_schema, clean_json_response, retry_on_exception
 from main import get_custom_print
 
-load_dotenv()
+load_dotenv(override=True)
 os.environ.pop("AUTOFIX_FILE_PATHS", None)
 
 

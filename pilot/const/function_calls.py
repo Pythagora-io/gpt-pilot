@@ -89,10 +89,6 @@ def step_save_file_definition():
                 "type": "object",
                 "description": "A file that should be created or updated.",
                 "properties": {
-                    "name": {
-                        "type": "string",
-                        "description": "Name of the file that will be created (if it doesn't exist) or updated (if it already exists)."
-                    },
                     "path": {
                         "type": "string",
                         "description": "Full path of the file with the file name."
@@ -102,7 +98,7 @@ def step_save_file_definition():
                         "description": "Empty string"
                     }
                 },
-                "required": ["name", "path", "code_change_description"]
+                "required": ["path", "code_change_description"]
             }
         },
         "required": ["type", "save_file"]
@@ -347,6 +343,45 @@ DEVELOPMENT_PLAN = {
     },
 }
 
+UPDATE_DEVELOPMENT_PLAN = {
+    'definitions': [{
+        'name': 'update_development_plan',
+        'description': 'Updates the development plan.',
+        'parameters': {
+            'type': 'object',
+            "properties": {
+                "updated_current_task": {
+                    "type": "object",
+                    'description': 'Updated current task.',
+                    'properties': {
+                        'description': {
+                            'type': 'string',
+                            'description': 'Updated detailed description of what was implemented while working on the current development task.',
+                        }
+                    },
+                    'required': ['description'],
+                },
+                "plan": {
+                    "type": "array",
+                    "description": 'List of development tasks that still need to be done to implement the entire plan.',
+                    "items": {
+                        "type": "object",
+                        'description': 'Development task that needs to be implemented to finish the entire plan.',
+                        'properties': {
+                            'description': {
+                                'type': 'string',
+                                'description': 'Very detailed description of the development task that needs to be done to implement the entire plan.',
+                            }
+                        },
+                        'required': ['description'],
+                    },
+                },
+            },
+            "required": ['updated_current_task', 'plan'],
+        },
+    }],
+}
+
 EXECUTE_COMMANDS = {
     'definitions': [{
         'name': 'execute_commands',
@@ -455,10 +490,6 @@ GET_DOCUMENTATION_FILE = {
         'parameters': {
             'type': 'object',
             'properties': {
-                'name': {
-                    'type': 'string',
-                    'description': 'Name of the documentation file that needs to be saved on the disk.',
-                },
                 'path': {
                     'type': 'string',
                     'description': 'Relative path of the documentation file with the file name that needs to be saved.',
@@ -468,7 +499,7 @@ GET_DOCUMENTATION_FILE = {
                     'description': 'Full content of the documentation file that needs to be saved on the disk.',
                 },
             },
-            'required': ['name', 'path', 'content'],
+            'required': ['path', 'content'],
         },
     }],
 }
@@ -496,7 +527,7 @@ REVIEW_CHANGES = {
                             "decision": {
                                 "type": "string",
                                 "enum": ["apply", "ignore", "rework"],
-                                "description": "Whether to apply this hunk (if it's a valid change with no problems), rework (a valid change but does something incorrectly), or ignore it (unwanted change)."
+                                "description": "Whether to apply this hunk, rework, or ignore it."
                             }
                         },
                         "required": ["number", "reason", "decision"],
@@ -520,32 +551,70 @@ GET_BUG_REPORT_MISSING_DATA = {
         'parameters': {
             "type": "object",
             "properties": {
-                "reasoning": {
-                    "type": "string",
-                    "description": "Reasoning for asking these questions or for not asking any questions."
-                },
                 "missing_data": {
                     "type": "array",
                     "items": {
                         "type": "object",
                         "properties": {
-                            "category": {
-                                "type": "string",
-                                "enum": ["general", "frontend", "backend", "database", "devops", "other"],
-                                "description": "Category of the question."
-                            },
                             "question": {
                                 "type": "string",
                                 "description": "Very clear question that needs to be answered to have good bug report.",
                             },
                         },
-                        "required": ["category", "question"],
+                        "required": ["question"],
                         "additionalProperties": False
                     },
                 }
             },
-            "required": ["reasoning", "missing_data"],
+            "required": ["missing_data"],
             "additionalProperties": False
         }
     }],
+}
+
+LIST_RELEVANT_FILES = {
+    'definitions': [{
+        'name': 'list_relevant_files',
+        'description': 'List of relevant files for the current task.',
+        'parameters': {
+            "type": "object",
+            "properties": {
+                "relevant_files": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "description": "Path to the file that is relevant for the current task, relative to the project root."
+                    },
+                }
+            },
+            "required": ["relevant_files"],
+            "additionalProperties": False
+        }
+    }],
+}
+
+DESCRIBE_FILE = {
+    'definitions': [{
+        'name': 'describe_file',
+        'description': 'Describe the content of the file.',
+        'parameters': {
+            "type": "object",
+            "properties": {
+                "summary": {
+                    "type": "string",
+                    "description": "Describe in detail the functionality being defined or implemented in this file. Be as detailed as possible."
+                },
+                "references": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "description": "Path to a file that is referenced in the current file, relative to the project root.",
+                    },
+                    "description": "List of file references."
+                }
+            },
+            "required": ["summary", "references"],
+            "additionalProperties": False,
+        }
+    }]
 }

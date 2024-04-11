@@ -1,15 +1,56 @@
-# 🧑‍✈️ GPT PILOT
+<div align="center">
 
-<a href="https://trendshift.io/repositories/466" target="_blank"><img src="https://trendshift.io/api/badge/repositories/466" alt="Pythagora-io%2Fgpt-pilot | Trendshift" style="width: 250px; height: 55px; margin-right: 10px;" width="250" height="55"/></a>
-### GPT Pilot is a true AI developer that writes code, debugs it, talks to you when it needs help, etc.
+# 🧑‍✈️ GPT PILOT 🧑‍✈️
 
-You specify what kind of app you want to build. Then, GPT Pilot asks clarifying questions, creates the product and technical requirements, sets up the environment, and **starts coding the app step by step, like in real life, while you oversee the development process**. It asks you to review each task it finishes or to help when it gets stuck. This way, GPT Pilot acts as a coder while you are a lead dev who reviews code and helps when needed.
+</div>
 
 ---
 
+<div align="center">
+
+[![Discord Follow](https://dcbadge.vercel.app/api/server/HaqXugmxr9?style=flat)](https://discord.gg/HaqXugmxr9)
+[![GitHub Repo stars](https://img.shields.io/github/stars/Pythagora-io/gpt-pilot?style=social)](https://github.com/Pythagora-io/gpt-pilot)
+[![Twitter Follow](https://img.shields.io/twitter/follow/HiPythagora?style=social)](https://twitter.com/HiPythagora)
+
+</div>
+
+---
+
+<div align="center">
+<a href="https://www.ycombinator.com/" target="_blank"><img src="https://s3.amazonaws.com/assets.pythagora.ai/yc/PNG/Black.png" alt="Pythagora-io%2Fgpt-pilot | Trendshift" style="width: 250px; height: 93px;"/></a>
+</div>
+<br>
+<div align="center">
+<a href="https://trendshift.io/repositories/466" target="_blank"><img src="https://trendshift.io/api/badge/repositories/466" alt="Pythagora-io%2Fgpt-pilot | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+</div>
+
+<br>
+<br>
+
+<div align="center">
+
+### GPT Pilot doesn't just generate code, it builds apps!
+
+</div>
+
+---
+<div align="center">
+
+[![See it in action](https://i3.ytimg.com/vi/4g-1cPGK0GA/maxresdefault.jpg)](https://youtu.be/4g-1cPGK0GA)
+
+(click to open the video in YouTube) (1:40min)
+
+</div>
+
+---
+
+<div align="center">
+
 <a href="vscode:extension/PythagoraTechnologies.gpt-pilot-vs-code" target="_blank"><img src="https://github.com/Pythagora-io/gpt-pilot/assets/10895136/5792143e-77c7-47dd-ad96-6902be1501cd" alt="Pythagora-io%2Fgpt-pilot | Trendshift" style="width: 185px; height: 55px;" width="185" height="55"/></a>
 
-GPT Pilot is the core technology for the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=PythagoraTechnologies.gpt-pilot-vs-code) that aims to provide **the first real AI developer companion**. Not just an autocomplete or a helper for PR messages but rather a real AI developer that can write full features, debug them, talk to you about issues, ask for review, etc.
+</div>
+
+GPT Pilot is the core technology for the [Pythagora VS Code extension](https://bit.ly/3IeZxp6) that aims to provide **the first real AI developer companion**. Not just an autocomplete or a helper for PR messages but rather a real AI developer that can write full features, debug them, talk to you about issues, ask for review, etc.
 
 ---
 
@@ -20,13 +61,9 @@ GPT Pilot is the core technology for the [VS Code extension](https://marketplace
 <!-- TOC -->
 * [🔌 Requirements](#-requirements)
 * [🚦How to start using gpt-pilot?](#how-to-start-using-gpt-pilot)
-    * [🐳 How to start gpt-pilot in docker?](#-how-to-start-gpt-pilot-in-docker)
-* [🧑‍💻️ CLI arguments](#%EF%B8%8F-cli-arguments)
 * [🔎 Examples](#-examples)
-    * [Real-time chat app](#-real-time-chat-app)
-    * [Markdown editor](#-markdown-editor)
-    * [Timer app](#-timer-app)
-* [🏛 Main pillars of GPT Pilot](#-main-pillars-of-gpt-pilot)
+* [🐳 How to start gpt-pilot in docker?](#-how-to-start-gpt-pilot-in-docker)
+* [🧑‍💻️ CLI arguments](#-cli-arguments)
 * [🏗 How GPT Pilot works?](#-how-gpt-pilot-works)
 * [🕴How's GPT Pilot different from _Smol developer_ and _GPT engineer_?](#hows-gpt-pilot-different-from-smol-developer-and-gpt-engineer)
 * [🍻 Contributing](#-contributing)
@@ -36,7 +73,7 @@ GPT Pilot is the core technology for the [VS Code extension](https://marketplace
 
 ---
 
-GPT Pilot aims to research how much GPT-4 can be utilized to generate fully working, production-ready apps while the developer oversees the implementation.
+GPT Pilot aims to research how much LLMs can be utilized to generate fully working, production-ready apps while the developer oversees the implementation.
 
 **The main idea is that AI can write most of the code for an app (maybe 95%), but for the rest, 5%, a developer is and will be needed until we get full AGI**.
 
@@ -44,26 +81,23 @@ If you are interested in our learnings during this project, you can check [our l
 
 ---
 
+<br>
 
 <div align="center">
 
-### **[👉 Examples of apps written by GPT Pilot 👈](#-examples)**
+### **[👉 Examples of apps written by GPT Pilot 👈](https://github.com/Pythagora-io/gpt-pilot/wiki/Apps-created-with-GPT-Pilot)**
 
 </div>
-
 <br>
 
-https://github.com/Pythagora-io/gpt-pilot/assets/10895136/0495631b-511e-451b-93d5-8a42acf22d3d
+---
 
 # 🔌 Requirements
 
 - **Python 3.9+**
-- **PostgreSQL** (Optional, default database is SQLite)
-   - DB is needed for multiple reasons like continuing app development. If you have to stop at any point or the app crashes, go back to a specific step so that you can change some later steps in development, and easier debugging, in future we will add functionality to update project (change some things in existing project or add new features to the project and so on).
-
 
 # 🚦How to start using gpt-pilot?
-👉 If you are using VS Code as your IDE, the easiest way to start is by downloading [GPT Pilot VS Code extension](https://marketplace.visualstudio.com/items?itemName=PythagoraTechnologies.gpt-pilot-vs-code). 👈
+👉 If you are using VS Code as your IDE, the easiest way to start is by downloading [GPT Pilot VS Code extension](https://bit.ly/3IeZxp6). 👈
 
 Otherwise, you can use the CLI tool.
 
@@ -80,13 +114,15 @@ After you have Python and (optionally) PostgreSQL installed, follow these steps:
    - Your API key
    - database settings: SQLite/PostgreSQL (to change from SQLite to PostgreSQL, just set `DATABASE_TYPE=postgres`)
    - optionally set IGNORE_PATHS for the folders which shouldn't be tracked by GPT Pilot in workspace, useful to ignore folders created by compilers (i.e. `IGNORE_PATHS=folder1,folder2,folder3`)
-9. `python db_init.py` (initialize the database)
-10. `python main.py` (start GPT Pilot)
+9. `python main.py` (start GPT Pilot)
 
 After, this, you can just follow the instructions in the terminal.
 
 All generated code will be stored in the folder `workspace` inside the folder named after the app name you enter upon starting the pilot.
 
+# 🔎 [Examples](https://github.com/Pythagora-io/gpt-pilot/wiki/Apps-created-with-GPT-Pilot)
+
+[Click here](https://github.com/Pythagora-io/gpt-pilot/wiki/Apps-created-with-GPT-Pilot) to see all example apps created with GPT Pilot.
 
 ## 🐳 How to start gpt-pilot in docker?
 1. `git clone https://github.com/Pythagora-io/gpt-pilot.git` (clone the repo)
@@ -95,8 +131,7 @@ All generated code will be stored in the folder `workspace` inside the folder na
 4. run `docker compose build`. this will build a gpt-pilot container for you.
 5. run `docker compose up`.
 6. access the web terminal on `port 7681`
-7. `python db_init.py` (initialize the database)
-8. `python main.py` (start GPT Pilot)
+7. `python main.py` (start GPT Pilot)
 
 This will start two containers, one being a new image built by the `Dockerfile` and a Postgres database. The new image also has [ttyd](https://github.com/tsl0922/ttyd) installed so that you can easily interact with gpt-pilot. Node is also installed on the image and port 3000 is exposed.
 
@@ -111,20 +146,15 @@ Lists all existing apps.
 python main.py --get-created-apps-with-steps
 ```
 
-## `app_id` and `workspace`
+<br>
+
+## `app_id`
 Continue working on an existing app using **`app_id`**
 ```bash
 python main.py app_id=<ID_OF_THE_APP>
 ```
 
-_or_ **`workspace`** path:
-
-```bash
-python main.py workspace=<PATH_TO_PROJECT_WORKSPACE>
-```
-
-Each user can have their own workspace path for each App.
-
+<br>
 
 ## `step`
 Continue working on an existing app from a specific **`step`** (eg: `development_planning`)
@@ -132,76 +162,36 @@ Continue working on an existing app from a specific **`step`** (eg: `development
 python main.py app_id=<ID_OF_THE_APP> step=<STEP_FROM_CONST_COMMON>
 ```
 
+<br>
 
 ## `skip_until_dev_step`
 Continue working on an existing app from a specific **development step**
 ```bash
 python main.py app_id=<ID_OF_THE_APP> skip_until_dev_step=<DEV_STEP>
 ```
-This is basically the same as `step` but during the development process. If you want to play around with gpt-pilot, this is likely the flag you will often use.
+Continue working on an existing app from a specific **`development step`**. If you want to play around with GPT Pilot, this is likely the flag you will often use.
+
 <br>
 
-Erase all development steps previously done and continue working on an existing app from the start of development.
 
 ```bash
 python main.py app_id=<ID_OF_THE_APP> skip_until_dev_step=0
 ```
+Erase all development steps previously done and continue working on an existing app from the start of development.
+
 
 ## `theme`
 ```bash
 python main.py theme=light
 ```
-
-![屏幕截图 2023-10-15 103907](https://github.com/Pythagora-io/gpt-pilot/assets/138990495/c3d08f21-7e3b-4ee4-981f-281d1c97149e)
 ```bash
 python main.py theme=dark
 ```
-- Dark mode.
-![屏幕截图 2023-10-15 104120](https://github.com/Pythagora-io/gpt-pilot/assets/138990495/942cd1c9-b774-498e-b72a-677b01be1ac3)
-
-# 🔎 Examples
-### Backend system for billing, admin, and user management
-- 💬 [Full initial prompt + additional features prompts](https://github.com/Pythagora-io/credit-based-backend-gpt-pilot-example/tree/main/prompts)
-- ▶️ [Video overview of app features](https://youtu.be/-OB6BJKADEo)
-- 💻️ [GitHub repo](https://github.com/Pythagora-io/credit-based-backend-gpt-pilot-example)
-- 📊 Stats:
-  - **3185** lines of code
-  - **104** files
-  - **~3** days of work
-
-### SQLite db analytics app
-- 💬 [All prompts used (initial and for additional features)](https://github.com/Pythagora-io/gpt-pilot-sqlite-analysis-tool/tree/main/prompts)
-- ▶️ [Video overview of app features](https://youtu.be/7t-Q2e7QsbE)
-- 💻️ [GitHub repo](https://github.com/Pythagora-io/gpt-pilot-sqlite-analysis-tool)
-- 📊 Stats:
-  - **730** lines of code
-  - **9** files
-  - **6** hours of work
-
-## Simple Examples
-### 📱 Real-time chat app
-- 💬 Prompt: `A simple chat app with real-time communication`
-- ▶️ [Video of the app creation process](https://youtu.be/bUj9DbMRYhA)
-- 💻️ [GitHub repo](https://github.com/Pythagora-io/gpt-pilot-chat-app-demo)
-
-
-### 📝 Markdown editor
-- 💬 Prompt: `Build a simple markdown editor using HTML, CSS, and JavaScript. Allow users to input markdown text and display the formatted output in real-time.`
-- ▶️ [Video of the app creation process](https://youtu.be/uZeA1iX9dgg)
-- 💻️ [GitHub repo](https://github.com/Pythagora-io/gpt-pilot-demo-markdown-editor.git)
-
-
-### ⏱️ Timer app
-- 💬 Prompt: `Create a simple timer app using HTML, CSS, and JavaScript that allows users to set a countdown timer and receive an alert when the time is up.`
-- ▶️ [Video of the app creation process](https://youtu.be/CMN3W18zfiE)
-- 💻️ [GitHub repo](https://github.com/Pythagora-io/gpt-pilot-timer-app-demo)
 
 <br>
 
 # 🏗 How GPT Pilot works?
 Here are the steps GPT Pilot takes to create an app:
-
-![GPT Pilot workflow](https://github.com/Pythagora-io/gpt-pilot/assets/10895136/d89ba1d4-1208-4b7f-b3d4-76e3ccea584e)
 
 1. You enter the app name and the description.
 2. **Product Owner agent** like in real life, does nothing. :)
@@ -215,9 +205,6 @@ Here are the steps GPT Pilot takes to create an app:
 10. **Debugger agent** hate to see him, but he is your best friend when things go south.
 11. **Technical Writer agent** writes documentation for the project.
 
-![GPT Pilot Coding Workflow](https://github.com/Pythagora-io/gpt-pilot/assets/10895136/53ea246c-cefe-401c-8ba0-8e4dd49c987b)
-
-
 <br>
 
 # 🕴How's GPT Pilot different from _Smol developer_ and _GPT engineer_?
@@ -227,10 +214,7 @@ Here are the steps GPT Pilot takes to create an app:
 - **Works at scale** - GPT Pilot isn't meant to create simple apps but rather so it can work at any scale. It has mechanisms that filter out the code, so in each LLM conversation, it doesn't need to store the entire codebase in context, but it shows the LLM only the relevant code for the current task it's working on. Once an app is finished, you can continue working on it by writing instructions on what feature you want to add.
 
 # 🍻 Contributing
-If you are interested in contributing to GPT Pilot, I would be more than happy to have you on board and also help you get started. Feel free to ping [zvonimir@pythagora.ai](mailto:zvonimir@pythagora.ai), and I'll help you get started.
-
-## 🔬️ Research
-Since this is a research project, there are many areas that need to be researched on both practical and theoretical levels. We're happy to hear how the entire GPT Pilot concept can be improved. For example, maybe it would work better if we structured functional requirements differently, or maybe technical requirements need to be specified in a different way.
+If you are interested in contributing to GPT Pilot, join [our Discord server](https://discord.gg/HaqXugmxr9), check out open [GitHub issues](https://github.com/Pythagora-io/gpt-pilot/issues), and see if anything interests you. We would be happy to get help in resolving any of those. The best place to start is by reviewing blog posts mentioned above to understand how the architecture works before diving into the codebase.
 
 ## 🖥 Development
 Other than the research, GPT Pilot needs to be debugged to work in different scenarios. For example, we realized that the quality of the code generated is very sensitive to the size of the development task. When the task is too broad, the code has too many bugs that are hard to fix, but when the development task is too narrow, GPT also seems to struggle in getting the task implemented into the existing code.
@@ -242,8 +226,3 @@ To improve GPT Pilot, we are tracking some events from which you can opt out at 
 🌟 As an open-source tool, it would mean the world to us if you starred the GPT-pilot repo 🌟
 
 💬 Join [the Discord server](https://discord.gg/HaqXugmxr9) to get in touch.
-
-
-# 🌟 Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=Pythagora-io/gpt-pilot&type=Date)](https://star-history.com/#Pythagora-io/gpt-pilot&Date)
