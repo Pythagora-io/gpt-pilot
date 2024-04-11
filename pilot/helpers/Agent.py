@@ -13,4 +13,4 @@ class Agent:
 
         agentModelName = f'{role.upper()}_MODEL_NAME'
         if agentModelName in os.environ:
-            self.model = os.getenv(agentModelName, DEFAULT_MODEL_NAME)
+            self.model = os.getenv(agentModelName)
