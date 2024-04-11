@@ -37,10 +37,7 @@ class AgentConvo:
         self.high_level_step = self.agent.project.current_step
         self.temperature = temperature
 
-        if(model is None) :
-            self.model = agent.model
-        else :
-            self.model = model
+        self.model = model or agent.model
 
         # add system message
         system_message = get_sys_message(self.agent.role, self.agent.project.args)
