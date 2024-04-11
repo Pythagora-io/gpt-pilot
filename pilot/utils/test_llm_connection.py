@@ -489,7 +489,7 @@ solution-oriented decision-making in areas where precise instructions were not p
         function_calls = ARCHITECTURE
 
         # When
-        response = create_gpt_chat_completion(convo.messages, '', project, model, function_calls=function_calls)
+        response = create_gpt_chat_completion(convo.messages, '', project, function_calls=function_calls, model_name=model)
 
         # Then
         assert convo.messages[0]['content'].startswith('You are an experienced software architect')
@@ -545,7 +545,7 @@ The development process will include the creation of user stories and tasks, bas
 
         # with patch('utils.llm_connection.questionary', mock_questionary):
         # When
-        response = create_gpt_chat_completion(convo.messages, '', project, model, function_calls=function_calls)
+        response = create_gpt_chat_completion(convo.messages, '', project, function_calls=function_calls, model_name=model)
 
         # Then
         assert convo.messages[0]['content'].startswith('You are a tech lead in a software development agency')
