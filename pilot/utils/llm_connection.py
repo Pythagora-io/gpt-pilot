@@ -22,6 +22,8 @@ from .telemetry import telemetry
 
 tokenizer = tiktoken.get_encoding("cl100k_base")
 
+endpoint_url = os.getenv('ENDPOINT_URL')
+
 
 def get_tokens_in_messages(messages: List[str]) -> int:
     tokenized_messages = [tokenizer.encode(message['content']) for message in messages]
@@ -124,12 +126,13 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
         'stream': True
     }
 
-    # delete some keys if using "OpenRouter" API
-    if os.getenv('ENDPOINT') == 'OPENROUTER':
+    # delete some keys if using "OpenRouter" or "LiteLLM" API
+    if os.getenv('ENDPOINT') in ('OPENROUTER', 'LITELLM'):
         keys_to_delete = ['n', 'max_tokens', 'temperature', 'top_p', 'presence_penalty', 'frequency_penalty']
         for key in keys_to_delete:
             if key in gpt_data:
                 del gpt_data[key]
+
 
     # Advise the LLM of the JSON response schema we are expecting
     messages_length = len(messages)
@@ -137,17 +140,20 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
     if prompt_data is not None and function_call_message is not None:
         prompt_data['function_call_message'] = function_call_message
 
+ #parse provider and model 
     if '/' in model_name:
         model_provider, model_name = model_name.split('/', 1)
     else:
         model_provider = 'openai'
-
     try:
         if model_provider == 'anthropic' and os.getenv('ENDPOINT') != 'OPENROUTER':
-            if not os.getenv('ANTHROPIC_API_KEY'):
-                os.environ['ANTHROPIC_API_KEY'] = os.getenv('OPENAI_API_KEY')
+            if not os.getenv('API_KEY'):
+                os.environ['API_KEY'] = os.getenv('API_KEY')
             response = stream_anthropic(messages, function_call_message, gpt_data, model_name)
         else:
+            if os.getenv('ENDPOINT') == 'OPENROUTER':
+                #Openrouter needs provider 
+                model_name = model_provider+'/'+model_name
             response = stream_gpt_completion(gpt_data, req_type, project, model_name)
 
         # Remove JSON schema and any added retry messages
@@ -277,8 +283,14 @@ def retry_on_exception(func):
                     continue
 
                 print(color_red('There was a problem with request to openai API:'))
-                # spinner_stop(spinner)
+                #spinner_stop(spinner)
                 print(err_str)
+                headers = {
+                'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + get_api_key_or_throw('API_KEY'),
+                    'HTTP-Referer': 'https://github.com/Pythagora-io/gpt-pilot',
+                    'X-Title': 'GPT Pilot'
+                 }
                 logger.error(f'There was a problem with request to openai API: {err_str}')
 
                 project = args[2]
@@ -422,19 +434,23 @@ def stream_gpt_completion(data, req_type, project, model=None):
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug('\n'.join([f"{message['role']}: {message['content']}" for message in data['messages']]))
 
+
+    
     if endpoint == 'AZURE':
         # If yes, get the AZURE_ENDPOINT from .ENV file
-        endpoint_url = os.getenv('AZURE_ENDPOINT') + '/openai/deployments/' + model + '/chat/completions?api-version=2023-05-15'
+        endpoint_url = os.getenv('ENDPOINT') + '/openai/deployments/' + model + '/chat/completions?api-version=2023-05-15'
         headers = {
             'Content-Type': 'application/json',
-            'api-key': get_api_key_or_throw('AZURE_API_KEY')
+            'api-key': get_api_key_or_throw('API_KEY')
         }
     elif endpoint == 'OPENROUTER':
+
+
         # If so, send the request to the OpenRouter API endpoint
-        endpoint_url = os.getenv('OPENROUTER_ENDPOINT', 'https://openrouter.ai/api/v1/chat/completions')
+        endpoint_url = os.getenv('ENDPOINT_URL')
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + get_api_key_or_throw('OPENROUTER_API_KEY'),
+            'Authorization': 'Bearer ' + get_api_key_or_throw('API_KEY'),
             'HTTP-Referer': 'https://github.com/Pythagora-io/gpt-pilot',
             'X-Title': 'GPT Pilot'
         }
@@ -442,10 +458,10 @@ def stream_gpt_completion(data, req_type, project, model=None):
         data['model'] = model
     else:
         # If not, send the request to the OpenAI endpoint
-        endpoint_url = os.getenv('OPENAI_ENDPOINT', 'https://api.openai.com/v1/chat/completions')
+        endpoint_url = os.getenv('ENDPOINT_URL')
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + get_api_key_or_throw('OPENAI_API_KEY')
+            'Authorization': 'Bearer ' + get_api_key_or_throw('API_KEY')
         }
         data['model'] = model
 
@@ -461,11 +477,13 @@ def stream_gpt_completion(data, req_type, project, model=None):
         timeout=(API_CONNECT_TIMEOUT, API_READ_TIMEOUT),
     )
 
+
+
     if response.status_code == 401 and 'BricksLLM' in response.text:
         print("", type='keyExpired')
         msg = "Trial Expired"
-        key = os.getenv("OPENAI_API_KEY")
-        endpoint = os.getenv("OPENAI_ENDPOINT")
+        key = os.getenv("API_KEY")
+        endpoint = os.getenv("ENDPOINT")
         if key:
             msg += f"\n\n(using key ending in ...{key[-4:]}):"
         if endpoint:
@@ -618,7 +636,7 @@ def stream_anthropic(messages, function_call_message, gpt_data, model_name = "cl
         raise RuntimeError("The 'anthropic' package is required to use the Anthropic Claude LLM.") from err
 
     client = anthropic.Anthropic(
-        base_url=os.getenv('ANTHROPIC_ENDPOINT') or None,
+        base_url=os.getenv('ENDPOINT') or None,
     )
 
     claude_system = "You are a software development AI assistant."
