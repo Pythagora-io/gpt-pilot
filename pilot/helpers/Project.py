@@ -199,6 +199,8 @@ class Project:
 
         print('', type='verbose', category='agent:product-owner')
         self.project_manager.get_project_description(self.spec_writer)
+        telemetry.set("initial_prompt", self.project_description)
+        print({ "project_description": self.project_description }, type='projectDescription')
         self.project_manager.get_user_stories()
         # self.user_tasks = self.project_manager.get_user_tasks()
 
@@ -237,6 +239,7 @@ class Project:
                 self.finish_loading()
 
             self.previous_features = get_features_by_app_id(self.args['app_id'])
+            print({"featuresList": self.previous_features}, type='featuresList')
             if not self.skip_steps:
                 print('', type='verbose', category='pythagora')
                 if self.run_command and self.check_ipc():

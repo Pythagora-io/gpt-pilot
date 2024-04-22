@@ -1,0 +1,8 @@
+```
+{{ app_summary }}
+```
+
+The following is a user prompt for application/software tool they are trying to develop. Determine the complexity of the user's request. Do NOT respond with thoughts, reasoning, explanations or anything similar, return ONLY a numerical representation of the complexity level. Use the following scale:
+3 for HIGH_COMPLEXITY
+2 for MODERATE_COMPLEXITY
+1 for LOW_COMPLEXITY

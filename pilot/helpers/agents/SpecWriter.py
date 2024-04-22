@@ -1,13 +1,13 @@
 from helpers.AgentConvo import AgentConvo
 from helpers.Agent import Agent
-from utils.files import count_lines_of_code
+from utils.telemetry import telemetry
 from utils.style import color_green_bold, color_yellow_bold
 from prompts.prompts import ask_user
 from const.messages import AFFIRMATIVE_ANSWERS
 from utils.exit import trace_code_event
 
-
 INITIAL_PROJECT_HOWTO_URL = "https://github.com/Pythagora-io/gpt-pilot/wiki/How-to-write-a-good-initial-project-description"
+
 
 class SpecWriter(Agent):
     def __init__(self, project):
@@ -75,7 +75,6 @@ class SpecWriter(Agent):
 
         return llm_response
 
-
     def review_spec(self, initial_prompt, spec):
         convo = AgentConvo(self, temperature=0)
         llm_response = convo.send_message('spec_writer/review_spec.prompt', {
@@ -86,8 +85,19 @@ class SpecWriter(Agent):
             return None
         return llm_response.strip()
 
+    def check_app_complexity(self, initial_prompt):
+        convo = AgentConvo(self, temperature=0)
+        llm_response = convo.send_message('spec_writer/app_complexity.prompt', {
+            "app_summary": initial_prompt,
+        })
+        if llm_response == '1':
+            return False
+        return True
+
     def create_spec(self, initial_prompt):
-        if len(initial_prompt) > 1500:
+        self.project.is_complex_app = self.check_app_complexity(initial_prompt)
+        telemetry.set("is_complex_app", self.project.is_complex_app)
+        if len(initial_prompt) > 1500 or not self.project.is_complex_app:
             return initial_prompt
 
         print('', type='verbose', category='agent:spec-writer')

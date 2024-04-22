@@ -7,4 +7,4 @@ You are working in a software development agency and a project manager and softw
 
 {{ files_list }}{% endif %}
 
-{{ project_tasks }}
+{% if is_complex_app %}{{ project_tasks }}{% else %}This is very low complexity app and because of that, you have to create ONLY one task that is sufficient to fully develop this app.{% endif %}

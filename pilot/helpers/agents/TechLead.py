@@ -54,6 +54,7 @@ class TechLead(Agent):
                     "existing_summary": existing_summary,
                     "files": self.project.get_all_coded_files(),
                     "task_type": 'app',
+                    "is_complex_app": self.project.is_complex_app,
                 }, DEVELOPMENT_PLAN)
         self.project.development_plan = llm_response['plan']
 

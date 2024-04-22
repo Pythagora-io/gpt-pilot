@@ -100,10 +100,10 @@ def ask_user_email(project):
 
 def exit_gpt_pilot(project, ask_feedback=True):
     terminate_running_processes()
-    path_id = get_path_id()
+    # path_id = get_path_id()
 
     if ask_feedback:
-        ask_to_store_prompt(project, path_id)
+        # ask_to_store_prompt(project, path_id)
         ask_user_email(project)
 
     # TODO: Turned off for now because we're asking for email, and we don't want to

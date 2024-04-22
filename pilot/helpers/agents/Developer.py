@@ -114,7 +114,7 @@ class Developer(Agent):
                 should_update_plan = 'llm_solutions' in task_executed and task_executed['llm_solutions']
                 if num_of_finished_tasks < len(self.project.development_plan) and should_update_plan:
                     self.project.tech_lead.update_plan(task_source, task_executed['llm_solutions'], self.modified_files, i)
-            print_task_progress(i + 1, num_of_tasks, dev_task['description'], task_source, 'done')
+                print_task_progress(i + 1, num_of_tasks, dev_task['description'], task_source, 'done')
 
         # DEVELOPMENT END
         if not self.project.skip_steps:
@@ -152,6 +152,7 @@ class Developer(Agent):
         if not should_execute_task:
             return None
 
+        print_task_progress(i + 1, len(self.project.development_plan), development_task['description'], task_source, 'in_progress')
         print(color_green_bold(f'Implementing task #{i + 1}: ') + color_green(f' {development_task["description"]}\n'), category='pythagora')
         print(f'Starting task #{i + 1} implementation...', type='verbose', category='agent:developer')
         self.project.dot_pilot_gpt.chat_log_folder(i + 1)

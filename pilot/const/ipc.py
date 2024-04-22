@@ -18,6 +18,8 @@ MESSAGE_TYPE = {
     'projectStats': 'projectStats',        # Project stats for extension only
     'keyExpired': 'keyExpired',            # (Free trial) key expired message - for extension only
     'inputPrefill': 'inputPrefill',        # Prefill input field with text in extension
+    'projectDescription': 'projectDescription',  # Project description for extension only
+    'featuresList': 'featuresList',        # Features list for extension only
 }
 
 LOCAL_IGNORE_MESSAGE_TYPES = [
@@ -35,4 +37,6 @@ LOCAL_IGNORE_MESSAGE_TYPES = [
     'projectStats',
     'keyExpired',
     'inputPrefill',
+    'projectDescription',
+    'featuresList',
 ]
