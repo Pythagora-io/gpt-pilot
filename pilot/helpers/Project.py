@@ -199,6 +199,7 @@ class Project:
 
         print('', type='verbose', category='agent:product-owner')
         self.project_manager.get_project_description(self.spec_writer)
+        telemetry.set("initial_prompt", self.project_description)
         print({ "project_description": self.project_description }, type='projectDescription')
         self.project_manager.get_user_stories()
         # self.user_tasks = self.project_manager.get_user_tasks()
