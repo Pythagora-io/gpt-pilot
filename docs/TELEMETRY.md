@@ -16,6 +16,7 @@ The telemetry data we collect includes:
 - **GPT Pilot Version**: The version of GPT Pilot you are using.
 - **LLM Model**: LLM model used for the session.
 - **Time**: How long it took to generate a project.
+- **Initial prompt**: App description used to create app (after Specification Writer Agent).
 
 All the data points are listed in [pilot.utils.telemetry:Telemetry.clear_data()](../pilot/utils/telemetry.py).
 
