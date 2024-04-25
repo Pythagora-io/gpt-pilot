@@ -1,6 +1,6 @@
 from helpers.AgentConvo import AgentConvo
 from helpers.Agent import Agent
-from utils.files import count_lines_of_code
+from utils.telemetry import telemetry
 from utils.style import color_green_bold, color_yellow_bold
 from prompts.prompts import ask_user
 from const.messages import AFFIRMATIVE_ANSWERS
@@ -96,6 +96,7 @@ class SpecWriter(Agent):
 
     def create_spec(self, initial_prompt):
         self.project.is_complex_app = self.check_app_complexity(initial_prompt)
+        telemetry.set("is_complex_app", self.project.is_complex_app)
         if len(initial_prompt) > 1500 or not self.project.is_complex_app:
             return initial_prompt
 
