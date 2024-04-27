@@ -5,6 +5,7 @@ import os
 
 import sys
 import traceback
+from helpers.generate_specs import generate_specs
 
 try:
     from dotenv import load_dotenv
@@ -90,6 +91,11 @@ if __name__ == "__main__":
                 print('\n'.join(f"{app['id']}: {app['status']:20}      "
                                 f"{'' if len(app['development_steps']) == 0 else app['development_steps'][-1]['id']:3}"
                                 f"  {app['name']}" for app in get_created_apps_with_steps()))
+
+        elif '--generate-specs' in args:
+            generate_specs()
+            print(get_version())
+            run_exit_fn = False
 
         elif '--delete-app' in args:
             run_exit_fn = False
