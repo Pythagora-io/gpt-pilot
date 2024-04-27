@@ -1,0 +1,11 @@
+I have a project with the following folders and files:
+```
+{{ project_structure }}
+```
+
+I want you to read the file `{{ file_path }}` that has the following content:
+```
+{{ file_content }}
+```
+
+Now, tell me a description of what does this file do in 5 sentences.

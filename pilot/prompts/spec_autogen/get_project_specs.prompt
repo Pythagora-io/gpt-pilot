@@ -1,0 +1,17 @@
+I have a project with the following folders and files:
+```
+{{ project_structure }}
+```
+
+Here are the descriptions of all files and folders within `{{ folder_path }}`:
+```
+{% for child in children %}
+{% if child['description'] != None -%}
+The description for the {{ child['type'] }} {{ child['name'] }} is:
+{{ child['description'] }}
+{%- endif %}
+
+{% endfor %}
+```
+
+Tell me, how can the user use this application?
