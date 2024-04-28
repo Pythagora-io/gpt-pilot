@@ -14,7 +14,7 @@ IGNORED_FOLDERS = {'test', '.git', 'build', 'resources', '.github', '.idea', '__
 
 # API settings - make sure to replace 'your_api_key' with your actual OpenAI API key
 
-def call_openai_gpt(prompt, model="gpt-3.5-turbo"):
+def call_openai_gpt(prompt, model="gpt-35-turbo"):
     response = ''
     API_URL = os.getenv("AZURE_ENDPOINT")
     API_VERSION = os.getenv("AZURE_API_VERSION")
@@ -34,6 +34,8 @@ def call_openai_gpt(prompt, model="gpt-3.5-turbo"):
         stream=True,
     )
     for chunk in stream:
+        if chunk.choices == []:
+            continue
         c = chunk.choices[0].delta.content or ""
         response += c
         print(c, end="")
