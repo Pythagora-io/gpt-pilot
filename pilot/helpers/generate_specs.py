@@ -13,18 +13,18 @@ IGNORED_FOLDERS = {'test', '.git', 'build', 'resources', '.github', '.idea', '__
                    'integ-test', 'terraform', '.pytest_cache', 'venv', 'migrations', 'public', 'coverage', 'tmp'}
 
 # API settings - make sure to replace 'your_api_key' with your actual OpenAI API key
-API_URL = "https://at-oai-openai-poc-002.openai.azure.com/"
-API_VERSION = "2024-02-01"
-API_KEY = 'bd4415eb90b443248a367a671f4d31e7'
-
-client = AzureOpenAI(
-    api_version=API_VERSION,
-    azure_endpoint=API_URL,
-    api_key=API_KEY,
-)
 
 def call_openai_gpt(prompt, model="gpt-3.5-turbo"):
     response = ''
+    API_URL = os.getenv("AZURE_ENDPOINT")
+    API_VERSION = os.getenv("AZURE_API_VERSION")
+    API_KEY = os.getenv("AZURE_API_KEY")
+
+    client = AzureOpenAI(
+        api_version=API_VERSION,
+        azure_endpoint=API_URL,
+        api_key=API_KEY,
+    )
     stream = client.chat.completions.create(
         model=model,
         messages=[{
