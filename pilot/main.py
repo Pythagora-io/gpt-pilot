@@ -94,7 +94,6 @@ if __name__ == "__main__":
 
         elif '--generate-specs' in args:
             generate_specs()
-            print(get_version())
             run_exit_fn = False
 
         elif '--delete-app' in args:

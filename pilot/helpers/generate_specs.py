@@ -249,8 +249,8 @@ def generate_directory_structure(directory, prefix=''):
     return structure_str, tree_dict
 
 def generate_specs():
-    directory = "/Users/zvonimirsabljic/Development/gpt-pilot/pilot"
-    # directory = input("Please paste the directory path: ")
+    # directory = ""
+    directory = input("Please paste the directory path: ")
 
     if not os.path.isdir(directory):
         print("This is not a valid directory.")
@@ -261,7 +261,7 @@ def generate_specs():
     choice = input("Choose an option:\n"
                    "a) List all file extensions\n"
                    "b) Count the number of lines of code\n"
-                   "c) !!! Create the project specs !!!\n"
+                   "c) Create the project specs*\n"
                    "d) Print the folder structure\n"
                    "Enter your choice (a, b, c, or d): ")
 
