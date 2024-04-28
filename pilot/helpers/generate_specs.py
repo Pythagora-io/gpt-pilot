@@ -55,6 +55,12 @@ def call_openai_gpt(prompt, context, model="gpt-35-turbo"):
 
     if tokens > 14000:
         model = "gpt-4-turbo"
+    if tokens > 124000:
+        print("Too many tokens, skipping")
+        print('-'*80)
+        print(prompt)
+        print('-'*80)
+        return 'File too big so cannot be processed.'
 
     stream = client.chat.completions.create(
         model=model,
