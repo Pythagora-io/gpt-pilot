@@ -4,7 +4,16 @@ import subprocess
 from tabulate import tabulate
 from helpers.specs_database import initialize_db, save_processed_file
 from jinja2 import Template, Environment, FileSystemLoader
-from openai import AzureOpenAI
+from openai import AzureOpenAI, OpenAI
+import tiktoken
+from typing import List
+
+tokenizer = tiktoken.get_encoding("cl100k_base")
+
+
+def get_tokens_in_messages(messages: List[str]) -> int:
+    tokenized_messages = [tokenizer.encode(message['content']) for message in messages]
+    return sum(len(tokens) for tokens in tokenized_messages)
 
 ALLOWED_EXTENSIONS = {'.html', '.css', '.js', '.py', '.java', '.c', '.cpp', '.txt', '.md', '.json', '.xml', '.yaml',
                       '.pug', '.svelte', '.ts', '.tsx', '.less', '.scss', '.sh', '.feature'}
@@ -14,17 +23,39 @@ IGNORED_FOLDERS = {'test', '.git', 'build', 'resources', '.github', '.idea', '__
 
 # API settings - make sure to replace 'your_api_key' with your actual OpenAI API key
 
-def call_openai_gpt(prompt, model="gpt-35-turbo"):
+def call_openai_gpt(prompt, context, model="gpt-35-turbo"):
     response = ''
     API_URL = os.getenv("AZURE_ENDPOINT")
     API_VERSION = os.getenv("AZURE_API_VERSION")
     API_KEY = os.getenv("AZURE_API_KEY")
 
-    client = AzureOpenAI(
-        api_version=API_VERSION,
-        azure_endpoint=API_URL,
-        api_key=API_KEY,
-    )
+    tokens = get_tokens_in_messages([{
+        'role': 'user',
+        'content': prompt
+    }])
+
+    # print(f"API_URL: {API_URL}")
+    # print(f"API_VERSION: {API_VERSION}")
+    # print(f"API_KEY: {API_KEY}")
+    # print('model:', model)
+    print(f"File {context['file_path'] if 'file_path' in context else context['folder_path'] if 'folder_path' in context else 'FINAL'} has {tokens} tokens")
+
+    if not API_URL or not API_VERSION or not API_KEY:
+        client = OpenAI(
+            # This is the default and can be omitted
+            api_key=os.environ.get("OPENAI_API_KEY"),
+        )
+        model = "gpt-3.5-turbo"
+    else:
+        client = AzureOpenAI(
+            api_version=API_VERSION,
+            azure_endpoint=API_URL,
+            api_key=API_KEY,
+        )
+
+    if tokens > 14000:
+        model = "gpt-4-turbo"
+
     stream = client.chat.completions.create(
         model=model,
         messages=[{
@@ -63,7 +94,7 @@ def render_and_call_openai(template_path, context, model="gpt-35-turbo"):
     # print("Generated Prompt:", filled_prompt)  # Optional: for debugging/verification
 
     # Call OpenAI with the rendered prompt
-    return call_openai_gpt(filled_prompt, model)
+    return call_openai_gpt(filled_prompt, context, model)
 
 def list_extensions(directory):
     extensions = set()
