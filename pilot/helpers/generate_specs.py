@@ -44,7 +44,7 @@ def call_openai_gpt(prompt, model="gpt-35-turbo"):
     return response
 
 
-def render_and_call_openai(template_path, context, model="gpt-3.5-turbo"):
+def render_and_call_openai(template_path, context, model="gpt-35-turbo"):
     """
     Reads a Jinja template from a relative path, renders the template with the provided context,
     and calls the OpenAI API with the rendered prompt.
