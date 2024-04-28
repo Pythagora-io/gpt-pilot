@@ -3,15 +3,24 @@ I have a project with the following folders and files:
 {{ project_structure }}
 ```
 
-Here are the descriptions of all files and folders within `{{ folder_path }}`:
-```
-{% for child in children %}
-{% if child['description'] != None -%}
-The description for the {{ child['type'] }} {{ child['name'] }} is:
-{{ child['description'] }}
-{%- endif %}
+Here are the descriptions of all files and folders within `{{ folder_path }}`.
+{% macro print_element(element) -%}
+    {%- if element['description'] != None -%}
+The description for the {{ element['type'] }} `{{ element['path'] }}` is:
+{{ element['description'] }}
+--------------
 
-{% endfor %}
-```
+{% endif -%}
+    {%- if element.children -%}
+        {%- for child in element.children -%}
+            {{ print_element(child) }}
+        {%- endfor -%}
+    {%- endif -%}
+{%- endmacro -%}
+
+{%- for element in node.children -%}
+    {{ print_element(element) }}
+
+{%- endfor -%}
 
 Tell me, how can the user use this application?

@@ -14,4 +14,4 @@ The description for the {{ child['type'] }} {{ child['name'] }} is:
 {% endfor %}
 ```
 
-If you had to guess what does this folder do without having a context of the entire app of which it's a part of, what would you say that this folder is meant for?
+If you had to guess what does this file do without having a context of the entire app of which it's a part of, what would you say that this file is meant for? What are the features that this file supports?

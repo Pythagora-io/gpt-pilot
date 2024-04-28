@@ -196,6 +196,7 @@ def get_file_description(node, project_structure):
             'project_path': node['path'],
             'project_structure': project_structure,
             'children': node['children'],
+            'node': node,
             'is_root': True,
         }, 'gpt-4-turbo')
 
