@@ -137,7 +137,7 @@ def create_gpt_chat_completion(messages: List[dict], req_type, project,
     if prompt_data is not None and function_call_message is not None:
         prompt_data['function_call_message'] = function_call_message
 
-    if '/' in model_name:
+    if '/' in model_name and os.getenv('ENDPOINT') != 'OPENROUTER':
         model_provider, model_name = model_name.split('/', 1)
     else:
         model_provider = 'openai'
