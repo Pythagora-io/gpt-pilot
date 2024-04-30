@@ -178,6 +178,7 @@ class CodeMonkey(Agent):
     def remove_backticks(content: str) -> str:
         """
         Remove optional backticks from the beginning and end of the content.
+        Add a single trailing newline to meet coding standards
 
         :param content: content to remove backticks from
         :return: content without backticks
@@ -186,6 +187,8 @@ class CodeMonkey(Agent):
         end_pattern = re.compile(r"\n```\s*$")
         content = start_pattern.sub("", content)
         content = end_pattern.sub("", content)
+        content = content.strip()
+        content += "\n"
         return content
 
     def identify_file_to_change(self, code_changes_description: str, files: list[dict]) -> str:
