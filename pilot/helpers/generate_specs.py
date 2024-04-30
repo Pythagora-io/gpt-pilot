@@ -267,12 +267,14 @@ def generate_specs():
 
     if choice.lower() == 'a':
         extensions = list_extensions(directory)
+        if len(extensions) % 3 != 0:
+            extensions = extensions + ["-"] * (len(extensions) % 3)
         # Organize extensions into sublists of three
         it = iter(extensions)
         grouped_extensions = list(zip(*[it] * 3))
         # Handle any remaining extensions if total number isn't a multiple of 3
-        if len(extensions) % 3 != 0:
-            grouped_extensions.append(tuple(it))
+        # if len(extensions) % 3 != 0:
+        #     grouped_extensions.append(tuple(it))
         # Print the table with three columns
         print(tabulate(grouped_extensions, headers=["Extension 1", "Extension 2", "Extension 3"], tablefmt="grid"))
     elif choice.lower() == 'b':
