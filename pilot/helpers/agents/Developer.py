@@ -161,7 +161,10 @@ class Developer(Agent):
         # we get here only after all tasks but last one are loaded, so this must be final task
         if self.project.dev_steps_to_load and 'breakdown.prompt' in self.project.dev_steps_to_load[0]['prompt_path']:
             instructions = self.project.dev_steps_to_load[0]['llm_response']['text']
-            self.relevant_files = self.project.dev_steps_to_load[0]['prompt_data']['relevant_files'] if 'relevant_files' in self.project.dev_steps_to_load[0]['prompt_data'] else set()
+            files = self.project.dev_steps_to_load[0]['prompt_data']['files'] if 'files' in self.project.dev_steps_to_load[0]['prompt_data'] else set()
+            self.relevant_files = set()
+            for file in files:
+                self.relevant_files.add(os.path.join(file['path'], file['name']))
             convo_dev_task.messages = self.project.dev_steps_to_load[0]['messages']
             # remove breakdown from the head of dev_steps_to_load; if it's last, record it in checkpoint
             self.project.cleanup_list('dev_steps_to_load', int(self.project.dev_steps_to_load[0]['id']) + 1)
