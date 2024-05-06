@@ -6,18 +6,10 @@ Here is a high level description of "{{ name }}":
 ```
 {{ features_list }}
 
-{% if development_tasks and current_task %}
-Development process of this app was split into smaller tasks. Here is the list of all tasks:
-```{% for task in development_tasks %}
-{{ loop.index }}. {{ task['description'] }}
-{% endfor %}
-```
-You are currently working on task "{{ current_task.description }}" and you have to focus only on that task.
+You are currently working on, and have to focus only on, this task:
+`{{ current_task.description }}`
 
-{% endif %}
-A part of the app is already finished.
-
-The app currently contains the following files:
+A part of the app is already finished. Here is the list of files and descriptions that the app currently contains:
 {% for fpath, summary in file_summaries.items() %}
 * `{{ fpath }}`: {{ summary }}{% endfor %}
 
@@ -31,6 +23,9 @@ Focus on solving this issue in the following way:
 {{ next_solution_to_try }}
 ```
 {% endif %}
-Now, before you can work on this, you need to select which files from the above list are relevant to this task. Output the relevant files in a JSON list.
+
+**IMPORTANT**
+The files necessary for a developer to understand, modify, implement, and test the current task are considered to be relevant files.
+Your job is select  which of existing files are relevant for the current task. From the above list of files that app currently contains, you have to select ALL files that are relevant to the current task. Think step by step of everything that has to be done in this task and which files contain needed information. If you are unsure if a file is relevant or not, it is always better to include it in the list of relevant files.
 
 {{ relative_paths }}

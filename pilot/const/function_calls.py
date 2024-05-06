@@ -363,14 +363,14 @@ UPDATE_DEVELOPMENT_PLAN = {
                 },
                 "plan": {
                     "type": "array",
-                    "description": 'List of development tasks that still need to be done to implement the entire plan.',
+                    "description": 'List of unfinished tasks.',
                     "items": {
                         "type": "object",
-                        'description': 'Development task that needs to be implemented to finish the entire plan.',
+                        'description': 'List of unfinished tasks.',
                         'properties': {
                             'description': {
                                 'type': 'string',
-                                'description': 'Very detailed description of the development task that needs to be done to implement the entire plan.',
+                                'description': 'Detailed description of the unfinished development task.',
                             }
                         },
                         'required': ['description'],
