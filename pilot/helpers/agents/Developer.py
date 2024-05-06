@@ -161,6 +161,10 @@ class Developer(Agent):
         # we get here only after all tasks but last one are loaded, so this must be final task
         if self.project.dev_steps_to_load and 'breakdown.prompt' in self.project.dev_steps_to_load[0]['prompt_path']:
             instructions = self.project.dev_steps_to_load[0]['llm_response']['text']
+            files = self.project.dev_steps_to_load[0]['prompt_data']['files'] if 'files' in self.project.dev_steps_to_load[0]['prompt_data'] else set()
+            self.relevant_files = set()
+            for file in files:
+                self.relevant_files.add(os.path.join(file['path'], file['name']))
             convo_dev_task.messages = self.project.dev_steps_to_load[0]['messages']
             # remove breakdown from the head of dev_steps_to_load; if it's last, record it in checkpoint
             self.project.cleanup_list('dev_steps_to_load', int(self.project.dev_steps_to_load[0]['id']) + 1)
@@ -244,10 +248,6 @@ class Developer(Agent):
                 # remove latest ID (which can be last_iteration or last_detailed_user_review_goal) from the head of
                 # dev_steps_to_load; if it's last, record it in checkpoint
                 self.project.cleanup_list('dev_steps_to_load', max(id for id in ids if id is not None))
-
-        if self.relevant_files is None:
-            # Recompute relevant files after project load
-            self.relevant_files = self.filter_relevant_files(self.project.get_file_summaries(), current_task=development_task)
 
         while True:
             result = self.execute_task(convo_dev_task,
@@ -938,6 +938,7 @@ class Developer(Agent):
         }, IMPLEMENT_TASK)
 
         task_steps = llm_response['tasks']
+        review_convo.remove_last_x_messages(2)
         result = self.execute_task(review_convo, task_steps, task_source='review')
         return {
             'success': result['success'] if 'success' in result else False,
