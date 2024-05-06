@@ -938,6 +938,7 @@ class Developer(Agent):
         }, IMPLEMENT_TASK)
 
         task_steps = llm_response['tasks']
+        review_convo.remove_last_x_messages(2)
         result = self.execute_task(review_convo, task_steps, task_source='review')
         return {
             'success': result['success'] if 'success' in result else False,
