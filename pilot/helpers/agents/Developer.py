@@ -1090,9 +1090,13 @@ class Developer(Agent):
             "directory_tree": self.project.get_directory_tree(True),
             "current_task": development_task,
             "development_tasks": self.project.development_plan,
-            "files": self.project.get_all_coded_files(),
+            "files": self.project.get_all_coded_files(relevant_files=self.relevant_files),
+            "file_summaries": self.project.get_file_summaries(),
             "user_input": user_feedback,
             "previous_solutions": previous_solutions,
+            # TODO tried_alternative_solutions_to_current_issue is not used in prompt anymore because in case multiple
+            #  different issues are being solved, LLM gets confused and doesn't know which one to focus on. Long term
+            #  solution is to know when issues is solved and then clear tried_alternative_solutions_to_current_issue.
             "tried_alternative_solutions_to_current_issue": tried_alternative_solutions_to_current_issue,
             "previous_features": self.project.previous_features,
             "current_feature": self.project.current_feature,

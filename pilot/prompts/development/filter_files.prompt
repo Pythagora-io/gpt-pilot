@@ -7,7 +7,9 @@ Here is a high level description of "{{ name }}":
 {{ features_list }}
 
 You are currently working on, and have to focus only on, this task:
-`{{ current_task.description }}`
+```
+{{ current_task.description }}
+```
 
 A part of the app is already finished. Here is the list of files and descriptions that the app currently contains:
 {% for fpath, summary in file_summaries.items() %}
