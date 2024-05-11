@@ -1,6 +1,7 @@
 from playhouse.shortcuts import model_to_dict
 from utils.style import color_yellow, color_red
 from peewee import DoesNotExist, IntegrityError
+import sqlite3
 from functools import reduce
 import operator
 from database.config import DB_NAME, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DATABASE_TYPE
@@ -8,7 +9,6 @@ if DATABASE_TYPE == "postgres":
     import psycopg2
     from psycopg2.extensions import quote_ident
 
-import os
 from const.common import PROMPT_DATA_TO_IGNORE, STEPS
 from logger.logger import logger
 from database.models.components.base_models import database
@@ -585,6 +585,9 @@ def create_database():
         cursor.execute(f"CREATE DATABASE {safe_db_name}")
 
         cursor.close()
+        conn.close()
+    elif DATABASE_TYPE == "sqlite":
+        conn = sqlite3.connect(DB_NAME)
         conn.close()
     else:
         pass
