@@ -1,5 +1,7 @@
 import os
+from dotenv import load_dotenv
 
+load_dotenv(override=True)
 DATABASE_TYPE = os.getenv("DATABASE_TYPE", "sqlite")
 DB_NAME = os.getenv("DB_NAME")
 DB_HOST = os.getenv("DB_HOST")
