@@ -5,36 +5,20 @@ Here is a high level description of "{{ name }}":
 {{ app_summary }}
 ```
 {{ features_list }}
-Project architecture:
-{{ architecture }}
 
-Here are the technologies that you need to use for this project:
-{% for tech in technologies %}
-* {{ tech["name"] }} - {{ tech["description"] }}{% endfor %}
-
-{% if development_tasks and current_task %}
-Development process of this app was split into smaller tasks. Here is the list of all tasks:
-```{% for task in development_tasks %}
-{{ loop.index }}. {{ task['description'] }}
-{% endfor %}
+{% if current_task %}
+You are currently working on, and have to focus only on, this task:
 ```
-You are currently working on task "{{ current_task.description }}" and you have to focus only on that task.
+{{ current_task.description }}
+```
 
 {% endif %}
 A part of the app is already finished.
 {{ files_list }}
 
-You are trying to solve an issue that your colleague is reporting. You tried {{ previous_solutions|length }} times to solve it but it was unsuccessful.
-{% if tried_alternative_solutions_to_current_issue|length > 0 %}
-
-Here are the alternative solutions that you tried to solve the issue:
-{% for solution in tried_alternative_solutions_to_current_issue %}
-----------------------------start_of_solution_{{ loop.index }}----------------------------
-{{ solution }}
-----------------------------end_of_solution_{{ loop.index }}----------------------------
-{% endfor %}
-{% elif previous_solutions|length > 0 %}
-First time, your colleague gave you this report:
+You are trying to solve an issue that your colleague is reporting.
+{% if previous_solutions|length > 0 %}
+You tried {{ previous_solutions|length }} times to solve it but it was unsuccessful. In last few attempts, your colleague gave you this report:
 {% for solution in previous_solutions[-3:] %}
 ----------------------------start_of_report_{{ loop.index }}----------------------------
 {{ solution['user_feedback'] }}
@@ -52,7 +36,7 @@ Then, upon implementing these changes, your colleague came back with the followi
 {% endif %}
 
 {% if user_input != '' %}
-After implementing these changes as well, your colleague who is testing the app "{{ name }}" sent you this report now:
+Your colleague who is testing the app "{{ name }}" sent you this report now:
 ```
 {{ user_input }}
 ```
@@ -62,9 +46,8 @@ You tried to solve this problem before but your colleague is telling you that yo
 
 It seems that the solutions you're proposing aren't working.
 
-Now, think about 5 alternative solutions to get this code to work that are most probable to solve this issue.
+Now, think step by step about 5 alternative solutions to get this code to work that are most probable to solve this issue.
 
 Every proposed solution needs to be concrete and not vague (eg, it cannot be "Review and change apps functionality") and based on the code changes. A solution can be complex if it's related to the same part of the code (eg. "Try changing the input variables X, Y and Z to a method N").
 
 Order them in the order of the biggest probability of fixing the problem. A developer will then go through this list item by item, try to implement it, and check if it solved the issue until the end of the list.
-Let's think step by step.
