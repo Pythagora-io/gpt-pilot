@@ -93,6 +93,7 @@ class Project:
         self.development_plan = None
         self.previous_features = None
         self.current_feature = None
+        self.is_complex_app = True
         self.dot_pilot_gpt = DotGptPilot(log_chat_completions=True)
 
         if os.getenv("AUTOFIX_FILE_PATHS", "").lower() in ["true", "1", "yes"]:
