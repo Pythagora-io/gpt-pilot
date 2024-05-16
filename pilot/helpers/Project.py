@@ -95,6 +95,7 @@ class Project:
         self.current_feature = None
         self.is_complex_app = True
         self.dot_pilot_gpt = DotGptPilot(log_chat_completions=True)
+        self.language = os.getenv('LANGUAGE', 'en')
 
         if os.getenv("AUTOFIX_FILE_PATHS", "").lower() in ["true", "1", "yes"]:
             File.update_paths()

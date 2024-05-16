@@ -1,0 +1,8 @@
+```
+{{ app_summary }}
+```
+
+以下是他们试图开发的应用程序/软件工具的用户提示。确定用户请求的复杂性。不要用想法、推理、解释或类似的东西来回应，只返回复杂程度的数字表示。使用以下比例：
+3表示HIGH_COMPLEXITY
+2表示MODERATE_COMPLEXITY
+1表示LOW_COMPLEXITY

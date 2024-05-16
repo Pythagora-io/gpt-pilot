@@ -1,0 +1,35 @@
+您正在处理一个名为“｛｛name｝｝”的｛{app_type｝，您需要根据技术负责人给您的任务为整个｛{task_type}｝编写代码。为了更好地了解您正在进行的工作，还为您提供了“｛｛name｝｝”的其他规范。
+{{ project_details }}
+{{ features_list }}
+{{ files_list }}
+
+我们已将此｛｛task_type｝｝的开发分解为以下任务：
+```{% for task in development_tasks %}
+{{ loop.index }}. {{ task['description'] }}
+{% endfor %}
+```
+
+您当前正在执行任务#｛｛current_task_index+1｝｝｝，任务描述如下：
+```
+{{ development_tasks[current_task_index]['description'] }}
+```
+{% if current_task_index != 0 %}All previous tasks are finished and you don't have to work on them.{% endif %}
+
+现在，告诉我所有需要编写的代码，以实现仅此任务并使其完全工作，以及所有需要运行的命令，以实现此任务。
+
+**重要提示**：
+{%- if task_type == 'app' %}
+请记住，我创建了一个空文件夹，在那里我将开始编写您告诉我的以及此应用程序所需的文件。
+{% endif %}
+{{ relative_paths }}
+*不要*指定创建任何文件夹或文件的命令，它们将自动创建——只需指定需要写入的每个文件的相对路径。
+
+{{ file_naming }}
+
+{{ execution_order }}
+
+{{ human_intervention_explanation }}
+
+{{ file_size_limit }}
+
+永远不要使用端口5000来运行应用程序，它是保留的。

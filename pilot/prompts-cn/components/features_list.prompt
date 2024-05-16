@@ -1,0 +1,14 @@
+{% if previous_features %}
+改进前的原“{{ name }}”功能（特性）的高级描述如下：
+```
+{% for feature in previous_features %}
+- {{ loop.index }}. {{ feature['summary'] }}
+{% endfor %}
+```
+
+{% endif %}{% if current_feature %}
+当前要实现的功能（特性）的描述如下：:
+```
+{{ current_feature }}
+```
+{% endif %}

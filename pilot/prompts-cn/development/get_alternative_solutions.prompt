@@ -1,0 +1,70 @@
+您正在处理一个名为“{{ name }}｝”的{{app_type}}，需要为整个应用程序编写代码。
+
+以下是对“{{ name }}｝”的高级描述：
+```
+{{ app_summary }}
+```
+{{ features_list }}
+项目架构：
+{{ architecture }}
+
+以下是您需要用于此项目的技术：
+{% for tech in technologies %}
+* {{ tech["name"] }} - {{ tech["description"] }}{% endfor %}
+
+{% if development_tasks and current_task %}
+此应用程序的开发过程被拆分为较小的任务。以下是所有任务的列表：
+```{% for task in development_tasks %}
+{{ loop.index }}. {{ task['description'] }}
+{% endfor %}
+```
+您当前正在处理任务“｛｛current_task.description｝｝”，您必须只关注该任务。
+
+{% endif %}
+应用程序的一部分已完成。
+{{ files_list }}
+
+您正试图解决您的同事正在报告的问题。您尝试了｛｛previous_solutions|length｝｝次来解决它，但没有成功。
+{% if tried_alternative_solutions_to_current_issue|length > 0 %}
+
+以下是您试图解决此问题的替代解决方案：
+{% for solution in tried_alternative_solutions_to_current_issue %}
+----------------------------start_of_solution_{{ loop.index }}----------------------------
+{{ solution }}
+----------------------------end_of_solution_{{ loop.index }}----------------------------
+{% endfor %}
+{% elif previous_solutions|length > 0 %}
+第一次，你的同事给了你这份报告：
+{% for solution in previous_solutions[-3:] %}
+----------------------------start_of_report_{{ loop.index }}----------------------------
+{{ solution['user_feedback'] }}
+----------------------------end_of_report_{{ loop.index }}----------------------------
+
+Then, you gave the following proposal (proposal_{{ loop.index }}) of what needs to be done to fix the issue:
+----------------------------start_of_proposal_{{ loop.index }}----------------------------
+{{ solution['llm_proposal'] }}
+----------------------------end_of_of_proposal_{{ loop.index }}----------------------------
+
+{% if not loop.last %}
+然后，在实施这些更改后，您的同事返回时提交了以下报告：
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if user_input != '' %}
+在实施这些更改后，您正在测试应用程序“{{ name }}｝”的同事立即向您发送了此报告：
+```
+{{ user_input }}
+```
+
+你以前试图解决这个问题，但你的同事告诉你，你陷入了一个循环，所有的尝试都以相同的方式结束——但都出现了错误。
+{%- endif -%}
+
+你提出的解决方案似乎不起作用。
+
+现在，考虑5种最有可能解决此问题的替代解决方案，以使此代码发挥作用。
+
+每一个提议的解决方案都需要具体而不含糊（例如，它不能是“审查和更改应用程序功能”），并基于代码更改。如果解决方案与代码的同一部分相关，则可能会很复杂（例如，“尝试将输入变量X、Y和Z更改为方法N”）。
+
+按照解决问题的最大概率排序。然后，开发人员将逐项检查此列表，尝试实现它，并检查它是否解决了问题，直到列表结束。
+让我们一步一步地思考。

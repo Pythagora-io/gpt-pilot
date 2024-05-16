@@ -1,0 +1,48 @@
+{% if task_steps and step_index is not none -%}
+当前任务已拆分为多个步骤，每个步骤都是以下步骤之一：
+* `command` - 要运行的命令
+* `save_file` -  创建或更新文件
+* `human_intervention` - 如果人类需要做某事
+
+{% if step_index > 0 %}以下是已执行的步骤列表：
+{% for step in task_steps %}{% if loop.index0 < step_index %}
+{%- if step.type in ['save_file', 'code_change', 'modify_file'] -%}
+    {%- set type_content = step.get(step.type, None) -%}
+    {%- if type_content -%}
+        {%- if 'content' in type_content -%}
+            {%- set _ = type_content.update({'content': '...' }) -%}
+        {%- endif -%}
+        {%- if 'code_change_description' in type_content -%}
+            {%- set _ = type_content.update({'code_change_description': '...' }) -%}
+        {%- endif -%}
+    {%- else -%}
+        {%- if 'code_change_description' in step -%}
+            {%- set _ = step.update({'code_change_description': '...' }) -%}
+        {%- endif -%}
+    {%- endif -%}
+{%- endif -%}
+{{ step }}
+{% endif %}{% endfor %}{% endif %}
+以下是你当前正在调试的步骤：
+{{ task_steps[step_index] }}
+
+{% if step_index < task_steps|length - 1 %}以下是调试完成后将执行的步骤：
+{% for step in task_steps %}{% if loop.index0 > step_index %}
+{%- if step.type in ['save_file', 'code_change', 'modify_file'] -%}
+    {%- set type_content = step.get(step.type, None) -%}
+    {%- if type_content -%}
+        {%- if 'content' in type_content -%}
+            {%- set _ = type_content.update({'content': '...' }) -%}
+        {%- endif -%}
+        {%- if 'code_change_description' in type_content -%}
+            {%- set _ = type_content.update({'code_change_description': '...' }) -%}
+        {%- endif -%}
+    {%- else -%}
+        {%- if 'code_change_description' in step -%}
+            {%- set _ = step.update({'code_change_description': '...' }) -%}
+        {%- endif -%}
+    {%- endif -%}
+{%- endif -%}
+{{ step }}
+{% endif %}{% endfor %}{% endif %}
+{%- endif %}

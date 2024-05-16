@@ -1,0 +1,12 @@
+{{ steps_list }}
+{%- if task_steps and step_index is not none -%}
+当试图查看命令是否成功运行时，请考虑以前执行的步骤以及在当前步骤之后将执行的步骤。可能会出现命令似乎失败的情况，但会通过下一步操作进行修复。在这种情况下，你应该认为该命令已成功执行。
+{%- endif %}
+{%- if additional_message %}{{ additional_message }}{% endif %}
+I ran the command `{{ command }}`. The output was:
+{#%- if error_response %}, it {{ error_response }}{% endif %#}
+{{ cli_response }}
+
+想想这个输出，而不是以前消息中的任何输出。如果命令已成功执行，请用响应 `DONE`. 如果不是，请回复 `BUG`.
+
+不要使用这两个关键字以外的任何内容进行回复。

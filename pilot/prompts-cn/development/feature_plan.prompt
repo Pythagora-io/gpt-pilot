@@ -1,0 +1,81 @@
+你在一家软件开发机构工作，项目经理和软件架构师会告诉你，你被指派为现有项目添加新功能。
+你正在开发一个名为“{{ name }}”的{{ app_type }} ，
+你需要创建一个详细的开发计划，以便开发人员可以开始开发新功能。
+以下是对“{{ name }}”的高级描述：
+```
+{{ app_summary }}
+```
+
+{% if clarifications %}
+以下是一些额外的问题和答案，以澄清应用程序的描述：
+```
+{% for clarification in clarifications %}
+问: {{ clarification.question }}
+答: {{ clarification.answer }}
+{% endfor %}
+```
+
+{% endif %}
+{% if user_stories %}
+以下是指定用户如何使用“{{ name }}”的用户故事：
+```
+{% for story in user_stories %}
+- {{ story }}
+{% endfor %}
+```
+
+{% endif %}
+{% if user_tasks %}
+以下是指定用户需要执行哪些操作才能与“{{ name }}”进行交互的用户任务：
+```
+{% for task in user_tasks %}
+- {{ task }}
+{% endfor %}
+```
+
+{% endif %}
+以下是你需要在项目中使用的技术框架:
+```
+{% for tech in technologies %}
+- {{ tech }}
+{% endfor %}
+```
+
+以下是已完成编码的开发任务：
+```
+{{ development_tasks }}
+```
+
+{% if previous_features and previous_features|length > 0 %}
+在完成这些任务后，新功能被添加到{{ app_type }} ""{{ name }}""中。
+以下是已实现的所有功能的列表：
+{% for feature in previous_features %}
+- {{ loop.index }}. {{ feature['summary'] }}
+{% endfor %}
+
+{% endif %}
+以下是显示项目当前文件夹结构的目录树：
+```
+{{ directory_tree }}
+```
+
+应用程序及其所有功能已经完成并运行。以下是当前已实现的文件：
+{% for file in files %}
+**{{ file.path }}**:
+```
+{{ file.content }}
+```
+{% endfor %}
+
+最后，以下是需要添加到 {{ app_type }} "{{ name }}"中的新功能的描述：:
+```
+{{ feature_description }}
+```
+
+现在，你需要创建代码来让这个功能充分发挥作用，但在我们进入编码之前，我希望你把创建这个功能的开发过程分成更小的任务，这样更容易调试，并使这个功能完成。该功能的每个较小任务都必须是一个整体，开发人员可以对其进行审查，以确保我们在创建该功能的正确轨道上。确保你们并没有将功能拆分成太小的任务，它们需要按逻辑进行拆分，以便开发人员跟踪他的进度。
+
+每项任务都只需要与该功能的开发相关，不要有任何多余内容，只仅仅能使功能完成就够了。不应该有研究、部署、编写文档或任何与编写实际代码无关的内容。逐个思考任务，并创建与此特定功能相关的最少的任务。如果功能足够小，那么只有一个任务也是可以的。
+
+对于每个任务，都必须有一种方法让人类开发人员来检查任务是否完成。写下人类开发人员应该如何检查任务是否完成。
+
+现在，根据提供的项目细节和新功能描述，逐个任务进行思考，并为新功能创建整个开发计划。对于每个任务，写一个描述和一个用户评审目标。

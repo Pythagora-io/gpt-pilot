@@ -1,0 +1,42 @@
+好的，现在，把你以前的消息以“{{instructions_prefix}}”开头，以“{{instructions_postfix}}”结尾，并将其转换为将由机器执行的可操作步骤列表。分析整个消息，逐步思考，并确保在将此消息转换为步骤时不会遗漏任何信息。
+每个步骤可以是：
+
+* `command` - 要运行的命令（必须能够在{{os}}计算机上运行，假设当前工作目录是项目根文件夹）
+* `save_file` - 创建或更新一个文件
+* `human_intervention` - 如果你需要人工做某事，请使用此类步骤并详细解释你希望人工做什么。切勿使用“人工干预”进行测试，因为所有步骤完成后，测试将由专门的QA单独进行。此外，你不得使用“human_intervention”来要求人员编写或审查代码。
+
+**重要提示**：在`save_file` 步骤的`code_change_description` 字段中，必须提供空字符串。如果同一文件需要多个修改，你必须为每个文件提供单独的`save_file`步骤。
+
+{{ file_naming }}
+
+{{ relative_paths }}
+
+{{ execution_order }}
+
+**重要提示**：记住，永远不要输出人工干预步骤来进行手动测试或编码任务，即使之前的消息要求这样做！测试将在这些步骤之后进行，你*不得*将测试包括在这些步骤中.
+
+示例：
+------------------------example_1---------------------------
+```
+{
+  "tasks": [
+    {
+      "type": "save_file",
+      "save_file": {
+        "path": "./server.js",
+        "code_change_description": "",
+      },
+    },
+    {
+      "type": "command",
+      "command": {
+        "command": "mv ./index.js ./public/index.js"",
+        "timeout": "5000",
+        "success_message": "",
+        "command_id": "move_index_file"
+      }
+    }
+  ]
+}
+```
+------------------------end_of_example_1---------------------------

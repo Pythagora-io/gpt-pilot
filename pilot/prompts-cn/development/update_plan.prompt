@@ -1,0 +1,39 @@
+您正在处理一个名为“{{ name }}”的{{ app_type }}。为了让您更好地了解正在进行的工作，以下是对{{ app_type }}的描述：
+```
+{{ app_summary }}
+```
+
+创建了该｛｛task_source｝｝的开发计划，然后将｛{task_source}｝分解为较小的任务，以便更容易进行开发。
+
+以下是迄今为止已完成的任务：
+```{% for task in finished_tasks %}
+- 任务 #{{ loop.index }}
+描述： {{ task }}
+
+{% endfor %}```
+
+以下是仍需执行的任务：
+```{% for task in not_finished_tasks %}
+- 任务 #{{ finished|length + loop.index }}
+描述： {{ task }}
+
+{% endfor %}```
+
+这是您正在处理的最后一项任务：
+```
+{{ last_finished_task['description'] }}
+```
+在处理最后一个任务时，您正在根据用户对此｛｛task_source｝｝的反馈进行迭代。以下是所有迭代的列表：
+```{% for iteration in llm_solutions %}
+- 迭代 #{{ loop.index }}:
+
+用户反馈：{{ iteration['user_feedback'] }}
+开发人员解决方案：{{ iteration['llm_proposal'] }}
+{% endfor %}```
+
+{{ custom_files_list }}
+
+您需要一步一步地思考上次任务中完成了什么，并在需要时更新开发计划。所有提到的迭代都已成功执行并完成，这需要反映在更新的开发计划中。
+作为输出，您必须给出两件事：
+1.如果需要，根据目前实现的内容，改写/更新当前任务“updated_current_task”。考虑当前任务描述、在此任务期间实现的所有迭代以及对代码所做的所有更改。
+2.给我最新的仍需执行的任务列表。考虑当前开发计划中的所有任务、以前完成的任务以及此任务中执行的所有任务。应该有尽可能少的任务数量仍然需要执行才能完成应用程序。您必须仅列出需要实现并且未在以前的任务范围内或在当前任务的迭代过程中完成的任务。不要创建新任务，只从仍需执行的任务列表中删除任务，以防在当前任务中执行这些任务。

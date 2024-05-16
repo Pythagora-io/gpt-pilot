@@ -1,0 +1,61 @@
+您正在处理一个名为“{{ name }}”的{{ app_type }}，需要为整个应用程序编写代码。
+
+以下是对“{{ name }}”的高级描述：
+```
+{{ app_summary }}
+```
+{{ features_list }}
+项目架构：
+{{ architecture }}
+
+以下是您需要用于此项目的技术：
+{% for tech in technologies %}
+* {{ tech["name"] }} - {{ tech["description"] }}{% endfor %}
+
+{% if development_tasks and current_task %}
+此应用程序的开发过程被拆分为较小的任务。以下是所有任务的列表：
+```{% for task in development_tasks %}
+{{ loop.index }}. {{ task['description'] }}
+{% endfor %}
+```
+您当前正在处理任务“{{ current_task.description }}”，而你只需要专注于这项任务。
+
+{% endif %}
+A part of the app is already finished.
+{{ files_list }}
+
+{% if user_feedback != '' %}
+使用应用程序“{{ name }}”的用户向您发送了以下反馈：
+```
+{{ user_feedback }}
+```{% endif %}
+{% if user_feedback_qa %}反馈不够清晰，所以您向用户询问了其他信息，得到的答复是：
+```{% for row in user_feedback_qa %}
+Q: {{ row.question }}
+A: {{ row.answer }}
+{% endfor %}
+```{% endif %}
+{% if next_solution_to_try is not none %}
+重点通过以下方式解决此问题：
+```
+{{ next_solution_to_try }}
+```
+{% endif %}
+现在，您必须调试这个问题，并遵守附加的用户反馈。
+
+**重要提示**：
+想想提供的所有信息。你的工作是通过分析所有文件来了解问题所在。
+不要回复任何代码、你的想法或问题的分解。只回答解决方案的描述，解释解决问题的步骤。
+创建尽可能少的步骤来解决问题。每个步骤都应该用句子而不是代码来描述特定文件中需要进行哪些更改，或者描述需要执行的命令以继续处理该问题。
+当一个文件中有多件事需要完成时，将所有事情都写为一个步骤，不要将其拆分为多个步骤。
+您可以计算出环境是以前设置的，并且文件中列出的包已经安装，所以只告诉我安装新依赖项所需的命令（如果有的话）。
+
+**重要提示**：
+若报告中提到了“多个”问题，请将其视为有多个独立的报告：仔细考虑每个报告，并为每个报告提供解决方案。
+
+{{ execution_order }}
+
+{{ file_size_limit }}
+
+{{ file_naming }}
+{{ relative_paths }}

@@ -1,0 +1,27 @@
+以下是对“{{ name }}”的高级描述：
+```
+{{ app_summary }}
+```
+
+{% if architecture %}以下是项目架构的简短描述：
+{{ architecture }}
+
+{% endif %}{% if user_stories %}以下是指定用户如何使用“{{ name }}”的用户故事：
+```
+{% for story in user_stories %}
+- {{ story }}
+{% endfor %}
+```
+
+{% endif %}{% if user_tasks %}以下是指定用户需要执行哪些操作才能与“{{ name }}”交互的用户任务：
+```
+{% for task in user_tasks %}
+- {{ task }}
+{% endfor %}
+```
+
+{% endif %}{% if technologies %}以下是一些你需要在这个项目中使用的技术{% if task_type == 'feature' %} {% else %}{% endif %} ：
+{% for tech in technologies %}
+* {{ tech["name"] }} - {{ tech["description"] }}{% endfor %}
+
+{% endif %}

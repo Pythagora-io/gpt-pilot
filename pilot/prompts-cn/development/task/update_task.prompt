@@ -1,0 +1,41 @@
+{% if completed_steps|length > 1 -%}
+我们有一个如何调试的计划，我们已经完成了以下步骤：
+-------------------------list_of_completed_steps-------------------------{% for step in completed_steps[:-1] %}
+step #{{ loop.index - 1 }}:
+step_type: {{ step.type }}{% if 'command' in step %}
+command_to_run: `{{ step.command.command }}`{% elif step.type == 'code_change' %}
+code_change_description: `{{ step.code_change_description }}`{% endif %}{% endfor %}
+-------------------------END_list_of_completed_steps-------------------------
+{% else %}
+我们有一个如何调试的计划。
+{%- endif %}
+
+现在，我们正在进行步骤 #{{ current_step_index }}:
+-------------------------current_step-------------------------
+step_type: {{ current_step.type }}
+command_to_run: `{{ current_step.command.command }}`
+-------------------------END_current_step-------------------------
+
+我们已经运行了命令 `{{ current_step.command.command }}` ，得到了以下输出：
+{{ cli_response }}
+
+{% if next_steps %}
+以下是将在当前步骤之后执行的步骤列表：
+-------------------------list_of_next_steps-------------------------
+{% for step in next_steps %}
+--step_{{ loop.index + current_step_index }}--
+step_type: {{ step.type }}{% if 'command' in step %}
+command_to_run: `{{ step.command.command }}`{% elif step.type == 'code_change' %}
+code_change_description: `{{ step.code_change_description }}`{% endif %}
+--END_step_{{ loop.index + current_step_index }}--{% endfor %}
+-------------------------END_list_of_next_steps-------------------------
+
+{% endif %}
+现在，一步一步地思考，并根据我们从运行中获得的输出创建一个新的任务步骤列表来完成此任务`{{ current_step.command.command }}`.它要么与现在相同，要么可能不再需要任何下一个任务步骤。
+
+{{ file_naming }}
+{{ relative_paths }}
+
+{{ execution_order }}
+
+{{ file_size_limit }}

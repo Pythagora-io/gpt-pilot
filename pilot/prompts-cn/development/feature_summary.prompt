@@ -1,0 +1,22 @@
+你正在处理一个名为“{{ name }}”的{{ app_type }}，需要为新功能创建摘要。
+以下是对“{{ name }}”的高级描述：
+```
+{{ app_summary }}
+```
+
+成功编码{{ app_type }}后，用户要求改进。以下是用户的问题：
+```
+{{ feature_description }}
+```
+
+然后为该功能创建了一个开发计划，然后将该功能分解为较小的任务，以便更容易进行开发。以下是发展计划：
+```{% for task in development_tasks %}
+- {{ loop.index }}. {{ task['description'] }}
+{% endfor %}
+```
+
+你的目标是在尽可能少的句子中创建仅描述该功能的摘要。尽量短一点。
+
+你没有对项目或任务进行总结。仅此功能的摘要。
+
+{{summary_instructions}}

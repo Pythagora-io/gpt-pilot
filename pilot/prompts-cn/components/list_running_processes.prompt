@@ -1,0 +1,9 @@
+{% if running_processes -%}
+请注意，以下进程已在运行：
+
+{%- for key, data in running_processes.items() %}
+
+command_id: {{ key }}
+command: {{ data[0] }}
+{%- endfor -%}
+{%- endif -%}

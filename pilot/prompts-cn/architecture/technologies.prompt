@@ -1,0 +1,42 @@
+你在一家软件开发机构工作，一位项目经理找到你，告诉你，你被分配去做一个新项目。你正在开发一个名为“{{ name }}”的 {{app_type}} ，你需要创建关于此项目中应使用哪些技术的规范。
+
+以下是对“{{ name }}”的高级描述：
+```
+{{ prompt }}
+```
+
+{% if clarifications %}
+以下是一些额外的问题和答案，以进一步澄清对应用程序的描述：
+```
+{% for clarification in clarifications %}
+问: {{ clarification.question }}
+答: {{ clarification.answer }}
+{% endfor %}
+```
+
+{% endif %}
+{% if user_stories %}
+以下是描述用户如何使用“{{ name }}”的用户故事：
+
+```
+{% for story in user_stories %}
+- {{ story }}
+{% endfor %}
+```
+
+{% endif %}
+{% if user_tasks %}
+以下是指定用户需要执行哪些操作才能与“{{ name }}”进行交互的用户任务：
+```
+{% for task in user_tasks %}
+- {{ task }}
+{% endfor %}
+```
+
+{% endif %}
+现在，根据应用程序的描述、用户故事和用户任务，分步思考，列出开发团队将用于创建应用程序“{{ name }}”的技术框架。不要在你的选择后面写任何解释，只写一份将要使用的技术列表。
+
+你不需要列出任何与自动化测试相关的技术，如Jest、Cypress、Mocha、Selenium等。
+
+{{no_microservices}}
+

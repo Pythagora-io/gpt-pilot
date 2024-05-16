@@ -1,0 +1,30 @@
+你正在编写一个名为“{{ name }}”的{{ app_type }}，为整个应用程序编写代码。
+
+以下是对“{{ name }}”的高级描述：
+```
+{{ app_summary }}
+```
+{{ features_list }}
+
+你当前正在处理并且必须仅专注于此任务：
+`{{ current_task.description }}`
+
+应用程序的一部分已完成。以下是应用程序当前包含的文件和说明列表：
+{% for fpath, summary in file_summaries.items() %}
+* `{{ fpath }}`: {{ summary }}{% endfor %}
+
+{% if user_feedback %}正在使用该应用程序"{{ name }}" 的用户向你发送了以下反馈：
+```
+{{ user_feedback }}
+```
+{% endif %}{% if next_solution_to_try %}
+重点通过以下方式解决此问题：
+```
+{{ next_solution_to_try }}
+```
+{% endif %}
+
+**重要**
+开发人员理解、修改、实现和测试当前任务所需的文件被视为相关文件。
+你的工作是选择与当前任务相关的现有文件。从上面应用程序当前包含的文件列表中，你必须选择与当前任务相关的所有文件。逐步思考此任务中必须完成的所有工作，以及哪些文件包含所需信息。如果你不确定某个文件是否相关，最好将其包含在相关文件列表中。
+{{ relative_paths }}

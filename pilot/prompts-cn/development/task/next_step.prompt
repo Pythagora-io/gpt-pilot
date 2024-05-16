@@ -1,0 +1,20 @@
+{% if step_index != 0 %}
+到目前为止，步骤 {{ finished_steps }} 已经结束了，让我们开始
+{% else %}
+让我们从{% endif %} 步骤 #{{ step_index }} 开始。 以下是此步骤的说明：
+```
+{{ step_description }}
+```
+逐步思考完成这一步骤需要做些什么。
+{% if step_type == 'COMMAND' %}
+使用完成此步骤所需运行的所有命令进行响应。
+{% elif step_type == 'CODE_CHANGE' %}
+首先，你需要了解当前编写的代码，以便能够适当地编写新代码或更新现有代码。
+{# Here are all the file that are written so far in a file tree format:
+```
+{{ directory_tree }}
+```
+#}
+在编写当前步骤的代码之前，使用需要查看的文件列表进行响应。
+此列表需要位于JSON数组中，其中每个项都是一个文件名。除了上面提到的JSON数组之外，不要使用其他任何东西进行响应。
+{% endif %}

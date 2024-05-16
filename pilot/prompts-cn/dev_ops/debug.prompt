@@ -1,0 +1,24 @@
+{{ steps_list }}
+{% if issue_description -%}
+你想让我检查一下 - `{{ issue_description }}` 但是有个问题
+{%- else -%}
+现在，我们需要调试这个问题
+{%- endif -%}
+{% if command %} 我们需要能够执行 `{{ command }}` 成功。 {% endif %}.
+{% if user_input %}我调查过这个问题。我希望您将我的发现作为调试此问题的重要组成部分。以下是我的发现：
+```
+{{ user_input }}
+```{% endif -%}
+我想让你创建一个步骤列表，这些步骤是n需要调试此问题。
+
+每个步骤可以是：
+
+* `command` - 要运行的命令（必须能够在{{os｝｝计算机上运行，假设当前工作目录是项目根文件夹）
+* `save_file` - 步骤将创建或更新一个文件，您需要彻底描述需要实现的内容。我将执行所要求的更改并通知您。
+* `human_intervention` - 如果你需要人工做某事，请使用此类步骤并详细解释你希望人工做什么。切勿使用“人工干预”进行测试，因为所有步骤完成后，测试将由专门的QA单独进行。
+
+{{ execution_order }}
+
+此外，请确保至少最后一步的“check_if_fixed”设置为TRUE。
+
+{{ file_size_limit }}
