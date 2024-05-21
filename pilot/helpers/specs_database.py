@@ -34,3 +34,12 @@ def save_processed_file(name, path, type, standalone_description='', contextual_
         # Create a new record
         ProcessedFile.create(name=name, path=path, type=type, standalone_description=standalone_description,
                              contextual_description=contextual_description)
+
+def get_processed_file(path, type):
+    """
+    Retrieve a processed file's content from the database and return the desired description
+    """
+    query = ProcessedFile.select().where(ProcessedFile.path == path)
+    if query.exists():
+        return query.get()
+    return None

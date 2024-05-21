@@ -2,13 +2,14 @@ import os
 from pathlib import Path
 import subprocess
 from tabulate import tabulate
-from helpers.specs_database import initialize_db, save_processed_file
+from helpers.specs_database import initialize_db, save_processed_file, get_processed_file
 from jinja2 import Template, Environment, FileSystemLoader
 from openai import AzureOpenAI, OpenAI
 import tiktoken
 from typing import List
 
 tokenizer = tiktoken.get_encoding("cl100k_base")
+get_from_database = False
 
 
 def get_tokens_in_messages(messages: List[str]) -> int:
@@ -65,6 +66,9 @@ def call_openai_gpt(prompt, context, model="gpt-35-turbo"):
     stream = client.chat.completions.create(
         model=model,
         messages=[{
+            'role': 'system',
+            'content': "You are a technical writer who is proficient in making project specifications. Your usual job is to create specifications for codebases that don't have any specs. You start with spec creation by looking at each file one by one individually and writing down what features this file might support. Then, when you have specs from all files, you go through the codebase once again and improve each file by knowing the context of other files as well. You start each of the specs by stating the file name and then writing the specs below. Here is an example:\n\nserver.js\nUsed for starting the server..."
+        }, {
             'role': 'user',
             'content': prompt
         }],
@@ -136,7 +140,7 @@ def traverse_tree_depth_first(node, action):
     action (function): A function that takes a node as an argument and performs an operation.
     """
     # If the node is a folder and has children, dive deeper first
-    if node['type'] == 'folder' and 'children' in node:
+    if (node['type'] == 'folder' or node['type'] == 'root') and 'children' in node:
         # for i in range(len(node['children'])):
         #     node['children'][i]['description'] = traverse_tree_depth_first(node['children'][i], action)
         for child in node['children']:
@@ -144,10 +148,13 @@ def traverse_tree_depth_first(node, action):
     # Apply the action to the current node
     return action(node)
 
-# def create_app_description():
-
+full_project_specs = ''
+def update_full_project_specs(node):
+    global full_project_specs
+    full_project_specs += '\n\n## ' + node['description']
 
 def create_project_specs(directory):
+    global full_project_specs
     printable_structure, project_structure = generate_directory_structure(directory)
 
     # pass #1: standalone descriptions
@@ -155,22 +162,27 @@ def create_project_specs(directory):
                                                                  lambda node: process_file_and_save(node, printable_structure, 'standalone'))
 
     project_structure['type'] = 'root'
-    project_specs = get_file_description(project_structure, project_structure)
+    project_specs_summary = get_file_description(project_structure, project_structure)
 
-    save_specs(project_specs)
+    traverse_tree_depth_first(project_structure, update_full_project_specs)
 
-    # pass #2: contextual descriptions
-    # traverse_tree_depth_first(project_structure, lambda node: process_file_and_save(node, printable_structure, 'contextual'))
+    save_specs(project_specs_summary, full_project_specs)
 
 
-def save_specs(specs):
-    file_path = 'output/project_specs.md'
 
+def save_specs(summary, full_specs):
+    file_path = 'output/full_project_specs.md'
     with open(file_path, 'w') as file:
-        file.write(specs)
+        file.write(full_specs)
+
+    file_path = 'output/project_spec_summary.md'
+    with open(file_path, 'w') as file:
+        file.write(summary)
 
 
 def process_file_and_save(node, project_structure, processing_type):
+    if get_from_database:
+        return getattr(get_processed_file(node['path'], processing_type), processing_type + '_description')
     description = get_file_description(node, project_structure)
     save_processed_file(node['name'],
                         node['path'],
