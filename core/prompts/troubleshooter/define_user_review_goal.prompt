@@ -1,0 +1,34 @@
+How can a human user test if this task was completed successfully?
+
+Please list actions, step by step, in order, that the user should take to verify the task. After each action, describe what the expected response is.
+
+**IMPORTANT**
+
+Follow these important rules when compiling a list of actions the user will take:
+
+1. Actions must be as specific as possible. You don't want the user to have to think anything through but rather that they just follow your instructions.
+2. In case this task can be tested by making an API request, you should always prefer to test functionality in the browser. In case you can't do that, do not suggest how can a request be made with Postman but rather write a full cURL command that the user can just run.
+3. Do not require the user to write any code or edit files to test this task.
+4. If the user must run a command, assume the user already has a terminal opened in the project root directory (no need to instruct the user "open the terminal" or "make sure you're in the project directory")
+5. The user is using {{ os }}, so the commands must run on that operating system
+6. Assume system services, such as the database, are already set up and running. Don't ask user to install or run any software other than the app they're testing.
+7. Don't ask the user to test things which aren't implemented yet (eg. opening a theoretical web page that doesn't exist yet, or clicking on a button that isn't implemented yet)
+
+Remember, these rules are very important and you must follow them!
+
+Here is an example output with a few user steps:
+---example---
+### Step 1
+Action: Start the server using `npm start`
+Expected result: You should see the message "Connected to database" or similar
+
+### Step 2
+Action: Open your web browser and visit http://localhost:3000/
+Expected result: Web page opens and you see a "Hello World" message with a contact form
+
+### Step 3
+Action: Click on the "Submit" button in the web form
+Expected result: Form is submitted, page is reloaded and "Thank you" message is shown
+---end_of_example---
+
+If nothing needs to be tested for this task, instead of outputting the steps, just output a single word: DONE
