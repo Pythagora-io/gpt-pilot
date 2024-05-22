@@ -1,7 +1,0 @@
-I received an incomplete JSON response. Please provide the remainder of the JSON object. I will append your entire response to the incomplete JSON data below so it is important that you must not include any of the data already received or any text that does not complete the JSON data.
-A response which starts with "Here is the remainder of the JSON object" would be an example of an invalid response, a preamble must NOT be included.
-Note that because the JSON data I have already received is an incomplete JSON object, you will not need to include the opening and closing curly braces in your response, but rather continue off from EXACTLY where the received JSON ends.
-
-JSON received:
-
-{{ received_json }}

@@ -1,4 +1,0 @@
-I want you to create the {{ app_type }} (let's call it "{{ name }}") that can be described like this:
-```
-{{ prompt }}
-```
