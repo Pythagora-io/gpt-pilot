@@ -167,7 +167,7 @@ class StateManager:
             f"step {state.step_index} (state id={state.id})"
         )
 
-        if self.current_state.current_epic:
+        if self.current_state.current_epic and self.ui:
             await self.ui.send_task_progress(
                 self.current_state.tasks.index(self.current_state.current_task) + 1,
                 len(self.current_state.tasks),
