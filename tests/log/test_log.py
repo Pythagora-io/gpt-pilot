@@ -9,7 +9,7 @@ def test_file_handler(tmp_path):
     cfg = LogConfig(level="DEBUG", output=output)
     setup(cfg, force=True)
 
-    logger = get_logger("pythagora")
+    logger = get_logger("core")
     logger.debug("debug message")
 
     assert len(logger.handlers) == 1
@@ -25,7 +25,7 @@ def test_log_level(capsys):
     cfg = LogConfig(level="WARNING", output=None)
     setup(cfg, force=True)
 
-    logger = get_logger("pythagora.test_default_setup")
+    logger = get_logger("core.test_default_setup")
     logger.debug("debug message")
     logger.info("info message")
     logger.warning("warning message")

@@ -12,7 +12,7 @@ def setup(config: LogConfig, force: bool = False):
     """
 
     root = getLogger()
-    logger = getLogger("pythagora")
+    logger = getLogger("core")
     # Only clear/remove existing log handlers if we're forcing a new setup
     if not force and (root.handlers or logger.handlers):
         return
