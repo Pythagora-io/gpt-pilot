@@ -2,8 +2,9 @@ import asyncio
 import signal
 import sys
 import time
+from copy import deepcopy
 from dataclasses import dataclass
-from os import getenv
+from os import environ
 from os.path import abspath, join
 from typing import Callable, Optional
 from uuid import UUID, uuid4
@@ -41,7 +42,7 @@ class LocalProcess:
         env: dict[str, str],
         bg: bool = False,
     ) -> "LocalProcess":
-        log.debug(f"Starting process: {cmd} (cwd={cwd}, env={env})")
+        log.debug(f"Starting process: {cmd} (cwd={cwd})")
         _process = await asyncio.create_subprocess_shell(
             cmd,
             cwd=cwd,
@@ -147,9 +148,7 @@ class ProcessManager:
         exit_handler: Optional[Callable] = None,
     ):
         if env is None:
-            env = {
-                "PATH": getenv("PATH"),
-            }
+            env = deepcopy(environ)
         self.processes: dict[UUID, LocalProcess] = {}
         self.default_env = env
         self.root_dir = root_dir
