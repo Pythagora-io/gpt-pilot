@@ -206,7 +206,9 @@ class BaseLLMClient:
                 err_msg = err.response.json().get("error", {}).get("message", "Incorrect API key")
                 if "[BricksLLM]" in err_msg:
                     # We only want to show the key expired message if it's from Bricks
-                    await self.error_handler(LLMError.KEY_EXPIRED)
+                    should_retry = await self.error_handler(LLMError.KEY_EXPIRED)
+                    if should_retry:
+                        continue
 
                 raise APIError(err_msg) from err
             except (openai.APIStatusError, anthropic.APIStatusError, groq.APIStatusError) as err:

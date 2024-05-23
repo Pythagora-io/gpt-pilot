@@ -117,18 +117,28 @@ class BaseAgent:
         if content is None:
             await self.ui.send_message("")
 
-    async def error_handler(self, error: LLMError, message: Optional[str] = None):
+    async def error_handler(self, error: LLMError, message: Optional[str] = None) -> bool:
         """
         Handle error responses from the LLM.
 
         :param error: The exception that was thrown the the LLM client.
         :param message: Optional message to show.
+        :return: Whether the request should be retried.
         """
 
         if error == LLMError.KEY_EXPIRED:
             await self.ui.send_key_expired(message)
+            answer = await self.ask_question(
+                "Would you like to retry the last step?",
+                buttons={"yes": "Yes", "no": "No"},
+            )
+            if answer.button == "yes":
+                return True
+
         elif error == LLMError.RATE_LIMITED:
             await self.stream_handler(message)
+
+        return False
 
     def get_llm(self, name=None) -> Callable:
         """
