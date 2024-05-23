@@ -29,6 +29,7 @@ class LLMRequest(Base):
     model: Mapped[str] = mapped_column()
     temperature: Mapped[float] = mapped_column()
     messages: Mapped[list[dict]] = mapped_column()
+    prompts: Mapped[list[str]] = mapped_column(server_default="[]")
     response: Mapped[Optional[str]] = mapped_column()
     prompt_tokens: Mapped[int] = mapped_column()
     completion_tokens: Mapped[int] = mapped_column()
@@ -68,6 +69,7 @@ class LLMRequest(Base):
             model=request_log.model,
             temperature=request_log.temperature,
             messages=request_log.messages,
+            prompts=request_log.prompts,
             response=request_log.response,
             prompt_tokens=request_log.prompt_tokens,
             completion_tokens=request_log.completion_tokens,

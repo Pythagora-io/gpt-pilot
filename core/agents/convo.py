@@ -21,6 +21,7 @@ class AgentConvo(Convo):
 
     def __init__(self, agent: "BaseAgent"):
         self.agent_instance = agent
+
         super().__init__()
         try:
             system_message = self.render("system")
@@ -49,6 +50,16 @@ class AgentConvo(Convo):
             "os": os,
         }
 
+    @staticmethod
+    def _serialize_prompt_context(context: dict) -> dict:
+        """
+        Convert data to JSON serializable format
+
+        This is done by replacing non-serializable values with
+        their string representations. This is useful for logging.
+        """
+        return json.loads(json.dumps(context, default=lambda o: str(o)))
+
     def render(self, name: str, **kwargs) -> str:
         self._init_templates()
 
@@ -62,11 +73,18 @@ class AgentConvo(Convo):
     def template(self, template_name: str, **kwargs) -> "AgentConvo":
         message = self.render(template_name, **kwargs)
         self.user(message)
+        self.prompt_log.append(
+            {
+                "template": f"{self.agent_instance.agent_type}/{template_name}",
+                "context": self._serialize_prompt_context(kwargs),
+            }
+        )
         return self
 
     def fork(self) -> "AgentConvo":
         child = AgentConvo(self.agent_instance)
         child.messages = deepcopy(self.messages)
+        child.prompt_log = deepcopy(self.prompt_log)
         return child
 
     def require_schema(self, model: BaseModel) -> "AgentConvo":
