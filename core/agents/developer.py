@@ -241,7 +241,7 @@ class Developer(BaseAgent):
             }
             for step in response.steps
         ]
-        if len(self.next_state.unfinished_steps) > 0:
+        if len(self.next_state.unfinished_steps) > 0 and source != "review":
             self.next_state.steps += [
                 # TODO: add refactor step here once we have the refactor agent
                 {
