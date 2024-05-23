@@ -382,8 +382,8 @@ class StateManager:
             try:
                 return LocalDiskVFS(root, allow_existing=load_existing, ignore_matcher=ignore_matcher)
             except FileExistsError:
-                log.warning(f"Directory {root} already exists, changing project folder to {self.project.folder_name}")
                 self.project.folder_name = self.project.folder_name + "-" + uuid4().hex[:7]
+                log.warning(f"Directory {root} already exists, changing project folder to {self.project.folder_name}")
                 await self.current_session.commit()
 
     def get_full_project_root(self) -> str:
@@ -398,18 +398,19 @@ class StateManager:
             raise ValueError("No project loaded")
         return os.path.join(config.fs.workspace_root, self.project.folder_name)
 
-    async def import_files(self) -> list[File]:
+    async def import_files(self) -> tuple[list[File], list[File]]:
         """
         Scan the file system, import new/modified files, delete removed files.
 
         The files are saved to / removed from `next_state`, but not committed
         to database until the new state is committed.
 
-        :return: List of imported files.
+        :return: Tuple with the list of imported files and the list of removed files.
         """
         known_files = {file.path: file for file in self.current_state.files}
         files_in_workspace = set()
         imported_files = []
+        removed_files = []
 
         for path in self.file_system.list():
             files_in_workspace.add(path)
@@ -430,8 +431,9 @@ class StateManager:
                 log.debug(f"File {path} was removed from workspace, deleting from project")
                 next_state_file = self.next_state.get_file_by_path(path)
                 self.next_state.files.remove(next_state_file)
+                removed_files.append(file)
 
-        return imported_files
+        return imported_files, removed_files
 
     async def restore_files(self) -> list[File]:
         """
