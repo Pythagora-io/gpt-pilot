@@ -10,7 +10,10 @@ Development process of this app was split into smaller tasks. Here is the list o
 {% endfor %}
 ```
 
-You are currently working on task "{{ current_task.description }}" and you have to focus only on that task.
+You are currently working on, and have to focus only on, this task:
+```
+{{ current_task.description }}
+```
 
 A part of the app is already finished.
 {% include "partials/files_list.prompt" %}

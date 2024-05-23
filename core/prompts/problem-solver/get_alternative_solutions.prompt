@@ -1,6 +1,10 @@
 You are working on an app called "{{ state.branch.project.name }}" and you need to write code for the entire {% if state.epics|length > 1 %}feature{% else %}app{% endif %} based on the tasks that the tech lead gives you. So that you understand better what you're working on, you're given other specs for "{{ state.branch.project.name }}" as well.
 
-{% include "partials/project_details.prompt" %}
+Here is a high level description of "{{ state.branch.project.name }}":
+```
+{{ state.specification.description }}
+```
+
 {% include "partials/features_list.prompt" %}
 
 We've broken the development of this {% if state.epics|length > 1 %}feature{% else %}app{% endif %} down to these tasks:
