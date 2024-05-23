@@ -5,6 +5,7 @@ __pycache__/
 htmlcov/
 dist/
 workspace/
+pilot-env/
 
 .coverage
 *.code-workspace

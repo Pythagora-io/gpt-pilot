@@ -54,6 +54,12 @@ class TaskSteps(BaseModel):
     steps: list[Step]
 
 
+class RelevantFiles(BaseModel):
+    relevant_files: list[str] = Field(
+        description="List of relevant files for the current task."
+    )
+
+
 class Developer(BaseAgent):
     agent_type = "developer"
     display_name = "Developer"
@@ -124,6 +130,8 @@ class Developer(BaseAgent):
             log.debug(f"Breaking down the iteration {description}")
             await self.send_message("Breaking down the current task iteration ...")
 
+        await self.get_relevant_files(user_feedback, description)
+
         await self.ui.send_task_progress(
             n_tasks,  # iterations and reviews can be created only one at a time, so we are always on last one
             n_tasks,
@@ -189,7 +197,7 @@ class Developer(BaseAgent):
         }
 
         await self.send_message("Breaking down the task into steps ...")
-        convo.template("parse_task").require_schema(TaskSteps)
+        convo.assistant(response).template("parse_task").require_schema(TaskSteps)
         response: TaskSteps = await llm(convo, parser=JSONParser(TaskSteps), temperature=0)
 
         # There might be state leftovers from previous tasks that we need to clean here
@@ -197,18 +205,26 @@ class Developer(BaseAgent):
         self.set_next_steps(response, source)
         return AgentResponse.done(self)
 
-    async def get_relevant_files(self) -> AgentResponse:
+    async def get_relevant_files(
+            self,
+            user_feedback: Optional[str] = None,
+            solution_description: Optional[str] = None
+    ) -> AgentResponse:
         log.debug("Getting relevant files for the current task")
         await self.send_message("Figuring out which project files are relevant for the next task ...")
 
         llm = self.get_llm()
-        convo = AgentConvo(self).template("filter_files", current_task=self.current_state.current_task)
+        convo = AgentConvo(self).template(
+            "filter_files",
+            current_task=self.current_state.current_task,
+            user_feedback=user_feedback,
+            solution_description=solution_description,
+        ).require_schema(RelevantFiles)
 
-        # FIXME: this doesn't validate correct structure format, we should use pydantic for that as well
-        llm_response: list[str] = await llm(convo, parser=JSONParser(), temperature=0)
+        llm_response: list[str] = await llm(convo, parser=JSONParser(RelevantFiles), temperature=0)
 
         existing_files = {file.path for file in self.current_state.files}
-        self.next_state.relevant_files = [path for path in llm_response if path in existing_files]
+        self.next_state.relevant_files = [path for path in llm_response.relevant_files if path in existing_files]
 
         return AgentResponse.done(self)
 

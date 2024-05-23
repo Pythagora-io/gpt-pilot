@@ -72,16 +72,18 @@ def convert_config(values: dict) -> Config:
             config.llm[provider].api_key = key
 
     provider = "openai"
-    model = values.get("MODEL_NAME", "gpt-4-turbo")
-    if "/" in model:
-        provider, model = model.split("/", 1)
+    model = values.get("MODEL_NAME")
+    if model:
+        if "/" in model:
+            provider, model = model.split("/", 1)
 
-    try:
-        agent_provider = LLMProvider(provider.upper())
-    except ValueError:
-        agent_provider = LLMProvider.OPENAI
+        try:
+            agent_provider = LLMProvider(provider.upper())
+        except ValueError:
+            agent_provider = LLMProvider.OPENAI
 
-    config.agent["default"].model = model
+        config.agent["default"].model = model
+
     config.agent["default"].provider = agent_provider
 
     ignore_paths = [p for p in values.get("IGNORE_PATHS", "").split(",") if p]
