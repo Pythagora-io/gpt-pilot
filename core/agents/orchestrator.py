@@ -275,11 +275,14 @@ class Orchestrator(BaseAgent):
             raise ValueError(f"Unknown step type: {step_type}")
 
     async def import_files(self) -> Optional[AgentResponse]:
-        imported_files = await self.state_manager.import_files()
-        if not imported_files:
+        imported_files, removed_files = await self.state_manager.import_files()
+        if not imported_files and not removed_files:
             return None
 
-        log.info(f"Imported new/changed files to project: {', '.join(f.path for f in imported_files)}")
+        if imported_files:
+            log.info(f"Imported new/changed files to project: {', '.join(f.path for f in imported_files)}")
+        if removed_files:
+            log.info(f"Removed files from project: {', '.join(f.path for f in removed_files)}")
 
         input_required_files: list[dict[str, int]] = []
         for file in imported_files:
