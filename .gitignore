@@ -5,7 +5,6 @@ __pycache__/
 htmlcov/
 dist/
 workspace/
-pilot/
 pilot-env/
 
 .coverage
@@ -18,4 +17,3 @@ config.json
 poetry.lock
 .DS_Store
 *.log
-brija.py

@@ -197,7 +197,7 @@ class Developer(BaseAgent):
         }
 
         await self.send_message("Breaking down the task into steps ...")
-        convo.template("parse_task").require_schema(TaskSteps)
+        convo.assistant(response).template("parse_task").require_schema(TaskSteps)
         response: TaskSteps = await llm(convo, parser=JSONParser(TaskSteps), temperature=0)
 
         # There might be state leftovers from previous tasks that we need to clean here
@@ -207,8 +207,8 @@ class Developer(BaseAgent):
 
     async def get_relevant_files(
             self,
-            user_feedback: Optional[str] = '',
-            solution_description: Optional[str] = ''
+            user_feedback: Optional[str] = None,
+            solution_description: Optional[str] = None
     ) -> AgentResponse:
         log.debug("Getting relevant files for the current task")
         await self.send_message("Figuring out which project files are relevant for the next task ...")
@@ -221,7 +221,6 @@ class Developer(BaseAgent):
             solution_description=solution_description,
         ).require_schema(RelevantFiles)
 
-        # FIXME: this doesn't validate correct structure format, we should use pydantic for that as well
         llm_response: list[str] = await llm(convo, parser=JSONParser(RelevantFiles), temperature=0)
 
         existing_files = {file.path for file in self.current_state.files}
