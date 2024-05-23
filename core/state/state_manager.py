@@ -382,8 +382,8 @@ class StateManager:
             try:
                 return LocalDiskVFS(root, allow_existing=load_existing, ignore_matcher=ignore_matcher)
             except FileExistsError:
-                log.warning(f"Directory {root} already exists, changing project folder to {self.project.folder_name}")
                 self.project.folder_name = self.project.folder_name + "-" + uuid4().hex[:7]
+                log.warning(f"Directory {root} already exists, changing project folder to {self.project.folder_name}")
                 await self.current_session.commit()
 
     def get_full_project_root(self) -> str:

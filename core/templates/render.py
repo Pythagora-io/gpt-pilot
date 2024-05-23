@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from os import walk
 from os.path import join, relpath
+from pathlib import Path
 from typing import Any, Callable
 
 from jinja2 import Environment, FileSystemLoader
@@ -93,7 +94,7 @@ class Renderer:
             for file in files:
                 file_path = join(path, file)  # actual full path of the template file
                 tpl_location = relpath(file_path, self.template_dir)  # template relative to template_dir
-                output_location = relpath(file_path, full_root)  # template relative to tree root
+                output_location = Path(file_path).relative_to(full_root).as_posix()  # template relative to tree root
 
                 if filter:
                     output_location = filter(output_location)

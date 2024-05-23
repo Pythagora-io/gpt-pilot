@@ -136,7 +136,7 @@ class LocalDiskVFS(VirtualFileSystem):
         self.ignore_matcher = ignore_matcher
 
     def get_full_path(self, path: str) -> str:
-        return os.path.normpath(os.path.join(self.root, path))
+        return os.path.abspath(os.path.normpath(os.path.join(self.root, path)))
 
     def save(self, path: str, content: str):
         full_path = self.get_full_path(path)
