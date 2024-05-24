@@ -275,14 +275,14 @@ class Orchestrator(BaseAgent):
             raise ValueError(f"Unknown step type: {step_type}")
 
     async def import_files(self) -> Optional[AgentResponse]:
-        imported_files, removed_files = await self.state_manager.import_files()
-        if not imported_files and not removed_files:
+        imported_files, removed_paths = await self.state_manager.import_files()
+        if not imported_files and not removed_paths:
             return None
 
         if imported_files:
             log.info(f"Imported new/changed files to project: {', '.join(f.path for f in imported_files)}")
-        if removed_files:
-            log.info(f"Removed files from project: {', '.join(f.path for f in removed_files)}")
+        if removed_paths:
+            log.info(f"Removed files from project: {', '.join(removed_paths)}")
 
         input_required_files: list[dict[str, int]] = []
         for file in imported_files:
@@ -295,7 +295,7 @@ class Orchestrator(BaseAgent):
             return AgentResponse.input_required(self, input_required_files)
 
         # Commit the newly imported file
-        log.debug(f"Committing imported files as a separate step {self.current_state.step_index}")
+        log.debug(f"Committing imported/removed files as a separate step {self.current_state.step_index}")
         await self.state_manager.commit()
         return None
 

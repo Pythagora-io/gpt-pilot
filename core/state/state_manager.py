@@ -431,7 +431,7 @@ class StateManager:
                 log.debug(f"File {path} was removed from workspace, deleting from project")
                 next_state_file = self.next_state.get_file_by_path(path)
                 self.next_state.files.remove(next_state_file)
-                removed_files.append(file)
+                removed_files.append(file.path)
 
         return imported_files, removed_files
 
