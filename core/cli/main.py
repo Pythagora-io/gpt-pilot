@@ -8,7 +8,6 @@ from core.config import LLMProvider, get_config
 from core.db.session import SessionManager
 from core.db.v0importer import LegacyDatabaseImporter
 from core.llm.base import APIError, BaseLLMClient
-from core.llm.convo import Convo
 from core.log import get_logger
 from core.state.state_manager import StateManager
 from core.telemetry import telemetry

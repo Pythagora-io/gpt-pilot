@@ -15,8 +15,6 @@ from core.agents.task_reviewer import TaskReviewer
 from core.agents.tech_lead import TechLead
 from core.agents.tech_writer import TechnicalWriter
 from core.agents.troubleshooter import Troubleshooter
-from core.config import LLMProvider, get_config
-from core.llm.convo import Convo
 from core.log import get_logger
 from core.telemetry import telemetry
 from core.ui.base import ProjectStage
