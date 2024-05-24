@@ -71,9 +71,9 @@ def convert_config(values: dict) -> Config:
         if key:
             config.llm[provider].api_key = key
 
-    provider = "openai"
     model = values.get("MODEL_NAME")
     if model:
+        provider = "openai"
         if "/" in model:
             provider, model = model.split("/", 1)
 
@@ -83,8 +83,7 @@ def convert_config(values: dict) -> Config:
             agent_provider = LLMProvider.OPENAI
 
         config.agent["default"].model = model
-
-    config.agent["default"].provider = agent_provider
+        config.agent["default"].provider = agent_provider
 
     ignore_paths = [p for p in values.get("IGNORE_PATHS", "").split(",") if p]
     if ignore_paths:
