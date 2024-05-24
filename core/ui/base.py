@@ -233,6 +233,12 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def loading_finished(self):
+        """
+        Notify the UI that loading has finished.
+        """
+        raise NotImplementedError()
+
 
 pythagora_source = UISource("Pythagora", "pythagora")
 

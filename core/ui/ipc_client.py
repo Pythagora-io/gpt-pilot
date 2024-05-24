@@ -36,6 +36,7 @@ class MessageType(str, Enum):
     HINT = "hint"
     KEY_EXPIRED = "keyExpired"
     INPUT_PREFILL = "inputPrefill"
+    LOADING_FINISHED = "loadingFinished"
 
 
 class Message(BaseModel):
@@ -312,6 +313,10 @@ class IPCClientUI(UIBase):
             MessageType.PROJECT_STATS,
             content=stats,
         )
+
+    async def loading_finished(self):
+        log.debug("Sending project loading finished signal to the extension")
+        await self._send(MessageType.LOADING_FINISHED)
 
 
 __all__ = ["IPCClientUI"]

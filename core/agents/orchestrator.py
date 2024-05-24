@@ -301,6 +301,8 @@ class Orchestrator(BaseAgent):
 
     async def init_ui(self):
         await self.ui.send_project_root(self.state_manager.get_full_project_root())
+        await self.ui.loading_finished()
+
         if self.current_state.epics:
             await self.ui.send_project_stage(ProjectStage.CODING)
         elif self.current_state.specification:

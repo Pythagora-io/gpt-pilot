@@ -115,7 +115,7 @@ class BaseAgent:
             await self.ui.send_stream_chunk(content, source=self.ui_source)
 
         if content is None:
-            await self.ui.send_message("")
+            await self.ui.send_message("", source=self.ui_source)
 
     async def error_handler(self, error: LLMError, message: Optional[str] = None) -> bool:
         """
