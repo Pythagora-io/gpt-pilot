@@ -53,10 +53,6 @@ class Orchestrator(BaseAgent):
         await self.init_ui()
         await self.offline_changes_check()
 
-        llm_api_check = await self.test_llm_access()
-        if not llm_api_check:
-            return False
-
         # TODO: consider refactoring this into two loop; the outer with one iteration per comitted step,
         # and the inner which runs the agents for the current step until they're done. This would simplify
         # handle_done() and let us do other per-step processing (eg. describing files) in between agent runs.
@@ -77,57 +73,6 @@ class Orchestrator(BaseAgent):
 
         # TODO: rollback changes to "next" so they aren't accidentally committed?
         return True
-
-    async def test_llm_access(self) -> bool:
-        """
-        Make sure the LLMs for all the defined agents are reachable.
-
-        Each LLM provider is only checked once.
-        Returns True if the check for successful for all LLMs.
-        """
-
-        config = get_config()
-        defined_agents = config.agent.keys()
-
-        convo = Convo()
-        convo.user(
-            " ".join(
-                [
-                    "This is a connection test. If you can see this,",
-                    "please respond only with 'START' and nothing else.",
-                ]
-            )
-        )
-
-        success = True
-        tested_llms: set[LLMProvider] = set()
-        for agent_name in defined_agents:
-            llm = self.get_llm(agent_name)
-            llm_config = config.llm_for_agent(agent_name)
-
-            if llm_config.provider in tested_llms:
-                continue
-
-            tested_llms.add(llm_config.provider)
-            provider_model_combo = f"{llm_config.provider.value} {llm_config.model}"
-            try:
-                resp = await llm(convo)
-            except Exception as err:
-                log.warning(f"API check for {provider_model_combo} failed: {err}")
-                success = False
-                await self.ui.send_message(f"Error connecting to the {provider_model_combo} API: {err}")
-                continue
-
-            if resp and len(resp) > 0:
-                log.debug(f"API check for {provider_model_combo} passed.")
-            else:
-                log.warning(f"API check for {provider_model_combo} failed.")
-                await self.ui.send_message(
-                    f"Error connecting to the {provider_model_combo} API. Please check your settings and internet connection."
-                )
-                success = False
-
-        return success
 
     async def offline_changes_check(self):
         """
