@@ -43,7 +43,7 @@ async def test_load_project(mock_get_config, testmanager):
 
     project_state = await sm.load_project(project_id=project.id)
 
-    assert project_state.branch.project == project
+    assert project_state.branch.project.id == project.id
 
 
 @pytest.mark.asyncio
@@ -70,7 +70,7 @@ async def test_load_project_branch(mock_get_config, testmanager):
 
     project_state = await sm.load_project(branch_id=project.branches[0].id)
 
-    assert project_state.branch.project == project
+    assert project_state.branch.project.id == project.id
 
 
 @pytest.mark.asyncio
@@ -93,7 +93,7 @@ async def test_load_specific_step(mock_get_config, testmanager):
 
     project_state = await sm.load_project(project_id=project.id, step_index=project.branches[0].states[0].step_index)
 
-    assert project_state.branch.project == project
+    assert project_state.branch.project.id == project.id
 
 
 @pytest.mark.asyncio
@@ -187,7 +187,7 @@ async def test_importing_changed_files_to_db(mock_get_config, tmpdir, testmanage
         assert os.path.exists(os.path.join(tmpdir, "test", "file2.txt"))
         assert os.path.exists(os.path.join(tmpdir, "test", "file3.txt"))
 
-        db_files = set([f.path for f in sm.current_state.files])
+        db_files = set(f.path for f in sm.current_state.files)
         assert "file1.txt" not in db_files
         assert "file2.txt" in db_files
         assert "file3.txt" in db_files
