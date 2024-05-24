@@ -83,8 +83,7 @@ def convert_config(values: dict) -> Config:
             agent_provider = LLMProvider.OPENAI
 
         config.agent["default"].model = model
-
-    config.agent["default"].provider = agent_provider
+        config.agent["default"].provider = agent_provider
 
     ignore_paths = [p for p in values.get("IGNORE_PATHS", "").split(",") if p]
     if ignore_paths:
