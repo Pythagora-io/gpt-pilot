@@ -55,9 +55,7 @@ class TaskSteps(BaseModel):
 
 
 class RelevantFiles(BaseModel):
-    relevant_files: list[str] = Field(
-        description="List of relevant files for the current task."
-    )
+    relevant_files: list[str] = Field(description="List of relevant files for the current task.")
 
 
 class Developer(BaseAgent):
@@ -206,20 +204,22 @@ class Developer(BaseAgent):
         return AgentResponse.done(self)
 
     async def get_relevant_files(
-            self,
-            user_feedback: Optional[str] = None,
-            solution_description: Optional[str] = None
+        self, user_feedback: Optional[str] = None, solution_description: Optional[str] = None
     ) -> AgentResponse:
         log.debug("Getting relevant files for the current task")
         await self.send_message("Figuring out which project files are relevant for the next task ...")
 
         llm = self.get_llm()
-        convo = AgentConvo(self).template(
-            "filter_files",
-            current_task=self.current_state.current_task,
-            user_feedback=user_feedback,
-            solution_description=solution_description,
-        ).require_schema(RelevantFiles)
+        convo = (
+            AgentConvo(self)
+            .template(
+                "filter_files",
+                current_task=self.current_state.current_task,
+                user_feedback=user_feedback,
+                solution_description=solution_description,
+            )
+            .require_schema(RelevantFiles)
+        )
 
         llm_response: list[str] = await llm(convo, parser=JSONParser(RelevantFiles), temperature=0)
 
@@ -290,9 +290,8 @@ class Developer(BaseAgent):
         user_response = await self.ask_question(
             "Edit the task description:",
             buttons={
-                # FIXME: Continue doesn't actually work, VSCode doesn't send the user
-                # message if it's clicked. Long term we need to fix the extension.
-                # "continue": "Continue",
+                # FIXME: must be lowercase becase VSCode doesn't recognize it otherwise. Needs a fix in the extension
+                "continue": "continue",
                 "cancel": "Cancel",
             },
             default="continue",

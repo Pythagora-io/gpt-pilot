@@ -66,7 +66,7 @@ async def start_new_project(sm: StateManager, ui: UIBase) -> bool:
     :param ui: User interface.
     :return: True if the project was created successfully, False otherwise.
     """
-    user_input = await ui.ask_question("What is the name of the project", allow_empty=False, source=pythagora_source)
+    user_input = await ui.ask_question("What is the project name?", allow_empty=False, source=pythagora_source)
     if user_input.cancelled:
         return False
 
