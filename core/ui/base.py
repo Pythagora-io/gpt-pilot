@@ -234,4 +234,6 @@ class UIBase:
         raise NotImplementedError()
 
 
-__all__ = ["UISource", "AgentSource", "UserInput", "UIBase"]
+pythagora_source = UISource("Pythagora", "pythagora")
+
+__all__ = ["UISource", "AgentSource", "UserInput", "UIBase", "pythagora_source"]

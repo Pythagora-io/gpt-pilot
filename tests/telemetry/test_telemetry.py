@@ -4,6 +4,7 @@ import httpx
 import pytest
 import pytest_asyncio
 
+from core.config import loader
 from core.telemetry import Telemetry
 
 
@@ -209,30 +210,16 @@ def test_record_crash(mock_settings):
 
     telemetry = Telemetry()
     try:
-        raise ValueError("test error")
+        loader.load("/tmp/this/file/does/not/exist")
     except Exception as err:
         telemetry.record_crash(err)
 
     assert telemetry.data["end_result"] == "failure"
     diag = telemetry.data["crash_diagnostics"]
-    assert diag["exception_class"] == "ValueError"
-    assert diag["exception_message"] == "test error"
-    assert diag["frames"][0]["file"] == "tests/telemetry/test_telemetry.py"
-    assert "ValueError: test error" in diag["stack_trace"]
-
-
-@patch("core.telemetry.settings")
-def test_record_crash_crashes(mock_settings):
-    mock_settings.telemetry = MagicMock(id="test-id", endpoint="test-endpoint", enabled=True)
-
-    telemetry = Telemetry()
-    telemetry.record_crash(None)
-
-    assert telemetry.data["end_result"] == "failure"
-    diag = telemetry.data["crash_diagnostics"]
-    assert diag["exception_class"] == "NoneType"
-    assert diag["exception_message"] == "None"
-    assert diag["frames"] == []
+    assert diag["exception_class"] == "FileNotFoundError"
+    assert "/tmp/this/file/does/not/exist" in diag["exception_message"]
+    assert diag["frames"][0]["file"] == "core/config/__init__.py"
+    assert "FileNotFoundError" in diag["stack_trace"]
 
 
 @patch("core.telemetry.settings")

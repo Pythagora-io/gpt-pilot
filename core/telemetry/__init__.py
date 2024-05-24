@@ -204,45 +204,62 @@ class Telemetry:
         self,
         exception: Exception,
         end_result: str = "failure",
-    ):
+    ) -> str:
         """
         Record crash diagnostics.
 
-        :param error: exception that caused the crash
+        The formatted stack trace only contains frames from the `core` package
+        of gpt-pilot.
+
+        :param exception: exception that caused the crash
+        :param end_result: end result of the application (default: "failure")
+        :return: formatted stack trace of the exception
 
         Records the following crash diagnostics data:
-        * full stack trace
+        * formatted stack trace
         * exception (class name and message)
-        * file:line for the last (innermost) 3 frames of the stack trace
+        * file:line for the last (innermost) 3 frames of the stack trace, only counting
+            the frames from the `core` package.
         """
         self.set("end_result", end_result)
 
         root_dir = Path(__file__).parent.parent.parent
-        stack_trace = traceback.format_exc()
         exception_class_name = exception.__class__.__name__
         exception_message = str(exception)
-        frames = []
 
-        # Let's not crash if there's something funny in frame or path handling
-        try:
-            tb = exception.__traceback__
-            while tb is not None:
-                frame = tb.tb_frame
-                file_path = Path(frame.f_code.co_filename).absolute().relative_to(root_dir).as_posix()
-                frame_info = {"file": file_path, "line": tb.tb_lineno}
-                if not file_path.startswith("pilot-env"):
-                    frames.append(frame_info)
-                tb = tb.tb_next
-        except:  # noqa
-            pass
+        frames = []
+        info = []
+
+        for frame in traceback.extract_tb(exception.__traceback__):
+            try:
+                file_path = Path(frame.filename).absolute().relative_to(root_dir).as_posix()
+            except ValueError:
+                # outside of root_dir
+                continue
+
+            if not file_path.startswith("core/"):
+                continue
+
+            frames.append(
+                {
+                    "file": file_path,
+                    "line": frame.lineno,
+                    "name": frame.name,
+                    "code": frame.line,
+                }
+            )
+            info.append(f"File `{file_path}`, line {frame.lineno}, in {frame.name}\n    {frame.line}")
 
         frames.reverse()
+        stack_trace = "\n".join(info) + f"\n{exception.__class__.__name__}: {str(exception)}"
+
         self.data["crash_diagnostics"] = {
             "stack_trace": stack_trace,
             "exception_class": exception_class_name,
             "exception_message": exception_message,
             "frames": frames[: self.MAX_CRASH_FRAMES],
         }
+        return stack_trace
 
     def record_llm_request(
         self,

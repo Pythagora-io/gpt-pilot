@@ -10,7 +10,7 @@ from core.llm.base import APIError
 from core.log import get_logger
 from core.state.state_manager import StateManager
 from core.telemetry import telemetry
-from core.ui.base import UIBase
+from core.ui.base import UIBase, pythagora_source
 
 log = get_logger(__name__)
 
@@ -35,28 +35,24 @@ async def run_project(sm: StateManager, ui: UIBase) -> bool:
     success = False
     try:
         success = await orca.run()
+        telemetry.set("end_result", "success:exit" if success else "failure:api-error")
     except KeyboardInterrupt:
         log.info("Interrupted by user")
         telemetry.set("end_result", "interrupt")
         await sm.rollback()
     except APIError as err:
         log.warning(f"LLM API error occurred: {err.message}")
-        await ui.send_message(f"LLM API error occurred: {err.message}")
-        await ui.send_message("Stopping Pythagora due to previous error.")
+        await ui.send_message(
+            f"Stopping Pythagora due to an error while calling the LLM API: {err.message}",
+            source=pythagora_source,
+        )
         telemetry.set("end_result", "failure:api-error")
         await sm.rollback()
     except Exception as err:
-        telemetry.record_crash(err)
-        await sm.rollback()
         log.error(f"Uncaught exception: {err}", exc_info=True)
-        await ui.send_message(f"Unrecoverable error occurred: {err}")
-
-    if success:
-        telemetry.set("end_result", "success:exit")
-    else:
-        # We assume unsuccessful exit (but not an exception) is a result
-        # of an API error that the user didn't retry.
-        telemetry.set("end_result", "failure:api-error")
+        stack_trace = telemetry.record_crash(err)
+        await sm.rollback()
+        await ui.send_message(f"Stopping Pythagora due to error:\n\n{stack_trace}", source=pythagora_source)
 
     await telemetry.send()
     return success
@@ -70,7 +66,7 @@ async def start_new_project(sm: StateManager, ui: UIBase) -> bool:
     :param ui: User interface.
     :return: True if the project was created successfully, False otherwise.
     """
-    user_input = await ui.ask_question("What is the name of the project", allow_empty=False)
+    user_input = await ui.ask_question("What is the name of the project", allow_empty=False, source=pythagora_source)
     if user_input.cancelled:
         return False
 
