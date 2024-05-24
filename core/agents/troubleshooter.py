@@ -250,7 +250,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
             user_response = await self.ask_question(
                 question,
                 buttons={
-                    "continue": "Submit answer",
+                    "continue": "continue",
                     "skip": "Skip this question",
                     "skip-all": "Skip all questions",
                 },
