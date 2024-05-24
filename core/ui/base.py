@@ -239,6 +239,24 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def send_project_description(self, description: str):
+        """
+        Send the project description to the UI.
+
+        :param description: Project description.
+        """
+        raise NotImplementedError()
+
+    async def send_features_list(self, features: list[str]):
+        """
+        Send the summaries of implemented features to the UI.
+
+        Features are epics after the initial one (initial project).
+
+        :param features: List of feature summaries.
+        """
+        raise NotImplementedError()
+
 
 pythagora_source = UISource("Pythagora", "pythagora")
 

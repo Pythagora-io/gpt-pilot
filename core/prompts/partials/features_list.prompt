@@ -2,8 +2,8 @@
 
 Here is the list of features that were previously implemented on top of initial high level description of "{{ state.branch.project.name }}":
 ```
-{% for feature in state.epics[1:] %}
-- {{ loop.index0 }}. {{ feature.summary }}
+{% for feature in state.epics[1:-1] %}
+- {{ loop.index0 }}. {{ feature.description }}
 {% endfor %}
 ```
 {% endif %}
@@ -11,6 +11,6 @@ Here is the list of features that were previously implemented on top of initial 
 
 Here is the feature that you are implementing right now:
 ```
-{{ state.unfinished_epics[0].description }}
+{{ state.current_epic.description }}
 ```
 {% endif %}
