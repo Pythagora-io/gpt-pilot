@@ -1,0 +1,46 @@
+You are working on a {{ app_type }} called "{{ name }}" and you need to create a detailed description for current state of project by analyzing the codebase. Your first task is to create a description text.
+
+{{ files_list }}
+
+Now, based on the project details provided, think step by step and create description text for this project. The file should have the following format:
+'''
+Short description (a few sentences) of the project based on the project details.
+
+Features:
+Description of what the app can do and how it can be used.
+
+Functional Specification:
+Description of what operations the app will perform and how it is expected to behave. It should include the app's behavior, the app's interactions with the user, and the app's responses to inputs. Also include any other necessary elements to ensure it comprehensively describes the functionality of the application.
+
+Technical Specification:
+Description of the architecture and technologies used in the project, and the project structure.
+'''
+
+
+Here is a example:
+'''
+The application is a simple TaskManage app built using React. Its primary function is to allow users to manage a list of tasks (todos). Each task has a description and a state (open or completed, with the default state being open). The application is frontend-only, with no user sign-up or authentication process. The goal is to provide a straightforward and user-friendly interface for task management.
+
+Features:
+1. Display of Todos: A list that displays all task items. Each item shows its description and a checkbox to indicate its state (open or completed).
+2. Add New task: A button to add a new task item. Clicking this button will prompt the user to enter a description for the new task.
+3. Toggle State: Each task item includes a checkbox. Checking/unchecking this box toggles the task's state between open and completed.
+4. Local Storage: The application will use the browser's local storage to persist todos between sessions, ensuring that users do not lose their data upon reloading the application.
+
+Functional Specification:
+- Upon loading the application, it fetches existing todos from the local storage and displays them in a list.
+- Each task item in the list displays a checkbox and a description. The checkbox reflects the task's current state (checked for completed, unchecked for open).
+- When the user checks or unchecks a checkbox, the application updates the state of the corresponding task item and saves the updated list to local storage.
+- Clicking the "Add New task" button prompts the user to enter a description for the new task. Upon confirmation, the application adds the new task (with the default state of open) to the list and updates local storage.
+- The application does not support deleting or editing task items to keep the interface and interactions simple.
+- Todos persist between sessions using the browser's local storage. The application saves any changes to the task list (additions or state changes) in local storage and retrieves this data when the application is reloaded.
+
+Technical Specification:
+- Platform/Technologies: The application is a web application developed using React. No backend technologies are required.
+- Styling: Use Bootstrap 5 for a simple and functional interface. Load Boostrap from the CDN (don't install it locally):
+    - https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css
+    - https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js
+- State Management: Directly in the React component
+    - make sure to initialize the state from the local storage as default (... = useState(JSON.parse(localStorage.getItem('todos')) || []) to avoid race conditions
+- Data Persistence: The application uses the browser's local storage to persist todos between sessions. It stores the array of todos as a JSON string and parses this data on application load.
+'''
