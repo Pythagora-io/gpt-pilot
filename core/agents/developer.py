@@ -262,10 +262,16 @@ class Developer(BaseAgent):
 
         :return: True if the task should be executed as is, False if the task is skipped or edited
         """
+        buttons = {"yes": "Yes", "edit": "Edit Task"}
+        if len(self.current_state.tasks) > 1:
+            buttons["skip"] = "Skip Task"
+
         description = self.current_state.current_task["description"]
+        await self.send_message("Starting new task with description:")
+        await self.send_message(description)
         user_response = await self.ask_question(
-            "Do you want to execute this task?",
-            buttons={"yes": "Yes", "edit": "Edit Task", "skip": "Skip Task"},
+            "Do you want to execute the above task?",
+            buttons=buttons,
             default="yes",
             buttons_only=True,
             hint=description,
