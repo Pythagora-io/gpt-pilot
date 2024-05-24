@@ -93,6 +93,9 @@ async def llm_api_check(ui: UIBase) -> bool:
             log.warning(f"API check for {llm_config.provider.value} failed with: {err}")
             success = False
 
+    if not success:
+        telemetry.set("end_result", "failure:api-error")
+
     return success
 
 
