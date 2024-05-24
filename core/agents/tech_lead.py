@@ -134,6 +134,7 @@ class TechLead(BaseAgent):
         self.next_state.tasks = self.current_state.tasks + [
             {
                 "id": uuid4().hex,
+                "epic_id": epic["id"],
                 "description": task.description,
                 "instructions": None,
                 "completed": False,
@@ -187,6 +188,7 @@ class TechLead(BaseAgent):
         self.next_state.tasks = finished_tasks + [
             {
                 "id": uuid4().hex,
+                "epic_id": epic["id"],
                 "description": task.description,
                 "instructions": None,
                 "completed": False,

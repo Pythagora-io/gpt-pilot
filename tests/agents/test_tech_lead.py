@@ -73,6 +73,7 @@ async def test_plan_epic(agentcontext):
 
     sm.current_state.epics = [
         {
+            "id": "abc",
             "name": "Initial Project",
             "description": "hello world",
             "complexity": Complexity.SIMPLE,
@@ -107,7 +108,7 @@ async def test_update_epic(agentcontext):
     """
     sm, _, ui, mock_get_llm = agentcontext
 
-    sm.current_state.epics = [{"name": "Initial Project"}]
+    sm.current_state.epics = [{"id": "abc", "name": "Initial Project"}]
     sm.current_state.tasks = [
         {"description": "Just Finished", "completed": False},
         {"description": "Future Task", "completed": False},
