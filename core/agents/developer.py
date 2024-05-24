@@ -264,10 +264,11 @@ class Developer(BaseAgent):
         """
         description = self.current_state.current_task["description"]
         user_response = await self.ask_question(
-            "Do you want to execute the this task:\n\n" + description,
+            "Do you want to execute this task?",
             buttons={"yes": "Yes", "edit": "Edit Task", "skip": "Skip Task"},
             default="yes",
             buttons_only=True,
+            hint=description,
         )
         if user_response.button == "yes":
             # Execute the task as is
