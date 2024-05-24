@@ -31,15 +31,6 @@ class Base(AsyncAttrs, DeclarativeBase):
         }
     )
 
-    def __eq__(self, other) -> bool:
-        """
-        Two instances of the same model class are the same if their
-        IDs are the same.
-
-        This allows comparison of models bound to different sessions.
-        """
-        return isinstance(other, self.__class__) and self.id == other.id
-
     def __repr__(self) -> str:
         """Return a string representation of the model."""
         return f"<{self.__class__.__name__}(id={self.id})>"

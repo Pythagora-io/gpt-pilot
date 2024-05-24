@@ -41,8 +41,8 @@ async def test_get_by_id_preloads_branch_project_files(testdb):
 
     # If "get_by_id" doesn't populate branch and project and load the files,
     # this will crash because they can't be lazy-loaded without an await.
-    assert s.branch == state.branch
-    assert s.branch.project == state.branch.project
+    assert s.branch.id == state.branch.id
+    assert s.branch.project.id == state.branch.project.id
     assert s.files[0].content.content == "hello world"
 
 
