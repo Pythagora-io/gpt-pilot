@@ -115,6 +115,36 @@ async def start_new_project(sm: StateManager, ui: UIBase) -> bool:
     return project_state is not None
 
 
+async def run_pythagora_session(sm: StateManager, ui: UIBase, args: Namespace):
+    """
+    Run a Pythagora session.
+
+    :param sm: State manager.
+    :param ui: User interface.
+    :param args: Command-line arguments.
+    :return: True if the application ran successfully, False otherwise.
+    """
+
+    if not await llm_api_check(ui):
+        return False
+
+    if args.project or args.branch or args.step:
+        telemetry.set("is_continuation", True)
+        # FIXME: we should send the project stage and other runtime info to the UI
+        success = await load_project(sm, args.project, args.branch, args.step)
+        if not success:
+            return False
+    elif args.delete:
+        success = await delete_project(sm, args.delete)
+        return success
+    else:
+        success = await start_new_project(sm, ui)
+        if not success:
+            return False
+
+    return await run_project(sm, ui)
+
+
 async def async_main(
     ui: UIBase,
     db: SessionManager,
@@ -153,24 +183,10 @@ async def async_main(
     if not ui_started:
         return False
 
-    if not await llm_api_check(ui):
-        return False
-
-    if args.project or args.branch or args.step:
-        telemetry.set("is_continuation", True)
-        # FIXME: we should send the project stage and other runtime info to the UI
-        success = await load_project(sm, args.project, args.branch, args.step)
-        if not success:
-            return False
-    elif args.delete:
-        success = await delete_project(sm, args.delete)
-        return success
-    else:
-        success = await start_new_project(sm, ui)
-        if not success:
-            return False
-
-    return await run_project(sm, ui)
+    telemetry.start()
+    success = await run_pythagora_session(sm, ui, args)
+    await telemetry.send()
+    return success
 
 
 def run_pythagora():
