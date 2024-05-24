@@ -4,9 +4,11 @@ from asyncio import run
 
 from core.agents.orchestrator import Orchestrator
 from core.cli.helpers import delete_project, init, list_projects, list_projects_json, load_project, show_config
+from core.config import get_config
 from core.db.session import SessionManager
 from core.db.v0importer import LegacyDatabaseImporter
-from core.llm.base import APIError
+from core.llm.base import APIError, BaseLLMClient
+from core.llm.convo import Convo
 from core.log import get_logger
 from core.state.state_manager import StateManager
 from core.telemetry import telemetry
@@ -55,6 +57,40 @@ async def run_project(sm: StateManager, ui: UIBase) -> bool:
         await ui.send_message(f"Stopping Pythagora due to error:\n\n{stack_trace}", source=pythagora_source)
 
     await telemetry.send()
+    return success
+
+
+async def llm_api_check(ui: UIBase) -> bool:
+    """
+    Check whether the configured LLMs are reachable.
+
+    :param ui: UI we'll use to report any issues
+    :return: True if all the LLMs are reachable.
+    """
+
+    config = get_config()
+
+    buffer = []
+    async def stream_handler(msg: str):
+        if msg:
+            buffer.append(msg)
+    async def error_handler(err, message):
+        buffer.append(str(err))
+
+    success = True
+    for llm_config in config.all_llms():
+        client_class = BaseLLMClient.for_provider(llm_config.provider)
+        llm_client = client_class(llm_config, stream_handler=stream_handler, error_handler=error_handler)
+        try:
+            resp = await llm_client.api_check()
+            if not resp:
+                success = False
+                log.warning(f"API check for {llm_config.provider.value} failed.")
+        except APIError as err:
+            await ui.send_message(f"API check for {llm_config.provider.value} failed with: {err}")
+            log.warning(f"API check for {llm_config.provider.value} failed with: {err}")
+            success = False
+
     return success
 
 
@@ -110,6 +146,11 @@ async def async_main(
     sm = StateManager(db, ui)
     ui_started = await ui.start()
     if not ui_started:
+        return False
+
+    # We want to check LLM connectivity before doing anything else.
+    # make an object here, send in UI so we can notify the UI of failed checks
+    if not await llm_api_check(ui):
         return False
 
     if args.project or args.branch or args.step:
