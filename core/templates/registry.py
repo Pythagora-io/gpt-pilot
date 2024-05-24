@@ -92,3 +92,17 @@ def get_template_summary(template_name: str) -> Optional[str]:
         return None
     template = PROJECT_TEMPLATES[template_name]
     return template["summary"]
+
+
+def get_template_description(template_name: str) -> Optional[str]:
+    """
+    Get the description of a project template.
+
+    :param template_name: The name of the project template.
+    :return: A summary of the template, or None if no template was found.
+    """
+    if not template_name or template_name not in PROJECT_TEMPLATES:
+        log.warning(f"Project template '{template_name}' not found, ignoring")
+        return None
+    template = PROJECT_TEMPLATES[template_name]
+    return template["description"]

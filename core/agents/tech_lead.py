@@ -9,7 +9,7 @@ from core.agents.response import AgentResponse, ResponseType
 from core.db.models import Complexity
 from core.llm.parser import JSONParser
 from core.log import get_logger
-from core.templates.registry import apply_project_template, get_template_summary
+from core.templates.registry import apply_project_template, get_template_description, get_template_summary
 from core.ui.base import ProjectStage
 
 log = get_logger(__name__)
@@ -76,8 +76,9 @@ class TechLead(BaseAgent):
         if len(state.epics) != 1 or not state.specification.template:
             return None
 
-        log.info(f"Applying project template: {self.current_state.specification.template}")
-        await self.send_message(f"Applying project template {self.current_state.specification.template} ...")
+        description = get_template_description(state.specification.template)
+        log.info(f"Applying project template: {state.specification.template}")
+        await self.send_message(f"Applying project template {description} ...")
         summary = await apply_project_template(
             self.current_state.specification.template,
             self.state_manager,
@@ -92,11 +93,11 @@ class TechLead(BaseAgent):
         log.debug("Asking for new feature")
         response = await self.ask_question(
             "Do you have a new feature to add to the project? Just write it here",
-            buttons={"end": "No, I'm done"},
+            buttons={"continue": "continue", "end": "No, I'm done"},
             allow_empty=True,
         )
 
-        if response.cancelled or response.button == "end" or not response.text:
+        if response.cancelled or not response.text:
             return AgentResponse.exit(self)
 
         self.next_state.epics = self.current_state.epics + [

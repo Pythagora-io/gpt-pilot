@@ -26,13 +26,21 @@ class SpecWriter(BaseAgent):
         response = await self.ask_question(
             "Describe your app in as much detail as possible",
             allow_empty=False,
-            buttons={"example": "Start an example project"},
+            buttons={
+                # FIXME: must be lowercase becase VSCode doesn't recognize it otherwise. Needs a fix in the extension
+                "continue": "continue",
+                "example": "Start an example project",
+            },
         )
         if response.cancelled:
             return AgentResponse.error(self, "No project description")
 
         if response.button == "example":
             self.prepare_example_project()
+            return AgentResponse.done(self)
+        elif response.button == "continue":
+            # FIXME: Workaround for the fact that VSCode "continue" button does
+            # nothing but repeat the question. We reproduce this bug for bug here.
             return AgentResponse.done(self)
 
         spec = response.text
