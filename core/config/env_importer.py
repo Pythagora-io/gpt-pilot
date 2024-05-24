@@ -71,9 +71,9 @@ def convert_config(values: dict) -> Config:
         if key:
             config.llm[provider].api_key = key
 
-    provider = "openai"
     model = values.get("MODEL_NAME")
     if model:
+        provider = "openai"
         if "/" in model:
             provider, model = model.split("/", 1)
 
