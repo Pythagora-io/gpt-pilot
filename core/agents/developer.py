@@ -100,12 +100,6 @@ class Developer(BaseAgent):
         :param review_feedback: If provided, the task review feedback is broken down instead of the current iteration
         :return: AgentResponse.done(self) when the breakdown is done
         """
-        if self.current_state.unfinished_steps:
-            # if this happens, it's most probably a bug as we should have gone through all the
-            # steps before getting new new iteration instructions
-            log.warning(
-                f"Unfinished steps found before the next iteration is broken down: {self.current_state.unfinished_steps}"
-            )
 
         if review_feedback is not None:
             iteration = None
