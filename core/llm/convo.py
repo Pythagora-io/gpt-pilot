@@ -1,15 +1,19 @@
 from copy import deepcopy
-from typing import Iterator, Optional
+from typing import Any, Iterator, Optional
 
 
 class Convo:
     """
     A conversation between a user and a Large Language Model (LLM) assistant.
+
+    Holds messages and an optional metadata log (list of dicts with
+    prompt information).
     """
 
     ROLES = ["system", "user", "assistant", "function"]
 
     messages: list[dict[str, str]]
+    prompt_log: list[dict[str, Any]]
 
     def __init__(self, content: Optional[str] = None):
         """
@@ -18,6 +22,8 @@ class Convo:
         :param content: Initial system message (optional).
         """
         self.messages = []
+        self.prompt_log = []
+
         if content is not None:
             self.system(content)
 
@@ -121,6 +127,7 @@ class Convo:
         """
         child = Convo()
         child.messages = deepcopy(self.messages)
+        child.prompt_log = deepcopy(self.prompt_log)
         return child
 
     def after(self, parent: "Convo") -> "Convo":

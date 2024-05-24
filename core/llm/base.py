@@ -149,6 +149,7 @@ class BaseLLMClient:
             provider=self.provider,
             model=self.config.model,
             temperature=temperature,
+            prompts=convo.prompt_log,
         )
 
         prompt_length_kb = len(json.dumps(convo.messages).encode("utf-8")) / 1024

@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -16,6 +17,7 @@ class LLMRequestLog(BaseModel):
     model: str
     temperature: float
     messages: list[dict[str, str]] = Field(default_factory=list)
+    prompts: list[dict[str, Any]] = Field(default_factory=list)
     response: str = ""
     prompt_tokens: int = 0
     completion_tokens: int = 0
