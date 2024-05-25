@@ -207,7 +207,7 @@ async def list_projects_json(db: SessionManager):
             }
             for state in branch.states:
                 s = {
-                    "name": f"Step #{state.step_index}",
+                    "name": state.action or f"Step #{state.step_index}",
                     "step": state.step_index,
                 }
                 b["steps"].append(s)

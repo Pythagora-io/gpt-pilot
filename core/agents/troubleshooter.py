@@ -89,13 +89,15 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         if len(self.current_state.iterations) >= LOOP_THRESHOLD:
             await self.trace_loop("loop-end")
 
+        current_task_index1 = self.current_state.tasks.index(self.current_state.current_task) + 1
+        self.next_state.action = f"Task #{current_task_index1} complete"
         if self.current_state.iterations:
             return AgentResponse.update_epic(self)
         else:
             self.next_state.complete_task()
             await self.state_manager.log_task_completed()
             await self.ui.send_task_progress(
-                self.current_state.tasks.index(self.current_state.current_task) + 1,
+                current_task_index1,
                 len(self.current_state.tasks),
                 self.current_state.current_task["description"],
                 self.current_state.current_epic.get("source", "app"),
@@ -210,6 +212,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         next_state_iteration["attempts"] += 1
         next_state_iteration["completed"] = False
         self.next_state.flag_iterations_as_modified()
+        self.next_state.action = f"Alternative solution (attempt #{next_state_iteration['attempts']})"
         return AgentResponse.done(self)
 
     async def generate_bug_report(

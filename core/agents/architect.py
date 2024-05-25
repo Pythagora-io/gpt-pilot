@@ -10,7 +10,7 @@ from core.telemetry import telemetry
 from core.templates.registry import PROJECT_TEMPLATES, ProjectTemplateEnum
 from core.ui.base import ProjectStage
 
-ARCHITECTURE_STEP = "architecture"
+ARCHITECTURE_STEP_NAME = "Project architecture"
 WARN_SYSTEM_DEPS = ["docker", "kubernetes", "microservices"]
 WARN_FRAMEWORKS = ["next.js", "vue", "vue.js", "svelte", "angular"]
 WARN_FRAMEWORKS_URL = "https://github.com/Pythagora-io/gpt-pilot/wiki/Using-GPT-Pilot-with-frontend-frameworks"
@@ -99,6 +99,7 @@ class Architect(BaseAgent):
             },
         )
         telemetry.set("template", spec.template)
+        self.next_state.action = ARCHITECTURE_STEP_NAME
         return AgentResponse.done(self)
 
     async def check_compatibility(self, arch: Architecture) -> bool:

@@ -153,6 +153,10 @@ class Developer(BaseAgent):
 
         if iteration:
             self.next_state.complete_iteration()
+            self.next_state.action = f"Troubleshooting #{len(self.current_state.iterations)}"
+        else:
+            self.next_state.complete_task()
+            self.next_state.action = "Task review feedback"
 
         return AgentResponse.done(self)
 
@@ -195,6 +199,7 @@ class Developer(BaseAgent):
         # There might be state leftovers from previous tasks that we need to clean here
         self.next_state.modified_files = {}
         self.set_next_steps(response, source)
+        self.next_state.action = f"Task #{current_task_index + 1} start"
         return AgentResponse.done(self)
 
     async def get_relevant_files(

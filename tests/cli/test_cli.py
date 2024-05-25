@@ -167,8 +167,9 @@ async def test_list_projects_json(mock_StateManager, capsys):
     branch = MagicMock(
         id=MagicMock(hex="1234"),
         states=[
-            MagicMock(step_index=1),
-            MagicMock(step_index=2),
+            MagicMock(step_index=1, action="foo"),
+            MagicMock(step_index=2, action=None),
+            MagicMock(step_index=3, action="baz"),
         ],
     )
     branch.name = "branch1"
@@ -195,8 +196,9 @@ async def test_list_projects_json(mock_StateManager, capsys):
                     "name": "branch1",
                     "id": "1234",
                     "steps": [
-                        {"step": 1, "name": "Step #1"},
-                        {"step": 2, "name": "Latest step"},
+                        {"step": 1, "name": "foo"},
+                        {"step": 2, "name": "Step #2"},
+                        {"step": 3, "name": "Latest step"},
                     ],
                 },
             ],
