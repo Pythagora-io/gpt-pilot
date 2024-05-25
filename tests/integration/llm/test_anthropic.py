@@ -5,6 +5,7 @@ import pytest
 
 from core.config import LLMConfig, LLMProvider
 from core.llm.anthropic_client import AnthropicClient
+from core.llm.base import APIError
 from core.llm.convo import Convo
 from core.llm.request_log import LLMRequestStatus
 
@@ -34,7 +35,7 @@ async def test_incorrect_key():
     llm = AnthropicClient(cfg, stream_handler=print_handler)
     convo = Convo("you're a friendly assistant").user("tell me joke")
 
-    with pytest.raises(ValueError, match="invalid x-api-key"):
+    with pytest.raises(APIError, match="invalid x-api-key"):
         await llm(convo)
 
 
@@ -49,7 +50,7 @@ async def test_unknown_model():
     llm = AnthropicClient(cfg)
     convo = Convo("you're a friendly assistant").user("tell me joke")
 
-    with pytest.raises(ValueError, match="model: gpt-3.6-nonexistent"):
+    with pytest.raises(APIError, match="model: gpt-3.6-nonexistent"):
         await llm(convo)
 
 

@@ -4,6 +4,7 @@ from os import getenv
 import pytest
 
 from core.config import LLMConfig, LLMProvider
+from core.llm.base import APIError
 from core.llm.convo import Convo
 from core.llm.groq_client import GroqClient
 
@@ -33,7 +34,7 @@ async def test_incorrect_key():
     llm = GroqClient(cfg, stream_handler=print_handler)
     convo = Convo("you're a friendly assistant").user("tell me joke")
 
-    with pytest.raises(ValueError, match="Invalid API Key"):
+    with pytest.raises(APIError, match="Invalid API Key"):
         await llm(convo)
 
 
@@ -48,7 +49,7 @@ async def test_unknown_model():
     llm = GroqClient(cfg)
     convo = Convo("you're a friendly assistant").user("tell me joke")
 
-    with pytest.raises(ValueError, match="does not exist"):
+    with pytest.raises(APIError, match="does not exist"):
         await llm(convo)
 
 
@@ -117,8 +118,5 @@ async def test_context_too_large():
     large_convo = " ".join(["lorem ipsum dolor sit amet"] * 30000)
     convo = Convo(large_convo)
 
-    with pytest.raises(ValueError, match="Context limit exceeded."):
+    with pytest.raises(APIError, match="We sent too large request to the LLM"):
         await llm(convo)
-
-    streamed = "".join(streamed_response)
-    assert "We sent too large request to the LLM" in streamed
