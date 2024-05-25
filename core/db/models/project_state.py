@@ -42,6 +42,7 @@ class ProjectState(Base):
     relevant_files: Mapped[list[str]] = mapped_column(default=list)
     modified_files: Mapped[dict] = mapped_column(default=dict)
     run_command: Mapped[Optional[str]] = mapped_column()
+    action: Mapped[Optional[str]] = mapped_column()
 
     # Relationships
     branch: Mapped["Branch"] = relationship(back_populates="states", lazy="selectin")

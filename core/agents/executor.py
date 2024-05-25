@@ -70,6 +70,7 @@ class Executor(BaseAgent):
 
         options = self.step["command"]
         cmd = options["command"]
+        cmd_name = cmd[:30] + "..." if len(cmd) > 33 else cmd
         timeout = options.get("timeout")
 
         if timeout:
@@ -87,6 +88,7 @@ class Executor(BaseAgent):
             log.info(f"Skipping command execution of `{cmd}` (requested by user)")
             await self.send_message(f"Skipping command {cmd}")
             self.complete()
+            self.next_state.action = f'Skip "{cmd_name}"'
             return AgentResponse.done(self)
 
         started_at = datetime.now()
@@ -98,6 +100,7 @@ class Executor(BaseAgent):
         duration = (datetime.now() - started_at).total_seconds()
 
         self.complete()
+        self.next_state.action = f'Run "{cmd_name}"'
 
         exec_log = ExecLog(
             started_at=started_at,

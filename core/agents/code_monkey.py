@@ -1,3 +1,5 @@
+from os.path import basename
+
 from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
@@ -64,6 +66,9 @@ class CodeMonkey(BaseAgent):
         else:
             log.debug(f"Implementing file {file_name}")
             await self.send_message(f"{'Updating existing' if file_content else 'Creating new'} file {file_name} ...")
+            self.next_state.action = (
+                f'Update file "{basename(file_name)}"' if file_content else f'Create file "{basename(file_name)}"'
+            )
             attempt = 1
             feedback = None
 

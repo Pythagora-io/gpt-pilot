@@ -16,6 +16,7 @@ ANALYZE_THRESHOLD = 1500
 INITIAL_PROJECT_HOWTO_URL = (
     "https://github.com/Pythagora-io/gpt-pilot/wiki/How-to-write-a-good-initial-project-description"
 )
+SPEC_STEP_NAME = "Create specification"
 
 
 class SpecWriter(BaseAgent):
@@ -58,6 +59,7 @@ class SpecWriter(BaseAgent):
         telemetry.set("initial_prompt", spec)
         telemetry.set("is_complex_app", complexity != Complexity.SIMPLE)
 
+        self.next_state.action = SPEC_STEP_NAME
         return AgentResponse.done(self)
 
     async def check_prompt_complexity(self, prompt: str) -> str:

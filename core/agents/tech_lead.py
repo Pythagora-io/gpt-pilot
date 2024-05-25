@@ -47,11 +47,12 @@ class TechLead(BaseAgent):
 
         if self.current_state.specification.template and not self.current_state.files:
             await self.apply_project_template()
+            self.next_state.action = "Apply project template"
             return AgentResponse.done(self)
 
-        unfinished_epics = self.current_state.unfinished_epics
-        if unfinished_epics:
-            return await self.plan_epic(unfinished_epics[0])
+        if self.current_state.current_epic:
+            self.next_state.action = "Create a development plan"
+            return await self.plan_epic(self.current_state.current_epic)
         else:
             return await self.ask_for_new_feature()
 
@@ -114,6 +115,7 @@ class TechLead(BaseAgent):
             }
         ]
         # Orchestrator will rerun us to break down the new feature epic
+        self.next_state.action = f"Start of feature #{len(self.current_state.epics)}"
         return AgentResponse.done(self)
 
     async def plan_epic(self, epic) -> AgentResponse:

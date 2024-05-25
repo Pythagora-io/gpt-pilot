@@ -19,6 +19,7 @@ class TechnicalWriter(BaseAgent):
             await self.create_readme()
 
         self.next_state.complete_step()
+        self.next_state.action = "Create README.md"
         return AgentResponse.done(self)
 
     async def create_readme(self):
