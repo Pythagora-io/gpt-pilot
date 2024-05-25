@@ -203,6 +203,7 @@ class ProjectState(Base):
             files=[],
             relevant_files=deepcopy(self.relevant_files),
             modified_files=deepcopy(self.modified_files),
+            run_command=self.run_command,
         )
 
         session: AsyncSession = inspect(self).async_session
@@ -263,13 +264,23 @@ class ProjectState(Base):
 
     def flag_iterations_as_modified(self):
         """
-        Flag the iteration field as having been modified
+        Flag the iterations field as having been modified
 
         Used by Agents that perform modifications within the mutable iterations field,
         to tell the database that it was modified and should get saved (as SQLalchemy
         can't detect changes in mutable fields by itself).
         """
         flag_modified(self, "iterations")
+
+    def flag_tasks_as_modified(self):
+        """
+        Flag the tasks field as having been modified
+
+        Used by Agents that perform modifications within the mutable tasks field,
+        to tell the database that it was modified and should get saved (as SQLalchemy
+        can't detect changes in mutable fields by itself).
+        """
+        flag_modified(self, "tasks")
 
     def get_file_by_path(self, path: str) -> Optional["File"]:
         """
