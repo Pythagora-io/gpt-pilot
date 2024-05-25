@@ -99,7 +99,7 @@ class AgentLLMConfig(_StrictModel):
     """
 
     provider: LLMProvider = LLMProvider.OPENAI
-    model: str = Field(description="Model to use", default="gpt-4-turbo-preview")
+    model: str = Field(description="Model to use", default="gpt-4-0125-preview")
     temperature: float = Field(
         default=0.5,
         description="Temperature to use for sampling",
