@@ -36,6 +36,8 @@ class SpecWriter(BaseAgent):
             return AgentResponse.error(self, "No project description")
 
         if response.button == "example":
+            await self.send_message("Starting example project with description:")
+            await self.send_message(EXAMPLE_PROJECT_DESCRIPTION)
             self.prepare_example_project()
             return AgentResponse.done(self)
         elif response.button == "continue":

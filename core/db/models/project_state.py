@@ -250,6 +250,7 @@ class ProjectState(Base):
 
         log.debug(f"Completing epic {self.unfinished_epics[0]['name']}")
         self.unfinished_epics[0]["completed"] = True
+        self.tasks = []
         flag_modified(self, "epics")
 
     def complete_iteration(self):

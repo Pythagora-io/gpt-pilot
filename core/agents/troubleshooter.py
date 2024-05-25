@@ -178,7 +178,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
 
         test_message = "Can you check if the app works please?"
         if user_instructions:
-            test_message += " Here is a description of what should be working:\n\n" + user_instructions
+            hint = " Here is a description of what should be working:\n\n" + user_instructions
 
         if run_command:
             await self.ui.send_run_command(run_command)
@@ -187,11 +187,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         if last_iteration:
             buttons["loop"] = "I'm stuck in a loop"
 
-        user_response = await self.ask_question(
-            test_message,
-            buttons=buttons,
-            default="continue",
-        )
+        user_response = await self.ask_question(test_message, buttons=buttons, default="continue", hint=hint)
         if user_response.button == "continue" or user_response.cancelled:
             return False, False, ""
 
