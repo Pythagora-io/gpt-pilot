@@ -299,6 +299,13 @@ class Config(_StrictModel):
         provider_config = self.llm[agent_config.provider]
         return LLMConfig.from_provider_and_agent_configs(provider_config, agent_config)
 
+    def all_llms(self) -> list[LLMConfig]:
+        """
+        Get configuration for all defined LLMs.
+        """
+
+        return [self.llm_for_agent(agent) for agent in self.agent]
+
 
 class ConfigLoader:
     """

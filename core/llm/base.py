@@ -192,7 +192,8 @@ class BaseLLMClient:
                 wait_time = self.rate_limit_sleep(err)
                 if wait_time:
                     message = f"We've hit {self.config.provider.value} rate limit. Sleeping for {wait_time.seconds} seconds..."
-                    await self.error_handler(LLMError.RATE_LIMITED, message)
+                    if self.error_handler:
+                        await self.error_handler(LLMError.RATE_LIMITED, message)
                     await asyncio.sleep(wait_time.seconds)
                     continue
                 else:
@@ -207,9 +208,10 @@ class BaseLLMClient:
                 err_msg = err.response.json().get("error", {}).get("message", "Incorrect API key")
                 if "[BricksLLM]" in err_msg:
                     # We only want to show the key expired message if it's from Bricks
-                    should_retry = await self.error_handler(LLMError.KEY_EXPIRED)
-                    if should_retry:
-                        continue
+                    if self.error_handler:
+                        should_retry = await self.error_handler(LLMError.KEY_EXPIRED)
+                        if should_retry:
+                            continue
 
                 raise APIError(err_msg) from err
             except (openai.APIStatusError, anthropic.APIStatusError, groq.APIStatusError) as err:
@@ -267,6 +269,19 @@ class BaseLLMClient:
         )
 
         return response, request_log
+
+    async def api_check(self) -> bool:
+        """
+        Perform an LLM API check.
+
+        :return: True if the check was successful, False otherwise.
+        """
+
+        convo = Convo()
+        msg = "This is a connection test. If you can see this, please respond only with 'START' and nothing else."
+        convo.user(msg)
+        resp, _log = await self(convo)
+        return bool(resp)
 
     @staticmethod
     def for_provider(provider: LLMProvider) -> type["BaseLLMClient"]:
