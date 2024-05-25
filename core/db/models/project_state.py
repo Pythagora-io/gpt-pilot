@@ -49,17 +49,19 @@ class ProjectState(Base):
         back_populates="next_state",
         remote_side=[id],
         single_parent=True,
+        lazy="raise",
+        cascade="delete",
     )
-    next_state: Mapped[Optional["ProjectState"]] = relationship(back_populates="prev_state")
+    next_state: Mapped[Optional["ProjectState"]] = relationship(back_populates="prev_state", lazy="raise")
     files: Mapped[list["File"]] = relationship(
         back_populates="project_state",
         lazy="selectin",
         cascade="all,delete-orphan",
     )
     specification: Mapped["Specification"] = relationship(back_populates="project_states", lazy="selectin")
-    llm_requests: Mapped[list["LLMRequest"]] = relationship(back_populates="project_state", cascade="all")
-    user_inputs: Mapped[list["UserInput"]] = relationship(back_populates="project_state", cascade="all")
-    exec_logs: Mapped[list["ExecLog"]] = relationship(back_populates="project_state", cascade="all")
+    llm_requests: Mapped[list["LLMRequest"]] = relationship(back_populates="project_state", cascade="all", lazy="raise")
+    user_inputs: Mapped[list["UserInput"]] = relationship(back_populates="project_state", cascade="all", lazy="raise")
+    exec_logs: Mapped[list["ExecLog"]] = relationship(back_populates="project_state", cascade="all", lazy="raise")
 
     @property
     def unfinished_steps(self) -> list[dict]:

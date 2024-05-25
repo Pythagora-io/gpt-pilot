@@ -29,7 +29,7 @@ class Project(Base):
     )
 
     # Relationships
-    branches: Mapped[list["Branch"]] = relationship(back_populates="project", cascade="all")
+    branches: Mapped[list["Branch"]] = relationship(back_populates="project", cascade="all", lazy="raise")
 
     @staticmethod
     async def get_by_id(session: "AsyncSession", project_id: Union[str, UUID]) -> Optional["Project"]:

@@ -38,8 +38,8 @@ class LLMRequest(Base):
     error: Mapped[Optional[str]] = mapped_column()
 
     # Relationships
-    branch: Mapped["Branch"] = relationship(back_populates="llm_requests")
-    project_state: Mapped["ProjectState"] = relationship(back_populates="llm_requests")
+    branch: Mapped["Branch"] = relationship(back_populates="llm_requests", lazy="raise")
+    project_state: Mapped["ProjectState"] = relationship(back_populates="llm_requests", lazy="raise")
 
     @classmethod
     def from_request_log(

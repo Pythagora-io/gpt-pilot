@@ -55,5 +55,12 @@ async def test_deleting_project_state_clears_back_references(testdb):
     await testdb.commit()
 
     # Check the second one still exists and has no back reference
-    await testdb.refresh(state2)
+    await testdb.refresh(state2, attribute_names=["prev_state"])
+
+    # After adding lazy="raise" to the the prev_state relationship,
+    # this assertion would fail with an ORM exception, *unless* we add
+    # the prev_state in the attribute_names in the above `refresh()`,
+    # which then causes SQLAlchemy to explicitly load that relationship
+    # Alternative is to just assert `prev_state_id is None`, which works
+    # without the attribute_names
     assert state2.prev_state is None
