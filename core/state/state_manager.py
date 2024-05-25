@@ -416,8 +416,11 @@ class StateManager:
             files_in_workspace.add(path)
             content = self.file_system.read(path)
             saved_file = known_files.get(path)
-            if saved_file and saved_file.content.content == content:
-                continue
+
+            if saved_file:
+                await saved_file.awaitable_attrs.content
+                if saved_file.content.content == content:
+                    continue
 
             # TODO: unify this with self.save_file() / refactor that whole bit
             hash = self.file_system.hash_string(content)
