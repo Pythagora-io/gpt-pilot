@@ -122,7 +122,7 @@ class SpecWriter(BaseAgent):
                         "Otherwise, please tell me what's missing or what you'd like to add."
                     ),
                     allow_empty=True,
-                    buttons={"continue": "Continue"},
+                    buttons={"continue": "continue"},
                 )
                 if confirm.cancelled or confirm.button == "continue" or confirm.text == "":
                     return spec

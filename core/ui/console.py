@@ -108,5 +108,14 @@ class PlainConsoleUI(UIBase):
     async def send_project_stats(self, stats: dict):
         pass
 
+    async def loading_finished(self):
+        pass
+
+    async def send_project_description(self, description: str):
+        pass
+
+    async def send_features_list(self, features: list[str]):
+        pass
+
 
 __all__ = ["PlainConsoleUI"]

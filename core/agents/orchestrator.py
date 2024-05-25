@@ -244,12 +244,21 @@ class Orchestrator(BaseAgent):
 
     async def init_ui(self):
         await self.ui.send_project_root(self.state_manager.get_full_project_root())
+        await self.ui.loading_finished()
+
         if self.current_state.epics:
             await self.ui.send_project_stage(ProjectStage.CODING)
-        elif self.current_state.specification:
+            if len(self.current_state.epics) > 2:
+                # We only want to send previous features, ie. exclude current one and the initial project (first epic)
+                await self.ui.send_features_list([e["description"] for e in self.current_state.epics[1:-1]])
+
+        elif self.current_state.specification.description:
             await self.ui.send_project_stage(ProjectStage.ARCHITECTURE)
         else:
             await self.ui.send_project_stage(ProjectStage.DESCRIPTION)
+
+        if self.current_state.specification.description:
+            await self.ui.send_project_description(self.current_state.specification.description)
 
     async def update_stats(self):
         if self.current_state.steps and self.current_state.current_step:
