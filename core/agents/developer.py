@@ -155,7 +155,6 @@ class Developer(BaseAgent):
             self.next_state.complete_iteration()
             self.next_state.action = f"Troubleshooting #{len(self.current_state.iterations)}"
         else:
-            self.next_state.complete_task()
             self.next_state.action = "Task review feedback"
 
         return AgentResponse.done(self)
