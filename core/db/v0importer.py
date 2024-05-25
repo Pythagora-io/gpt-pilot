@@ -7,16 +7,29 @@ import aiosqlite
 
 from core.db.models import Branch, Project, ProjectState
 from core.db.session import SessionManager
+from core.disk.vfs import MemoryVFS
 from core.log import get_logger
 from core.state.state_manager import StateManager
 
 log = get_logger(__name__)
 
 
+class ImporterStateManager(StateManager):
+    async def init_file_system(self, load_existing: bool) -> MemoryVFS:
+        """
+        Initialize in-memory file system.
+
+        We don't want to overwrite all the files on disk while importing
+        the legacy database, as this could overwrite new changes that the
+        user might have done in the meantime. Project loading will handle that.
+        """
+        return MemoryVFS()
+
+
 class LegacyDatabaseImporter:
     def __init__(self, session_manager: SessionManager, dbpath: str):
         self.session_manager = session_manager
-        self.state_manager = StateManager(self.session_manager, None)
+        self.state_manager = ImporterStateManager(self.session_manager, None)
         self.dbpath = dbpath
         self.conn = None
 
@@ -24,8 +37,13 @@ class LegacyDatabaseImporter:
             raise FileNotFoundError(f"File not found: {dbpath}")
 
     async def import_database(self):
-        info = await self.load_legacy_database()
-        await self.save_to_new_database(info)
+        try:
+            info = await self.load_legacy_database()
+        except Exception as err:  # noqa
+            print(f"Failed to load legacy database {self.dbpath}: {err}")
+            return
+        n = await self.save_to_new_database(info)
+        print(f"Successfully imported {n} projects from {self.dbpath}")
 
     async def load_legacy_database(self):
         async with aiosqlite.connect(self.dbpath) as conn:
@@ -135,7 +153,13 @@ class LegacyDatabaseImporter:
 
         return files
 
-    async def save_to_new_database(self, info: dict):
+    async def save_to_new_database(self, info: dict) -> int:
+        """
+        Save projects to the new database
+
+        :param info: A dictionary with app_id as key and app info as value.
+        :return: Number of projects saved to the new database.
+        """
         async with self.session_manager as session:
             projects = await Project.get_all_projects(session)
 
@@ -144,8 +168,11 @@ class LegacyDatabaseImporter:
             if imported_app:
                 log.info(f"Project {project.name} already exists in the new database, skipping")
 
+        n = 0
         for app_id, app_info in info.items():
             await self.save_app(app_id, app_info)
+            n += 1
+        return n
 
     async def save_app(self, app_id: str, app_info: dict):
         log.info(f"Importing app {app_info['name']} (id={app_id}) ...")
