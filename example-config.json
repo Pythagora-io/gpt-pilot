@@ -17,7 +17,7 @@
   "agent": {
     "default": {
       "provider": "openai",
-      "model": "gpt-4-turbo-preview",
+      "model": "gpt-4-0125-preview",
       "temperature": 0.5
     },
     "CodeMonkey.describe_files": {

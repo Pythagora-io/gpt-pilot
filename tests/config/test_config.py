@@ -65,7 +65,7 @@ def test_builtin_defaults():
     config = ConfigLoader.from_json("{}")
 
     assert config.llm_for_agent().provider == LLMProvider.OPENAI
-    assert config.llm_for_agent().model == "gpt-4-turbo-preview"
+    assert config.llm_for_agent().model == "gpt-4-0125-preview"
     assert config.llm_for_agent().base_url is None
     assert config.llm_for_agent().api_key is None
 

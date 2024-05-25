@@ -11,7 +11,7 @@ def test_convert_config():
         "AZURE_ENDPOINT": "",
         "OPENROUTER_API_KEY": "",
         "ANTHROPIC_API_KEY": "",
-        "MODEL_NAME": "gpt-4-turbo-preview",
+        "MODEL_NAME": "gpt-4-0125-preview",
         "MAX_TOKENS": "8192",
         "DB_NAME": "gpt-pilot",
         "DB_HOST": "",
