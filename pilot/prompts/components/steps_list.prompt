@@ -1,10 +1,10 @@
 {% if task_steps and step_index is not none -%}
-The current task has been split into multiple steps, and each step is one of the following:
+The current task has been split into multiple steps of the following types:
 * `command` - command to run
 * `save_file` -  create or update a file
 * `human_intervention` - if the human needs to do something
 
-{% if step_index > 0 %}Here is the list of steps that have been executed:
+{% if step_index > 0 %}Steps that have been executed:
 {% for step in task_steps %}{% if loop.index0 < step_index %}
 {%- if step.type in ['save_file', 'code_change', 'modify_file'] -%}
     {%- set type_content = step.get(step.type, None) -%}
@@ -23,10 +23,10 @@ The current task has been split into multiple steps, and each step is one of the
 {%- endif -%}
 {{ step }}
 {% endif %}{% endfor %}{% endif %}
-Here is the step you are currently debugging:
+Step you are currently debugging:
 {{ task_steps[step_index] }}
 
-{% if step_index < task_steps|length - 1 %}Here are steps that will be executed once debugging is done:
+{% if step_index < task_steps|length - 1 %}Steps to execute once debugging is done:
 {% for step in task_steps %}{% if loop.index0 > step_index %}
 {%- if step.type in ['save_file', 'code_change', 'modify_file'] -%}
     {%- set type_content = step.get(step.type, None) -%}

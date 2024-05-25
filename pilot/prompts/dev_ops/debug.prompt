@@ -1,24 +1,25 @@
 {{ steps_list }}
 {% if issue_description -%}
-You wanted me to check this - `{{ issue_description }}` but there was a problem
+There's a problem with attempting following: `{{ issue_description }}`
 {%- else -%}
-Now, we need to debug this issue
+We need to debug this issue
 {%- endif -%}
 {% if command %} and we need to be able to execute `{{ command }}` successfully. {% endif %}.
-{% if user_input %}I looked into this issue. I want you to take my findings as important part of debugging this issue. Here are my findings:
+{% if user_input %}Consider these findings as important part of debugging this issue:
 ```
 {{ user_input }}
 ```{% endif -%}
-I want you to create a list of steps that are needed to debug this issue.
 
-Each step can be either:
+List steps needed to debug this issue with steps of either of these types:
 
-* `command` - command to run (must be able to run on a {{ os }} machine, assume current working directory is project root folder)
-* `save_file` - step will create or update a file, and you need to thoroughly describe what needs to be implemented. I will implement the requested changes and let you know.
-* `human_intervention` - if you need the human to do something, use this type of step and explain in details what you want the human to do. NEVER use `human_intervention` for testing, as testing will be done separately by a dedicated QA after all the steps are done.
+* [command]: a command executable on a {{ os }} OS with the project root folder as the current working directory. Use commands for tasks that require package management, building software, deployment, analysis, and others. 
+* [save_file]: creates or updates ONE file. Output an empty string in `code_change_description` field. When a file needs multiple edits, combine all changes into a single 'save_file' step.
+* [human_intervention]: steps requiring actions impossible to execute with automated commands, such as managing credentials for cloud services. Explain in details what you want the human to do. ALWAYS abstain from using `human_intervention` for testing, writing code, or reviewing code.
 
 {{ execution_order }}
 
-Also, make sure that at least the last step has `check_if_fixed` set to TRUE.
+Ensure that at least the last step has `check_if_fixed` set to TRUE.
 
 {{ file_size_limit }}
+
+List the steps
