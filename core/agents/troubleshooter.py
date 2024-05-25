@@ -28,10 +28,18 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
 
     async def run(self) -> AgentResponse:
         run_command = await self.get_run_command()
-        user_instructions = await self.get_user_instructions()
-        if user_instructions is None:
-            # LLM decided we don't need to test anything, so we're done with the task
-            return await self.complete_task()
+
+        user_instructions = self.current_state.current_task.get("test_instructions")
+        if not user_instructions:
+            user_instructions = await self.get_user_instructions()
+            if user_instructions is None:
+                # LLM decided we don't need to test anything, so we're done with the task
+                return await self.complete_task()
+
+            # Save the user instructions for future iterations and rerun
+            self.next_state.current_task["test_instructions"] = user_instructions
+            self.next_state.flag_tasks_as_modified()
+            return AgentResponse.done(self)
 
         # Developer sets iteration as "completed" when it generates the step breakdown, so we can't
         # use "current_iteration" here

@@ -63,6 +63,7 @@ class TechLead(BaseAgent):
                 "name": "Initial Project",
                 "source": "app",
                 "description": self.current_state.specification.description,
+                "test_instructions": None,
                 "summary": None,
                 "completed": False,
                 "complexity": self.current_state.specification.complexity,
@@ -104,6 +105,7 @@ class TechLead(BaseAgent):
             {
                 "id": uuid4().hex,
                 "name": f"Feature #{len(self.current_state.epics)}",
+                "test_instructions": None,
                 "source": "feature",
                 "description": response.text,
                 "summary": None,
