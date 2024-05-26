@@ -7,6 +7,7 @@ htmlcov/
 dist/
 workspace/
 pilot-env/
+venv/
 
 .coverage
 *.code-workspace
