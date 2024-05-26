@@ -64,6 +64,11 @@ class StateManager:
         branch = Branch(project=project)
         state = ProjectState.create_initial_state(branch)
         session.add(project)
+
+        # This is needed as we have some behavior that traverses the files
+        # even for a new project, eg. offline changes check and stats updating
+        await state.awaitable_attrs.files
+
         await session.commit()
 
         log.info(
@@ -206,6 +211,12 @@ class StateManager:
         self.current_session.add(self.next_state)
         self.next_state = await self.current_state.create_next_state()
 
+        # After the next_state becomes the current_state, we need to load
+        # the FileContent model, which was previously loaded by the load_project(),
+        # but is not populated by the `create_next_state()`
+        for f in self.current_state.files:
+            await f.awaitable_attrs.content
+
         telemetry.inc("num_steps")
 
         # FIXME: write a test to verify files (and file content) are preloaded
@@ -301,13 +312,7 @@ class StateManager:
         :param path: The file path.
         :return: The file object, or None if not found.
         """
-        # FIXME - is this needed? should all be preloaded
-        file = self.current_state.get_file_by_path(path)
-        if file is None:
-            return None
-        # Make sure content is loaded
-        await file.awaitable_attrs.content
-        return file
+        return self.current_state.get_file_by_path(path)
 
     async def save_file(
         self,
@@ -417,10 +422,8 @@ class StateManager:
             content = self.file_system.read(path)
             saved_file = known_files.get(path)
 
-            if saved_file:
-                await saved_file.awaitable_attrs.content
-                if saved_file.content.content == content:
-                    continue
+            if saved_file and saved_file.content.content == content:
+                continue
 
             # TODO: unify this with self.save_file() / refactor that whole bit
             hash = self.file_system.hash_string(content)

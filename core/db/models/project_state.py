@@ -210,6 +210,9 @@ class ProjectState(Base):
         session: AsyncSession = inspect(self).async_session
         session.add(new_state)
 
+        # NOTE: we only need the await here because of the tests, in live, the
+        # load_project() and commit() methods on StateManager make sure that
+        # the the files are eagerly loaded.
         for file in await self.awaitable_attrs.files:
             clone = file.clone()
             new_state.files.append(clone)
