@@ -10,6 +10,8 @@ class TaskCompleter(BaseAgent):
     display_name = "Pythagora"
 
     async def run(self) -> AgentResponse:
+        current_task_index1 = self.current_state.tasks.index(self.current_state.current_task) + 1
+        self.next_state.action = f"Task #{current_task_index1} complete"
         self.next_state.complete_task()
         await self.state_manager.log_task_completed()
         await self.ui.send_task_progress(

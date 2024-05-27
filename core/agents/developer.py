@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse, ResponseType
+from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
 
@@ -281,7 +282,7 @@ class Developer(BaseAgent):
         if user_response.cancelled or user_response.button == "skip":
             log.info(f"Skipping task: {description}")
             self.next_state.current_task["instructions"] = "(skipped on user request)"
-            self.next_state.current_task["status"] = "skipped"
+            self.next_state.set_current_task_status(TaskStatus.SKIPPED)
             await self.send_message("Skipping task...")
             # We're done here, and will pick up the next task (if any) on the next run
             return False

@@ -7,6 +7,7 @@ from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse
 from core.db.models import Complexity
+from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
 from core.templates.registry import apply_project_template, get_template_description, get_template_summary
@@ -36,7 +37,7 @@ class TechLead(BaseAgent):
 
     async def run(self) -> AgentResponse:
         current_task_status = self.current_state.current_task.get("status") if self.current_state.current_task else None
-        if current_task_status and current_task_status == "documented":
+        if current_task_status and current_task_status == TaskStatus.DOCUMENTED:
             return await self.update_epic()
 
         if len(self.current_state.epics) == 0:
@@ -141,7 +142,7 @@ class TechLead(BaseAgent):
                 "id": uuid4().hex,
                 "description": task.description,
                 "instructions": None,
-                "completed": False,
+                "status": TaskStatus.TODO,
             }
             for task in response.plan
         ]
@@ -152,13 +153,13 @@ class TechLead(BaseAgent):
         Update the development plan for the current epic.
         """
         epic = self.current_state.current_epic
-        self.next_state.current_task["status"] = "done"
+        self.next_state.set_current_task_status(TaskStatus.EPIC_UPDATED)
 
         if len(self.next_state.unfinished_tasks) == 1 or not self.current_state.iterations:
             # Current task is still "unfinished" at this point, so if it's last task, there's nothing to update
             return AgentResponse.done(self)
 
-        finished_tasks = [task for task in self.next_state.tasks if task["completed"]]
+        finished_tasks = [task for task in self.next_state.tasks if task["status"] == TaskStatus.DONE]
         finished_tasks.append(self.next_state.current_task)
 
         log.debug(f"Updating development plan for {epic['name']}")
@@ -189,7 +190,7 @@ class TechLead(BaseAgent):
                 "id": uuid4().hex,
                 "description": task.description,
                 "instructions": None,
-                "completed": False,
+                "status": TaskStatus.TODO,
             }
             for task in response.plan
         ]

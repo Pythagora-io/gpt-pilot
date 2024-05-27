@@ -1,6 +1,7 @@
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse
+from core.db.models.project_state import TaskStatus
 from core.log import get_logger
 
 log = get_logger(__name__)
@@ -21,7 +22,7 @@ class TechnicalWriter(BaseAgent):
             await self.create_readme()
 
         self.next_state.action = "Create README.md"
-        self.next_state.current_task["status"] = "documented"
+        self.next_state.set_current_task_status(TaskStatus.DOCUMENTED)
         return AgentResponse.done(self)
 
     async def create_readme(self):

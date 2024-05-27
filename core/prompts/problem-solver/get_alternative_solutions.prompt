@@ -10,7 +10,7 @@ Here is a high level description of "{{ state.branch.project.name }}":
 We've broken the development of this {% if state.epics|length > 1 %}feature{% else %}app{% endif %} down to these tasks:
 ```
 {% for task in state.tasks %}
-{{ loop.index }}. {{ task.description }}{% if task.get("completed") %} (completed){% endif %}
+{{ loop.index }}. {{ task.description }}{% if task.get("status") == "done" %} (completed){% endif %}
 {% endfor %}
 ```
 

@@ -61,6 +61,6 @@ EXAMPLE_PROJECT_PLAN = [
             "Finally, use TodoList and AddTodo components in App component to implement the required functionality. "
             "Integrate Boostrap 5 for styling - add CSS/JS to index.html, style App.jsx and other files as appropriate."
         ),
-        "completed": False,
+        "status": "todo",
     }
 ]

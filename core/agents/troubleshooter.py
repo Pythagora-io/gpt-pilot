@@ -7,6 +7,7 @@ from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.mixins import IterationPromptMixin
 from core.agents.response import AgentResponse
+from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser, OptionalCodeBlockParser
 from core.log import get_logger
 from core.telemetry import telemetry
@@ -89,19 +90,15 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
 
     async def complete_task(self) -> AgentResponse:
         """
-        Mark the current task as completed.
-
-        If there were iterations for the task, instead of marking the task as completed directly,
-        we ask the TechLead to update the epic (it needs state to the current task) and then mark
-        the task as completed.
+        No more coding or user interaction needed for the current task, mark it as reviewed.
+        After this it goes to TechnicalWriter for documentation.
         """
-        self.next_state.steps = []
         if len(self.current_state.iterations) >= LOOP_THRESHOLD:
             await self.trace_loop("loop-end")
 
         current_task_index1 = self.current_state.tasks.index(self.current_state.current_task) + 1
-        self.next_state.action = f"Task #{current_task_index1} complete"
-        self.next_state.current_task["status"] = "reviewed"
+        self.next_state.action = f"Task #{current_task_index1} reviewed"
+        self.next_state.set_current_task_status(TaskStatus.REVIEWED)
         return AgentResponse.done(self)
 
     def _get_task_convo(self) -> AgentConvo:
@@ -272,7 +269,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         state = self.current_state
         task_with_loop = {
             "task_description": state.current_task["description"],
-            "task_number": len([t for t in state.tasks if t["completed"]]) + 1,
+            "task_number": len([t for t in state.tasks if t["status"] == TaskStatus.DONE]) + 1,
             "steps": len(state.steps),
             "iterations": len(state.iterations),
         }

@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 import aiosqlite
 
 from core.db.models import Branch, Project, ProjectState
+from core.db.models.project_state import TaskStatus
 from core.db.session import SessionManager
 from core.disk.vfs import MemoryVFS
 from core.log import get_logger
@@ -248,7 +249,7 @@ class LegacyDatabaseImporter:
                 "id": uuid4().hex,
                 "description": task_info["description"],
                 "instructions": None,
-                "completed": current_task_index > i,
+                "status": TaskStatus.DONE if current_task_index > i else TaskStatus.TODO,
             }
             for i, task_info in enumerate(task["tasks"])
         ]

@@ -16,6 +16,7 @@ from core.agents.task_reviewer import TaskReviewer
 from core.agents.tech_lead import TechLead
 from core.agents.tech_writer import TechnicalWriter
 from core.agents.troubleshooter import Troubleshooter
+from core.db.models.project_state import TaskStatus
 from core.log import get_logger
 from core.telemetry import telemetry
 from core.ui.base import ProjectStage
@@ -167,20 +168,6 @@ class Orchestrator(BaseAgent):
             if prev_response.type == ResponseType.TASK_REVIEW_FEEDBACK:
                 return Developer(self.state_manager, self.ui, prev_response=prev_response)
 
-        status = state.current_task.get("status") if state.current_task else None
-        if status:
-            # Status of the current task is set first time after the task was reviewed by user
-            log.info(f"Status of current task: {status}")
-            if status == "reviewed":
-                # User reviewed the task, call TechnicalWriter to see if documentation needs to be updated
-                return TechnicalWriter(self.state_manager, self.ui)
-            elif status == "documented":
-                # After documentation is done, call TechLead update the development plan (remaining tasks)
-                return TechLead(self.state_manager, self.ui)
-            elif status in ["done", "skipped"]:
-                # Task is fully done or skipped, call TaskCompleter to mark it as completed
-                return TaskCompleter(self.state_manager, self.ui)
-
         if not state.specification.description:
             # Ask the Spec Writer to refine and save the project specification
             return SpecWriter(self.state_manager, self.ui)
@@ -197,6 +184,20 @@ class Orchestrator(BaseAgent):
         elif not state.steps and not state.iterations:
             # Ask the Developer to break down current task into actionable steps
             return Developer(self.state_manager, self.ui)
+
+        current_task_status = state.current_task.get("status") if state.current_task else None
+        if current_task_status:
+            # Status of the current task is set first time after the task was reviewed by user
+            log.info(f"Status of current task: {current_task_status}")
+            if current_task_status == TaskStatus.REVIEWED:
+                # User reviewed the task, call TechnicalWriter to see if documentation needs to be updated
+                return TechnicalWriter(self.state_manager, self.ui)
+            elif current_task_status == TaskStatus.DOCUMENTED:
+                # After documentation is done, call TechLead update the development plan (remaining tasks)
+                return TechLead(self.state_manager, self.ui)
+            elif current_task_status in [TaskStatus.EPIC_UPDATED, TaskStatus.SKIPPED]:
+                # Task is fully done or skipped, call TaskCompleter to mark it as completed
+                return TaskCompleter(self.state_manager, self.ui)
 
         if state.current_step:
             # Execute next step in the task

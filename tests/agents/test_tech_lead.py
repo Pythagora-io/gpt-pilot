@@ -3,6 +3,7 @@ import pytest
 from core.agents.response import ResponseType
 from core.agents.tech_lead import DevelopmentPlan, Task, TechLead, UpdatedDevelopmentPlan
 from core.db.models import Complexity
+from core.db.models.project_state import TaskStatus
 from core.ui.base import UserInput
 
 
@@ -110,8 +111,8 @@ async def test_update_epic(agentcontext):
 
     sm.current_state.epics = [{"id": "abc", "name": "Initial Project"}]
     sm.current_state.tasks = [
-        {"description": "Just Finished", "completed": False},
-        {"description": "Future Task", "completed": False},
+        {"description": "Just Finished", "status": "reviewed"},
+        {"description": "Future Task", "status": "todo"},
     ]
     sm.current_state.iterations = [
         {"user_feedback": "Doesn't work", "description": "There, I fixed it"},
@@ -132,6 +133,6 @@ async def test_update_epic(agentcontext):
     await sm.commit()
 
     assert sm.current_state.tasks[0]["description"] == "Updated Just Finished"
-    assert sm.current_state.tasks[0]["completed"] is False
+    assert sm.current_state.tasks[0]["status"] == TaskStatus.EPIC_UPDATED
     assert sm.current_state.tasks[1]["description"] == "Alternative Future Task"
-    assert sm.current_state.tasks[1]["completed"] is False
+    assert sm.current_state.tasks[1]["status"] == TaskStatus.TODO
