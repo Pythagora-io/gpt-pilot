@@ -18,6 +18,18 @@ if TYPE_CHECKING:
 log = get_logger(__name__)
 
 
+class TaskStatus:
+    """Status of a task."""
+
+    TODO = "todo"
+    IN_PROGRESS = "in_progress"
+    REVIEWED = "reviewed"
+    DOCUMENTED = "documented"
+    EPIC_UPDATED = "epic_updated"
+    DONE = "done"
+    SKIPPED = "skipped"
+
+
 class ProjectState(Base):
     __tablename__ = "project_states"
     __table_args__ = (
@@ -113,7 +125,7 @@ class ProjectState(Base):
 
         :return: List of unfinished tasks.
         """
-        return [task for task in self.tasks if not task.get("completed")]
+        return [task for task in self.tasks if task.get("status") != TaskStatus.DONE]
 
     @property
     def current_task(self) -> Optional[dict]:
@@ -238,7 +250,7 @@ class ProjectState(Base):
             raise ValueError("Current state is read-only (already has a next state).")
 
         log.debug(f"Completing task {self.unfinished_tasks[0]['description']}")
-        self.unfinished_tasks[0]["completed"] = True
+        self.set_current_task_status(TaskStatus.DONE)
         self.steps = []
         self.iterations = []
         self.relevant_files = []
@@ -288,6 +300,20 @@ class ProjectState(Base):
         can't detect changes in mutable fields by itself).
         """
         flag_modified(self, "tasks")
+
+    def set_current_task_status(self, status: str):
+        """
+        Set the status of the current task.
+
+        :param status: The new status.
+        """
+        if not self.current_task:
+            raise ValueError("There is no current task to set status for")
+        if "next_state" in self.__dict__:
+            raise ValueError("Current state is read-only (already has a next state).")
+
+        self.current_task["status"] = status
+        self.flag_tasks_as_modified()
 
     def get_file_by_path(self, path: str) -> Optional["File"]:
         """

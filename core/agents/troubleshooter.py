@@ -7,6 +7,7 @@ from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.mixins import IterationPromptMixin
 from core.agents.response import AgentResponse
+from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser, OptionalCodeBlockParser
 from core.log import get_logger
 from core.telemetry import telemetry
@@ -40,6 +41,8 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
             self.next_state.current_task["test_instructions"] = user_instructions
             self.next_state.flag_tasks_as_modified()
             return AgentResponse.done(self)
+        else:
+            await self.ui.send_message("Here are instruction on how to test the app:\n\n" + user_instructions)
 
         # Developer sets iteration as "completed" when it generates the step breakdown, so we can't
         # use "current_iteration" here
@@ -87,31 +90,16 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
 
     async def complete_task(self) -> AgentResponse:
         """
-        Mark the current task as completed.
-
-        If there were iterations for the task, instead of marking the task as completed directly,
-        we ask the TechLead to update the epic (it needs state to the current task) and then mark
-        the task as completed.
+        No more coding or user interaction needed for the current task, mark it as reviewed.
+        After this it goes to TechnicalWriter for documentation.
         """
-        self.next_state.steps = []
         if len(self.current_state.iterations) >= LOOP_THRESHOLD:
             await self.trace_loop("loop-end")
 
         current_task_index1 = self.current_state.tasks.index(self.current_state.current_task) + 1
-        self.next_state.action = f"Task #{current_task_index1} complete"
-        if self.current_state.iterations:
-            return AgentResponse.update_epic(self)
-        else:
-            self.next_state.complete_task()
-            await self.state_manager.log_task_completed()
-            await self.ui.send_task_progress(
-                current_task_index1,
-                len(self.current_state.tasks),
-                self.current_state.current_task["description"],
-                self.current_state.current_epic.get("source", "app"),
-                "done",
-            )
-            return AgentResponse.done(self)
+        self.next_state.action = f"Task #{current_task_index1} reviewed"
+        self.next_state.set_current_task_status(TaskStatus.REVIEWED)
+        return AgentResponse.done(self)
 
     def _get_task_convo(self) -> AgentConvo:
         # FIXME: Current prompts reuse conversation from the developer so we have to resort to this
@@ -281,7 +269,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         state = self.current_state
         task_with_loop = {
             "task_description": state.current_task["description"],
-            "task_number": len([t for t in state.tasks if t["completed"]]) + 1,
+            "task_number": len([t for t in state.tasks if t["status"] == TaskStatus.DONE]) + 1,
             "steps": len(state.steps),
             "iterations": len(state.iterations),
         }

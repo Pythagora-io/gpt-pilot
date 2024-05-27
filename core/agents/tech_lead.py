@@ -5,8 +5,9 @@ from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
-from core.agents.response import AgentResponse, ResponseType
+from core.agents.response import AgentResponse
 from core.db.models import Complexity
+from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
 from core.templates.registry import apply_project_template, get_template_description, get_template_summary
@@ -35,7 +36,8 @@ class TechLead(BaseAgent):
     display_name = "Tech Lead"
 
     async def run(self) -> AgentResponse:
-        if self.prev_response and self.prev_response.type == ResponseType.UPDATE_EPIC:
+        current_task_status = self.current_state.current_task.get("status") if self.current_state.current_task else None
+        if current_task_status and current_task_status == TaskStatus.DOCUMENTED:
             return await self.update_epic()
 
         if len(self.current_state.epics) == 0:
@@ -140,7 +142,7 @@ class TechLead(BaseAgent):
                 "id": uuid4().hex,
                 "description": task.description,
                 "instructions": None,
-                "completed": False,
+                "status": TaskStatus.TODO,
             }
             for task in response.plan
         ]
@@ -149,21 +151,16 @@ class TechLead(BaseAgent):
     async def update_epic(self) -> AgentResponse:
         """
         Update the development plan for the current epic.
-
-        As a side-effect, this also marks the current task as a complete,
-        and should only be called by Troubleshooter once the task is done,
-        if the Troubleshooter decides plan update is needed.
-
         """
         epic = self.current_state.current_epic
-        self.next_state.complete_task()
-        await self.state_manager.log_task_completed()
+        self.next_state.set_current_task_status(TaskStatus.EPIC_UPDATED)
 
-        if not self.next_state.unfinished_tasks:
-            # There are no tasks after this one, so there's nothing to update
+        if len(self.next_state.unfinished_tasks) == 1 or not self.current_state.iterations:
+            # Current task is still "unfinished" at this point, so if it's last task, there's nothing to update
             return AgentResponse.done(self)
 
-        finished_tasks = [task for task in self.next_state.tasks if task["completed"]]
+        finished_tasks = [task for task in self.next_state.tasks if task["status"] == TaskStatus.DONE]
+        finished_tasks.append(self.next_state.current_task)
 
         log.debug(f"Updating development plan for {epic['name']}")
         await self.ui.send_message("Updating development plan ...")
@@ -193,7 +190,7 @@ class TechLead(BaseAgent):
                 "id": uuid4().hex,
                 "description": task.description,
                 "instructions": None,
-                "completed": False,
+                "status": TaskStatus.TODO,
             }
             for task in response.plan
         ]

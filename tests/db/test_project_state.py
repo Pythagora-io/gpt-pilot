@@ -176,7 +176,7 @@ async def test_completing_unfinished_tasks(testdb):
             "id": "abc",
             "description": "test task",
             "instructions": None,
-            "completed": False,
+            "status": "todo",
         }
     ]
     testdb.add(state)

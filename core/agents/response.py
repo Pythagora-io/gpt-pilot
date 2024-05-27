@@ -36,9 +36,6 @@ class ResponseType(str, Enum):
     INPUT_REQUIRED = "input-required"
     """User needs to modify a line in the generated code."""
 
-    UPDATE_EPIC = "update-epic"
-    """Update the epic development plan after a task was iterated on."""
-
     TASK_REVIEW_FEEDBACK = "task-review-feedback"
     """Agent is providing feedback on the entire task."""
 
@@ -123,10 +120,6 @@ class AgentResponse:
     @staticmethod
     def input_required(agent: "BaseAgent", files: list[dict[str, int]]) -> "AgentResponse":
         return AgentResponse(type=ResponseType.INPUT_REQUIRED, agent=agent, data={"files": files})
-
-    @staticmethod
-    def update_epic(agent: "BaseAgent") -> "AgentResponse":
-        return AgentResponse(type=ResponseType.UPDATE_EPIC, agent=agent)
 
     @staticmethod
     def task_review_feedback(agent: "BaseAgent", feedback: str) -> "AgentResponse":

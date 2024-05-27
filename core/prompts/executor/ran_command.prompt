@@ -6,7 +6,7 @@ A coding task has been implemented for the new project we're working on.
 We've broken the development of the project down to these tasks:
 ```
 {% for task in state.tasks %}
-{{ loop.index }}. {{ task.description }}{% if task.get("completed") %} (completed){% endif %}
+{{ loop.index }}. {{ task.description }}{% if task.get("status") == "done" %} (completed){% endif %}
 {% endfor %}
 ```
 
