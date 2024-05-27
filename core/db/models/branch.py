@@ -29,10 +29,10 @@ class Branch(Base):
 
     # Relationships
     project: Mapped["Project"] = relationship(back_populates="branches", lazy="selectin")
-    states: Mapped[list["ProjectState"]] = relationship(back_populates="branch", cascade="all")
-    llm_requests: Mapped[list["LLMRequest"]] = relationship(back_populates="branch", cascade="all")
-    user_inputs: Mapped[list["UserInput"]] = relationship(back_populates="branch", cascade="all")
-    exec_logs: Mapped[list["ExecLog"]] = relationship(back_populates="branch", cascade="all")
+    states: Mapped[list["ProjectState"]] = relationship(back_populates="branch", cascade="all", lazy="raise")
+    llm_requests: Mapped[list["LLMRequest"]] = relationship(back_populates="branch", cascade="all", lazy="raise")
+    user_inputs: Mapped[list["UserInput"]] = relationship(back_populates="branch", cascade="all", lazy="raise")
+    exec_logs: Mapped[list["ExecLog"]] = relationship(back_populates="branch", cascade="all", lazy="raise")
 
     @staticmethod
     async def get_by_id(session: "AsyncSession", branch_id: Union[str, UUID]) -> Optional["Branch"]:

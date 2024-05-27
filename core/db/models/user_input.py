@@ -29,8 +29,8 @@ class UserInput(Base):
     cancelled: Mapped[bool] = mapped_column()
 
     # Relationships
-    branch: Mapped["Branch"] = relationship(back_populates="user_inputs")
-    project_state: Mapped["ProjectState"] = relationship(back_populates="user_inputs")
+    branch: Mapped["Branch"] = relationship(back_populates="user_inputs", lazy="raise")
+    project_state: Mapped["ProjectState"] = relationship(back_populates="user_inputs", lazy="raise")
 
     @classmethod
     def from_user_input(cls, project_state: "ProjectState", question: str, user_input: UserInputData) -> "UserInput":

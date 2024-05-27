@@ -20,7 +20,7 @@ class FileContent(Base):
     content: Mapped[str] = mapped_column()
 
     # Relationships
-    files: Mapped[list["File"]] = relationship(back_populates="content")
+    files: Mapped[list["File"]] = relationship(back_populates="content", lazy="raise")
 
     @classmethod
     async def store(cls, session: AsyncSession, hash: str, content: str) -> "FileContent":

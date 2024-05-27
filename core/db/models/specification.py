@@ -31,7 +31,7 @@ class Specification(Base):
     complexity: Mapped[str] = mapped_column(server_default=Complexity.HARD)
 
     # Relationships
-    project_states: Mapped[list["ProjectState"]] = relationship(back_populates="specification")
+    project_states: Mapped[list["ProjectState"]] = relationship(back_populates="specification", lazy="raise")
 
     def clone(self) -> "Specification":
         """

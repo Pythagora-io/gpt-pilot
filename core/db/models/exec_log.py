@@ -34,8 +34,8 @@ class ExecLog(Base):
     success: Mapped[bool] = mapped_column()
 
     # Relationships
-    branch: Mapped["Branch"] = relationship(back_populates="exec_logs")
-    project_state: Mapped["ProjectState"] = relationship(back_populates="exec_logs")
+    branch: Mapped["Branch"] = relationship(back_populates="exec_logs", lazy="raise")
+    project_state: Mapped["ProjectState"] = relationship(back_populates="exec_logs", lazy="raise")
 
     @classmethod
     def from_exec_log(cls, project_state: "ProjectState", exec_log: ExecLogData) -> "ExecLog":

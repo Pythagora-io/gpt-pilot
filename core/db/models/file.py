@@ -24,7 +24,7 @@ class File(Base):
     meta: Mapped[dict] = mapped_column(default=dict, server_default="{}")
 
     # Relationships
-    project_state: Mapped[Optional["ProjectState"]] = relationship(back_populates="files")
+    project_state: Mapped[Optional["ProjectState"]] = relationship(back_populates="files", lazy="raise")
     content: Mapped["FileContent"] = relationship(back_populates="files", lazy="selectin")
 
     def clone(self) -> "File":
