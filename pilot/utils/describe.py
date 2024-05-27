@@ -49,13 +49,14 @@ def describe_file(project, fpath: str, content: str) -> str:
         return ''
 
     model_name = os.getenv("MODEL_NAME")
-    if model_name.startswith("gpt-4") or model_name.startswith("openai/gpt-4"):
-        model_name = "gpt-3.5-turbo"
-    elif model_name.startswith("claude-3") or model_name.startswith("anthropic/claude-3"):
-        model_name = "anthropic/claude-3-haiku-20240307"
-    else:
-        # Unknown default model (possibly local LLM), didsable file summaries
-        return ''
+    # Environmental variables should be added to provide different models for different agents or tasks
+    # if model_name.startswith("gpt-4") or model_name.startswith("openai/gpt-4"):
+    #     model_name = "gpt-3.5-turbo"
+    # elif model_name.startswith("claude-3") or model_name.startswith("anthropic/claude-3"):
+    #     model_name = "anthropic/claude-3-haiku-20240307"
+    # else:
+    #     # Unknown default model (possibly local LLM), didsable file summaries
+    #     return ''
 
     if not content or not content.strip():
         return "(empty)"
