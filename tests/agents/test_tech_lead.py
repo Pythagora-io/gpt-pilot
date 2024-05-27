@@ -132,6 +132,6 @@ async def test_update_epic(agentcontext):
     await sm.commit()
 
     assert sm.current_state.tasks[0]["description"] == "Updated Just Finished"
-    assert sm.current_state.tasks[0]["completed"] is True
+    assert sm.current_state.tasks[0]["completed"] is False
     assert sm.current_state.tasks[1]["description"] == "Alternative Future Task"
     assert sm.current_state.tasks[1]["completed"] is False

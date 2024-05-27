@@ -40,6 +40,8 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
             self.next_state.current_task["test_instructions"] = user_instructions
             self.next_state.flag_tasks_as_modified()
             return AgentResponse.done(self)
+        else:
+            await self.ui.send_message("Here are instruction on how to test the app:\n\n" + user_instructions)
 
         # Developer sets iteration as "completed" when it generates the step breakdown, so we can't
         # use "current_iteration" here
@@ -99,19 +101,8 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
 
         current_task_index1 = self.current_state.tasks.index(self.current_state.current_task) + 1
         self.next_state.action = f"Task #{current_task_index1} complete"
-        if self.current_state.iterations:
-            return AgentResponse.update_epic(self)
-        else:
-            self.next_state.complete_task()
-            await self.state_manager.log_task_completed()
-            await self.ui.send_task_progress(
-                current_task_index1,
-                len(self.current_state.tasks),
-                self.current_state.current_task["description"],
-                self.current_state.current_epic.get("source", "app"),
-                "done",
-            )
-            return AgentResponse.done(self)
+        self.next_state.current_task["status"] = "reviewed"
+        return AgentResponse.done(self)
 
     def _get_task_convo(self) -> AgentConvo:
         # FIXME: Current prompts reuse conversation from the developer so we have to resort to this

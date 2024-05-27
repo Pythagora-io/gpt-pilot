@@ -11,6 +11,7 @@ from core.agents.human_input import HumanInput
 from core.agents.problem_solver import ProblemSolver
 from core.agents.response import AgentResponse, ResponseType
 from core.agents.spec_writer import SpecWriter
+from core.agents.task_completer import TaskCompleter
 from core.agents.task_reviewer import TaskReviewer
 from core.agents.tech_lead import TechLead
 from core.agents.tech_writer import TechnicalWriter
@@ -74,7 +75,7 @@ class Orchestrator(BaseAgent):
 
     async def offline_changes_check(self):
         """
-        Check for changes outside of Pythagora.
+        Check for changes outside Pythagora.
 
         If there are changes, ask the user if they want to keep them, and
         import if needed.
@@ -163,10 +164,22 @@ class Orchestrator(BaseAgent):
             if prev_response.type == ResponseType.INPUT_REQUIRED:
                 # FIXME: HumanInput should be on the whole time and intercept chat/interrupt
                 return HumanInput(self.state_manager, self.ui, prev_response=prev_response)
-            if prev_response.type == ResponseType.UPDATE_EPIC:
-                return TechLead(self.state_manager, self.ui, prev_response=prev_response)
             if prev_response.type == ResponseType.TASK_REVIEW_FEEDBACK:
                 return Developer(self.state_manager, self.ui, prev_response=prev_response)
+
+        status = state.current_task.get("status") if state.current_task else None
+        if status:
+            # Status of the current task is set first time after the task was reviewed by user
+            log.info(f"Status of current task: {status}")
+            if status == "reviewed":
+                # User reviewed the task, call TechnicalWriter to see if documentation needs to be updated
+                return TechnicalWriter(self.state_manager, self.ui)
+            elif status == "documented":
+                # After documentation is done, call TechLead update the development plan (remaining tasks)
+                return TechLead(self.state_manager, self.ui)
+            elif status in ["done", "skipped"]:
+                # Task is fully done or skipped, call TaskCompleter to mark it as completed
+                return TaskCompleter(self.state_manager, self.ui)
 
         if not state.specification.description:
             # Ask the Spec Writer to refine and save the project specification
@@ -179,7 +192,7 @@ class Orchestrator(BaseAgent):
             or not self.current_state.unfinished_tasks
             or (state.specification.template and not state.files)
         ):
-            # Ask the Tech Lead to break down the initial project or feature into tasks and apply projet template
+            # Ask the Tech Lead to break down the initial project or feature into tasks and apply project template
             return TechLead(self.state_manager, self.ui, process_manager=self.process_manager)
         elif not state.steps and not state.iterations:
             # Ask the Developer to break down current task into actionable steps

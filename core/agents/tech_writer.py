@@ -12,14 +12,16 @@ class TechnicalWriter(BaseAgent):
 
     async def run(self) -> AgentResponse:
         n_tasks = len(self.current_state.tasks)
-        n_unfinished = len(self.current_state.unfinished_tasks)
+        # current task is still "unfinished" at this point but for purposes of this agent, we want to consider
+        # it as "finished" and that is why we are subtracting 1 from the total number of unfinished tasks
+        n_unfinished = len(self.current_state.unfinished_tasks) - 1
 
         if n_unfinished in [n_tasks // 2, 1]:
-            # Halfway through the initial project, and and at the last task
+            # Halfway through the initial project, and at the last task
             await self.create_readme()
 
-        self.next_state.complete_step()
         self.next_state.action = "Create README.md"
+        self.next_state.current_task["status"] = "documented"
         return AgentResponse.done(self)
 
     async def create_readme(self):
