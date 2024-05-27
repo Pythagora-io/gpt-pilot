@@ -11,7 +11,7 @@ from core.llm.base import APIError, BaseLLMClient
 from core.log import get_logger
 from core.state.state_manager import StateManager
 from core.telemetry import telemetry
-from core.ui.base import UIBase, pythagora_source
+from core.ui.base import UIBase, UIClosedError, pythagora_source
 
 log = get_logger(__name__)
 
@@ -37,7 +37,7 @@ async def run_project(sm: StateManager, ui: UIBase) -> bool:
     try:
         success = await orca.run()
         telemetry.set("end_result", "success:exit" if success else "failure:api-error")
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, UIClosedError):
         log.info("Interrupted by user")
         telemetry.set("end_result", "interrupt")
         await sm.rollback()

@@ -1,7 +1,7 @@
 from typing import Optional
 
 from core.log import get_logger
-from core.ui.base import ProjectStage, UIBase, UISource, UserInput
+from core.ui.base import ProjectStage, UIBase, UIClosedError, UISource, UserInput
 
 log = get_logger(__name__)
 
@@ -61,7 +61,7 @@ class PlainConsoleUI(UIBase):
             try:
                 choice = input("> ").strip()
             except KeyboardInterrupt:
-                return UserInput(cancelled=True)
+                raise UIClosedError()
             if not choice and default:
                 choice = default
             if buttons and choice in buttons:

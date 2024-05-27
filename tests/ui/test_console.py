@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from core.ui.base import AgentSource
+from core.ui.base import AgentSource, UIClosedError
 from core.ui.console import PlainConsoleUI
 
 
@@ -77,11 +77,8 @@ async def test_ask_question_interrupted(mock_input):
     ui = PlainConsoleUI()
 
     await ui.start()
-    input = await ui.ask_question("Hello, how are you?")
-
-    assert input.cancelled is True
-    assert input.button is None
-    assert input.text is None
+    with pytest.raises(UIClosedError):
+        await ui.ask_question("Hello, how are you?")
 
     await ui.stop()
 
