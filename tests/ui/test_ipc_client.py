@@ -5,7 +5,7 @@ import sys
 import pytest
 
 from core.config import LocalIPCConfig
-from core.ui.base import AgentSource
+from core.ui.base import AgentSource, UIClosedError
 from core.ui.ipc_client import IPCClientUI
 
 if sys.platform == "win32":
@@ -160,11 +160,8 @@ async def test_server_closes_connection():
         connected = await ui.start()
         assert connected is True
 
-        answer = await ui.ask_question("Hello, how are you?")
-
-        await ui.stop()
-
-    assert answer.cancelled is True
+        with pytest.raises(UIClosedError):
+            await ui.ask_question("Hello, how are you?")
 
 
 @pytest.mark.asyncio

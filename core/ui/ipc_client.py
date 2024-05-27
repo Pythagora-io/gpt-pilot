@@ -8,7 +8,7 @@ from pydantic import BaseModel, ValidationError
 
 from core.config import LocalIPCConfig
 from core.log import get_logger
-from core.ui.base import ProjectStage, UIBase, UISource, UserInput
+from core.ui.base import ProjectStage, UIBase, UIClosedError, UISource, UserInput
 
 VSCODE_EXTENSION_HOST = "localhost"
 VSCODE_EXTENSION_PORT = 8125
@@ -113,20 +113,29 @@ class IPCClientUI(UIBase):
     async def _send(self, type: MessageType, **kwargs):
         msg = Message(type=type, **kwargs)
         data = msg.to_bytes()
+        if self.writer.is_closing():
+            log.error("IPC connection closed, can't send the message")
+            raise UIClosedError()
         try:
             self.writer.write(len(data).to_bytes(4, byteorder="big"))
             self.writer.write(data)
             await self.writer.drain()
         except (ConnectionResetError, BrokenPipeError) as err:
             log.error(f"Connection lost while sending the message: {err}")
+            raise UIClosedError()
 
     async def _receive(self) -> Optional[Message]:
         data = b""
         while True:
             try:
                 response = await self.reader.read(MESSAGE_SIZE_LIMIT)
-            except (asyncio.exceptions.IncompleteReadError, ConnectionResetError, asyncio.exceptions.CancelledError):
-                return None
+            except (
+                asyncio.exceptions.IncompleteReadError,
+                ConnectionResetError,
+                asyncio.exceptions.CancelledError,
+                BrokenPipeError,
+            ):
+                raise UIClosedError()
 
             if response == b"":
                 # We're at EOF, the server closed the connection
