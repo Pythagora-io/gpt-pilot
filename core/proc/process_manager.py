@@ -77,7 +77,6 @@ class LocalProcess:
             # FIXME: this may still hang if we don't manage to kill the process.
             retcode = await self._process.wait()
 
-        await self.read_output()
         return retcode
 
     @staticmethod

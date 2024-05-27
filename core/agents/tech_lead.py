@@ -11,7 +11,7 @@ from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
 from core.templates.registry import apply_project_template, get_template_description, get_template_summary
-from core.ui.base import ProjectStage
+from core.ui.base import ProjectStage, success_source
 
 log = get_logger(__name__)
 
@@ -94,6 +94,11 @@ class TechLead(BaseAgent):
         return summary
 
     async def ask_for_new_feature(self) -> AgentResponse:
+        if len(self.current_state.epics) > 2:
+            await self.ui.send_message("Your new feature is complete!", source=success_source)
+        else:
+            await self.ui.send_message("Your app is DONE!!! You can start using it right now!", source=success_source)
+
         log.debug("Asking for new feature")
         response = await self.ask_question(
             "Do you have a new feature to add to the project? Just write it here",
@@ -163,7 +168,7 @@ class TechLead(BaseAgent):
         finished_tasks.append(self.next_state.current_task)
 
         log.debug(f"Updating development plan for {epic['name']}")
-        await self.ui.send_message("Updating development plan ...")
+        await self.send_message("Updating development plan ...")
 
         llm = self.get_llm()
         convo = (

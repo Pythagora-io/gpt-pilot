@@ -259,5 +259,14 @@ class UIBase:
 
 
 pythagora_source = UISource("Pythagora", "pythagora")
+success_source = UISource("Congratulations", "success")
 
-__all__ = ["UISource", "AgentSource", "UserInput", "UIBase", "pythagora_source"]
+
+__all__ = [
+    "UISource",
+    "AgentSource",
+    "UserInput",
+    "UIBase",
+    "pythagora_source",
+    "success_source",
+]

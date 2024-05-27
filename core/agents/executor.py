@@ -11,9 +11,12 @@ from core.log import get_logger
 from core.proc.exec_log import ExecLog
 from core.proc.process_manager import ProcessManager
 from core.state.state_manager import StateManager
-from core.ui.base import AgentSource, UIBase
+from core.ui.base import AgentSource, UIBase, UISource
 
 log = get_logger(__name__)
+
+CMD_OUTPUT_SOURCE_NAME = "Command output"
+CMD_OUTPUT_SOURCE_TYPE = "cli-output"
 
 
 class CommandResult(BaseModel):
@@ -42,6 +45,8 @@ class Executor(BaseAgent):
         Create a new Executor agent
         """
         self.ui_source = AgentSource(self.display_name, self.agent_type)
+        self.cmd_ui_source = UISource(CMD_OUTPUT_SOURCE_NAME, CMD_OUTPUT_SOURCE_TYPE)
+
         self.ui = ui
         self.state_manager = state_manager
         self.process_manager = ProcessManager(
@@ -58,8 +63,8 @@ class Executor(BaseAgent):
         return self
 
     async def output_handler(self, out, err):
-        await self.stream_handler(out)
-        await self.stream_handler(err)
+        await self.ui.send_stream_chunk(out, source=self.cmd_ui_source)
+        await self.ui.send_stream_chunk(err, source=self.cmd_ui_source)
 
     async def exit_handler(self, process):
         pass
