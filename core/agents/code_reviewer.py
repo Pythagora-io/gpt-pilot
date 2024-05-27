@@ -197,11 +197,9 @@ class CodeReviewer(BaseAgent):
                 log.info(f"Rejecting entire change to {file_name} with reason: {llm_response.review_notes}")
                 return old_content, None
 
-        print("Applying code change:\n" + diff_log)
-        log.info(f"Applying code change to {file_name}:\n{diff_log}")
+        log.debug(f"Applying code change to {file_name}:\n{diff_log}")
         new_content = self.apply_diff(file_name, old_content, hunks_to_apply, new_content)
         if hunks_to_rework:
-            print(f"Requesting rework for {len(hunks_to_rework)} changes with reason: {llm_response.review_notes}")
             log.info(f"Requesting further rework for {len(hunks_to_rework)} changes to {file_name}")
             return new_content, review_log
         else:
