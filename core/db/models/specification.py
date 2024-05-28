@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Optional
 
+from sqlalchemy import delete, distinct, select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.db.models import Base
@@ -46,3 +48,16 @@ class Specification(Base):
             complexity=self.complexity,
         )
         return clone
+
+    @classmethod
+    async def delete_orphans(cls, session: AsyncSession):
+        """
+        Delete Specification objects that are not referenced by any ProjectState object.
+
+        :param session: The database session.
+        """
+        from core.db.models import ProjectState
+
+        await session.execute(
+            delete(Specification).where(~Specification.id.in_(select(distinct(ProjectState.specification_id))))
+        )
