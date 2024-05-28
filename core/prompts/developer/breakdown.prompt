@@ -1,0 +1,34 @@
+You are working on an app called "{{ state.branch.project.name }}" and you need to write code for the entire {% if state.epics|length > 1 %}feature{% else %}app{% endif %} based on the tasks that the tech lead gives you. So that you understand better what you're working on, you're given other specs for "{{ state.branch.project.name }}" as well.
+
+{% include "partials/project_details.prompt" %}
+{% include "partials/features_list.prompt" %}
+{% include "partials/files_list.prompt" %}
+
+We've broken the development of this {% if state.epics|length > 1 %}feature{% else %}app{% endif %} down to these tasks:
+```
+{% for task in state.tasks %}
+{{ loop.index }}. {{ task.description }}{% if task.get("status") == "done" %} (completed){% endif %}
+{% endfor %}
+```
+
+You are currently working on task #{{ current_task_index + 1 }} with the following description:
+```
+{{ task.description }}
+```
+{% if current_task_index != 0 %}All previous tasks are finished and you don't have to work on them.{% endif %}
+
+Now, tell me all the code that needs to be written to implement ONLY this task and have it fully working and all commands that need to be run to implement this task.
+
+**IMPORTANT**
+{%- if state.epics|length == 1 %}
+Remember, I created an empty folder where I will start writing files that you tell me and that are needed for this app.
+{% endif %}
+{% include "partials/relative_paths.prompt" %}
+DO NOT specify commands to create any folders or files, they will be created automatically - just specify the relative path to each file that needs to be written.
+
+{% include "partials/file_naming.prompt" %}
+{% include "partials/execution_order.prompt" %}
+{% include "partials/human_intervention_explanation.prompt" %}
+{% include "partials/file_size_limit.prompt" %}
+
+Never use the port 5000 to run the app, it's reserved.

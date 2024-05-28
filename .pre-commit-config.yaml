@@ -1,0 +1,31 @@
+fail_fast: true
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.3.5
+    hooks:
+      # Run the linter.
+      - id: ruff
+        args: [ --fix ]
+      # Run the formatter.
+      - id: ruff-format
+  - repo: local
+    hooks:
+      # Check there are no migrations missing
+      - id: alembic
+        name: alembic
+        stages: [commit]
+        types: [python]
+        entry: alembic -c core/db/alembic.ini check
+        language: system
+        pass_filenames: false
+  - repo: local
+    hooks:
+      # Run the tests
+      - id: pytest
+        name: pytest
+        stages: [commit]
+        types: [python]
+        entry: pytest
+        language: system
+        pass_filenames: false

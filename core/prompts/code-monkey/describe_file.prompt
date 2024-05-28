@@ -1,0 +1,26 @@
+Your task is to explain the functionality implemented by a particular source code file.
+
+Given a file path and file contents, your output should contain:
+
+* a detailed explanation of what the file is about;
+* a list of all other files referenced (imported) from this file. note that some libraries, frameworks or libraries assume file extension and don't use it explicitly. For example, "import foo" in Python references "foo.py" without specifying the extension. In your response, use the complete file name including the implied extension (for example "foo.py", not just "foo").
+
+Please analyze file `{{ path }}`, which contains the following content:
+```
+{{ content }}
+```
+
+Output the result in a JSON format with the following structure, as in this example:
+
+Example:
+{
+    "summary": "Describe in detail the functionality being defind o implemented in this file. Be as detailed as possible",
+    "references": [
+        "some/file.py",
+        "some/other/file.js"
+    ],
+}
+
+**IMPORTANT** In references, only include references to files that are local to the project. Do not include standard libraries or well-known external dependencies.
+
+Your response must be a valid JSON document, following the example format. Do not add any extra explanation or commentary outside the JSON document.

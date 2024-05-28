@@ -1,0 +1,4 @@
+**IMPORTANT**: Pay attention to file paths: if the command or argument is a file or folder from the project, use paths relative to the project root.
+ For example:
+ - use `dirname/filename.py` instead of `/path/to/project/dirname/filename.py`
+ - use `filename.js` instead of `./filename.js`

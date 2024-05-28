@@ -1,0 +1,16 @@
+{% if state.epics|length > 2 %}
+
+Here is the list of features that were previously implemented on top of initial high level description of "{{ state.branch.project.name }}":
+```
+{% for feature in state.epics[1:-1] %}
+- {{ loop.index }}. {{ feature.description }}
+{% endfor %}
+```
+{% endif %}
+{% if state.epics|length > 1 %}
+
+Here is the feature that you are implementing right now:
+```
+{{ state.current_epic.description }}
+```
+{% endif %}

@@ -1,0 +1,26 @@
+{% if state.relevant_files %}
+These files are currently implemented in the project:
+{% for file in state.files %}
+* `{{ file.path }}{% if file.meta.get("description") %}: {{file.meta.description}}{% endif %}`
+{% endfor %}
+
+Here are the complete contents of files relevant to this task:
+---START_OF_FILES---
+{% for file in state.relevant_file_objects %}
+File **`{{ file.path }}`** ({{file.content.content.splitlines()|length}} lines of code):
+```
+{{ file.content.content }}```
+
+{% endfor %}
+---END_OF_FILES---
+{% elif state.files %}
+These files are currently implemented in the project:
+---START_OF_FILES---
+{% for file in state.files %}
+**`{{ file.path }}`** ({{file.content.content.splitlines()|length}} lines of code):
+```
+{{ file.content.content }}```
+
+{% endfor %}
+---END_OF_FILES---
+{% endif %}

@@ -1,0 +1,8 @@
+```
+{{ prompt }}
+```
+
+The above is a user prompt for application/software tool they are trying to develop. Determine the complexity of the user's request. Do NOT respond with thoughts, reasoning, explanations or anything similar, return ONLY a string representation of the complexity level. Use the following scale:
+"hard" for high complexity
+"moderate" for moderate complexity
+"simple" for low complexity

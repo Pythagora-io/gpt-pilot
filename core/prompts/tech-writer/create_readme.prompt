@@ -1,0 +1,37 @@
+You are working on a project called "{{ state.branch.project.name }}" and you need to create a detailed documentation for current state of project. Your first task is to create README.md file.
+
+{% include "partials/project_details.prompt" %}
+{% include "partials/features_list.prompt" %}
+{% include "partials/files_list.prompt" %}
+
+DO NOT specify commands to create any folders or files, they will be created automatically - just specify the relative path to file that needs to be written.
+
+{% include "partials/relative_paths.prompt" %}
+
+Now, based on the project details provided, think step by step and create README.md file for this project. The file should have the following format:
+
+# Project name
+
+Short description (a few sentences) of the project based on the project details.
+
+## Overview
+
+Description of the architecture and technologies used in the project, and the project structure.
+
+## Features
+
+Description of what the app can do and how it can be used.
+
+## Getting started
+
+### Requirements
+
+Required technologies/setup needed on the computer to run the project.
+
+### Quickstart
+
+How to set up the project and run it
+
+### License
+
+The project is proprietary (not open source), just output the standard Copyright (c) 2024. template here.

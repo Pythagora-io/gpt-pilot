@@ -1,0 +1,76 @@
+{
+  // Configuration for the LLM providers that can be used. Pythagora supports
+  // OpenAI, Anthropic and Groq. Azure and OpenRouter and local LLMs (such as LM-Studio)
+  // also work, you can use "openai" provider to define these.
+  "llm": {
+    "openai": {
+      // Base url to the provider/server, omitting the trailing "chat/completions" part.
+      "base_url": null,
+      "api_key": null,
+      "connect_timeout": 60.0,
+      "read_timeout": 10.0
+    }
+  },
+  // Each agent can use a different model or configuration. The default, as before, is GPT4 Turbo
+  // for most tasks and GPT3.5 Turbo to generate file descriptions. The agent name here should match
+  // the Python class name.
+  "agent": {
+    "default": {
+      "provider": "openai",
+      "model": "gpt-4-0125-preview",
+      "temperature": 0.5
+    },
+    "CodeMonkey.describe_files": {
+      "provider": "openai",
+      "model": "gpt-3.5-turbo",
+      "temperature": 0.0
+    }
+  },
+  // Logging configuration outputs debug log to "pythagora.log" by default. If you set this to null,
+  // the log will be sent to stdout.
+  "log": {
+    "level": "DEBUG",
+    "format": "%(asctime)s %(levelname)s [%(name)s] %(message)s",
+    "output": "pythagora.log"
+  },
+  // Database to use. Pythagora uses asyncio so asyncio-compatible database engine should be specified.
+  // If "debug_sql" is set to True, all SQL queries will be logged.
+  "db": {
+    "url": "sqlite+aiosqlite:///pythagora.db",
+    "debug_sql": false
+  },
+  "ui": {
+    "type": "plain"
+  },
+  "fs": {
+    "type": "local",
+    // Root directory of the workspace. Pythagora will store all projects under this directory by default.
+    "workspace_root": "workspace",
+    // Directories, files and patterns to ignore when examining the files in the project.
+    // Note that Pythagora already ignores all binary (non-text) files by default.
+    "ignore_paths": [
+      ".git",
+      ".gpt-pilot",
+      ".idea",
+      ".vscode",
+      ".next",
+      ".DS_Store",
+      "__pycache__",
+      "site-packages",
+      "node_modules",
+      "package-lock.json",
+      "venv",
+      "dist",
+      "build",
+      "target",
+      "*.min.js",
+      "*.min.css",
+      "*.svg",
+      "*.csv",
+      "*.log",
+      "go.sum"
+    ],
+    // Files larger than 50KB will be ignored, even if they otherwise wouldn't be.
+    "ignore_size_threshold": 50000
+  }
+}

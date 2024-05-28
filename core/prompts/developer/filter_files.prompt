@@ -1,0 +1,34 @@
+We're starting work on a new task for a project we're working on.
+
+{% include "partials/project_details.prompt" %}
+{% include "partials/features_list.prompt" %}
+{% include "partials/files_list.prompt" %}
+
+We've broken the development of the project down to these tasks:
+```
+{% for task in state.tasks %}
+{{ loop.index }}. {{ task.description }}{% if task.get("status") == "done" %} (completed){% endif %}
+{% endfor %}
+```
+
+The next task we need to work on, and have to focus on, is this task:
+```
+{{ current_task.description }}
+```
+
+{% if user_feedback %}User who was using the app sent you this feedback:
+```
+{{ user_feedback }}
+```
+{% endif %}{% if solution_description %}
+Focus on solving this issue in the following way:
+```
+{{ solution_description }}
+```
+{% endif %}
+
+**IMPORTANT**
+The files necessary for a developer to understand, modify, implement, and test the current task are considered to be relevant files.
+Your job is select  which of existing files are relevant for the current task. From the above list of files that app currently contains, you have to select ALL files that are relevant to the current task. Think step by step of everything that has to be done in this task and which files contain needed information. If you are unsure if a file is relevant or not, it is always better to include it in the list of relevant files.
+
+{% include "partials/relative_paths.prompt" %}

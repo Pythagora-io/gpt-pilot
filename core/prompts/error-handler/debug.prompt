@@ -1,0 +1,58 @@
+A coding task has been implemented for the new project we're working on.
+
+{% include "partials/project_details.prompt" %}
+{% include "partials/files_list.prompt" %}
+
+We've broken the development of the project down to these tasks:
+```
+{% for task in state.tasks %}
+{{ loop.index }}. {{ task.description }}{% if task.get("status") == "done" %} (completed){% endif %}
+{% endfor %}
+```
+
+The current task is: {{ current_task.description }}
+
+Here are the detailed instructions for the current task:
+```
+{{ current_task.instructions }}
+```
+{# FIXME: the above stands in place of a previous (task breakdown) convo, and is duplicated in define_user_review_goal, review_task and debug prompts #}
+
+{% if task_steps and step_index is not none -%}
+The current task has been split into multiple steps, and each step is one of the following:
+* `command` - command to run
+* `save_file` -  create or update a file
+* `human_intervention` - if the human needs to do something
+
+{# FIXME: this is copypasted from ran_command #}
+Here is the list of all steps in in this task (steps that were already completed are marked as COMPLETED, future steps that will be executed once debugging is done are marked as FUTURE, and the current step is marked as CURRENT STEP):
+{% for step in task_steps %}
+* {% if loop.index0 < step_index %}(COMPLETED){% elif loop.index0 > step_index %}(FUTURE){% else %}(**CURRENT STEP**){% endif %} {{ step.type }}: `{% if step.type == 'command' %}{{ step.command.command }}{% elif step.type == 'save_file' %}{{ step.save_file.path }}{% endif %}`
+{% endfor %}
+
+When trying to see if command was ran successfully, take into consideration steps that were previously executed and steps that will be executed after the current step. It can happen that command seems like it failed but it will be fixed with next steps. In that case you should consider that command to be successfully executed.
+{%- endif %}
+
+I ran the command `{{ cmd }}`, and it {% if status_code is none %}timed out{% else %}exited with status code {{ status_code }}{% endif %}.
+{% if stdout %}
+Command stdout:
+```
+{{ stdout }}
+```
+{% endif %}
+{% if stderr %}
+Command stderr:
+```
+{{ stderr }}
+```
+{% endif %}
+{# end copypasted #}
+
+{{ analysis }}
+
+Based on the above, I want you to propose a step by step plan to solve the problem and continue with the the current task. I will take your plan and replace the current steps with it, so make sure it contains everything needed to complete this task AND THIS TASK ONLY.
+
+{% include "partials/file_naming.prompt" %}
+{% include "partials/execution_order.prompt" %}
+{% include "partials/human_intervention_explanation.prompt" %}
+{% include "partials/file_size_limit.prompt" %}

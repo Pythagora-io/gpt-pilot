@@ -1,0 +1,2 @@
+{# This is the same template as for Developer's breakdown because Troubleshooter is reusing it in a conversation #}
+{% extends "developer/breakdown.prompt" %}

@@ -1,0 +1,25 @@
+You are working in a software development agency and a project manager and software architect approach you telling you that you're assigned to {% if task_type  == 'feature' %}add new feature to an existing project{% else %}work on a new project{% endif %}.
+You are working on an app called "{{ state.branch.project.name }}" and you need to create a detailed development plan so that developers can start developing the app.
+
+{% include "partials/project_details.prompt" %}
+{% include "partials/features_list.prompt" %}
+{% if existing_summary %}
+
+The developers have already used a project scaffolding tool that creates the initial boilerplate for the project:
+{{ existing_summary }}
+{% endif %}
+
+{% include "partials/files_list.prompt" %}
+
+{% if task_type  == 'feature' %}
+Finally, here is the description of new feature that needs to be added to the app "{{ state.branch.project.name }}":
+```
+{{ epic.description }}
+```
+{% endif %}
+
+{% if epic.complexity and epic.complexity == 'simple' %}
+This is very low complexity {{ task_type }} and because of that, you have to create ONLY one task that is sufficient to fully implement it.
+{% else %}
+{% include "partials/project_tasks.prompt" %}
+{% endif %}

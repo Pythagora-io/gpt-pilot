@@ -1,0 +1,56 @@
+{% if rework_feedback is defined %}
+You previously made changes to file `{{ file_name }}`, according to the instructions described in the previous message.
+The reviewer accepted some of your changes, and the file now looks like this:
+```
+{{ file_content }}
+```
+{% elif file_content %}
+I need to modify file `{{ file_name }}` that currently looks like this:
+```
+{{ file_content }}
+```
+{% else %}
+I need to create a new file `{{ file_name }}`:
+{% endif %}
+
+**IMPORTANT**
+{% if rework_feedback is defined %}
+But not all changes were accepted, and the reviewer provided feedback on the changes that you must rework:
+{{ rework_feedback}}
+Please update the file accordingly and output the full new version of the file.
+{% else %}
+I want you to implement changes described in previous message, that starts with `{{ " ".join(instructions.split()[:5]) }}` and ends with `{{ " ".join(instructions.split()[-5:]) }}`.
+{% endif %}
+Make sure you don't make any mistakes, especially ones that could affect rest of project. Your changes will {% if rework_feedback is defined %}again {% endif %}be reviewed by very detailed reviewer. Because of that, it is extremely important that you are STRICTLY following ALL the following rules while implementing changes:
+
+**IMPORTANT** Output format
+You must output the COMPLETE NEW VERSION of this file in following format:
+-----------------------format----------------------------
+```
+the full contents of the updated file, without skipping over any content
+```
+------------------------end_of_format---------------------------
+
+**IMPORTANT** Comprehensive Codebase Insight
+It's crucial to grasp the full scope of the codebase related to your tasks to avert mistakes. Check the initial conversation message for a list of files. Pay a lot of attention to files that are directly included in the file you are currently modifying or that are importing your file.
+Consider these examples to guide your approach and thought process:
+-----------------------start_of_examples----------------------------
+- UI components or templates: Instead of placing scripts directly on specific pages, integrating them in the <head> section or as reusable partials enhances application-wide consistency and reusability.
+- Database operations: Be careful not to execute an action, like password hashing, both in a routing function and a model's pre('save') hook, which could lead to redundancy and errors.
+- Adding backend logic: Prior to creating new functions, verify if an equivalent function exists in the codebase that you could import and use, preventing unnecessary code duplication and keeping the project efficient.
+-----------------------end_of_examples----------------------------
+
+**IMPORTANT** Coding principles
+Write high-quality code, first organize it logically with clear, meaningful names for variables, functions, and classes. Aim for simplicity and adhere to the DRY (Don't Repeat Yourself) principle to avoid code duplication. Ensure your codebase is structured and modular for easy navigation and updates.
+
+**IMPORTANT** If the instructions have comments like `// ..add code here...` or `# placeholder for code`, instead of copying the comment, interpret the instructions and output the relevant code.
+
+**IMPORTANT** Your reply MUST NOT omit any code in the new implementation or substitute anything with comments like `// .. rest of the code goes here ..` or `# insert existing code here`, because I will overwrite the existing file with the content you provide. Output ONLY the content for this file, without additional explanation, suggestions or notes. Your output MUST start with ``` and MUST end with ``` and include only the complete file contents.
+
+**IMPORTANT** When working with configuration files (e.g. config.json, .env,...), for hardcoded configuration values that the user needs to change, mark the line that needs user configuration with `INPUT_REQUIRED {config_description}` comment,  where `config_description` is a description of the value that needs to be set by the user. Use appropriate syntax for comments in the file you're saving (for example `// INPUT_REQUIRED {config_description}` in JavaScript). NEVER ask the user to write code or provide implementation, even if the instructions suggest it! If the file type doesn't support comments (eg JSON), don't add any.
+
+**IMPORTANT**: Logging
+Whenever you write code, make sure to log code execution so that when a developer looks at the CLI output, they can understand what is happening on the server. If the description above mentions the exact code that needs to be added but doesn't contain enough logs, you need to add the logs handlers inside that code yourself.
+
+**IMPORTANT**: Error handling
+Whenever you write code, make sure to add error handling for all edge cases you can think of because this app will be used in production so there shouldn't be any crashes. Whenever you log the error, you **MUST** log the entire error message and trace and not only the error message. If the description above mentions the exact code that needs to be added but doesn't contain enough error handlers, you need to add the error handlers inside that code yourself.
