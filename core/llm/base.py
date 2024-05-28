@@ -18,6 +18,7 @@ log = get_logger(__name__)
 class LLMError(str, Enum):
     KEY_EXPIRED = "key_expired"
     RATE_LIMITED = "rate_limited"
+    GENERIC_API_ERROR = "generic_api_error"
 
 
 class APIError(Exception):
@@ -240,6 +241,17 @@ class BaseLLMClient:
                 request_log.error = str(f"API error: {err}")
                 request_log.status = LLMRequestStatus.ERROR
                 return None, request_log
+            except (openai.APIError, anthropic.APIError, groq.APIError) as err:
+                # Generic LLM API error
+                # Make sure this handler is last in the chain as some of the above
+                # errors inherit from these `APIError` classes
+                log.warning(f"LLM API error {err}", exc_info=True)
+                msg = "LLM had an error processing our request."
+                if self.error_handler:
+                    should_retry = await self.error_handler(LLMError.GENERIC_API_ERROR, message=msg)
+                    if should_retry:
+                        continue
+                raise APIError(msg) from err
 
             request_log.response = response
 

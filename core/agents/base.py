@@ -135,7 +135,15 @@ class BaseAgent:
             )
             if answer.button == "yes":
                 return True
-
+        elif error == LLMError.GENERIC_API_ERROR:
+            await self.stream_handler(message)
+            answer = await self.ask_question(
+                "Would you like to retry the last step?",
+                buttons={"yes": "Yes", "no": "No"},
+                buttons_only=True,
+            )
+            if answer.button == "yes":
+                return True
         elif error == LLMError.RATE_LIMITED:
             await self.stream_handler(message)
 
