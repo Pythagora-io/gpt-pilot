@@ -260,8 +260,7 @@ async def test_handle_garbage_response():
         await ui.send_message("fake1")
         await ui.send_message("fake2")
 
-        answer = await ui.ask_question("Are you sure")
+        with pytest.raises(UIClosedError):
+            await ui.ask_question("Are you sure")
 
         await ui.stop()
-
-    assert answer.cancelled is True

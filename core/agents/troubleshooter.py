@@ -42,7 +42,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
             self.next_state.flag_tasks_as_modified()
             return AgentResponse.done(self)
         else:
-            await self.ui.send_message("Here are instruction on how to test the app:\n\n" + user_instructions)
+            await self.send_message("Here are instruction on how to test the app:\n\n" + user_instructions)
 
         # Developer sets iteration as "completed" when it generates the step breakdown, so we can't
         # use "current_iteration" here
