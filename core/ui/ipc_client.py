@@ -124,7 +124,7 @@ class IPCClientUI(UIBase):
             log.error(f"Connection lost while sending the message: {err}")
             raise UIClosedError()
 
-    async def _receive(self) -> Optional[Message]:
+    async def _receive(self) -> Message:
         data = b""
         while True:
             try:
@@ -139,7 +139,7 @@ class IPCClientUI(UIBase):
 
             if response == b"":
                 # We're at EOF, the server closed the connection
-                return None
+                raise UIClosedError()
 
             data += response
             try:
@@ -210,7 +210,7 @@ class IPCClientUI(UIBase):
         source: Optional[UISource] = None,
     ) -> UserInput:
         if not self.writer:
-            return UserInput(cancelled=True)
+            raise UIClosedError()
 
         category = source.type_name if source else None
 
@@ -231,9 +231,6 @@ class IPCClientUI(UIBase):
             await self._send(MessageType.INPUT_PREFILL, content=initial_text, category=category)
 
         response = await self._receive()
-        if response is None:
-            return UserInput(cancelled=True)
-
         answer = response.content.strip()
         if not answer and default:
             answer = default
