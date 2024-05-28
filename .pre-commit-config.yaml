@@ -11,6 +11,16 @@ repos:
       - id: ruff-format
   - repo: local
     hooks:
+      # Check there are no migrations missing
+      - id: alembic
+        name: alembic
+        stages: [commit]
+        types: [python]
+        entry: alembic -c core/db/alembic.ini check
+        language: system
+        pass_filenames: false
+  - repo: local
+    hooks:
       # Run the tests
       - id: pytest
         name: pytest
