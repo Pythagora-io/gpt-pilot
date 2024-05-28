@@ -1,8 +1,10 @@
 from unittest.mock import AsyncMock, MagicMock, call, patch
 
+import openai
 import pytest
 
 from core.config import LLMConfig
+from core.llm.base import APIError
 from core.llm.convo import Convo
 from core.llm.openai_client import OpenAIClient
 
@@ -111,10 +113,62 @@ async def test_openai_parser_fails(mock_AsyncOpenAI):
     mock_AsyncOpenAI.return_value.chat.completions.create = stream
 
     llm = OpenAIClient(cfg)
-    response, req_log = await llm(convo, parser=parser, max_retries=1)
 
-    assert response is None
-    assert req_log.status == "error"
+    with pytest.raises(APIError, match="Error parsing LLM response"):
+        await llm(convo, parser=parser, max_retries=1)
+
+
+@pytest.mark.asyncio
+@patch("core.llm.openai_client.AsyncOpenAI")
+async def test_openai_error_handler_success(mock_AsyncOpenAI):
+    """
+    Test that LLM client auto-retries up to max_retries, then calls
+    the error handler to decide what next.
+    """
+    cfg = LLMConfig(model="gpt-4-turbo")
+    convo = Convo("system hello").user("user hello")
+
+    expected_errors = [
+        "Error connecting to the LLM: API connection error: second",
+        "Error connecting to the LLM: LLM had an error processing our request: fourth",
+    ]
+
+    async def error_handler(error, message):
+        assert message == expected_errors.pop(0)
+        return True
+
+    llm = OpenAIClient(cfg, error_handler=error_handler)
+    llm._make_request = AsyncMock(
+        side_effect=[
+            openai.APIConnectionError(message="first", request=None),  # auto-retried
+            openai.APIConnectionError(message="second", request=None),  # defer to error handler
+            openai.APIError("third", None, body=None),  # auto-retried
+            openai.APIError("fourth", None, body=None),  # defer to error handler
+            ("Hello", 0, 0),  # success
+        ]
+    )
+    response, _ = await llm(convo, max_retries=2)
+    assert response == "Hello"
+
+
+@pytest.mark.asyncio
+@patch("core.llm.openai_client.AsyncOpenAI")
+async def test_openai_error_handler_failure(mock_AsyncOpenAI):
+    """
+    Test that LLM client raises an API error if error handler decides
+    not to retry.
+    """
+    cfg = LLMConfig(model="gpt-4-turbo")
+    convo = Convo("system hello").user("user hello")
+
+    error_handler = AsyncMock(return_value=False)
+    llm = OpenAIClient(cfg, error_handler=error_handler)
+    llm._make_request = AsyncMock(side_effect=[openai.APIError("test error", None, body=None)])
+
+    with pytest.raises(APIError, match="test error"):
+        await llm(convo, max_retries=1)
+
+    error_handler.assert_awaited_once()
 
 
 @pytest.mark.parametrize(
