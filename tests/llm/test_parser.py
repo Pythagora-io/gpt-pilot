@@ -4,7 +4,7 @@ from typing import Tuple
 import pytest
 from pydantic import BaseModel, field_validator
 
-from core.llm.parser import CodeBlockParser, EnumParser, JSONParser, MultiCodeBlockParser
+from core.llm.parser import CodeBlockParser, EnumParser, JSONParser, MultiCodeBlockParser, OptionalCodeBlockParser
 
 
 @pytest.mark.parametrize(
@@ -188,3 +188,17 @@ def test_enum_parser(input, expected):
             parser(input)
     else:
         assert parser(input).value == expected
+
+
+@pytest.mark.parametrize(
+    ("input", "expected"),
+    [
+        ("abc", "abc"),
+        ("watch this: `foo`", "watch this: `foo`"),
+        ("`hello world`", "hello world"),
+        ("```\nhello world\n```", "hello world"),
+    ],
+)
+def test_optional_block_parser(input, expected):
+    parser = OptionalCodeBlockParser()
+    assert parser(input) == expected
