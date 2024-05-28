@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 
 from core.config import FileSystemType, get_config
 from core.db.models import Branch, ExecLog, File, FileContent, LLMRequest, Project, ProjectState, UserInput
+from core.db.models.specification import Specification
 from core.db.session import SessionManager
 from core.disk.ignore import IgnoreMatcher
 from core.disk.vfs import LocalDiskVFS, MemoryVFS, VirtualFileSystem
@@ -88,7 +89,12 @@ class StateManager:
     async def delete_project(self, project_id: UUID) -> bool:
         session = await self.session_manager.start()
         rows = await Project.delete_by_id(session, project_id)
+        if rows > 0:
+            await Specification.delete_orphans(session)
+            await FileContent.delete_orphans(session)
+
         await session.commit()
+
         if rows > 0:
             log.info(f"Deleted project {project_id}.")
         return bool(rows)

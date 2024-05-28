@@ -133,9 +133,6 @@ async def run_pythagora_session(sm: StateManager, ui: UIBase, args: Namespace):
         success = await load_project(sm, args.project, args.branch, args.step)
         if not success:
             return False
-    elif args.delete:
-        success = await delete_project(sm, args.delete)
-        return success
     else:
         success = await start_new_project(sm, ui)
         if not success:
@@ -171,6 +168,9 @@ async def async_main(
         importer = LegacyDatabaseImporter(db, args.import_v0)
         await importer.import_database()
         return True
+    elif args.delete:
+        success = await delete_project(db, args.delete)
+        return success
 
     telemetry.set("user_contact", args.email)
     if args.extension_version:

@@ -274,7 +274,7 @@ async def load_project(
     return False
 
 
-async def delete_project(sm: StateManager, project_id: UUID) -> bool:
+async def delete_project(db: SessionManager, project_id: UUID) -> bool:
     """
     Delete a project from a database.
 
@@ -283,6 +283,7 @@ async def delete_project(sm: StateManager, project_id: UUID) -> bool:
     :return: True if project was deleted, False otherwise.
     """
 
+    sm = StateManager(db)
     return await sm.delete_project(project_id)
 
 

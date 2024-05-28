@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import select
+from sqlalchemy import delete, distinct, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -45,3 +45,14 @@ class FileContent(Base):
         session.add(fc)
 
         return fc
+
+    @classmethod
+    async def delete_orphans(cls, session: AsyncSession):
+        """
+        Delete FileContent objects that are not referenced by any File object.
+
+        :param session: The database session.
+        """
+        from core.db.models import File
+
+        await session.execute(delete(FileContent).where(~FileContent.id.in_(select(distinct(File.content_id)))))
