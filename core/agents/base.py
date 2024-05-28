@@ -7,7 +7,7 @@ from core.llm.base import BaseLLMClient, LLMError
 from core.log import get_logger
 from core.proc.process_manager import ProcessManager
 from core.state.state_manager import StateManager
-from core.ui.base import AgentSource, UIBase, UserInput
+from core.ui.base import AgentSource, UIBase, UserInput, pythagora_source
 
 log = get_logger(__name__)
 
@@ -137,10 +137,11 @@ class BaseAgent:
                 return True
         elif error == LLMError.GENERIC_API_ERROR:
             await self.stream_handler(message)
-            answer = await self.ask_question(
-                "Would you like to retry the last step?",
+            answer = await self.ui.ask_question(
+                "Would you like to retry the failed request?",
                 buttons={"yes": "Yes", "no": "No"},
                 buttons_only=True,
+                source=pythagora_source,
             )
             if answer.button == "yes":
                 return True
