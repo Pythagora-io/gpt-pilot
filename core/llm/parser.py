@@ -77,6 +77,9 @@ class OptionalCodeBlockParser:
             # Remove the first and last line. Note the first line may include syntax
             # highlighting, so we can't just remove the first 3 characters.
             text = "\n".join(text.splitlines()[1:-1]).strip()
+        elif "\n" not in text and text.startswith("`") and text.endswith("`"):
+            # Single-line code blocks are wrapped in single backticks
+            text = text[1:-1]
         return text
 
 
