@@ -194,6 +194,7 @@ async def list_projects_json(db: SessionManager):
 
     data = []
     for project in projects:
+        last_updated = None
         p = {
             "name": project.name,
             "id": project.id.hex,
@@ -206,6 +207,8 @@ async def list_projects_json(db: SessionManager):
                 "steps": [],
             }
             for state in branch.states:
+                if not last_updated or state.created_at > last_updated:
+                    last_updated = state.created_at
                 s = {
                     "name": state.action or f"Step #{state.step_index}",
                     "step": state.step_index,
@@ -214,7 +217,9 @@ async def list_projects_json(db: SessionManager):
             if b["steps"]:
                 b["steps"][-1]["name"] = "Latest step"
             p["branches"].append(b)
+        p["updated_at"] = last_updated.isoformat() if last_updated else None
         data.append(p)
+
     print(json.dumps(data, indent=2))
 
 

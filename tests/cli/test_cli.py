@@ -1,5 +1,6 @@
 import json
 from argparse import ArgumentParser, ArgumentTypeError
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -167,9 +168,9 @@ async def test_list_projects_json(mock_StateManager, capsys):
     branch = MagicMock(
         id=MagicMock(hex="1234"),
         states=[
-            MagicMock(step_index=1, action="foo"),
-            MagicMock(step_index=2, action=None),
-            MagicMock(step_index=3, action="baz"),
+            MagicMock(step_index=1, action="foo", created_at=datetime(2021, 1, 1)),
+            MagicMock(step_index=2, action=None, created_at=datetime(2021, 1, 2)),
+            MagicMock(step_index=3, action="baz", created_at=datetime(2021, 1, 3)),
         ],
     )
     branch.name = "branch1"
@@ -191,6 +192,7 @@ async def test_list_projects_json(mock_StateManager, capsys):
         {
             "name": "project1",
             "id": "abcd",
+            "updated_at": "2021-01-03T00:00:00",
             "branches": [
                 {
                     "name": "branch1",
