@@ -53,7 +53,10 @@ async def run_project(sm: StateManager, ui: UIBase) -> bool:
         log.error(f"Uncaught exception: {err}", exc_info=True)
         stack_trace = telemetry.record_crash(err)
         await sm.rollback()
-        await ui.send_message(f"Stopping Pythagora due to error:\n\n{stack_trace}", source=pythagora_source)
+        await ui.send_message(
+            f"Stopping Pythagora due to error:\n\n{stack_trace}",
+            source=pythagora_source,
+        )
 
     await telemetry.send()
     return success
@@ -88,7 +91,10 @@ async def llm_api_check(ui: UIBase) -> bool:
             else:
                 log.info(f"API check for {llm_config.provider.value} succeeded.")
         except APIError as err:
-            await ui.send_message(f"API check for {llm_config.provider.value} failed with: {err}")
+            await ui.send_message(
+                f"API check for {llm_config.provider.value} failed with: {err}",
+                source=pythagora_source,
+            )
             log.warning(f"API check for {llm_config.provider.value} failed with: {err}")
             success = False
 
@@ -125,6 +131,10 @@ async def run_pythagora_session(sm: StateManager, ui: UIBase, args: Namespace):
     """
 
     if not await llm_api_check(ui):
+        await ui.send_message(
+            "Pythagora cannot start because the LLM API is not reachable.",
+            source=pythagora_source,
+        )
         return False
 
     if args.project or args.branch or args.step:
@@ -185,6 +195,8 @@ async def async_main(
     telemetry.start()
     success = await run_pythagora_session(sm, ui, args)
     await telemetry.send()
+    await ui.stop()
+
     return success
 
 
