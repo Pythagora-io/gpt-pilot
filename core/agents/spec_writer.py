@@ -31,10 +31,14 @@ class SpecWriter(BaseAgent):
                 # FIXME: must be lowercase becase VSCode doesn't recognize it otherwise. Needs a fix in the extension
                 "continue": "continue",
                 "example": "Start an example project",
+                "import": "Import an existing project",
             },
         )
         if response.cancelled:
             return AgentResponse.error(self, "No project description")
+
+        if response.button == "import":
+            return AgentResponse.import_project(self)
 
         if response.button == "example":
             await self.send_message("Starting example project with description:")

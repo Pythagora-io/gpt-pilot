@@ -1,0 +1,28 @@
+You're given an existing project you need to analyze and continue developing. To do this, you'll need to determine the project architecture, technologies used (platform, libraries, etc) and reverse-engineer the technical and functional spec.
+
+Here is the list of all the files in the project:
+
+{% for file in state.files %}
+* `{{ file.path }}` - {{ file.meta.get("description")}}
+{% endfor %}
+
+Here's the full content of interesting files that may help you to determine the specification:
+
+{% for file in state.files %}
+**`{{ file.path }}`**:
+```
+{{ file.content.content }}
+```
+
+{% endfor %}
+
+Based on this information, please provide detailed specification for the project. Here is an example specification format:
+
+---START_OF_EXAMPLE_SPEC---
+{{ example_spec }}
+---END_OF_EXAMPLE_SPEC---
+
+**IMPORTANT**: In the specification, you must include the following sections:
+* **Project Description**: A detailed description of what the project is about.
+* **Features**: A list of features that the project has implemented. Each feature should be described in detail.
+* **Technical Specification**: Detailed description of how the project works, including any important technical details.
