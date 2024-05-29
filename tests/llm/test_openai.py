@@ -115,3 +115,26 @@ async def test_openai_parser_fails(mock_AsyncOpenAI):
 
     assert response is None
     assert req_log.status == "error"
+
+
+@pytest.mark.parametrize(
+    ("remaining_tokens", "reset_tokens", "reset_requests", "expected"),
+    [
+        (0, "1h1m1s", "", 3661),
+        (0, "1h1s", "", 3601),
+        (0, "1m", "", 60),
+        (0, "", "1h1m1s", 0),
+        (1, "", "1h1m1s", 3661),
+    ],
+)
+@patch("core.llm.openai_client.AsyncOpenAI")
+def test_openai_rate_limit_parser(mock_AsyncOpenAI, remaining_tokens, reset_tokens, reset_requests, expected):
+    headers = {
+        "x-ratelimit-remaining-tokens": remaining_tokens,
+        "x-ratelimit-reset-tokens": reset_tokens,
+        "x-ratelimit-reset-requests": reset_requests,
+    }
+    err = MagicMock(response=MagicMock(headers=headers))
+
+    llm = OpenAIClient(LLMConfig(model="gpt-4"))
+    assert int(llm.rate_limit_sleep(err).total_seconds()) == expected
