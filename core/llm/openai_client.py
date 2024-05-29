@@ -104,13 +104,16 @@ class OpenAIClient(BaseLLMClient):
             match = re.search(time_regex, headers["x-ratelimit-reset-requests"])
 
         if match:
-            seconds = int(match.group(1)) * 3600 + int(match.group(2)) * 60 + int(match.group(3))
+            hours = int(match.group(1)) if match.group(1) else 0
+            minutes = int(match.group(2)) if match.group(2) else 0
+            seconds = int(match.group(3)) if match.group(3) else 0
+            total_seconds = hours * 3600 + minutes * 60 + seconds
         else:
             # Not sure how this would happen, we would have to get a RateLimitError,
             # but nothing (or invalid entry) in the `reset` field. Using a sane default.
-            seconds = 5
+            total_seconds = 5
 
-        return datetime.timedelta(seconds=seconds)
+        return datetime.timedelta(seconds=total_seconds)
 
 
 __all__ = ["OpenAIClient"]
