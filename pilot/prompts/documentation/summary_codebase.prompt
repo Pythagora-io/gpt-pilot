@@ -3,7 +3,8 @@ You are working on a {{ app_type }} called "{{ name }}" and you need to create a
 {{ files_list }}
 
 Now, based on the project details provided, think step by step and create description text for this project. The file should have the following format:
-'''
+-----------------------START_OF_FORMAT-------------------
+```
 Short description (a few sentences) of the project based on the project details.
 
 Features:
@@ -14,11 +15,12 @@ Description of what operations the app will perform and how it is expected to be
 
 Technical Specification:
 Description of the architecture and technologies used in the project, and the project structure.
-'''
+```
+------------------------END_OF_FORMAT---------------------
 
-
-Here is a example:
-'''
+Here is an example:
+-----------------------START_OF_EXAMPLES------------------
+```
 The application is a simple TaskManage app built using React. Its primary function is to allow users to manage a list of tasks (todos). Each task has a description and a state (open or completed, with the default state being open). The application is frontend-only, with no user sign-up or authentication process. The goal is to provide a straightforward and user-friendly interface for task management.
 
 Features:
@@ -43,4 +45,6 @@ Technical Specification:
 - State Management: Directly in the React component
     - make sure to initialize the state from the local storage as default (... = useState(JSON.parse(localStorage.getItem('todos')) || []) to avoid race conditions
 - Data Persistence: The application uses the browser's local storage to persist todos between sessions. It stores the array of todos as a JSON string and parses this data on application load.
-'''
+```
+-----------------------END_OF_EXAMPLES------------------------
+
