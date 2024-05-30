@@ -181,10 +181,9 @@ class Orchestrator(BaseAgent):
         ):
             # Ask the Tech Lead to break down the initial project or feature into tasks and apply project template
             return TechLead(self.state_manager, self.ui, process_manager=self.process_manager)
-        elif not state.steps and not state.iterations:
-            # Ask the Developer to break down current task into actionable steps
-            return Developer(self.state_manager, self.ui)
 
+        # Current task status must be checked before Developer is called because we might want
+        # to skip it instead of breaking it down
         current_task_status = state.current_task.get("status") if state.current_task else None
         if current_task_status:
             # Status of the current task is set first time after the task was reviewed by user
@@ -198,6 +197,10 @@ class Orchestrator(BaseAgent):
             elif current_task_status in [TaskStatus.EPIC_UPDATED, TaskStatus.SKIPPED]:
                 # Task is fully done or skipped, call TaskCompleter to mark it as completed
                 return TaskCompleter(self.state_manager, self.ui)
+
+        if not state.steps and not state.iterations:
+            # Ask the Developer to break down current task into actionable steps
+            return Developer(self.state_manager, self.ui)
 
         if state.current_step:
             # Execute next step in the task
