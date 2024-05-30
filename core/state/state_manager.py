@@ -170,7 +170,6 @@ class StateManager:
         self.branch = state.branch
         self.project = state.branch.project
         self.next_state = await state.create_next_state()
-        # TODO: overwrite files?
         self.file_system = await self.init_file_system(load_existing=True)
         log.debug(
             f"Loaded project {self.project} ({self.project.id}) "
@@ -178,7 +177,7 @@ class StateManager:
             f"step {state.step_index} (state id={state.id})"
         )
 
-        if self.current_state.current_epic and self.ui:
+        if self.current_state.current_epic and self.current_state.current_task and self.ui:
             await self.ui.send_task_progress(
                 self.current_state.tasks.index(self.current_state.current_task) + 1,
                 len(self.current_state.tasks),
