@@ -11,7 +11,7 @@ from core.llm.base import APIError, BaseLLMClient
 from core.log import get_logger
 from core.state.state_manager import StateManager
 from core.telemetry import telemetry
-from core.ui.base import UIBase, UIClosedError, pythagora_source
+from core.ui.base import UIBase, UIClosedError, UserInput, pythagora_source
 
 log = get_logger(__name__)
 
@@ -112,7 +112,15 @@ async def start_new_project(sm: StateManager, ui: UIBase) -> bool:
     :param ui: User interface.
     :return: True if the project was created successfully, False otherwise.
     """
-    user_input = await ui.ask_question("What is the project name?", allow_empty=False, source=pythagora_source)
+    try:
+        user_input = await ui.ask_question(
+            "What is the project name?",
+            allow_empty=False,
+            source=pythagora_source,
+        )
+    except (KeyboardInterrupt, UIClosedError):
+        user_input = UserInput(cancelled=True)
+
     if user_input.cancelled:
         return False
 
