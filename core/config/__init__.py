@@ -212,6 +212,12 @@ class DBConfig(_StrictModel):
     def validate_url_scheme(cls, v: str) -> str:
         if v.startswith("sqlite+aiosqlite://"):
             return v
+        if v.startswith("postgresql+asyncpg://"):
+            try:
+                import asyncpg  # noqa: F401
+            except ImportError:
+                raise ValueError("To use PostgreSQL database, please install `asyncpg` and `psycopg2` packages")
+            return v
         raise ValueError(f"Unsupported database URL scheme in: {v}")
 
 
