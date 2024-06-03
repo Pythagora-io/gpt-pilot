@@ -117,5 +117,8 @@ class PlainConsoleUI(UIBase):
     async def send_features_list(self, features: list[str]):
         pass
 
+    async def import_project(self, project_dir: str):
+        pass
+
 
 __all__ = ["PlainConsoleUI"]
