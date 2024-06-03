@@ -151,6 +151,15 @@ any adjustments if needed).
 
 This will start two containers, one being a new image built by the `Dockerfile` and a Postgres database. The new image also has [ttyd](https://github.com/tsl0922/ttyd) installed so that you can easily interact with gpt-pilot. Node is also installed on the image and port 3000 is exposed.
 
+### PostgreSQL support
+
+GPT Pilot uses built-in SQLite database by default. If you want to use the PostgreSQL database, you need to additional install `asyncpg` and `psycopg2` packages:
+
+```bash
+pip install asyncpg psycopg2
+```
+
+Then, you need to update the `config.json` file to set `db.url` to `postgresql+asyncpg://<user>:<password>@<db-host>/<db-name>`.
 
 # 🧑‍💻️ CLI arguments
 
