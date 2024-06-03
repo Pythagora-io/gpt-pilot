@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -35,8 +35,9 @@ async def test_stream(capsys):
 
 
 @pytest.mark.asyncio
-@patch("builtins.input", return_value="awesome")
-async def test_ask_question_simple(mock_input):
+@patch("core.ui.console.PromptSession")
+async def test_ask_question_simple(mock_PromptSession):
+    prompt_async = mock_PromptSession.return_value.prompt_async = AsyncMock(return_value="awesome")
     ui = PlainConsoleUI()
 
     await ui.start()
@@ -48,12 +49,13 @@ async def test_ask_question_simple(mock_input):
 
     await ui.stop()
 
-    mock_input.assert_called_once()
+    prompt_async.assert_awaited_once()
 
 
 @pytest.mark.asyncio
-@patch("builtins.input", return_value="yes")
-async def test_ask_question_with_buttons(mock_input):
+@patch("core.ui.console.PromptSession")
+async def test_ask_question_with_buttons(mock_PromptSession):
+    prompt_async = mock_PromptSession.return_value.prompt_async = AsyncMock(return_value="yes")
     ui = PlainConsoleUI()
 
     await ui.start()
@@ -68,12 +70,13 @@ async def test_ask_question_with_buttons(mock_input):
 
     await ui.stop()
 
-    mock_input.assert_called_once()
+    prompt_async.assert_awaited_once()
 
 
 @pytest.mark.asyncio
-@patch("builtins.input", side_effect=KeyboardInterrupt())
-async def test_ask_question_interrupted(mock_input):
+@patch("core.ui.console.PromptSession")
+async def test_ask_question_interrupted(mock_PromptSession):
+    prompt_async = mock_PromptSession.return_value.prompt_async = AsyncMock(side_effect=KeyboardInterrupt)
     ui = PlainConsoleUI()
 
     await ui.start()
@@ -82,4 +85,4 @@ async def test_ask_question_interrupted(mock_input):
 
     await ui.stop()
 
-    mock_input.assert_called_once()
+    prompt_async.assert_awaited_once()
