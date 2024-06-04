@@ -73,9 +73,11 @@ class Developer(BaseAgent):
             log.debug(f"Some files are missing descriptions: {', '.join(missing_descriptions)}, reqesting analysis")
             return AgentResponse.describe_files(self)
 
-        log.debug(f"Current state files: {len(self.current_state.files)}, relevant {self.current_state.relevant_files}")
+        log.debug(
+            f"Current state files: {len(self.current_state.files)}, relevant {self.current_state.relevant_files or []}"
+        )
         # Check which files are relevant to the current task
-        if self.current_state.files and not self.current_state.relevant_files:
+        if self.current_state.files and self.current_state.relevant_files is None:
             await self.get_relevant_files()
             return AgentResponse.done(self)
 

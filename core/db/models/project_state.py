@@ -51,7 +51,7 @@ class ProjectState(Base):
     tasks: Mapped[list[dict]] = mapped_column(default=list)
     steps: Mapped[list[dict]] = mapped_column(default=list)
     iterations: Mapped[list[dict]] = mapped_column(default=list)
-    relevant_files: Mapped[list[str]] = mapped_column(default=list)
+    relevant_files: Mapped[Optional[list[str]]] = mapped_column(default=None)
     modified_files: Mapped[dict] = mapped_column(default=dict)
     run_command: Mapped[Optional[str]] = mapped_column()
     action: Mapped[Optional[str]] = mapped_column()
@@ -167,7 +167,8 @@ class ProjectState(Base):
 
         :return: List of tuples with file path and content.
         """
-        return [file for file in self.files if file.path in self.relevant_files]
+        relevant = self.relevant_files or []
+        return [file for file in self.files if file.path in relevant]
 
     @staticmethod
     def create_initial_state(branch: "Branch") -> "ProjectState":
@@ -361,6 +362,8 @@ class ProjectState(Base):
 
         if path not in self.modified_files and not external:
             self.modified_files[path] = original_content
+
+        self.relevant_files = self.relevant_files or []
         if path not in self.relevant_files:
             self.relevant_files.append(path)
 
