@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional, Union
 from unicodedata import normalize
 from uuid import UUID, uuid4
 
-from sqlalchemy import delete, inspect, select
+from sqlalchemy import and_, delete, inspect, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
 from sqlalchemy.sql import func
@@ -79,7 +79,7 @@ class Project(Base):
         from core.db.models import Branch, ProjectState
 
         latest_state_query = (
-            select(ProjectState.branch_id, func.max(ProjectState.id).label("max_id"))
+            select(ProjectState.branch_id, func.max(ProjectState.step_index).label("max_index"))
             .group_by(ProjectState.branch_id)
             .subquery()
         )
@@ -88,7 +88,13 @@ class Project(Base):
             select(Project, Branch, ProjectState)
             .join(Branch, Project.branches)
             .join(ProjectState, Branch.states)
-            .join(latest_state_query, ProjectState.id == latest_state_query.columns.max_id)
+            .join(
+                latest_state_query,
+                and_(
+                    ProjectState.branch_id == latest_state_query.columns.branch_id,
+                    ProjectState.step_index == latest_state_query.columns.max_index,
+                ),
+            )
             .options(selectinload(Project.branches), selectinload(Branch.states))
             .order_by(Project.name, Branch.name)
         )
