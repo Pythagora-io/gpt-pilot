@@ -39,6 +39,7 @@ class MessageType(str, Enum):
     LOADING_FINISHED = "loadingFinished"
     PROJECT_DESCRIPTION = "projectDescription"
     FEATURES_LIST = "featuresList"
+    IMPORT_PROJECT = "importProject"
 
 
 class Message(BaseModel):
@@ -331,6 +332,9 @@ class IPCClientUI(UIBase):
 
     async def send_features_list(self, features: list[str]):
         await self._send(MessageType.FEATURES_LIST, content={"featuresList": features})
+
+    async def import_project(self, project_dir: str):
+        await self._send(MessageType.IMPORT_PROJECT, content={"project_dir": project_dir})
 
 
 __all__ = ["IPCClientUI"]

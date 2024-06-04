@@ -8,6 +8,7 @@ from core.agents.developer import Developer
 from core.agents.error_handler import ErrorHandler
 from core.agents.executor import Executor
 from core.agents.human_input import HumanInput
+from core.agents.importer import Importer
 from core.agents.problem_solver import ProblemSolver
 from core.agents.response import AgentResponse, ResponseType
 from core.agents.spec_writer import SpecWriter
@@ -167,10 +168,16 @@ class Orchestrator(BaseAgent):
                 return HumanInput(self.state_manager, self.ui, prev_response=prev_response)
             if prev_response.type == ResponseType.TASK_REVIEW_FEEDBACK:
                 return Developer(self.state_manager, self.ui, prev_response=prev_response)
+            if prev_response.type == ResponseType.IMPORT_PROJECT:
+                return Importer(self.state_manager, self.ui, prev_response=prev_response)
 
         if not state.specification.description:
-            # Ask the Spec Writer to refine and save the project specification
-            return SpecWriter(self.state_manager, self.ui)
+            if state.files:
+                # The project has been imported, but not analyzed yet
+                return Importer(self.state_manager, self.ui)
+            else:
+                # New project: ask the Spec Writer to refine and save the project specification
+                return SpecWriter(self.state_manager, self.ui)
         elif not state.specification.architecture:
             # Ask the Architect to design the project architecture and determine dependencies
             return Architect(self.state_manager, self.ui, process_manager=self.process_manager)

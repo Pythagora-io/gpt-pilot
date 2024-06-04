@@ -1,0 +1,21 @@
+You're given an existing project you need to analyze and continue developing. To do this, you'll need to determine the project architecture, technologies used (platform, libraries, etc) and reverse-engineer the technical and functional spec.
+
+As a first step, you have to identify which of the listed files to examine so you can determine this. After you identify the files, you'll be given full access to their contents so you can determine the project information.
+
+Here is the list of all the files in the project:
+
+{% for file in state.files %}
+* `{{ file.path }}` - {{ file.meta.get("description")}}
+{% endfor %}
+
+Based on this information, list the files (full path, as shown in the list) you would examine to determine the project architecture, technologies and specification. Output the list in JSON format like in the following example:
+
+```json
+{
+  "files": [
+    "README.md",
+    "pyproject.toml",
+    "settings/settings.py"
+  ]
+}
+```

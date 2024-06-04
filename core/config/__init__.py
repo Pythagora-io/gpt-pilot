@@ -18,6 +18,7 @@ DEFAULT_IGNORE_PATHS = [
     "node_modules",
     "package-lock.json",
     "venv",
+    ".venv",
     "dist",
     "build",
     "target",

@@ -39,6 +39,9 @@ class ResponseType(str, Enum):
     TASK_REVIEW_FEEDBACK = "task-review-feedback"
     """Agent is providing feedback on the entire task."""
 
+    IMPORT_PROJECT = "import-project"
+    """User wants to import an existing project."""
+
 
 class AgentResponse:
     type: ResponseType = ResponseType.DONE
@@ -130,3 +133,7 @@ class AgentResponse:
                 "feedback": feedback,
             },
         )
+
+    @staticmethod
+    def import_project(agent: "BaseAgent") -> "AgentResponse":
+        return AgentResponse(type=ResponseType.IMPORT_PROJECT, agent=agent)
