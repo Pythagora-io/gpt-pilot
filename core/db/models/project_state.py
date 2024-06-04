@@ -254,7 +254,7 @@ class ProjectState(Base):
         self.set_current_task_status(TaskStatus.DONE)
         self.steps = []
         self.iterations = []
-        self.relevant_files = []
+        self.relevant_files = None
         self.modified_files = {}
         flag_modified(self, "tasks")
 

@@ -305,7 +305,7 @@ class Developer(BaseAgent):
 
         self.next_state.current_task["description"] = user_response.text
         self.next_state.current_task["run_always"] = True
-        self.next_state.relevant_files = []
+        self.next_state.relevant_files = None
         log.info(f"Task description updated to: {user_response.text}")
         # Orchestrator will rerun us with the new task description
         return False
