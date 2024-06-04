@@ -74,6 +74,16 @@ class ErrorHandler(BaseAgent):
         if not cmd:
             raise ValueError("No command provided in command error response details")
 
+        confirm = await self.ask_question(
+            "Can I debug why this command failed?",
+            buttons={"yes": "Yes", "no": "No"},
+            default="yes",
+            buttons_only=True,
+        )
+        if confirm.cancelled or confirm.button == "no":
+            log.info("Skipping command error debug (requested by user)")
+            return AgentResponse.done(self)
+
         llm = self.get_llm()
         convo = AgentConvo(self).template(
             "debug",
