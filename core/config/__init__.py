@@ -1,6 +1,6 @@
 from enum import Enum
 from os.path import abspath, dirname, isdir, join
-from typing import Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import Annotated
@@ -55,6 +55,7 @@ class LLMProvider(str, Enum):
     ANTHROPIC = "anthropic"
     GROQ = "groq"
     LM_STUDIO = "lm-studio"
+    AZURE = "azure"
 
 
 class UIAdapter(str, Enum):
@@ -88,6 +89,10 @@ class ProviderConfig(_StrictModel):
         default=10.0,
         description="Timeout (in seconds) for receiving a new chunk of data from the response stream",
         ge=0.0,
+    )
+    extra: Optional[dict[str, Any]] = Field(
+        None,
+        description="Extra provider-specific configuration",
     )
 
 
@@ -140,6 +145,10 @@ class LLMConfig(_StrictModel):
         description="Timeout (in seconds) for receiving a new chunk of data from the response stream",
         ge=0.0,
     )
+    extra: Optional[dict[str, Any]] = Field(
+        None,
+        description="Extra provider-specific configuration",
+    )
 
     @classmethod
     def from_provider_and_agent_configs(cls, provider: ProviderConfig, agent: AgentLLMConfig):
@@ -151,6 +160,7 @@ class LLMConfig(_StrictModel):
             temperature=agent.temperature,
             connect_timeout=provider.connect_timeout,
             read_timeout=provider.read_timeout,
+            extra=provider.extra,
         )
 
 
