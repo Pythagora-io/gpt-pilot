@@ -14,7 +14,7 @@ Output the result in a JSON format with the following structure, as in this exam
 
 Example:
 {
-    "summary": "Describe in detail the functionality being defind o implemented in this file. Be as detailed as possible",
+    "summary": "Describe in detail the functionality being defined or implemented in this file. Be as detailed as possible",
     "references": [
         "some/file.py",
         "some/other/file.js"
