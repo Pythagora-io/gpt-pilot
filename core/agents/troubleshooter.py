@@ -46,7 +46,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
 
         # Developer sets iteration as "completed" when it generates the step breakdown, so we can't
         # use "current_iteration" here
-        last_iteration = self.current_state.iterations[-1] if self.current_state.iterations else None
+        last_iteration = self.current_state.iterations[-1] if len(self.current_state.iterations) >= 3 else None
 
         should_iterate, is_loop, user_feedback = await self.get_user_feedback(
             run_command,
