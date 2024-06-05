@@ -17,6 +17,7 @@ tokenizer = tiktoken.get_encoding("cl100k_base")
 
 class OpenAIClient(BaseLLMClient):
     provider = LLMProvider.OPENAI
+    stream_options = {"include_usage": True}
 
     def _init_client(self):
         self.client = AsyncOpenAI(
@@ -40,10 +41,10 @@ class OpenAIClient(BaseLLMClient):
             "messages": convo.messages,
             "temperature": self.config.temperature if temperature is None else temperature,
             "stream": True,
-            "stream_options": {
-                "include_usage": True,
-            },
         }
+        if self.stream_options:
+            completion_kwargs["stream_options"] = self.stream_options
+
         if json_mode:
             completion_kwargs["response_format"] = {"type": "json_object"}
 
