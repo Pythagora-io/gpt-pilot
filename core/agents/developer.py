@@ -119,6 +119,8 @@ class Developer(BaseAgent):
             self.current_state.current_task["description"],
             source,
             "in-progress",
+            self.current_state.get_source_index(source),
+            self.current_state.tasks,
         )
         llm = self.get_llm()
         # FIXME: In case of iteration, parse_task depends on the context (files, tasks, etc) set there.
@@ -157,6 +159,8 @@ class Developer(BaseAgent):
             self.current_state.current_task["description"],
             source,
             "in-progress",
+            self.current_state.get_source_index(source),
+            self.current_state.tasks,
         )
 
         log.debug(f"Breaking down the current task: {task['description']}")
@@ -229,6 +233,7 @@ class Developer(BaseAgent):
                 "id": uuid4().hex,
                 "completed": False,
                 "source": source,
+                "iteration_index": len(self.current_state.iterations),
                 **step.model_dump(),
             }
             for step in response.steps
@@ -241,6 +246,7 @@ class Developer(BaseAgent):
                     "completed": False,
                     "type": "review_task",
                     "source": source,
+                    "iteration_index": len(self.current_state.iterations),
                 },
             ]
         log.debug(f"Next steps: {self.next_state.unfinished_steps}")

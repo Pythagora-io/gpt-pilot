@@ -169,6 +169,7 @@ class UIBase:
         source: str,
         status: str,
         source_index: int = 1,
+        tasks: list[dict] = None,
     ):
         """
         Send a task progress update to the UI.
@@ -179,6 +180,7 @@ class UIBase:
         :param source: Source of the task, one of: 'app', 'feature', 'debugger', 'troubleshooting', 'review'.
         :param status: Status of the task, can be 'in_progress' or 'done'.
         :param source_index: Index of the source.
+        :param tasks: List of all tasks.
         """
         raise NotImplementedError()
 

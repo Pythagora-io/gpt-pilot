@@ -179,12 +179,15 @@ class StateManager:
         )
 
         if self.current_state.current_epic and self.ui:
+            source = self.current_state.current_epic.get("source", "app")
             await self.ui.send_task_progress(
                 self.current_state.tasks.index(self.current_state.current_task) + 1,
                 len(self.current_state.tasks),
                 self.current_state.current_task["description"],
-                self.current_state.current_epic.get("source", "app"),
+                source,
                 "in-progress",
+                self.current_state.get_source_index(source),
+                self.current_state.tasks,
             )
 
         return self.current_state

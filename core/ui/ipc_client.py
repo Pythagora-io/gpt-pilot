@@ -261,6 +261,7 @@ class IPCClientUI(UIBase):
         source: str,
         status: str,
         source_index: int = 1,
+        tasks: list[dict] = None,
     ):
         await self._send(
             MessageType.PROGRESS,
@@ -272,7 +273,8 @@ class IPCClientUI(UIBase):
                     "source": source,
                     "status": status,
                     "source_index": source_index,
-                }
+                },
+                "all_tasks": tasks,
             },
         )
 

@@ -285,7 +285,7 @@ class Orchestrator(BaseAgent):
     async def update_stats(self):
         if self.current_state.steps and self.current_state.current_step:
             source = self.current_state.current_step.get("source")
-            source_steps = [s for s in self.current_state.steps if s.get("source") == source]
+            source_steps = self.current_state.get_last_iteration_steps()
             await self.ui.send_step_progress(
                 source_steps.index(self.current_state.current_step) + 1,
                 len(source_steps),
