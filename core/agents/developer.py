@@ -67,18 +67,6 @@ class Developer(BaseAgent):
         if self.prev_response and self.prev_response.type == ResponseType.TASK_REVIEW_FEEDBACK:
             return await self.breakdown_current_iteration(self.prev_response.data["feedback"])
 
-        # If any of the files are missing metadata/descriptions, those need to be filled-in
-        missing_descriptions = [file.path for file in self.current_state.files if not file.meta.get("description")]
-        if missing_descriptions:
-            log.debug(f"Some files are missing descriptions: {', '.join(missing_descriptions)}, reqesting analysis")
-            return AgentResponse.describe_files(self)
-
-        log.debug(f"Current state files: {len(self.current_state.files)}, relevant {self.current_state.relevant_files}")
-        # Check which files are relevant to the current task
-        if self.current_state.files and not self.current_state.relevant_files:
-            await self.get_relevant_files()
-            return AgentResponse.done(self)
-
         if not self.current_state.unfinished_tasks:
             log.warning("No unfinished tasks found, nothing to do (why am I called? is this a bug?)")
             return AgentResponse.done(self)
@@ -173,6 +161,11 @@ class Developer(BaseAgent):
 
         log.debug(f"Breaking down the current task: {task['description']}")
         await self.send_message("Thinking about how to implement this task ...")
+
+        log.debug(f"Current state files: {len(self.current_state.files)}, relevant {self.current_state.relevant_files}")
+        # Check which files are relevant to the current task
+        if self.current_state.files and not self.current_state.relevant_files:
+            await self.get_relevant_files()
 
         current_task_index = self.current_state.tasks.index(task)
 

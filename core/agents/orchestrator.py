@@ -148,7 +148,15 @@ class Orchestrator(BaseAgent):
         # If there are any new or modified files changed outside Pythagora,
         # this is a good time to add them to the project. If any of them have
         # INPUT_REQUIRED, we'll first ask the user to provide the required input.
-        return await self.import_files()
+        import_files_response = await self.import_files()
+
+        # If any of the files are missing metadata/descriptions, those need to be filled-in
+        missing_descriptions = [file.path for file in self.current_state.files if not file.meta.get("description")]
+        if missing_descriptions:
+            log.debug(f"Some files are missing descriptions: {', '.join(missing_descriptions)}, requesting analysis")
+            return AgentResponse.describe_files(self)
+
+        return import_files_response
 
     def create_agent(self, prev_response: Optional[AgentResponse]) -> BaseAgent:
         state = self.current_state
