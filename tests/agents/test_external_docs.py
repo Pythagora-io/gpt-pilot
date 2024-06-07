@@ -1,0 +1,33 @@
+from unittest.mock import patch
+
+import pytest
+from httpx import HTTPError
+
+from core.agents.external_docs import ExternalDocumentation
+
+
+@pytest.mark.asyncio
+async def test_stores_documentation_snippets_for_task(agentcontext):
+    sm, _, ui, mock_llm = agentcontext
+
+    sm.current_state.tasks = [{"description": "Some VueJS task", "status": "todo"}]
+    await sm.commit()
+
+    ed = ExternalDocumentation(sm, ui)
+    ed.get_llm = mock_llm(side_effect=["vuejs-api-ref", "VueJS Options Rendering"])
+    await ed.run()
+    assert ed.next_state.current_task["docs"][0]["key"] == "vuejs-api-ref"
+
+
+@pytest.mark.asyncio
+async def test_continues_without_docs_if_api_is_down(agentcontext):
+    sm, _, ui, _ = agentcontext
+
+    sm.current_state.tasks = [{"description": "Future Task", "status": "todo"}]
+    await sm.commit()
+
+    ed = ExternalDocumentation(sm, ui)
+    with patch("httpx.Client.get", side_effect=HTTPError("Failed")):
+        await ed.run()
+
+    assert ed.next_state.current_task["docs"] == []

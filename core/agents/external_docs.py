@@ -23,6 +23,11 @@ class ExternalDocumentation(BaseAgent):
         1. Ask the LLM to select useful documentation from a predefined list.
         2. Ask the LLM to come up with a query to use to fetch the actual documentation snippets.
 
+    Agent does 2 calls to our documentation API:
+        1. Fetch all the available docsets. `docset` is a collection of documentation snippets
+           for a single topic, eg. VueJS API Reference docs.
+        2. Fetch the documentation snippets for given queries.
+
     """
 
     agent_type = "external-docs"
@@ -64,6 +69,8 @@ class ExternalDocumentation(BaseAgent):
         return resp.json()
 
     async def _select_docsets(self, available_docsets: list[tuple]) -> dict[str, str]:
+        """From a list of available docsets, select the relevant ones."""
+
         if not available_docsets:
             return {}
 
@@ -73,6 +80,7 @@ class ExternalDocumentation(BaseAgent):
             current_task=self.current_state.current_task,
             available_docsets=available_docsets,
         )
+        await self.send_message("Determining if external documentation is needed...")
         llm_response: str = await llm(convo)
         available_docsets = dict(available_docsets)
         if llm_response.strip().lower() == "done":
@@ -88,6 +96,7 @@ class ExternalDocumentation(BaseAgent):
 
         """
         queries = {}
+        await self.send_message("Getting relevant documentation for the following topics:")
         for k, short_desc in docsets.items():
             llm = self.get_llm()
             convo = AgentConvo(self).template(
@@ -110,7 +119,6 @@ class ExternalDocumentation(BaseAgent):
 
         """
         url = urljoin(EXTERNAL_DOCUMENTATION_API, "query")
-
         snippets: list[tuple] = []
         async with httpx.AsyncClient(transport=httpx.AsyncHTTPTransport(retries=3)) as client:
             reqs = []

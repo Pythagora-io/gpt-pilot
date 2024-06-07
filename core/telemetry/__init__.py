@@ -81,6 +81,8 @@ class Telemetry:
             "model": config.agent["default"].model,
             # Initial prompt
             "initial_prompt": None,
+            # App complexity
+            "is_complex_app": None,
             # Optional template used for the project
             "template": None,
             # Optional user contact email
@@ -89,6 +91,10 @@ class Telemetry:
             "app_id": None,
             # Project architecture
             "architecture": None,
+            # Documentation sets used for a given task
+            "docsets_used": [],
+            # Number of documentation snippets stored for a given task
+            "doc_snippets_stored": 0,
         }
         if sys.platform == "linux":
             try:
