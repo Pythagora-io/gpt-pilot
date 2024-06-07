@@ -36,10 +36,12 @@ class ExternalDocumentation(BaseAgent):
 
         available_docsets = await self._get_available_docsets()
         selected_docsets = await self._select_docsets(available_docsets)
+        telemetry.set("docsets_used", selected_docsets)
+
         if not selected_docsets:
+            log.info("No documentation selected for this task.")
             await self._store_docs([], available_docsets)
             return AgentResponse.done(self)
-        telemetry.set("docsets_used", selected_docsets)
 
         queries = await self._create_queries(selected_docsets)
         doc_snippets = await self._fetch_snippets(queries)
@@ -50,11 +52,21 @@ class ExternalDocumentation(BaseAgent):
 
     async def _get_available_docsets(self) -> list[tuple]:
         url = urljoin(EXTERNAL_DOCUMENTATION_API, "docsets")
-        resp = httpx.get(url)
+        client = httpx.Client(transport=httpx.HTTPTransport(retries=3))
+        try:
+            resp = client.get(url)
+        except httpx.HTTPError:
+            # In case of any errors, we'll proceed without the documentation
+            log.warning("Failed to fetch available docsets due to an error.", exc_info=True)
+            return []
+
         log.debug(f"Fetched {len(resp.json())} docsets.")
         return resp.json()
 
     async def _select_docsets(self, available_docsets: list[tuple]) -> dict[str, str]:
+        if not available_docsets:
+            return {}
+
         llm = self.get_llm()
         convo = AgentConvo(self).template(
             "select_docset",
@@ -100,14 +112,17 @@ class ExternalDocumentation(BaseAgent):
         url = urljoin(EXTERNAL_DOCUMENTATION_API, "query")
 
         snippets: list[tuple] = []
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(transport=httpx.AsyncHTTPTransport(retries=3)) as client:
             reqs = []
             ordered_keys = []
             for docset_key, qs in queries.items():
                 reqs.append(client.get(url, params={"q": qs, "doc_key": docset_key}))
                 ordered_keys.append(docset_key)
 
-            results = await asyncio.gather(*reqs)
+            try:
+                results = await asyncio.gather(*reqs)
+            except httpx.HTTPError:
+                log.warning("Failed to fetch documentation snippets", exc_info=True)
 
         for k, res in zip(ordered_keys, results):
             snippets.append((k, res.json()))
