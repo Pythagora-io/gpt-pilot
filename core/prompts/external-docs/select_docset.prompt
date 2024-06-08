@@ -12,4 +12,4 @@ Here is the list of available documentations:
 {{ docset[0], docset[1] }}
 {% endfor %}
 
-Now, give me the list of the additional documentation that you would like to use to complete the task listed above. Return ONLY the keys from the available documentation list, without any formatting like quotes and bullets, DO NOT return anything else. If you don't need any additional documentation, just respond with "DONE". Return only the documentation that is absolutely required for the given task.
+Now, give me the list of the additional documentation that you would like to use to complete the task listed above. Return only the documentation that is absolutely required for the given task. If there is no additional documentation in the list that you would like to use, return an empty list.

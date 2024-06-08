@@ -19,20 +19,7 @@ You are currently working on task #{{ current_task_index + 1 }} with the followi
 
 Now, tell me all the code that needs to be written to implement ONLY this task and have it fully working and all commands that need to be run to implement this task.
 
-{% if task.docs %}
-We have some some documentation snippets that might be helpful while working on this task, we will now list those.
-
-{% for d in task.docs %}
-Documentation snippets from {{ d.desc }}:
-{% for snippet in d.snippets %}
-{{ snippet }}
-
-{% endfor %}
-
-{% endfor %}
-
-This concludes the documentation snippets.
-{% endif %}
+{% include "partials/doc_snippets.prompt" %}
 
 **IMPORTANT**
 {%- if state.epics|length == 1 %}

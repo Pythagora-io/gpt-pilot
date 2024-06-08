@@ -2,15 +2,25 @@ import asyncio
 from urllib.parse import urljoin
 
 import httpx
+from pydantic import BaseModel
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse
 from core.config import EXTERNAL_DOCUMENTATION_API
+from core.llm.parser import JSONParser
 from core.log import get_logger
 from core.telemetry import telemetry
 
 log = get_logger(__name__)
+
+
+class DocQueries(BaseModel):
+    queries: list[str]
+
+
+class SelectedDocsets(BaseModel):
+    docsets: list[str]
 
 
 class ExternalDocumentation(BaseAgent):
@@ -34,14 +44,9 @@ class ExternalDocumentation(BaseAgent):
     display_name = "Documentation"
 
     async def run(self) -> AgentResponse:
-        current_task = self.current_state.current_task
-        if not current_task:
-            # If we have no active task, there's no docs to collect
-            return AgentResponse.done(self)
-
         available_docsets = await self._get_available_docsets()
         selected_docsets = await self._select_docsets(available_docsets)
-        telemetry.set("docsets_used", selected_docsets)
+        await telemetry.trace_code_event("docsets_used", selected_docsets)
 
         if not selected_docsets:
             log.info("No documentation selected for this task.")
@@ -50,7 +55,7 @@ class ExternalDocumentation(BaseAgent):
 
         queries = await self._create_queries(selected_docsets)
         doc_snippets = await self._fetch_snippets(queries)
-        telemetry.set("doc_snippets_stored", len(doc_snippets))
+        await telemetry.trace_code_event("doc_snippets", {"num_stored": len(doc_snippets)})
 
         await self._store_docs(doc_snippets, available_docsets)
         return AgentResponse.done(self)
@@ -75,19 +80,19 @@ class ExternalDocumentation(BaseAgent):
             return {}
 
         llm = self.get_llm()
-        convo = AgentConvo(self).template(
-            "select_docset",
-            current_task=self.current_state.current_task,
-            available_docsets=available_docsets,
+        convo = (
+            AgentConvo(self)
+            .template(
+                "select_docset",
+                current_task=self.current_state.current_task,
+                available_docsets=available_docsets,
+            )
+            .require_schema(SelectedDocsets)
         )
-        await self.send_message("Determining if external documentation is needed...")
-        llm_response: str = await llm(convo)
+        await self.send_message("Determining if external documentation is needed for the next task...")
+        llm_response: SelectedDocsets = await llm(convo, parser=JSONParser(spec=SelectedDocsets))
         available_docsets = dict(available_docsets)
-        if llm_response.strip().lower() == "done":
-            return {}
-        else:
-            selected_keys = llm_response.splitlines()
-            return {k: available_docsets[k] for k in selected_keys}
+        return {k: available_docsets[k] for k in llm_response.docsets}
 
     async def _create_queries(self, docsets: dict[str, str]) -> dict[str, list[str]]:
         """Return queries we have to make to the docs API.
@@ -99,16 +104,18 @@ class ExternalDocumentation(BaseAgent):
         await self.send_message("Getting relevant documentation for the following topics:")
         for k, short_desc in docsets.items():
             llm = self.get_llm()
-            convo = AgentConvo(self).template(
-                "create_queries",
-                short_description=short_desc,
-                current_task=self.current_state.current_task,
+            convo = (
+                AgentConvo(self)
+                .template(
+                    "create_docs_queries",
+                    short_description=short_desc,
+                    current_task=self.current_state.current_task,
+                )
+                .require_schema(DocQueries)
             )
-            llm_response: str = await llm(convo)
-            if llm_response.strip().lower() == "done":
-                continue
-            else:
-                queries[k] = llm_response.splitlines()
+            llm_response: DocQueries = await llm(convo, parser=JSONParser(spec=DocQueries))
+            if llm_response.queries:
+                queries[k] = llm_response.queries
 
         return queries
 

@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 from httpx import HTTPError
 
-from core.agents.external_docs import ExternalDocumentation
+from core.agents.external_docs import DocQueries, ExternalDocumentation, SelectedDocsets
 
 
 @pytest.mark.asyncio
@@ -14,7 +14,9 @@ async def test_stores_documentation_snippets_for_task(agentcontext):
     await sm.commit()
 
     ed = ExternalDocumentation(sm, ui)
-    ed.get_llm = mock_llm(side_effect=["vuejs-api-ref", "VueJS Options Rendering"])
+    ed.get_llm = mock_llm(
+        side_effect=[SelectedDocsets(docsets=["vuejs-api-ref"]), DocQueries(queries=["VueJS component model"])]
+    )
     await ed.run()
     assert ed.next_state.current_task["docs"][0]["key"] == "vuejs-api-ref"
 
