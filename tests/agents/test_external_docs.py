@@ -18,7 +18,7 @@ async def test_stores_documentation_snippets_for_task(agentcontext):
         side_effect=[SelectedDocsets(docsets=["vuejs-api-ref"]), DocQueries(queries=["VueJS component model"])]
     )
     await ed.run()
-    assert ed.next_state.current_task["docs"][0]["key"] == "vuejs-api-ref"
+    assert ed.next_state.docs[0]["key"] == "vuejs-api-ref"
 
 
 @pytest.mark.asyncio
@@ -32,4 +32,4 @@ async def test_continues_without_docs_if_api_is_down(agentcontext):
     with patch("httpx.Client.get", side_effect=HTTPError("Failed")):
         await ed.run()
 
-    assert ed.next_state.current_task["docs"] == []
+    assert ed.next_state.docs == []

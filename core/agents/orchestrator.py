@@ -190,8 +190,7 @@ class Orchestrator(BaseAgent):
             # Ask the Tech Lead to break down the initial project or feature into tasks and apply project template
             return TechLead(self.state_manager, self.ui, process_manager=self.process_manager)
 
-        current_task_docs = state.current_task.get("docs") if state.current_task else None
-        if state.current_task and current_task_docs is None:
+        if state.current_task and state.docs is None:
             return ExternalDocumentation(self.state_manager, self.ui)
 
         # Current task status must be checked before Developer is called because we might want

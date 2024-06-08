@@ -53,6 +53,7 @@ class ProjectState(Base):
     iterations: Mapped[list[dict]] = mapped_column(default=list)
     relevant_files: Mapped[Optional[list[str]]] = mapped_column(default=None)
     modified_files: Mapped[dict] = mapped_column(default=dict)
+    docs: Mapped[Optional[list[dict]]] = mapped_column(default=None)
     run_command: Mapped[Optional[str]] = mapped_column()
     action: Mapped[Optional[str]] = mapped_column()
 
@@ -219,6 +220,7 @@ class ProjectState(Base):
             files=[],
             relevant_files=deepcopy(self.relevant_files),
             modified_files=deepcopy(self.modified_files),
+            docs=deepcopy(self.docs),
             run_command=self.run_command,
         )
 
@@ -256,6 +258,7 @@ class ProjectState(Base):
         self.iterations = []
         self.relevant_files = None
         self.modified_files = {}
+        self.docs = None
         flag_modified(self, "tasks")
 
         if not self.unfinished_tasks and self.unfinished_epics:

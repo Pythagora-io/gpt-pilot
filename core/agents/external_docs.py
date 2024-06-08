@@ -131,7 +131,7 @@ class ExternalDocumentation(BaseAgent):
             reqs = []
             ordered_keys = []
             for docset_key, qs in queries.items():
-                reqs.append(client.get(url, params={"q": qs, "doc_key": docset_key}))
+                reqs.append(client.get(url, params={"q": qs, "doc_key": docset_key, "num_results": 3}))
                 ordered_keys.append(docset_key)
 
             try:
@@ -156,5 +156,5 @@ class ExternalDocumentation(BaseAgent):
         for docset_key, snip in snippets:
             docs.append({"key": docset_key, "desc": docsets_dict[docset_key], "snippets": snip})
 
-        self.next_state.current_task["docs"] = docs
+        self.next_state.docs = docs
         self.next_state.flag_tasks_as_modified()
