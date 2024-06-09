@@ -145,6 +145,7 @@ class Developer(BaseAgent):
                 user_feedback=user_feedback,
                 user_feedback_qa=None,
                 next_solution_to_try=None,
+                docs=self.current_state.docs,
             )
             .assistant(description)
             .template("parse_task")
@@ -180,10 +181,7 @@ class Developer(BaseAgent):
 
         llm = self.get_llm()
         convo = AgentConvo(self).template(
-            "breakdown",
-            task=task,
-            iteration=None,
-            current_task_index=current_task_index,
+            "breakdown", task=task, iteration=None, current_task_index=current_task_index, docs=self.current_state.docs
         )
         response: str = await llm(convo)
 

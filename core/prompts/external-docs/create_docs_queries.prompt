@@ -1,0 +1,14 @@
+{% include "partials/project_details.prompt" %}
+
+Here is the next task that needs to be implemented:
+```
+{{ current_task.description }}
+```
+
+Here is the list of the libraries, frameworks and APIs for which we have documentation available. The documentation is given in a sequence of pairs, one pair per line. First item in the pair is the documentation key. Second  item is the short description of what that documentation contains.
+Here's an example for React API documentation:
+"react-api-ref", "React API Reference documentation"
+
+We have additional documentation from "{{ short_description }}" that might be useful for completing this task.
+
+Now, give me a summary of what specifically from the {{ short_description }} you think would be useful for completing this task. Please provide only the topics of interest, no additional text. Only return the topics relevant to the actual implementation, NOT the topics related to library installation and setup, environment setup, database setup and similar. Return the topics in JSON format, as a list of strings, WITHOUT any additional formatting such as backticks, bullets and similar. Return a maximum of 3 topics you think would be most useful.

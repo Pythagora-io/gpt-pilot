@@ -7,6 +7,7 @@ from core.agents.code_reviewer import CodeReviewer
 from core.agents.developer import Developer
 from core.agents.error_handler import ErrorHandler
 from core.agents.executor import Executor
+from core.agents.external_docs import ExternalDocumentation
 from core.agents.human_input import HumanInput
 from core.agents.importer import Importer
 from core.agents.problem_solver import ProblemSolver
@@ -188,6 +189,9 @@ class Orchestrator(BaseAgent):
         ):
             # Ask the Tech Lead to break down the initial project or feature into tasks and apply project template
             return TechLead(self.state_manager, self.ui, process_manager=self.process_manager)
+
+        if state.current_task and state.docs is None:
+            return ExternalDocumentation(self.state_manager, self.ui)
 
         # Current task status must be checked before Developer is called because we might want
         # to skip it instead of breaking it down

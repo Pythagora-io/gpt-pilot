@@ -35,6 +35,9 @@ IGNORE_SIZE_THRESHOLD = 50000  # 50K+ files are ignored by default
 DEFAULT_AGENT_NAME = "default"
 DESCRIBE_FILES_AGENT_NAME = "CodeMonkey.describe_files"
 
+# Endpoint for the external documentation
+EXTERNAL_DOCUMENTATION_API = "http://docs-pythagora-io-439719575.us-east-1.elb.amazonaws.com"
+
 
 class _StrictModel(BaseModel):
     """
