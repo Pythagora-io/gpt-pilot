@@ -167,7 +167,8 @@ class ProjectState(Base):
 
         :return: List of tuples with file path and content.
         """
-        return [file for file in self.files if file.path in self.relevant_files]
+        all_files = set(self.relevant_files + list(self.modified_files.keys()))
+        return [file for file in self.files if file.path in all_files]
 
     @staticmethod
     def create_initial_state(branch: "Branch") -> "ProjectState":
