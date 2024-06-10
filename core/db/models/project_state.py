@@ -168,8 +168,11 @@ class ProjectState(Base):
 
         :return: List of tuples with file path and content.
         """
-        relevant = self.relevant_files or []
-        return [file for file in self.files if file.path in relevant]
+        relevant_files = self.relevant_files or []
+        modified_files = self.modified_files or {}
+
+        all_files = set(relevant_files + list(modified_files.keys()))
+        return [file for file in self.files if file.path in all_files]
 
     @staticmethod
     def create_initial_state(branch: "Branch") -> "ProjectState":
@@ -386,3 +389,29 @@ class ProjectState(Base):
                 ProjectState.step_index > self.step_index,
             )
         )
+
+    def get_last_iteration_steps(self) -> list:
+        """
+        Get the steps of the last iteration.
+
+        :return: A list of steps.
+        """
+        return [s for s in self.steps if s.get("iteration_index") == len(self.iterations)] or self.steps
+
+    def get_source_index(self, source: str) -> int:
+        """
+        Get the index of the source which can be one of: 'app', 'feature', 'troubleshooting', 'review'. For example,
+        for feature return value would be number of current feature.
+
+        :param source: The source to search for.
+        :return: The index of the source.
+        """
+        if source in ["app", "feature"]:
+            return len([epic for epic in self.epics if epic.get("source") == source])
+        elif source == "troubleshooting":
+            return len(self.iterations)
+        elif source == "review":
+            steps = self.get_last_iteration_steps()
+            return len([step for step in steps if step.get("type") == "review_task"])
+
+        return 1

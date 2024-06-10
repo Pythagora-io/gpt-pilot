@@ -72,12 +72,13 @@ class CodeMonkey(BaseAgent):
             attempt = 1
             feedback = None
 
+        iterations = self.current_state.iterations
         llm = self.get_llm()
         convo = self._get_task_convo().template(
             "implement_changes",
             file_name=file_name,
             file_content=file_content,
-            instructions=task["instructions"],
+            instructions=iterations[-1]["description"] if iterations else task["instructions"],
         )
         if feedback:
             convo.assistant(f"```\n{self.prev_response.data['new_content']}\n```\n").template(

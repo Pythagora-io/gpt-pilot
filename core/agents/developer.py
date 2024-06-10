@@ -67,20 +67,6 @@ class Developer(BaseAgent):
         if self.prev_response and self.prev_response.type == ResponseType.TASK_REVIEW_FEEDBACK:
             return await self.breakdown_current_iteration(self.prev_response.data["feedback"])
 
-        # If any of the files are missing metadata/descriptions, those need to be filled-in
-        missing_descriptions = [file.path for file in self.current_state.files if not file.meta.get("description")]
-        if missing_descriptions:
-            log.debug(f"Some files are missing descriptions: {', '.join(missing_descriptions)}, reqesting analysis")
-            return AgentResponse.describe_files(self)
-
-        log.debug(
-            f"Current state files: {len(self.current_state.files)}, relevant {self.current_state.relevant_files or []}"
-        )
-        # Check which files are relevant to the current task
-        if self.current_state.files and self.current_state.relevant_files is None:
-            await self.get_relevant_files()
-            return AgentResponse.done(self)
-
         if not self.current_state.unfinished_tasks:
             log.warning("No unfinished tasks found, nothing to do (why am I called? is this a bug?)")
             return AgentResponse.done(self)
@@ -133,6 +119,8 @@ class Developer(BaseAgent):
             self.current_state.current_task["description"],
             source,
             "in-progress",
+            self.current_state.get_source_index(source),
+            self.current_state.tasks,
         )
         llm = self.get_llm()
         # FIXME: In case of iteration, parse_task depends on the context (files, tasks, etc) set there.
@@ -172,10 +160,17 @@ class Developer(BaseAgent):
             self.current_state.current_task["description"],
             source,
             "in-progress",
+            self.current_state.get_source_index(source),
+            self.current_state.tasks,
         )
 
         log.debug(f"Breaking down the current task: {task['description']}")
         await self.send_message("Thinking about how to implement this task ...")
+
+        log.debug(f"Current state files: {len(self.current_state.files)}, relevant {self.current_state.relevant_files}")
+        # Check which files are relevant to the current task
+        if self.current_state.files and self.current_state.relevant_files is None:
+            await self.get_relevant_files()
 
         current_task_index = self.current_state.tasks.index(task)
 
@@ -236,6 +231,7 @@ class Developer(BaseAgent):
                 "id": uuid4().hex,
                 "completed": False,
                 "source": source,
+                "iteration_index": len(self.current_state.iterations),
                 **step.model_dump(),
             }
             for step in response.steps
@@ -248,6 +244,7 @@ class Developer(BaseAgent):
                     "completed": False,
                     "type": "review_task",
                     "source": source,
+                    "iteration_index": len(self.current_state.iterations),
                 },
             ]
         log.debug(f"Next steps: {self.next_state.unfinished_steps}")

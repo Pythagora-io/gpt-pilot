@@ -89,6 +89,7 @@ class PlainConsoleUI(UIBase):
         source: str,
         status: str,
         source_index: int = 1,
+        tasks: list[dict] = None,
     ):
         pass
 
