@@ -114,7 +114,7 @@ async def test_openai_parser_fails(mock_AsyncOpenAI):
 
     llm = OpenAIClient(cfg)
 
-    with pytest.raises(APIError, match="Error parsing LLM response"):
+    with pytest.raises(APIError, match="Error parsing response"):
         await llm(convo, parser=parser, max_retries=1)
 
 

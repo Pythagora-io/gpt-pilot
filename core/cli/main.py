@@ -28,7 +28,6 @@ async def run_project(sm: StateManager, ui: UIBase) -> bool:
     :return: True if the orchestrator exited successfully, False otherwise.
     """
 
-    telemetry.start()
     telemetry.set("app_id", str(sm.project.id))
     telemetry.set("initial_prompt", sm.current_state.specification.description)
 
@@ -58,7 +57,6 @@ async def run_project(sm: StateManager, ui: UIBase) -> bool:
             source=pythagora_source,
         )
 
-    await telemetry.send()
     return success
 
 
@@ -147,7 +145,6 @@ async def run_pythagora_session(sm: StateManager, ui: UIBase, args: Namespace):
 
     if args.project or args.branch or args.step:
         telemetry.set("is_continuation", True)
-        # FIXME: we should send the project stage and other runtime info to the UI
         success = await load_project(sm, args.project, args.branch, args.step)
         if not success:
             return False

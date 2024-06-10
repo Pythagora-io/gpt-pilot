@@ -181,6 +181,7 @@ class BaseLLMClient:
             remaining_retries -= 1
             request_log.messages = convo.messages[:]
             request_log.response = None
+            request_log.status = LLMRequestStatus.SUCCESS
             request_log.error = None
             response = None
 
@@ -278,7 +279,9 @@ class BaseLLMClient:
                     response = parser(response)
                     break
                 except ValueError as err:
-                    log.debug(f"Error parsing GPT response: {err}, asking LLM to retry", exc_info=True)
+                    request_log.error = f"Error parsing response: {err}"
+                    request_log.status = LLMRequestStatus.ERROR
+                    log.debug(f"Error parsing LLM response: {err}, asking LLM to retry", exc_info=True)
                     convo.assistant(response)
                     convo.user(f"Error parsing response: {err}. Please output your response EXACTLY as requested.")
                     continue
