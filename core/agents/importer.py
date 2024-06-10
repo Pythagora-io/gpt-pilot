@@ -6,6 +6,7 @@ from core.agents.response import AgentResponse, ResponseType
 from core.db.models import Complexity
 from core.llm.parser import JSONParser
 from core.log import get_logger
+from core.telemetry import telemetry
 from core.templates.example_project import EXAMPLE_PROJECT_DESCRIPTION
 
 log = get_logger(__name__)
@@ -84,3 +85,13 @@ class Importer(BaseAgent):
                 "complexity": Complexity.HARD if len(self.current_state.files) > 5 else Complexity.SIMPLE,
             }
         ]
+
+        n_lines = sum(len(f.content.content.splitlines()) for f in self.current_state.files)
+        await telemetry.trace_code_event(
+            "existing-project",
+            {
+                "num_files": len(self.current_state.files),
+                "num_lines": n_lines,
+                "description": llm_response,
+            },
+        )

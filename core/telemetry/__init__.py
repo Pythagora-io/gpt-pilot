@@ -321,6 +321,7 @@ class Telemetry:
         Note: this method clears all telemetry data after sending it.
         """
         if not self.enabled:
+            log.debug("Telemetry.send(): telemetry is disabled, not sending data")
             return
 
         if self.endpoint is None:
