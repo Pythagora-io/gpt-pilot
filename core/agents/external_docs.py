@@ -92,7 +92,7 @@ class ExternalDocumentation(BaseAgent):
         await self.send_message("Determining if external documentation is needed for the next task...")
         llm_response: SelectedDocsets = await llm(convo, parser=JSONParser(spec=SelectedDocsets))
         available_docsets = dict(available_docsets)
-        return {k: available_docsets[k] for k in llm_response.docsets}
+        return {k: available_docsets[k] for k in llm_response.docsets if k in available_docsets}
 
     async def _create_queries(self, docsets: dict[str, str]) -> dict[str, list[str]]:
         """Return queries we have to make to the docs API.
