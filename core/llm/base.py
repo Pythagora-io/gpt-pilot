@@ -316,6 +316,7 @@ class BaseLLMClient:
         :return: Client class for the specified provider.
         """
         from .anthropic_client import AnthropicClient
+        from .azure_client import AzureClient
         from .groq_client import GroqClient
         from .openai_client import OpenAIClient
 
@@ -325,6 +326,8 @@ class BaseLLMClient:
             return AnthropicClient
         elif provider == LLMProvider.GROQ:
             return GroqClient
+        elif provider == LLMProvider.AZURE:
+            return AzureClient
         else:
             raise ValueError(f"Unsupported LLM provider: {provider.value}")
 

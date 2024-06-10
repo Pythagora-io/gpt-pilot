@@ -1,0 +1,14 @@
+{% if docs is defined and docs %}
+We have some some documentation snippets that might be helpful while working on this task, we will now list those.
+
+---START_OF_DOCUMENTATION_SNIPPETS---
+{% for d in docs %}
+Documentation snippets from {{ d.desc }}:
+{% for snippet in d.snippets %}
+{{ snippet }}
+
+{% endfor %}
+
+{% endfor %}
+---END_OF_DOCUMENTATION_SNIPPETS---
+{% endif %}

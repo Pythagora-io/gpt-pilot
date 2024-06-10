@@ -1,6 +1,6 @@
 {
   // Configuration for the LLM providers that can be used. Pythagora supports
-  // OpenAI, Anthropic and Groq. Azure and OpenRouter and local LLMs (such as LM-Studio)
+  // OpenAI, Azure, Anthropic and Groq. OpenRouter and local LLMs (such as LM-Studio)
   // also work, you can use "openai" provider to define these.
   "llm": {
     "openai": {
@@ -9,6 +9,17 @@
       "api_key": null,
       "connect_timeout": 60.0,
       "read_timeout": 10.0
+    },
+    // Example config for Azure OpenAI (see https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#chat-completions)
+    "azure": {
+      "base_url": "https://your-resource-name.openai.azure.com/",
+      "api_key": "your-api-key",
+      "connect_timeout": 60.0,
+      "read_timeout": 10.0,
+      "extra": {
+        "azure_deployment": "your-azure-deployment-id",
+        "api_version": "2024-02-01"
+      }
     }
   },
   // Each agent can use a different model or configuration. The default, as before, is GPT4 Turbo

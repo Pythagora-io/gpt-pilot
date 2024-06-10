@@ -1,6 +1,6 @@
 from enum import Enum
 from os.path import abspath, dirname, isdir, join
-from typing import Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import Annotated
@@ -18,6 +18,7 @@ DEFAULT_IGNORE_PATHS = [
     "node_modules",
     "package-lock.json",
     "venv",
+    ".venv",
     "dist",
     "build",
     "target",
@@ -33,6 +34,9 @@ IGNORE_SIZE_THRESHOLD = 50000  # 50K+ files are ignored by default
 # Agents with sane setup in the default configuration
 DEFAULT_AGENT_NAME = "default"
 DESCRIBE_FILES_AGENT_NAME = "CodeMonkey.describe_files"
+
+# Endpoint for the external documentation
+EXTERNAL_DOCUMENTATION_API = "http://docs-pythagora-io-439719575.us-east-1.elb.amazonaws.com"
 
 
 class _StrictModel(BaseModel):
@@ -54,6 +58,7 @@ class LLMProvider(str, Enum):
     ANTHROPIC = "anthropic"
     GROQ = "groq"
     LM_STUDIO = "lm-studio"
+    AZURE = "azure"
 
 
 class UIAdapter(str, Enum):
@@ -87,6 +92,10 @@ class ProviderConfig(_StrictModel):
         default=10.0,
         description="Timeout (in seconds) for receiving a new chunk of data from the response stream",
         ge=0.0,
+    )
+    extra: Optional[dict[str, Any]] = Field(
+        None,
+        description="Extra provider-specific configuration",
     )
 
 
@@ -139,6 +148,10 @@ class LLMConfig(_StrictModel):
         description="Timeout (in seconds) for receiving a new chunk of data from the response stream",
         ge=0.0,
     )
+    extra: Optional[dict[str, Any]] = Field(
+        None,
+        description="Extra provider-specific configuration",
+    )
 
     @classmethod
     def from_provider_and_agent_configs(cls, provider: ProviderConfig, agent: AgentLLMConfig):
@@ -150,6 +163,7 @@ class LLMConfig(_StrictModel):
             temperature=agent.temperature,
             connect_timeout=provider.connect_timeout,
             read_timeout=provider.read_timeout,
+            extra=provider.extra,
         )
 
 
@@ -211,6 +225,12 @@ class DBConfig(_StrictModel):
     @classmethod
     def validate_url_scheme(cls, v: str) -> str:
         if v.startswith("sqlite+aiosqlite://"):
+            return v
+        if v.startswith("postgresql+asyncpg://"):
+            try:
+                import asyncpg  # noqa: F401
+            except ImportError:
+                raise ValueError("To use PostgreSQL database, please install `asyncpg` and `psycopg2` packages")
             return v
         raise ValueError(f"Unsupported database URL scheme in: {v}")
 

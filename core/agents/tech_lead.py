@@ -90,7 +90,7 @@ class TechLead(BaseAgent):
         )
         # Saving template files will fill this in and we want it clear for the
         # first task.
-        self.next_state.relevant_files = []
+        self.next_state.relevant_files = None
         return summary
 
     async def ask_for_new_feature(self) -> AgentResponse:

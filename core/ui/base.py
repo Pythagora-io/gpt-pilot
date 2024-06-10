@@ -263,6 +263,17 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def import_project(self, project_dir: str):
+        """
+        Ask the UI to import files from the project directory.
+
+        The UI should provide a way for the user to select the directory with
+        existing project, and recursively copy the files over.
+
+        :param project_dir: Project directory.
+        """
+        raise NotImplementedError()
+
 
 pythagora_source = UISource("Pythagora", "pythagora")
 success_source = UISource("Congratulations", "success")

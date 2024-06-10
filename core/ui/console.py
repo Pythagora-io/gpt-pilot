@@ -1,5 +1,7 @@
 from typing import Optional
 
+from prompt_toolkit.shortcuts import PromptSession
+
 from core.log import get_logger
 from core.ui.base import ProjectStage, UIBase, UIClosedError, UISource, UserInput
 
@@ -57,9 +59,12 @@ class PlainConsoleUI(UIBase):
                 default_str = " (default)" if k == default else ""
                 print(f"  [{k}]: {v}{default_str}")
 
+        session = PromptSession("> ")
+
         while True:
             try:
-                choice = input("> ").strip()
+                choice = await session.prompt_async(default=initial_text or "")
+                choice = choice.strip()
             except KeyboardInterrupt:
                 raise UIClosedError()
             if not choice and default:
@@ -116,6 +121,9 @@ class PlainConsoleUI(UIBase):
         pass
 
     async def send_features_list(self, features: list[str]):
+        pass
+
+    async def import_project(self, project_dir: str):
         pass
 
 

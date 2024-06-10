@@ -80,14 +80,14 @@ async def test_create_next_deep_copies_fields(testdb):
     next_state.tasks[0]["completed"] = True
     next_state.iterations[0]["completed"] = True
     next_state.steps[0]["completed"] = True
-    next_state.relevant_files.append("test.txt")
+    next_state.relevant_files = ["test.txt"]
     next_state.modified_files["test.txt"] = "Hello World"
 
     assert state.epics[0]["completed"] is False
     assert state.tasks[0]["completed"] is False
     assert state.iterations[0]["completed"] is False
     assert state.steps[0]["completed"] is False
-    assert state.relevant_files == []
+    assert state.relevant_files is None
     assert state.modified_files == {}
 
 

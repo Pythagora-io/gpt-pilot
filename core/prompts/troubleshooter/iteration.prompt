@@ -39,6 +39,7 @@ Focus on solving this issue in the following way:
 {{ next_solution_to_try }}
 ```
 {% endif %}
+{% include "partials/doc_snippets.prompt" %}
 Now, you have to debug this issue and comply with the additional user feedback.
 
 **IMPORTANT**

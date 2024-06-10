@@ -7,7 +7,9 @@ from core.agents.code_reviewer import CodeReviewer
 from core.agents.developer import Developer
 from core.agents.error_handler import ErrorHandler
 from core.agents.executor import Executor
+from core.agents.external_docs import ExternalDocumentation
 from core.agents.human_input import HumanInput
+from core.agents.importer import Importer
 from core.agents.problem_solver import ProblemSolver
 from core.agents.response import AgentResponse, ResponseType
 from core.agents.spec_writer import SpecWriter
@@ -175,10 +177,16 @@ class Orchestrator(BaseAgent):
                 return HumanInput(self.state_manager, self.ui, prev_response=prev_response)
             if prev_response.type == ResponseType.TASK_REVIEW_FEEDBACK:
                 return Developer(self.state_manager, self.ui, prev_response=prev_response)
+            if prev_response.type == ResponseType.IMPORT_PROJECT:
+                return Importer(self.state_manager, self.ui, prev_response=prev_response)
 
         if not state.specification.description:
-            # Ask the Spec Writer to refine and save the project specification
-            return SpecWriter(self.state_manager, self.ui)
+            if state.files:
+                # The project has been imported, but not analyzed yet
+                return Importer(self.state_manager, self.ui)
+            else:
+                # New project: ask the Spec Writer to refine and save the project specification
+                return SpecWriter(self.state_manager, self.ui)
         elif not state.specification.architecture:
             # Ask the Architect to design the project architecture and determine dependencies
             return Architect(self.state_manager, self.ui, process_manager=self.process_manager)
@@ -189,10 +197,12 @@ class Orchestrator(BaseAgent):
         ):
             # Ask the Tech Lead to break down the initial project or feature into tasks and apply project template
             return TechLead(self.state_manager, self.ui, process_manager=self.process_manager)
-        elif not state.steps and not state.iterations:
-            # Ask the Developer to break down current task into actionable steps
-            return Developer(self.state_manager, self.ui)
 
+        if state.current_task and state.docs is None:
+            return ExternalDocumentation(self.state_manager, self.ui)
+
+        # Current task status must be checked before Developer is called because we might want
+        # to skip it instead of breaking it down
         current_task_status = state.current_task.get("status") if state.current_task else None
         if current_task_status:
             # Status of the current task is set first time after the task was reviewed by user
@@ -206,6 +216,10 @@ class Orchestrator(BaseAgent):
             elif current_task_status in [TaskStatus.EPIC_UPDATED, TaskStatus.SKIPPED]:
                 # Task is fully done or skipped, call TaskCompleter to mark it as completed
                 return TaskCompleter(self.state_manager, self.ui)
+
+        if not state.steps and not state.iterations:
+            # Ask the Developer to break down current task into actionable steps
+            return Developer(self.state_manager, self.ui)
 
         if state.current_step:
             # Execute next step in the task

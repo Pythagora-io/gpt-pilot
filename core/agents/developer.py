@@ -133,6 +133,7 @@ class Developer(BaseAgent):
                 user_feedback=user_feedback,
                 user_feedback_qa=None,
                 next_solution_to_try=None,
+                docs=self.current_state.docs,
             )
             .assistant(description)
             .template("parse_task")
@@ -168,17 +169,14 @@ class Developer(BaseAgent):
 
         log.debug(f"Current state files: {len(self.current_state.files)}, relevant {self.current_state.relevant_files}")
         # Check which files are relevant to the current task
-        if self.current_state.files and not self.current_state.relevant_files:
+        if self.current_state.files and self.current_state.relevant_files is None:
             await self.get_relevant_files()
 
         current_task_index = self.current_state.tasks.index(task)
 
         llm = self.get_llm()
         convo = AgentConvo(self).template(
-            "breakdown",
-            task=task,
-            iteration=None,
-            current_task_index=current_task_index,
+            "breakdown", task=task, iteration=None, current_task_index=current_task_index, docs=self.current_state.docs
         )
         response: str = await llm(convo)
 
@@ -302,7 +300,7 @@ class Developer(BaseAgent):
 
         self.next_state.current_task["description"] = user_response.text
         self.next_state.current_task["run_always"] = True
-        self.next_state.relevant_files = []
+        self.next_state.relevant_files = None
         log.info(f"Task description updated to: {user_response.text}")
         # Orchestrator will rerun us with the new task description
         return False

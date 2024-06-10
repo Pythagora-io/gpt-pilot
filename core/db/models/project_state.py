@@ -51,8 +51,9 @@ class ProjectState(Base):
     tasks: Mapped[list[dict]] = mapped_column(default=list)
     steps: Mapped[list[dict]] = mapped_column(default=list)
     iterations: Mapped[list[dict]] = mapped_column(default=list)
-    relevant_files: Mapped[list[str]] = mapped_column(default=list)
+    relevant_files: Mapped[Optional[list[str]]] = mapped_column(default=None)
     modified_files: Mapped[dict] = mapped_column(default=dict)
+    docs: Mapped[Optional[list[dict]]] = mapped_column(default=None)
     run_command: Mapped[Optional[str]] = mapped_column()
     action: Mapped[Optional[str]] = mapped_column()
 
@@ -167,7 +168,10 @@ class ProjectState(Base):
 
         :return: List of tuples with file path and content.
         """
-        all_files = set(self.relevant_files + list(self.modified_files.keys()))
+        relevant_files = self.relevant_files or []
+        modified_files = self.modified_files or {}
+
+        all_files = set(relevant_files + list(modified_files.keys()))
         return [file for file in self.files if file.path in all_files]
 
     @staticmethod
@@ -219,6 +223,7 @@ class ProjectState(Base):
             files=[],
             relevant_files=deepcopy(self.relevant_files),
             modified_files=deepcopy(self.modified_files),
+            docs=deepcopy(self.docs),
             run_command=self.run_command,
         )
 
@@ -254,8 +259,9 @@ class ProjectState(Base):
         self.set_current_task_status(TaskStatus.DONE)
         self.steps = []
         self.iterations = []
-        self.relevant_files = []
+        self.relevant_files = None
         self.modified_files = {}
+        self.docs = None
         flag_modified(self, "tasks")
 
         if not self.unfinished_tasks and self.unfinished_epics:
@@ -362,6 +368,8 @@ class ProjectState(Base):
 
         if path not in self.modified_files and not external:
             self.modified_files[path] = original_content
+
+        self.relevant_files = self.relevant_files or []
         if path not in self.relevant_files:
             self.relevant_files.append(path)
 

@@ -1,0 +1,15 @@
+{% include "partials/project_details.prompt" %}
+
+Here is the next task that needs to be implemented:
+{{ current_task.description }}
+
+Here is the list of the libraries, frameworks and APIs for which we have documentation available. The documentation is given in a sequence of pairs, one pair per line. First item in the pair is the documentation key. Second  item is the short description of what that documentation contains.
+Here's an example for React API documentation:
+"react-api-ref", "React API Reference documentation"
+
+Here is the list of available documentations:
+{% for docset in available_docsets %}
+{{ docset[0], docset[1] }}
+{% endfor %}
+
+Now, give me the list of the additional documentation that you would like to use to complete the task listed above. Return only the documentation that is absolutely required for the given task, and only from the list of available documentations provided above. If there is no additional documentation in the list that you would like to use, return an empty list.
