@@ -1,12 +1,19 @@
+import os
 from typing import Callable
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 import pytest_asyncio
 
 from core.config import DBConfig
 from core.db.models import Base
 from core.db.session import SessionManager
 from core.state.state_manager import StateManager
+
+
+@pytest.fixture(autouse=True)
+def disable_test_telemetry(monkeypatch):
+    os.environ["DISABLE_TELEMETRY"] = "1"
 
 
 @pytest_asyncio.fixture

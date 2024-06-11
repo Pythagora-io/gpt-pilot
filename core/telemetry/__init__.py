@@ -2,6 +2,7 @@ import sys
 import time
 import traceback
 from copy import deepcopy
+from os import getenv
 from pathlib import Path
 from typing import Any
 
@@ -320,7 +321,7 @@ class Telemetry:
 
         Note: this method clears all telemetry data after sending it.
         """
-        if not self.enabled:
+        if not self.enabled or getenv("DISABLE_TELEMETRY"):
             log.debug("Telemetry.send(): telemetry is disabled, not sending data")
             return
 
@@ -362,7 +363,7 @@ class Telemetry:
         :param name: name of the event
         :param data: data to send with the event
         """
-        if not self.enabled:
+        if not self.enabled or getenv("DISABLE_TELEMETRY"):
             return
 
         payload = {
