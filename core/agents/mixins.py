@@ -57,6 +57,7 @@ class SystemDependencyCheckerMixin:
         :param spec: Project specification.
         """
         deps = spec.system_dependencies
+        checked = {}
 
         for dep in deps:
             status_code, _, _ = await self.process_manager.run_command(dep["test"])
@@ -73,8 +74,10 @@ class SystemDependencyCheckerMixin:
                     buttons_only=True,
                     default="continue",
                 )
+                checked[dep["name"]] = "missing"
             else:
                 await self.send_message(f"✅ {dep['name']} is available.")
+                checked[dep["name"]] = "present"
 
         telemetry.set(
             "architecture",
@@ -82,5 +85,6 @@ class SystemDependencyCheckerMixin:
                 "description": spec.architecture,
                 "system_dependencies": deps,
                 "package_dependencies": spec.package_dependencies,
+                "checked_system_dependencies": checked,
             },
         )

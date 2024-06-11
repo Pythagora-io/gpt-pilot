@@ -1,6 +1,7 @@
 from core.agents.base import BaseAgent
 from core.agents.response import AgentResponse
 from core.log import get_logger
+from core.telemetry import telemetry
 
 log = get_logger(__name__)
 
@@ -24,6 +25,9 @@ class TaskCompleter(BaseAgent):
             "done",
             self.current_state.get_source_index(source),
             tasks,
+        )
+        await telemetry.trace_code_event(
+            "task-end", {"task-num": current_task_index1, "num-iterations": len(self.current_state.iterations)}
         )
 
         return AgentResponse.done(self)

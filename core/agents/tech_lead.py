@@ -10,6 +10,7 @@ from core.db.models import Complexity
 from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
+from core.telemetry import telemetry
 from core.templates.registry import apply_project_template, get_template_description, get_template_summary
 from core.ui.base import ProjectStage, success_source
 
@@ -151,6 +152,7 @@ class TechLead(BaseAgent):
             }
             for task in response.plan
         ]
+        await telemetry.trace_code_event("development-plan", {"num-tasks": len(response.plan)})
         return AgentResponse.done(self)
 
     async def update_epic(self) -> AgentResponse:

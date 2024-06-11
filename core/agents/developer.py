@@ -10,6 +10,7 @@ from core.agents.response import AgentResponse, ResponseType
 from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
+from core.telemetry import telemetry
 
 log = get_logger(__name__)
 
@@ -195,6 +196,7 @@ class Developer(BaseAgent):
         self.next_state.modified_files = {}
         self.set_next_steps(response, source)
         self.next_state.action = f"Task #{current_task_index + 1} start"
+        await telemetry.trace_code_event("task-start", {"task-num": current_task_index + 1})
         return AgentResponse.done(self)
 
     async def get_relevant_files(

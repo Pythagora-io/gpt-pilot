@@ -182,6 +182,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
             return False, False, ""
 
         if user_response.button == "loop":
+            await telemetry.trace_code_event("stuck-in-loop", {"clicked": True})
             return True, True, ""
 
         return True, False, user_response.text
