@@ -54,6 +54,14 @@ class SpecWriter(SystemDependencyCheckerMixin, BaseAgent):
         spec = response.text
 
         complexity = await self.check_prompt_complexity(spec)
+        await telemetry.trace_code_event(
+            "project-description",
+            {
+                "initial_prompt": spec,
+                "complexity": complexity,
+            },
+        )
+
         if len(spec) < ANALYZE_THRESHOLD and complexity != Complexity.SIMPLE:
             spec = await self.analyze_spec(spec)
             spec = await self.review_spec(spec)
@@ -111,6 +119,8 @@ class SpecWriter(SystemDependencyCheckerMixin, BaseAgent):
 
         llm = self.get_llm()
         convo = AgentConvo(self).template("ask_questions").user(spec)
+        n_questions = 0
+        n_answers = 0
 
         while True:
             response: str = await llm(convo)
@@ -125,12 +135,21 @@ class SpecWriter(SystemDependencyCheckerMixin, BaseAgent):
                     buttons={"continue": "continue"},
                 )
                 if confirm.cancelled or confirm.button == "continue" or confirm.text == "":
+                    await self.telemetry.trace_code_event(
+                        "spec-writer-questions",
+                        {
+                            "num_questions": n_questions,
+                            "num_answers": n_answers,
+                            "new_spec": spec,
+                        },
+                    )
                     return spec
                 convo.user(confirm.text)
 
             else:
                 convo.assistant(response)
 
+                n_questions += 1
                 user_response = await self.ask_question(
                     response,
                     buttons={"skip": "Skip questions"},
@@ -143,6 +162,7 @@ class SpecWriter(SystemDependencyCheckerMixin, BaseAgent):
                     response: str = await llm(convo)
                     return response
 
+                n_answers += 1
                 convo.user(user_response.text)
 
     async def review_spec(self, spec: str) -> str:
