@@ -366,6 +366,9 @@ class Telemetry:
         if not self.enabled or getenv("DISABLE_TELEMETRY"):
             return
 
+        if not data.get("app_id") and self.data("app_id"):
+            data = {**data, "app_id": self.data["app_id"]}
+
         payload = {
             "pathId": self.telemetry_id,
             "event": f"trace-{name}",
