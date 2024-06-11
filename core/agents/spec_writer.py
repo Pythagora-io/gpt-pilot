@@ -1,5 +1,6 @@
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
+from core.agents.mixins import SystemDependencyCheckerMixin
 from core.agents.response import AgentResponse
 from core.db.models import Complexity
 from core.llm.parser import StringParser
@@ -19,7 +20,7 @@ INITIAL_PROJECT_HOWTO_URL = (
 SPEC_STEP_NAME = "Create specification"
 
 
-class SpecWriter(BaseAgent):
+class SpecWriter(SystemDependencyCheckerMixin, BaseAgent):
     agent_type = "spec-writer"
     display_name = "Spec Writer"
 
@@ -43,7 +44,7 @@ class SpecWriter(BaseAgent):
         if response.button == "example":
             await self.send_message("Starting example project with description:")
             await self.send_message(EXAMPLE_PROJECT_DESCRIPTION)
-            self.prepare_example_project()
+            await self.prepare_example_project()
             return AgentResponse.done(self)
         elif response.button == "continue":
             # FIXME: Workaround for the fact that VSCode "continue" button does
@@ -73,7 +74,7 @@ class SpecWriter(BaseAgent):
         llm_response: str = await llm(convo, temperature=0, parser=StringParser())
         return llm_response.lower()
 
-    def prepare_example_project(self):
+    async def prepare_example_project(self):
         spec = self.current_state.specification.clone()
         spec.description = EXAMPLE_PROJECT_DESCRIPTION
         spec.architecture = EXAMPLE_PROJECT_ARCHITECTURE["architecture"]
@@ -84,14 +85,9 @@ class SpecWriter(BaseAgent):
         telemetry.set("initial_prompt", spec.description.strip())
         telemetry.set("is_complex_app", False)
         telemetry.set("template", spec.template)
-        telemetry.set(
-            "architecture",
-            {
-                "architecture": spec.architecture,
-                "system_dependencies": spec.system_dependencies,
-                "package_dependencies": spec.package_dependencies,
-            },
-        )
+
+        await self.check_system_dependencies(spec)
+
         self.next_state.specification = spec
 
         self.next_state.epics = [

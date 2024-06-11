@@ -1,18 +1,24 @@
+from unittest.mock import AsyncMock
+
 import pytest
 
 from core.agents.response import ResponseType
 from core.agents.spec_writer import SpecWriter
 from core.db.models import Complexity
+from core.telemetry import telemetry
 from core.ui.base import UserInput
 
 
 @pytest.mark.asyncio
 async def test_start_example_project(agentcontext):
-    sm, _, ui, _ = agentcontext
+    sm, pm, ui, _ = agentcontext
 
     ui.ask_question.return_value = UserInput(button="example")
+    pm.run_command = AsyncMock(return_value=(0, "", ""))
 
-    sw = SpecWriter(sm, ui)
+    telemetry.start()
+
+    sw = SpecWriter(sm, ui, process_manager=pm)
     response = await sw.run()
     assert response.type == ResponseType.DONE
 
@@ -23,6 +29,10 @@ async def test_start_example_project(agentcontext):
     assert sm.current_state.specification.complexity == Complexity.SIMPLE
     assert sm.current_state.epics != []
     assert sm.current_state.tasks != []
+    pm.run_command.assert_awaited_once_with("node --version")
+
+    assert telemetry.data["initial_prompt"] == sm.current_state.specification.description.strip()
+    assert telemetry.data["architecture"]["system_dependencies"][0]["installed"] is True
 
 
 @pytest.mark.asyncio

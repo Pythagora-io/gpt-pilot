@@ -186,7 +186,7 @@ class Orchestrator(BaseAgent):
                 return Importer(self.state_manager, self.ui)
             else:
                 # New project: ask the Spec Writer to refine and save the project specification
-                return SpecWriter(self.state_manager, self.ui)
+                return SpecWriter(self.state_manager, self.ui, process_manager=self.process_manager)
         elif not state.specification.architecture:
             # Ask the Architect to design the project architecture and determine dependencies
             return Architect(self.state_manager, self.ui, process_manager=self.process_manager)

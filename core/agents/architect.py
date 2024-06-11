@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
+from core.agents.mixins import SystemDependencyCheckerMixin
 from core.agents.response import AgentResponse
 from core.llm.parser import JSONParser
 from core.telemetry import telemetry
@@ -67,7 +68,7 @@ class Architecture(BaseModel):
     )
 
 
-class Architect(BaseAgent):
+class Architect(SystemDependencyCheckerMixin, BaseAgent):
     agent_type = "architect"
     display_name = "Architect"
 
@@ -81,7 +82,6 @@ class Architect(BaseAgent):
         arch: Architecture = await llm(convo, parser=JSONParser(Architecture))
 
         await self.check_compatibility(arch)
-        await self.check_system_dependencies(arch.system_dependencies)
 
         spec = self.current_state.specification.clone()
         spec.architecture = arch.architecture
@@ -90,14 +90,7 @@ class Architect(BaseAgent):
         spec.template = arch.template.value if arch.template else None
 
         self.next_state.specification = spec
-        telemetry.set(
-            "architecture",
-            {
-                "description": spec.architecture,
-                "system_dependencies": spec.system_dependencies,
-                "package_dependencies": spec.package_dependencies,
-            },
-        )
+        await self.check_system_dependencies(spec)
         telemetry.set("template", spec.template)
         self.next_state.action = ARCHITECTURE_STEP_NAME
         return AgentResponse.done(self)
@@ -129,19 +122,3 @@ class Architect(BaseAgent):
         # return AgentResponse.revise_spec()
         # that SpecWriter should catch and allow the user to reword the initial spec.
         return True
-
-    async def check_system_dependencies(self, deps: list[SystemDependency]):
-        """
-        Check whether the required system dependencies are installed.
-        """
-
-        for dep in deps:
-            status_code, _, _ = await self.process_manager.run_command(dep.test)
-            if status_code != 0:
-                if dep.required_locally:
-                    remedy = "Please install it before proceeding with your app."
-                else:
-                    remedy = "If you would like to use it locally, please install it before proceeding."
-                await self.send_message(f"❌ {dep.name} is not available. {remedy}")
-            else:
-                await self.send_message(f"✅ {dep.name} is available.")
