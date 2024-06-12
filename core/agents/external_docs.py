@@ -53,6 +53,7 @@ class ExternalDocumentation(BaseAgent):
             await self._store_docs([], available_docsets)
             return AgentResponse.done(self)
 
+        log.info(f"Selected {len(selected_docsets)} docsets for this task.")
         queries = await self._create_queries(selected_docsets)
         doc_snippets = await self._fetch_snippets(queries)
         await telemetry.trace_code_event("doc_snippets", {"num_stored": len(doc_snippets)})
@@ -140,7 +141,10 @@ class ExternalDocumentation(BaseAgent):
                 log.warning("Failed to fetch documentation snippets", exc_info=True)
 
         for k, res in zip(ordered_keys, results):
-            snippets.append((k, res.json()))
+            json_snippets = res.json()
+            log.debug(f"Fetched {len(json_snippets)} snippets from {k}")
+            if len(json_snippets):
+                snippets.append((k, res.json()))
         return snippets
 
     async def _store_docs(self, snippets: list[tuple], available_docsets: list[tuple]):
