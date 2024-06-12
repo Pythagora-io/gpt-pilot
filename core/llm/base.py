@@ -201,7 +201,7 @@ class BaseLLMClient:
                 request_log.error = str(f"Read timeout: {err}")
                 request_log.status = LLMRequestStatus.ERROR
                 continue
-            except httpx.ReadError as err:
+            except (httpx.ReadError, httpx.RemoteProtocolError) as err:
                 log.warning(f"Read error: {err}", exc_info=True)
                 request_log.error = str(f"Read error: {err}")
                 request_log.status = LLMRequestStatus.ERROR
