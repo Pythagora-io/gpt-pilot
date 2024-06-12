@@ -35,19 +35,29 @@ class CodeMonkey(BaseAgent):
         # FIXME: Current prompts reuse task breakdown / iteration messages so we have to resort to this
         task = self.current_state.current_task
         current_task_index = self.current_state.tasks.index(task)
+        convo = AgentConvo(self)
 
-        convo = AgentConvo(self).template(
-            "breakdown",
-            task=task,
-            iteration=None,
-            current_task_index=current_task_index,
-        )
-        # TODO: We currently show last iteration to the code monkey; we might need to show the task
-        # breakdown and all the iterations instead? To think about when refactoring prompts
-        if self.current_state.iterations:
-            convo.assistant(self.current_state.iterations[-1]["description"])
+        iterations = self.current_state.iterations
+        if iterations:
+            # Implementing file according to the last broken-down iteration
+            iteration = iterations[-1]
+            convo.template(
+                "iteration",
+                current_task=task,
+                user_feedback=iteration["user_feedback"],
+                user_feedback_qa=iteration["user_feedback_qa"],
+                next_solution_to_try=None,
+                docs=self.current_state.docs,
+            ).assistant(iteration["description"])
         else:
-            convo.assistant(self.current_state.current_task["instructions"])
+            # Implementing file according to the task instructions
+            convo.template(
+                "breakdown",
+                task=task,
+                iteration=None,
+                current_task_index=current_task_index,
+            ).assistant(task["instructions"])
+
         return convo
 
     async def implement_changes(self) -> AgentResponse:
