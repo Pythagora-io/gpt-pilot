@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -96,13 +96,13 @@ class Executor(BaseAgent):
             self.next_state.action = f'Skip "{cmd_name}"'
             return AgentResponse.done(self)
 
-        started_at = datetime.now()
+        started_at = datetime.now(UTC)
 
         log.info(f"Running command `{cmd}` with timeout {timeout}s")
         status_code, stdout, stderr = await self.process_manager.run_command(cmd, timeout=timeout)
         llm_response = await self.check_command_output(cmd, timeout, stdout, stderr, status_code)
 
-        duration = (datetime.now() - started_at).total_seconds()
+        duration = (datetime.now(UTC) - started_at).total_seconds()
 
         self.complete()
         self.next_state.action = f'Run "{cmd_name}"'

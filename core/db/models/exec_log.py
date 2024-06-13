@@ -4,6 +4,7 @@ from uuid import UUID
 
 from sqlalchemy import ForeignKey, inspect
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
 
 from core.db.models import Base
 from core.proc.exec_log import ExecLog as ExecLogData
@@ -21,7 +22,7 @@ class ExecLog(Base):
     project_state_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("project_states.id", ondelete="SET NULL"))
 
     # Attributes
-    started_at: Mapped[datetime] = mapped_column()
+    started_at: Mapped[datetime] = mapped_column(server_default=func.now())
     duration: Mapped[float] = mapped_column()
     cmd: Mapped[str] = mapped_column()
     cwd: Mapped[str] = mapped_column()
