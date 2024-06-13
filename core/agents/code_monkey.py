@@ -31,25 +31,6 @@ class CodeMonkey(BaseAgent):
         else:
             return await self.implement_changes()
 
-    def _get_task_convo(self) -> AgentConvo:
-        # FIXME: Current prompts reuse task breakdown / iteration messages so we have to resort to this
-        task = self.current_state.current_task
-        current_task_index = self.current_state.tasks.index(task)
-
-        convo = AgentConvo(self).template(
-            "breakdown",
-            task=task,
-            iteration=None,
-            current_task_index=current_task_index,
-        )
-        # TODO: We currently show last iteration to the code monkey; we might need to show the task
-        # breakdown and all the iterations instead? To think about when refactoring prompts
-        if self.current_state.iterations:
-            convo.assistant(self.current_state.iterations[-1]["description"])
-        else:
-            convo.assistant(self.current_state.current_task["instructions"])
-        return convo
-
     async def implement_changes(self) -> AgentResponse:
         file_name = self.step["save_file"]["path"]
 
@@ -73,12 +54,23 @@ class CodeMonkey(BaseAgent):
             feedback = None
 
         iterations = self.current_state.iterations
+        user_feedback = None
+        user_feedback_qa = None
         llm = self.get_llm()
-        convo = self._get_task_convo().template(
+        if iterations:
+            instructions = iterations[-1]["description"]
+            user_feedback = iterations[-1]["user_feedback"]
+            user_feedback_qa = iterations[-1]["user_feedback_qa"]
+        else:
+            instructions = self.current_state.current_task["instructions"]
+
+        convo = AgentConvo(self).template(
             "implement_changes",
             file_name=file_name,
             file_content=file_content,
-            instructions=iterations[-1]["description"] if iterations else task["instructions"],
+            instructions=instructions,
+            user_feedback=user_feedback,
+            user_feedback_qa=user_feedback_qa,
         )
         if feedback:
             convo.assistant(f"```\n{self.prev_response.data['new_content']}\n```\n").template(

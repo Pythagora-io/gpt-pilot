@@ -1,0 +1,15 @@
+{% if user_feedback %}
+User who was using the app "{{ state.branch.project.name }}" sent you this feedback:
+```
+{{ user_feedback }}
+```
+{% endif %}
+{% if user_feedback_qa %}
+Feedback was not clear enough so you asked user for additional information and got this response:
+```
+{% for row in user_feedback_qa %}
+Q: {{ row.question }}
+A: {{ row.answer }}
+{% endfor %}
+```
+{% endif %}
