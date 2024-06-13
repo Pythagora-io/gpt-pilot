@@ -1,5 +1,6 @@
 {# This is actually creation of tasks and not epics. Reason why this prompt uses word "epic" instead of "task" is that LLM gives very detailed description and creates very big plan if we ask him to create tasks. When asked to create epics he focuses on much bigger picture and gives high level description which is what we want. #}
 # Rules for creating epics
+---start_of_rules_for_creating_epics---
 
 ## Rule #1
 Every epic must have only coding involved. There should never be a epic that is only testing or ensuring something works. There shouldn't be a epic for researching, deployment, writing documentation, testing or anything that is not writing the actual code. Testing if app works will be done as part of each epic.
@@ -23,4 +24,4 @@ Every epic must have a clear, high level, and short 1 sentence 'description'. It
 This rule applies to order of epics.
 Epics will be executed in same order that you output them. You must order them in a logical way so that epics that depend on other functionalities are implemented in later stage.
 
-END OF RULES FOR CREATING EPIC
+---end_of_rules_for_creating_epics---
