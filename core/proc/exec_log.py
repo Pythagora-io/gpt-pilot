@@ -1,11 +1,11 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from pydantic import BaseModel, Field
 
 
 class ExecLog(BaseModel):
-    started_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     duration: float = Field(description="The duration of the command/process run in seconds")
     cmd: str = Field(description="The full command (as executed in the shell)")
     cwd: str = Field(description="The working directory for the command (relative to project root)")
