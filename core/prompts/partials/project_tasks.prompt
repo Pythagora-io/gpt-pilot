@@ -1,6 +1,3 @@
-Before we go into the coding part, your job is to split the development process of creating this app into smaller epics.
-Now, based on the project details provided{% if task_type  == 'feature' %} and new feature description{% endif %}, think epic by epic and create the entire development plan{% if task_type  == 'feature' %} for new feature{% elif task_type  == 'app' %}. {% if state.files %}Continue from the existing code listed above{% else %}Start from the project setup{% endif %} and specify each epic until the moment when the entire app should be fully working{% if state.files %}. You should not reimplement what's already done - just continue from the implementation already there{% endif %}{% endif %} while strictly following these rules:
-
 {# This is actually creation of tasks and not epics. Reason why this prompt uses word "epic" instead of "task" is that LLM gives very detailed description and creates very big plan if we ask him to create tasks. When asked to create epics he focuses on much bigger picture and gives high level description which is what we want. #}
 # Rules for creating epics
 
@@ -25,3 +22,5 @@ Every epic must have a clear, high level, and short 1 sentence 'description'. It
 ## Rule #5
 This rule applies to order of epics.
 Epics will be executed in same order that you output them. You must order them in a logical way so that epics that depend on other functionalities are implemented in later stage.
+
+END OF RULES FOR CREATING EPIC

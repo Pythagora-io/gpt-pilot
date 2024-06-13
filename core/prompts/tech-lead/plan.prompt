@@ -21,5 +21,8 @@ Finally, here is the description of new feature that needs to be added to the ap
 {% if epic.complexity and epic.complexity == 'simple' %}
 This is very low complexity {{ task_type }} and because of that, you have to create ONLY one task that is sufficient to fully implement it.
 {% else %}
+Before we go into the coding part, your job is to split the development process of creating this app into smaller epics.
+Now, based on the project details provided{% if task_type  == 'feature' %} and new feature description{% endif %}, think epic by epic and create the entire development plan{% if task_type  == 'feature' %} for new feature{% elif task_type  == 'app' %}. {% if state.files %}Continue from the existing code listed above{% else %}Start from the project setup{% endif %} and specify each epic until the moment when the entire app should be fully working{% if state.files %}. You should not reimplement what's already done - just continue from the implementation already there{% endif %}{% endif %} while strictly following these rules:
+
 {% include "partials/project_tasks.prompt" %}
 {% endif %}
