@@ -77,6 +77,7 @@ class StateManager:
             f'with default branch "{branch.name}" (id={branch.id}) '
             f"and initial state id={state.id} (step_index={state.step_index})"
         )
+        await telemetry.trace_code_event("create-project", {"name": name})
 
         self.current_session = session
         self.current_state = state

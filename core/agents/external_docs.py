@@ -26,7 +26,7 @@ class SelectedDocsets(BaseModel):
 class ExternalDocumentation(BaseAgent):
     """Agent in charge of collecting and storing additional documentation.
 
-    Docs are per task and are stores in the `tasks` variable in the project state.
+    Docs are per task and are stores in the `docs` variable in the project state.
     This agent ensures documentation is collected only once per task.
 
     Agent does 2 LLM interactions:
@@ -44,7 +44,12 @@ class ExternalDocumentation(BaseAgent):
     display_name = "Documentation"
 
     async def run(self) -> AgentResponse:
-        available_docsets = await self._get_available_docsets()
+        if self.current_state.specification.example_project:
+            log.debug("Example project detected, no documentation selected.")
+            available_docsets = []
+        else:
+            available_docsets = await self._get_available_docsets()
+
         selected_docsets = await self._select_docsets(available_docsets)
         await telemetry.trace_code_event("docsets_used", selected_docsets)
 
@@ -153,6 +158,8 @@ class ExternalDocumentation(BaseAgent):
         Documentation snippets are stored as a list of dictionaries:
         {"key": docset-key, "desc": documentation-description, "snippets": list-of-snippets}
 
+        :param snippets: List of tuples: (docset_key, snippets)
+        :param available_docsets: List of available docsets from the API.
         """
 
         docsets_dict = dict(available_docsets)
@@ -161,4 +168,3 @@ class ExternalDocumentation(BaseAgent):
             docs.append({"key": docset_key, "desc": docsets_dict[docset_key], "snippets": snip})
 
         self.next_state.docs = docs
-        self.next_state.flag_tasks_as_modified()

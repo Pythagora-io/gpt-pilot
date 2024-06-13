@@ -3,11 +3,11 @@ from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse
 from core.db.models import Complexity
 from core.llm.parser import StringParser
+from core.log import get_logger
 from core.telemetry import telemetry
 from core.templates.example_project import (
-    EXAMPLE_PROJECT_ARCHITECTURE,
-    EXAMPLE_PROJECT_DESCRIPTION,
-    EXAMPLE_PROJECT_PLAN,
+    DEFAULT_EXAMPLE_PROJECT,
+    EXAMPLE_PROJECTS,
 )
 
 # If the project description is less than this, perform an analysis using LLM
@@ -17,6 +17,8 @@ INITIAL_PROJECT_HOWTO_URL = (
     "https://github.com/Pythagora-io/gpt-pilot/wiki/How-to-write-a-good-initial-project-description"
 )
 SPEC_STEP_NAME = "Create specification"
+
+log = get_logger(__name__)
 
 
 class SpecWriter(BaseAgent):
@@ -41,18 +43,25 @@ class SpecWriter(BaseAgent):
             return AgentResponse.import_project(self)
 
         if response.button == "example":
-            await self.send_message("Starting example project with description:")
-            await self.send_message(EXAMPLE_PROJECT_DESCRIPTION)
-            self.prepare_example_project()
+            await self.prepare_example_project(DEFAULT_EXAMPLE_PROJECT)
             return AgentResponse.done(self)
+
         elif response.button == "continue":
             # FIXME: Workaround for the fact that VSCode "continue" button does
             # nothing but repeat the question. We reproduce this bug for bug here.
             return AgentResponse.done(self)
 
-        spec = response.text
+        spec = response.text.strip()
 
         complexity = await self.check_prompt_complexity(spec)
+        await telemetry.trace_code_event(
+            "project-description",
+            {
+                "initial_prompt": spec,
+                "complexity": complexity,
+            },
+        )
+
         if len(spec) < ANALYZE_THRESHOLD and complexity != Complexity.SIMPLE:
             spec = await self.analyze_spec(spec)
             spec = await self.review_spec(spec)
@@ -73,36 +82,21 @@ class SpecWriter(BaseAgent):
         llm_response: str = await llm(convo, temperature=0, parser=StringParser())
         return llm_response.lower()
 
-    def prepare_example_project(self):
+    async def prepare_example_project(self, example_name: str):
+        example_description = EXAMPLE_PROJECTS[example_name]["description"].strip()
+
+        log.debug(f"Starting example project: {example_name}")
+        await self.send_message(f"Starting example project with description:\n\n{example_description}")
+
         spec = self.current_state.specification.clone()
-        spec.description = EXAMPLE_PROJECT_DESCRIPTION
-        spec.architecture = EXAMPLE_PROJECT_ARCHITECTURE["architecture"]
-        spec.system_dependencies = EXAMPLE_PROJECT_ARCHITECTURE["system_dependencies"]
-        spec.package_dependencies = EXAMPLE_PROJECT_ARCHITECTURE["package_dependencies"]
-        spec.template = EXAMPLE_PROJECT_ARCHITECTURE["template"]
-        spec.complexity = Complexity.SIMPLE
-        telemetry.set("initial_prompt", spec.description.strip())
-        telemetry.set("is_complex_app", False)
-        telemetry.set("template", spec.template)
-        telemetry.set(
-            "architecture",
-            {
-                "architecture": spec.architecture,
-                "system_dependencies": spec.system_dependencies,
-                "package_dependencies": spec.package_dependencies,
-            },
-        )
+        spec.example_project = example_name
+        spec.description = example_description
+        spec.complexity = EXAMPLE_PROJECTS[example_name]["complexity"]
         self.next_state.specification = spec
 
-        self.next_state.epics = [
-            {
-                "name": "Initial Project",
-                "description": EXAMPLE_PROJECT_DESCRIPTION,
-                "completed": False,
-                "complexity": Complexity.SIMPLE,
-            }
-        ]
-        self.next_state.tasks = EXAMPLE_PROJECT_PLAN
+        telemetry.set("initial_prompt", spec.description)
+        telemetry.set("example_project", example_name)
+        telemetry.set("is_complex_app", spec.complexity != Complexity.SIMPLE)
 
     async def analyze_spec(self, spec: str) -> str:
         msg = (
@@ -115,6 +109,8 @@ class SpecWriter(BaseAgent):
 
         llm = self.get_llm()
         convo = AgentConvo(self).template("ask_questions").user(spec)
+        n_questions = 0
+        n_answers = 0
 
         while True:
             response: str = await llm(convo)
@@ -129,12 +125,21 @@ class SpecWriter(BaseAgent):
                     buttons={"continue": "continue"},
                 )
                 if confirm.cancelled or confirm.button == "continue" or confirm.text == "":
+                    await self.telemetry.trace_code_event(
+                        "spec-writer-questions",
+                        {
+                            "num_questions": n_questions,
+                            "num_answers": n_answers,
+                            "new_spec": spec,
+                        },
+                    )
                     return spec
                 convo.user(confirm.text)
 
             else:
                 convo.assistant(response)
 
+                n_questions += 1
                 user_response = await self.ask_question(
                     response,
                     buttons={"skip": "Skip questions"},
@@ -147,6 +152,7 @@ class SpecWriter(BaseAgent):
                     response: str = await llm(convo)
                     return response
 
+                n_answers += 1
                 convo.user(user_response.text)
 
     async def review_spec(self, spec: str) -> str:
