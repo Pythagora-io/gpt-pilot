@@ -27,7 +27,13 @@ class TaskCompleter(BaseAgent):
             tasks,
         )
         await telemetry.trace_code_event(
-            "task-end", {"task-num": current_task_index1, "num-iterations": len(self.current_state.iterations)}
+            "task-end",
+            {
+                "task_index": current_task_index1,
+                "num_tasks": len(self.current_state.tasks),
+                "num_epics": len(self.current_state.epics),
+                "num_iterations": len(self.current_state.iterations),
+            },
         )
 
         return AgentResponse.done(self)

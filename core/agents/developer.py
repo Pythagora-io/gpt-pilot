@@ -196,7 +196,14 @@ class Developer(BaseAgent):
         self.next_state.modified_files = {}
         self.set_next_steps(response, source)
         self.next_state.action = f"Task #{current_task_index + 1} start"
-        await telemetry.trace_code_event("task-start", {"task-num": current_task_index + 1})
+        await telemetry.trace_code_event(
+            "task-start",
+            {
+                "task_index": current_task_index + 1,
+                "num_tasks": len(self.current_state.tasks),
+                "num_epics": len(self.current_state.epics),
+            },
+        )
         return AgentResponse.done(self)
 
     async def get_relevant_files(

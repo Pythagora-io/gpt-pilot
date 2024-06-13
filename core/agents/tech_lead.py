@@ -155,7 +155,13 @@ class TechLead(BaseAgent):
             }
             for task in response.plan
         ]
-        await telemetry.trace_code_event("development-plan", {"num-tasks": len(response.plan)})
+        await telemetry.trace_code_event(
+            "development-plan",
+            {
+                "num_tasks": len(self.current_state.tasks),
+                "num_epics": len(self.current_state.epics),
+            },
+        )
         return AgentResponse.done(self)
 
     async def update_epic(self) -> AgentResponse:

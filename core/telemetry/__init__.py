@@ -368,8 +368,9 @@ class Telemetry:
         if not self.enabled or getenv("DISABLE_TELEMETRY"):
             return
 
-        if not data.get("app_id") and self.data["app_id"]:
-            data = {**data, "app_id": self.data["app_id"]}
+        data = deepcopy(data)
+        for item in ["app_id", "user_contact", "platform", "pilot_version", "model"]:
+            data[item] = self.data[item]
 
         payload = {
             "pathId": self.telemetry_id,
@@ -377,13 +378,13 @@ class Telemetry:
             "data": data,
         }
 
-        log.debug(f"Sending trace event {name} to {self.endpoint}")
+        log.debug(f"Sending trace event {name} to {self.endpoint}: {repr(payload)}")
 
         try:
             async with httpx.AsyncClient() as client:
                 await client.post(self.endpoint, json=payload)
-        except httpx.RequestError:
-            pass
+        except httpx.RequestError as e:
+            log.error(f"Failed to send trace event {name}: {e}", exc_info=True)
 
     async def trace_loop(self, name: str, task_with_loop: dict):
         payload = deepcopy(self.data)
