@@ -1,14 +1,13 @@
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
-from core.agents.mixins import SystemDependencyCheckerMixin
 from core.agents.response import AgentResponse
 from core.db.models import Complexity
 from core.llm.parser import StringParser
+from core.log import get_logger
 from core.telemetry import telemetry
 from core.templates.example_project import (
-    EXAMPLE_PROJECT_ARCHITECTURE,
-    EXAMPLE_PROJECT_DESCRIPTION,
-    EXAMPLE_PROJECT_PLAN,
+    DEFAULT_EXAMPLE_PROJECT,
+    EXAMPLE_PROJECTS,
 )
 
 # If the project description is less than this, perform an analysis using LLM
@@ -19,8 +18,10 @@ INITIAL_PROJECT_HOWTO_URL = (
 )
 SPEC_STEP_NAME = "Create specification"
 
+log = get_logger(__name__)
 
-class SpecWriter(SystemDependencyCheckerMixin, BaseAgent):
+
+class SpecWriter(BaseAgent):
     agent_type = "spec-writer"
     display_name = "Spec Writer"
 
@@ -42,16 +43,15 @@ class SpecWriter(SystemDependencyCheckerMixin, BaseAgent):
             return AgentResponse.import_project(self)
 
         if response.button == "example":
-            await self.send_message("Starting example project with description:")
-            await self.send_message(EXAMPLE_PROJECT_DESCRIPTION)
-            await self.prepare_example_project()
+            await self.prepare_example_project(DEFAULT_EXAMPLE_PROJECT)
             return AgentResponse.done(self)
+
         elif response.button == "continue":
             # FIXME: Workaround for the fact that VSCode "continue" button does
             # nothing but repeat the question. We reproduce this bug for bug here.
             return AgentResponse.done(self)
 
-        spec = response.text
+        spec = response.text.strip()
 
         complexity = await self.check_prompt_complexity(spec)
         await telemetry.trace_code_event(
@@ -82,31 +82,21 @@ class SpecWriter(SystemDependencyCheckerMixin, BaseAgent):
         llm_response: str = await llm(convo, temperature=0, parser=StringParser())
         return llm_response.lower()
 
-    async def prepare_example_project(self):
+    async def prepare_example_project(self, example_name: str):
+        example_description = EXAMPLE_PROJECTS[example_name]["description"].strip()
+
+        log.debug(f"Starting example project: {example_name}")
+        await self.send_message(f"Starting example project with description:\n\n{example_description}")
+
         spec = self.current_state.specification.clone()
-        spec.description = EXAMPLE_PROJECT_DESCRIPTION
-        spec.architecture = EXAMPLE_PROJECT_ARCHITECTURE["architecture"]
-        spec.system_dependencies = EXAMPLE_PROJECT_ARCHITECTURE["system_dependencies"]
-        spec.package_dependencies = EXAMPLE_PROJECT_ARCHITECTURE["package_dependencies"]
-        spec.template = EXAMPLE_PROJECT_ARCHITECTURE["template"]
-        spec.complexity = Complexity.SIMPLE
-        telemetry.set("initial_prompt", spec.description.strip())
-        telemetry.set("is_complex_app", False)
-        telemetry.set("template", spec.template)
-
-        await self.check_system_dependencies(spec)
-
+        spec.example_project = example_name
+        spec.description = example_description
+        spec.complexity = EXAMPLE_PROJECTS[example_name]["complexity"]
         self.next_state.specification = spec
 
-        self.next_state.epics = [
-            {
-                "name": "Initial Project",
-                "description": EXAMPLE_PROJECT_DESCRIPTION,
-                "completed": False,
-                "complexity": Complexity.SIMPLE,
-            }
-        ]
-        self.next_state.tasks = EXAMPLE_PROJECT_PLAN
+        telemetry.set("initial_prompt", spec.description)
+        telemetry.set("example_project", example_name)
+        telemetry.set("is_complex_app", spec.complexity != Complexity.SIMPLE)
 
     async def analyze_spec(self, spec: str) -> str:
         msg = (

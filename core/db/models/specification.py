@@ -31,6 +31,7 @@ class Specification(Base):
     package_dependencies: Mapped[list[dict]] = mapped_column(default=list)
     template: Mapped[Optional[str]] = mapped_column()
     complexity: Mapped[str] = mapped_column(server_default=Complexity.HARD)
+    example_project: Mapped[Optional[str]] = mapped_column()
 
     # Relationships
     project_states: Mapped[list["ProjectState"]] = relationship(back_populates="specification", lazy="raise")
@@ -46,6 +47,7 @@ class Specification(Base):
             package_dependencies=self.package_dependencies,
             template=self.template,
             complexity=self.complexity,
+            example_project=self.example_project,
         )
         return clone
 

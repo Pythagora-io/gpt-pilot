@@ -1,3 +1,5 @@
+from core.db.models import Complexity
+
 EXAMPLE_PROJECT_DESCRIPTION = """
 The application is a simple ToDo app built using React. Its primary function is to allow users to manage a list of tasks (todos). Each task has a description and a state (open or completed, with the default state being open). The application is frontend-only, with no user sign-up or authentication process. The goal is to provide a straightforward and user-friendly interface for task management.
 
@@ -64,3 +66,15 @@ EXAMPLE_PROJECT_PLAN = [
         "status": "todo",
     }
 ]
+
+
+EXAMPLE_PROJECTS = {
+    "example-project": {
+        "description": EXAMPLE_PROJECT_DESCRIPTION,
+        "architecture": EXAMPLE_PROJECT_ARCHITECTURE,
+        "complexity": Complexity.SIMPLE,
+        "plan": EXAMPLE_PROJECT_PLAN,
+    }
+}
+
+DEFAULT_EXAMPLE_PROJECT = "example-project"

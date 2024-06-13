@@ -1,8 +1,6 @@
 from typing import Optional
 
 from core.agents.convo import AgentConvo
-from core.db.models.specification import Specification
-from core.telemetry import telemetry
 
 
 class IterationPromptMixin:
@@ -37,54 +35,3 @@ class IterationPromptMixin:
         )
         llm_solution: str = await llm(convo)
         return llm_solution
-
-
-class SystemDependencyCheckerMixin:
-    """
-    Provides a method to check whether the required system dependencies are installed.
-
-    Used by Architect and SpecWriter agents. Assumes the agent has access to UI
-    and ProcessManager.
-    """
-
-    async def check_system_dependencies(self, spec: Specification):
-        """
-        Check whether the required system dependencies are installed.
-
-        This also stores the app architecture telemetry data, including the
-        information about whether each system dependency is installed.
-
-        :param spec: Project specification.
-        """
-        deps = spec.system_dependencies
-        checked = {}
-
-        for dep in deps:
-            status_code, _, _ = await self.process_manager.run_command(dep["test"])
-            dep["installed"] = bool(status_code == 0)
-            if status_code != 0:
-                if dep["required_locally"]:
-                    remedy = "Please install it before proceeding with your app."
-                else:
-                    remedy = "If you would like to use it locally, please install it before proceeding."
-                await self.send_message(f"❌ {dep['name']} is not available. {remedy}")
-                await self.ask_question(
-                    f"Once you have installed {dep['name']}, please press Continue.",
-                    buttons={"continue": "Continue"},
-                    buttons_only=True,
-                    default="continue",
-                )
-                checked[dep["name"]] = "missing"
-            else:
-                await self.send_message(f"✅ {dep['name']} is available.")
-                checked[dep["name"]] = "present"
-
-        telemetry.set(
-            "architecture",
-            {
-                "description": spec.architecture,
-                "system_dependencies": deps,
-                "package_dependencies": spec.package_dependencies,
-                "checked_system_dependencies": checked,
-            },
-        )

@@ -23,16 +23,8 @@ async def test_start_example_project(agentcontext):
     assert response.type == ResponseType.DONE
 
     assert sm.current_state.specification.description != ""
-    assert sm.current_state.specification.architecture != ""
-    assert sm.current_state.specification.system_dependencies != []
-    assert sm.current_state.specification.package_dependencies != []
     assert sm.current_state.specification.complexity == Complexity.SIMPLE
-    assert sm.current_state.epics != []
-    assert sm.current_state.tasks != []
-    pm.run_command.assert_awaited_once_with("node --version")
-
-    assert telemetry.data["initial_prompt"] == sm.current_state.specification.description.strip()
-    assert telemetry.data["architecture"]["system_dependencies"][0]["installed"] is True
+    assert telemetry.data["initial_prompt"] == sm.current_state.specification.description
 
 
 @pytest.mark.asyncio

@@ -1,1 +1,10 @@
-Generic single-database configuration.
+Pythagora uses Alembic for database migrations.
+
+After changing any of the database models, create a new migration:
+
+    alembic -c core/db/alembic.ini revision --autogenerate -m "description"
+
+Migrations are applied automatically when the application starts, but can also be
+run manually with:
+
+    alembic -c core/db/alembic.ini upgrade head

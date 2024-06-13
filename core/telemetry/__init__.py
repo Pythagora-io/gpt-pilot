@@ -73,7 +73,7 @@ class Telemetry:
             "python_version": sys.version,
             # GPT Pilot version
             "pilot_version": get_version(),
-            # GPT Pilot Extension version
+            # Pythagora VSCode Extension version
             "extension_version": None,
             # Is extension used
             "is_extension": False,
@@ -86,6 +86,8 @@ class Telemetry:
             "is_complex_app": None,
             # Optional template used for the project
             "template": None,
+            # Optional, example project selected by the user
+            "example_project": None,
             # Optional user contact email
             "user_contact": None,
             # Unique project ID (app_id)

@@ -11,6 +11,7 @@ from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
 from core.telemetry import telemetry
+from core.templates.example_project import EXAMPLE_PROJECTS
 from core.templates.registry import apply_project_template, get_template_description, get_template_summary
 from core.ui.base import ProjectStage, success_source
 
@@ -42,8 +43,10 @@ class TechLead(BaseAgent):
             return await self.update_epic()
 
         if len(self.current_state.epics) == 0:
-            self.create_initial_project_epic()
-            # Orchestrator will rerun us to break down the initial project epic
+            if self.current_state.specification.example_project:
+                self.plan_example_project()
+            else:
+                self.create_initial_project_epic()
             return AgentResponse.done(self)
 
         await self.ui.send_project_stage(ProjectStage.CODING)
@@ -203,3 +206,18 @@ class TechLead(BaseAgent):
         ]
         log.debug(f"Updated development plan for {epic['name']}, {len(response.plan)} tasks remaining")
         return AgentResponse.done(self)
+
+    def plan_example_project(self):
+        example_name = self.current_state.specification.example_project
+        log.debug(f"Planning example project: {example_name}")
+
+        example = EXAMPLE_PROJECTS[example_name]
+        self.next_state.epics = [
+            {
+                "name": "Initial Project",
+                "description": example["description"],
+                "completed": False,
+                "complexity": example["complexity"],
+            }
+        ]
+        self.next_state.tasks = example["plan"]
