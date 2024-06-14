@@ -90,11 +90,15 @@ class LocalProcess:
         :param timeout: Timeout for the read operation (should not be too long).
         :return: Data read from the stream reader, or empty string.
         """
-        try:
-            data = await asyncio.wait_for(reader.read(), timeout)
-            return data.decode("utf-8", errors="ignore")
-        except asyncio.TimeoutError:
-            return ""
+        buffer = ""
+        while True:
+            try:
+                data = await asyncio.wait_for(reader.read(1), timeout)
+                if not data:
+                    return buffer
+                buffer += data.decode("utf-8", errors="ignore")
+            except asyncio.TimeoutError:
+                return buffer
 
     async def read_output(self, timeout: float = NONBLOCK_READ_TIMEOUT) -> tuple[str, str]:
         new_stdout = await self._nonblock_read(self._process.stdout, timeout)
