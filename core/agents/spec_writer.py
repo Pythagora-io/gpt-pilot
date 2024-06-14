@@ -125,7 +125,7 @@ class SpecWriter(BaseAgent):
                     buttons={"continue": "continue"},
                 )
                 if confirm.cancelled or confirm.button == "continue" or confirm.text == "":
-                    await self.telemetry.trace_code_event(
+                    await telemetry.trace_code_event(
                         "spec-writer-questions",
                         {
                             "num_questions": n_questions,
