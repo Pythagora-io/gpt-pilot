@@ -2,7 +2,7 @@
 ---start_of_coding_rules---
 
 ## Rule 1: Scope of your coding task
-You must implement everything mentioned in the instructions in the previous message that is related to this file. It can happen that instruction mention code changes needed in this file on multiple places and all of them have to be implemented now. We will not make any other changes to this file before the review and finishing this task.
+You must implement everything mentioned in the instructions that is related to this file. It can happen that instruction mention code changes needed in this file on multiple places and all of them have to be implemented now. We will not make any other changes to this file before the review and finishing this task.
 
 ## Rule 2: Output format
 You must output the COMPLETE NEW VERSION of this file in following format:

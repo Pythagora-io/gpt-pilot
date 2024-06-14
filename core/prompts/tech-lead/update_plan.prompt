@@ -5,7 +5,7 @@ You are working on an app called "{{ state.branch.project.name }}".
 {# This is actually updating of tasks and not epics. Reason why this prompt uses word "epic" instead of "task" is that LLM gives very detailed description and creates very big plan if we ask him to create tasks. When asked to create epics he focuses on much bigger picture and gives high level description which is what we want. #}
 Development plan for that {{ task_type }} was created and the {{ task_type }} was then broken down to smaller epics so that it's easier for development.
 
-Here are epic that are finished so far:
+Here are epics that are finished so far:
 ```
 {% for task in finished_tasks %}
 - Epic #{{ loop.index }}
