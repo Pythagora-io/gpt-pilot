@@ -182,6 +182,21 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
             return False, False, ""
 
         if user_response.button == "loop":
+            await telemetry.trace_code_event(
+                "stuck-in-loop",
+                {
+                    "clicked": True,
+                    "task_index": self.current_state.tasks.index(self.current_state.current_task) + 1,
+                    "num_tasks": len(self.current_state.tasks),
+                    "num_epics": len(self.current_state.epics),
+                    "num_iterations": len(self.current_state.iterations),
+                    "num_steps": len(self.current_state.steps),
+                    "architecture": {
+                        "system_dependencies": self.current_state.specification.system_dependencies,
+                        "app_dependencies": self.current_state.specification.package_dependencies,
+                    },
+                },
+            )
             return True, True, ""
 
         return True, False, user_response.text

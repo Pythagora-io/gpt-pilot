@@ -98,14 +98,15 @@ def test_inc_ignores_unknown_data_field(mock_settings):
     assert "unknown_field" not in telemetry.data
 
 
+@patch("core.telemetry.getenv")
 @patch("core.telemetry.time")
 @patch("core.telemetry.settings")
-def test_start_with_telemetry_enabled(mock_settings, mock_time):
+def test_start_with_telemetry_enabled(mock_settings, mock_time, mock_getenv):
     mock_settings.telemetry = MagicMock(id="test-id", endpoint="test-endpoint", enabled=True)
     mock_time.time.return_value = 1234.0
+    mock_getenv.return_value = None  # override DISABLE_TELEMETRY test env var
 
     telemetry = Telemetry()
-
     telemetry.start()
     assert telemetry.start_time == 1234.0
 
@@ -134,9 +135,11 @@ def test_stop_calculates_elapsed_time(mock_settings, mock_time):
 
 
 @pytest.mark.asyncio
+@patch("core.telemetry.getenv")
 @patch("core.telemetry.settings")
-async def test_send_enabled_and_successful(mock_settings, mock_httpx_post):
+async def test_send_enabled_and_successful(mock_settings, mock_getenv, mock_httpx_post):
     mock_settings.telemetry = MagicMock(id="test-id", endpoint="test-endpoint", enabled=True)
+    mock_getenv.return_value = None  # override DISABLE_TELEMETRY test env var
 
     telemetry = Telemetry()
     with patch.object(telemetry, "calculate_statistics"):
@@ -151,10 +154,12 @@ async def test_send_enabled_and_successful(mock_settings, mock_httpx_post):
 
 
 @pytest.mark.asyncio
+@patch("core.telemetry.getenv")
 @patch("core.telemetry.settings")
-async def test_send_enabled_but_post_fails(mock_settings, mock_httpx_post):
+async def test_send_enabled_but_post_fails(mock_settings, mock_getenv, mock_httpx_post):
     mock_settings.telemetry = MagicMock(id="test-id", endpoint="test-endpoint", enabled=True)
     mock_httpx_post.side_effect = httpx.RequestError("Connection error")
+    mock_getenv.return_value = None  # override DISABLE_TELEMETRY test env var
 
     telemetry = Telemetry()
     with patch.object(telemetry, "calculate_statistics"):
@@ -180,9 +185,11 @@ async def test_send_not_enabled(mock_settings, mock_httpx_post):
 
 
 @pytest.mark.asyncio
+@patch("core.telemetry.getenv")
 @patch("core.telemetry.settings")
-async def test_send_no_endpoint_configured(mock_settings, mock_httpx_post):
+async def test_send_no_endpoint_configured(mock_settings, mock_getenv, mock_httpx_post):
     mock_settings.telemetry = MagicMock(id="test-id", endpoint=None, enabled=True)
+    mock_getenv.return_value = None  # override DISABLE_TELEMETRY test env var
 
     telemetry = Telemetry()
     await telemetry.send()
@@ -191,9 +198,11 @@ async def test_send_no_endpoint_configured(mock_settings, mock_httpx_post):
 
 
 @pytest.mark.asyncio
+@patch("core.telemetry.getenv")
 @patch("core.telemetry.settings")
-async def test_send_clears_counters_after_sending(mock_settings, mock_httpx_post):
+async def test_send_clears_counters_after_sending(mock_settings, mock_getenv, mock_httpx_post):
     mock_settings.telemetry = MagicMock(id="test-id", endpoint="test-endpoint", enabled=True)
+    mock_getenv.return_value = None  # override DISABLE_TELEMETRY test env var
 
     telemetry = Telemetry()
     telemetry.data["model"] = "test-model"

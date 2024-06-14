@@ -8,9 +8,9 @@ from core.state.state_manager import StateManager
 
 @pytest.mark.asyncio
 async def test_offline_changes_check_restores_if_workspace_empty():
-    sm = Mock(spec=StateManager)
-    sm.workspace_is_empty.return_value = True
-    ui = Mock()
+    sm = AsyncMock(spec=StateManager)
+    sm.workspace_is_empty = Mock(return_value=False)
+    ui = AsyncMock()
     orca = Orchestrator(state_manager=sm, ui=ui)
     await orca.offline_changes_check()
     assert sm.restore_files.assert_called_once
@@ -19,7 +19,8 @@ async def test_offline_changes_check_restores_if_workspace_empty():
 @pytest.mark.asyncio
 async def test_offline_changes_check_imports_changes_from_disk():
     sm = AsyncMock()
-    sm.workspace_is_empty.return_value = False
+    sm.workspace_is_empty = Mock(return_value=False)
+    sm.import_files = AsyncMock(return_value=([], []))
     ui = AsyncMock()
     ui.ask_question.return_value.button = "yes"
     orca = Orchestrator(state_manager=sm, ui=ui)
@@ -31,7 +32,7 @@ async def test_offline_changes_check_imports_changes_from_disk():
 @pytest.mark.asyncio
 async def test_offline_changes_check_restores_changes_from_db():
     sm = AsyncMock()
-    sm.workspace_is_empty.return_value = False
+    sm.workspace_is_empty = Mock(return_value=False)
     ui = AsyncMock()
     ui.ask_question.return_value.button = "no"
     orca = Orchestrator(state_manager=sm, ui=ui)

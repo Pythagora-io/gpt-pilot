@@ -2,6 +2,7 @@ import sys
 import time
 import traceback
 from copy import deepcopy
+from os import getenv
 from pathlib import Path
 from typing import Any
 
@@ -72,7 +73,7 @@ class Telemetry:
             "python_version": sys.version,
             # GPT Pilot version
             "pilot_version": get_version(),
-            # GPT Pilot Extension version
+            # Pythagora VSCode Extension version
             "extension_version": None,
             # Is extension used
             "is_extension": False,
@@ -85,6 +86,8 @@ class Telemetry:
             "is_complex_app": None,
             # Optional template used for the project
             "template": None,
+            # Optional, example project selected by the user
+            "example_project": None,
             # Optional user contact email
             "user_contact": None,
             # Unique project ID (app_id)
@@ -320,7 +323,7 @@ class Telemetry:
 
         Note: this method clears all telemetry data after sending it.
         """
-        if not self.enabled:
+        if not self.enabled or getenv("DISABLE_TELEMETRY"):
             log.debug("Telemetry.send(): telemetry is disabled, not sending data")
             return
 
@@ -362,8 +365,12 @@ class Telemetry:
         :param name: name of the event
         :param data: data to send with the event
         """
-        if not self.enabled:
+        if not self.enabled or getenv("DISABLE_TELEMETRY"):
             return
+
+        data = deepcopy(data)
+        for item in ["app_id", "user_contact", "platform", "pilot_version", "model"]:
+            data[item] = self.data[item]
 
         payload = {
             "pathId": self.telemetry_id,
@@ -371,13 +378,13 @@ class Telemetry:
             "data": data,
         }
 
-        log.debug(f"Sending trace event {name} to {self.endpoint}")
+        log.debug(f"Sending trace event {name} to {self.endpoint}: {repr(payload)}")
 
         try:
             async with httpx.AsyncClient() as client:
                 await client.post(self.endpoint, json=payload)
-        except httpx.RequestError:
-            pass
+        except httpx.RequestError as e:
+            log.error(f"Failed to send trace event {name}: {e}", exc_info=True)
 
     async def trace_loop(self, name: str, task_with_loop: dict):
         payload = deepcopy(self.data)
