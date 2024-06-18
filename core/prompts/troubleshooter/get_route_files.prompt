@@ -1,0 +1,22 @@
+{# eval-tool test ID: 74918173-59e4-4005-bf19-d28f3bc9f06c
+
+This was added in June 2024, to improve the accuracy of user testing instructions.
+We've noticed that the LLM would often times include incorrect URLs in the user testing
+instructions, because it wasn't aware of the routes used in the application.
+The solution was to add the entire content of all the files that have routes defined in
+them, and this prompt selects those files.
+
+#}
+Your task is to identify all the files, from the above list, that have routes defined in them. Return just the file paths as a JSON list named "files", DO NOT return anything else. If there are no files with routes, return an empty list.
+
+Example response:
+```
+{
+    "files": [
+        "dir/file1.js",
+        "dir/file2.js",
+    ]
+}
+```
+
+Your response must be a valid JSON format.

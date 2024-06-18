@@ -7,6 +7,8 @@ from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.mixins import IterationPromptMixin
 from core.agents.response import AgentResponse
+from core.config import ROUTE_FILES_AGENT_NAME
+from core.db.models.file import File
 from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser, OptionalCodeBlockParser
 from core.log import get_logger
@@ -21,6 +23,10 @@ class BugReportQuestions(BaseModel):
     missing_data: list[str] = Field(
         description="Very clear question that needs to be answered to have good bug report."
     )
+
+
+class RouteFilePaths(BaseModel):
+    files: list[str] = Field(description="List of paths for files that contain routes")
 
 
 class Troubleshooter(IterationPromptMixin, BaseAgent):
@@ -134,8 +140,12 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
     async def get_user_instructions(self) -> Optional[str]:
         await self.send_message("Determining how to test the app ...")
 
+        route_files = await self._get_route_files()
+
         llm = self.get_llm()
-        convo = self._get_task_convo().template("define_user_review_goal", task=self.current_state.current_task)
+        convo = self._get_task_convo().template(
+            "define_user_review_goal", task=self.current_state.current_task, route_files=route_files
+        )
         user_instructions: str = await llm(convo)
 
         user_instructions = user_instructions.strip()
@@ -144,6 +154,17 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
             return None
 
         return user_instructions
+
+    async def _get_route_files(self) -> list[File]:
+        """Returns the list of file paths that have routes defined in them."""
+
+        llm = self.get_llm(ROUTE_FILES_AGENT_NAME)
+        convo = self._get_task_convo().template("get_route_files", task=self.current_state.current_task)
+        file_list = await llm(convo, parser=JSONParser(RouteFilePaths))
+        route_files: set[str] = set(file_list.files)
+
+        # Sometimes LLM can return a non-existent file, let's make sure to filter those out
+        return [f for f in self.current_state.files if f.path in route_files]
 
     async def get_user_feedback(
         self,

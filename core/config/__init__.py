@@ -34,6 +34,7 @@ IGNORE_SIZE_THRESHOLD = 50000  # 50K+ files are ignored by default
 # Agents with sane setup in the default configuration
 DEFAULT_AGENT_NAME = "default"
 DESCRIBE_FILES_AGENT_NAME = "CodeMonkey.describe_files"
+ROUTE_FILES_AGENT_NAME = "Troubleshooter.get_route_files"
 
 # Endpoint for the external documentation
 EXTERNAL_DOCUMENTATION_API = "http://docs-pythagora-io-439719575.us-east-1.elb.amazonaws.com"
@@ -298,6 +299,7 @@ class Config(_StrictModel):
         default={
             DEFAULT_AGENT_NAME: AgentLLMConfig(),
             DESCRIBE_FILES_AGENT_NAME: AgentLLMConfig(model="gpt-3.5-turbo", temperature=0.0),
+            ROUTE_FILES_AGENT_NAME: AgentLLMConfig(model="gpt-4o", temperature=0.0),
         }
     )
     prompt: PromptConfig = PromptConfig()
