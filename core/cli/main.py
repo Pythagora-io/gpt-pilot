@@ -110,19 +110,28 @@ async def start_new_project(sm: StateManager, ui: UIBase) -> bool:
     :param ui: User interface.
     :return: True if the project was created successfully, False otherwise.
     """
-    try:
-        user_input = await ui.ask_question(
-            "What is the project name?",
-            allow_empty=False,
-            source=pythagora_source,
-        )
-    except (KeyboardInterrupt, UIClosedError):
-        user_input = UserInput(cancelled=True)
+    while True:
+        try:
+            user_input = await ui.ask_question(
+                "What is the project name?",
+                allow_empty=False,
+                source=pythagora_source,
+            )
+        except (KeyboardInterrupt, UIClosedError):
+            user_input = UserInput(cancelled=True)
 
-    if user_input.cancelled:
-        return False
+        if user_input.cancelled:
+            return False
 
-    project_state = await sm.create_project(user_input.text)
+        project_name = user_input.text.strip()
+        if not project_name:
+            await ui.send_message("Please choose a project name", source=pythagora_source)
+        elif len(project_name) > 100:
+            await ui.send_message("Please choose a shorter project name", source=pythagora_source)
+        else:
+            break
+
+    project_state = await sm.create_project(project_name)
     return project_state is not None
 
 
@@ -136,12 +145,13 @@ async def run_pythagora_session(sm: StateManager, ui: UIBase, args: Namespace):
     :return: True if the application ran successfully, False otherwise.
     """
 
-    if not await llm_api_check(ui):
-        await ui.send_message(
-            "Pythagora cannot start because the LLM API is not reachable.",
-            source=pythagora_source,
-        )
-        return False
+    if not args.no_check:
+        if not await llm_api_check(ui):
+            await ui.send_message(
+                "Pythagora cannot start because the LLM API is not reachable.",
+                source=pythagora_source,
+            )
+            return False
 
     if args.project or args.branch or args.step:
         telemetry.set("is_continuation", True)

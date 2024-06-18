@@ -3,6 +3,7 @@ import sys
 from copy import deepcopy
 from typing import TYPE_CHECKING, Optional
 
+import jsonref
 from pydantic import BaseModel
 
 from core.config import get_config
@@ -88,6 +89,17 @@ class AgentConvo(Convo):
         return child
 
     def require_schema(self, model: BaseModel) -> "AgentConvo":
-        schema_txt = json.dumps(model.model_json_schema())
-        self.user(f"IMPORTANT: Your response MUST conform to this JSON schema:\n```\n{schema_txt}\n```")
+        def remove_defs(d):
+            if isinstance(d, dict):
+                return {k: remove_defs(v) for k, v in d.items() if k != "$defs"}
+            elif isinstance(d, list):
+                return [remove_defs(v) for v in d]
+            else:
+                return d
+
+        schema_txt = json.dumps(remove_defs(jsonref.loads(json.dumps(model.model_json_schema()))))
+        self.user(
+            f"IMPORTANT: Your response MUST conform to this JSON schema:\n```\n{schema_txt}\n```."
+            f"YOU MUST NEVER add any additional fields to your response, and NEVER add additional preamble like 'Here is your JSON'."
+        )
         return self

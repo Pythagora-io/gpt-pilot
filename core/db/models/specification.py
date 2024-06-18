@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import delete, distinct, select
@@ -29,7 +30,8 @@ class Specification(Base):
     architecture: Mapped[str] = mapped_column(default="")
     system_dependencies: Mapped[list[dict]] = mapped_column(default=list)
     package_dependencies: Mapped[list[dict]] = mapped_column(default=list)
-    template: Mapped[Optional[str]] = mapped_column()
+    templates: Mapped[Optional[dict]] = mapped_column()
+
     complexity: Mapped[str] = mapped_column(server_default=Complexity.HARD)
     example_project: Mapped[Optional[str]] = mapped_column()
 
@@ -45,7 +47,7 @@ class Specification(Base):
             architecture=self.architecture,
             system_dependencies=self.system_dependencies,
             package_dependencies=self.package_dependencies,
-            template=self.template,
+            templates=deepcopy(self.templates) if self.templates else None,
             complexity=self.complexity,
             example_project=self.example_project,
         )

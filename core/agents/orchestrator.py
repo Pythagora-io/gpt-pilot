@@ -194,9 +194,9 @@ class Orchestrator(BaseAgent):
         elif (
             not state.epics
             or not self.current_state.unfinished_tasks
-            or (state.specification.template and not state.files)
+            or (state.specification.templates and not state.files)
         ):
-            # Ask the Tech Lead to break down the initial project or feature into tasks and apply project template
+            # Ask the Tech Lead to break down the initial project or feature into tasks and apply project templates
             return TechLead(self.state_manager, self.ui, process_manager=self.process_manager)
 
         if state.current_task and state.docs is None and state.specification.complexity != Complexity.SIMPLE:

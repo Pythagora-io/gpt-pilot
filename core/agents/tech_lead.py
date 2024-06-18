@@ -1,4 +1,3 @@
-from typing import Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -12,7 +11,7 @@ from core.llm.parser import JSONParser
 from core.log import get_logger
 from core.telemetry import telemetry
 from core.templates.example_project import EXAMPLE_PROJECTS
-from core.templates.registry import apply_project_template, get_template_description, get_template_summary
+from core.templates.registry import PROJECT_TEMPLATES
 from core.ui.base import ProjectStage, success_source
 
 log = get_logger(__name__)
@@ -51,9 +50,9 @@ class TechLead(BaseAgent):
 
         await self.ui.send_project_stage(ProjectStage.CODING)
 
-        if self.current_state.specification.template and not self.current_state.files:
-            await self.apply_project_template()
-            self.next_state.action = "Apply project template"
+        if self.current_state.specification.templates and not self.current_state.files:
+            await self.apply_project_templates()
+            self.next_state.action = "Apply project templates"
             return AgentResponse.done(self)
 
         if self.current_state.current_epic:
@@ -77,25 +76,39 @@ class TechLead(BaseAgent):
             }
         ]
 
-    async def apply_project_template(self) -> Optional[str]:
+    async def apply_project_templates(self):
         state = self.current_state
+        summaries = []
 
-        # Only do this for the initial project and if the template is specified
-        if len(state.epics) != 1 or not state.specification.template:
-            return None
+        # Only do this for the initial project and if the templates are specified
+        if len(state.epics) != 1 or not state.specification.templates:
+            return
 
-        description = get_template_description(state.specification.template)
-        log.info(f"Applying project template: {state.specification.template}")
-        await self.send_message(f"Applying project template {description} ...")
-        summary = await apply_project_template(
-            self.current_state.specification.template,
-            self.state_manager,
-            self.process_manager,
-        )
-        # Saving template files will fill this in and we want it clear for the
-        # first task.
+        for template_name, template_options in state.specification.templates.items():
+            template_class = PROJECT_TEMPLATES.get(template_name)
+            if not template_class:
+                log.error(f"Project template not found: {template_name}")
+                continue
+
+            template = template_class(
+                template_options,
+                self.state_manager,
+                self.process_manager,
+            )
+
+            description = template.description
+            log.info(f"Applying project template: {template.name}")
+            await self.send_message(f"Applying project template {description} ...")
+            summary = await template.apply()
+            summaries.append(summary)
+
+        # Saving template files will fill this in and we want it clear for the first task.
         self.next_state.relevant_files = None
-        return summary
+
+        if summaries:
+            spec = self.current_state.specification.clone()
+            spec.description += "\n\n" + "\n\n".join(summaries)
+            self.next_state.specification = spec
 
     async def ask_for_new_feature(self) -> AgentResponse:
         if len(self.current_state.epics) > 2:
@@ -140,7 +153,8 @@ class TechLead(BaseAgent):
                 "plan",
                 epic=epic,
                 task_type=self.current_state.current_epic.get("source", "app"),
-                existing_summary=get_template_summary(self.current_state.specification.template),
+                # FIXME: we're injecting summaries to initial description
+                existing_summary=None,
             )
             .require_schema(DevelopmentPlan)
         )

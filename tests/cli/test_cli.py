@@ -56,6 +56,7 @@ def test_parse_arguments(mock_ArgumentParser):
         "--import-v0",
         "--email",
         "--extension-version",
+        "--no-check",
     }
 
     parser.parse_args.assert_called_once_with()

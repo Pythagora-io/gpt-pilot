@@ -1,0 +1,10 @@
+You're starting a new software project. The specification provided by the client is:
+
+```
+{{ project_description }}
+```
+
+Based on the specification, we've decided to use the following project scaffolding/template: {{ project_template.description }}.
+
+To start, we need to specify options for the project template:
+{{ project_template.options_description }}

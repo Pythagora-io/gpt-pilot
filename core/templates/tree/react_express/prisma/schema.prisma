@@ -1,0 +1,27 @@
+// Prisma schema file
+// See https://www.prisma.io/docs/concepts/components/prisma-schema
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+{% if options.auth %}
+
+model User {
+  id Int @id @default(autoincrement())
+  email String @unique
+  password String
+  token String @unique
+  name String
+  createdAt DateTime @default(now())
+  lastLoginAt DateTime @default(now())
+  isActive Boolean @default(true)
+
+  @@index([email])
+  @@index([token])
+}
+{% endif %}
