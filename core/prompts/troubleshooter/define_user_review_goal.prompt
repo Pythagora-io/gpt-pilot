@@ -8,6 +8,7 @@ File **`{{ file.path }}`** ({{file.content.content.splitlines()|length}} lines o
 {{ file.content.content }}```
 
 {% endfor %}
+---END_OF_FILES---
 {% endif %}
 How can a human user test if this task was completed successfully?
 

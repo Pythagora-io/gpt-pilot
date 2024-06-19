@@ -8,15 +8,3 @@ them, and this prompt selects those files.
 
 #}
 Your task is to identify all the files, from the above list, that have routes defined in them. Return just the file paths as a JSON list named "files", DO NOT return anything else. If there are no files with routes, return an empty list.
-
-Example response:
-```
-{
-    "files": [
-        "dir/file1.js",
-        "dir/file2.js",
-    ]
-}
-```
-
-Your response must be a valid JSON format.
