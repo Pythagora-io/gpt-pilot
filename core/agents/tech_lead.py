@@ -27,7 +27,7 @@ class DevelopmentPlan(BaseModel):
 
 
 class UpdatedDevelopmentPlan(BaseModel):
-    updated_current_task: Task = Field(
+    updated_current_epic: Task = Field(
         description="Updated detailed description of what was implemented while working on the current development task."
     )
     plan: list[Task] = Field(description="List of unfinished development tasks.")
@@ -198,8 +198,8 @@ class TechLead(BaseAgent):
             parser=JSONParser(UpdatedDevelopmentPlan),
             temperature=0,
         )
-        log.debug(f"Reworded last task as: {response.updated_current_task.description}")
-        finished_tasks[-1]["description"] = response.updated_current_task.description
+        log.debug(f"Reworded last task as: {response.updated_current_epic.description}")
+        finished_tasks[-1]["description"] = response.updated_current_epic.description
 
         self.next_state.tasks = finished_tasks + [
             {
