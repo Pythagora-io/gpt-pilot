@@ -122,7 +122,7 @@ async def test_update_epic(agentcontext):
     tl = TechLead(sm, ui)
     tl.get_llm = mock_get_llm(
         return_value=UpdatedDevelopmentPlan(
-            updated_current_task=Task(description="Updated Just Finished"),
+            updated_current_epic=Task(description="Updated Just Finished"),
             plan=[Task(description="Alternative Future Task")],
         )
     )

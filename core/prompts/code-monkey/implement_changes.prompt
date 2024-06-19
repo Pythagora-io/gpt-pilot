@@ -35,3 +35,5 @@ Here is how `{{ file_name }}` looks like currently:
 {% else %}
 You need to create a new file `{{ file_name }}`.
 {% endif %}
+
+{% include "partials/files_list.prompt" %}
