@@ -121,6 +121,18 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def send_app_finished(self):
+        """
+        Send the app finished message.
+        """
+        raise NotImplementedError()
+
+    async def send_feature_finished(self):
+        """
+        Send the feature finished message.
+        """
+        raise NotImplementedError()
+
     async def ask_question(
         self,
         question: str,

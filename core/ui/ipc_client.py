@@ -40,6 +40,8 @@ class MessageType(str, Enum):
     PROJECT_DESCRIPTION = "projectDescription"
     FEATURES_LIST = "featuresList"
     IMPORT_PROJECT = "importProject"
+    APP_FINISHED = "appFinished"
+    FEATURE_FINISHED = "featureFinished"
 
 
 class Message(BaseModel):
@@ -196,6 +198,14 @@ class IPCClientUI(UIBase):
 
     async def send_key_expired(self, message: Optional[str] = None):
         await self._send(MessageType.KEY_EXPIRED)
+        await self.writer.drain()
+
+    async def send_app_finished(self):
+        await self._send(MessageType.APP_FINISHED)
+        await self.writer.drain()
+
+    async def send_feature_finished(self):
+        await self._send(MessageType.FEATURE_FINISHED)
         await self.writer.drain()
 
     async def ask_question(

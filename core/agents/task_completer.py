@@ -18,7 +18,7 @@ class TaskCompleter(BaseAgent):
         tasks = self.current_state.tasks
         source = self.current_state.current_epic.get("source", "app")
         await self.ui.send_task_progress(
-            tasks.index(self.current_state.current_task) + 1,
+            current_task_index1,
             len(tasks),
             self.current_state.current_task["description"],
             source,
@@ -35,5 +35,11 @@ class TaskCompleter(BaseAgent):
                 "num_iterations": len(self.current_state.iterations),
             },
         )
+
+        if current_task_index1 == len(tasks):
+            if source == "app":
+                await self.ui.send_app_finished()
+            elif source == "feature":
+                await self.ui.send_feature_finished()
 
         return AgentResponse.done(self)
