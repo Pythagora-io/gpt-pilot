@@ -69,6 +69,7 @@ class UIAdapter(str, Enum):
 
     PLAIN = "plain"
     IPC_CLIENT = "ipc-client"
+    VIRTUAL = "virtual"
 
 
 class ProviderConfig(_StrictModel):
@@ -254,8 +255,17 @@ class LocalIPCConfig(_StrictModel):
     port: int = 8125
 
 
+class VirtualUIConfig(_StrictModel):
+    """
+    Configuration for the virtual UI.
+    """
+
+    type: Literal[UIAdapter.VIRTUAL] = UIAdapter.VIRTUAL
+    inputs: list[Any]
+
+
 UIConfig = Annotated[
-    Union[PlainUIConfig, LocalIPCConfig],
+    Union[PlainUIConfig, LocalIPCConfig, VirtualUIConfig],
     Field(discriminator="type"),
 ]
 
