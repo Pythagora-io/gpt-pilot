@@ -35,8 +35,7 @@ class MultiCodeBlockParser:
     """
 
     def __init__(self):
-        # FIXME: ``` should be the only content on the line`
-        self.pattern = re.compile(r"```([a-z0-9]+\n)?(.*?)```\s*", re.DOTALL)
+        self.pattern = re.compile(r"^```([a-z0-9]+\n)?(.*?)^```\s*", re.DOTALL | re.MULTILINE)
 
     def __call__(self, text: str) -> list[str]:
         blocks = []
