@@ -15,6 +15,7 @@ from core.llm.parser import CodeBlockParser, EnumParser, JSONParser, MultiCodeBl
         ("```\n```", [""]),
         ("```py\n```", [""]),
         ("```py\nsome code\n```", ["some code"]),
+        ("```py\nsome ``` code\n```", ["some ``` code"]),
         (
             "some text preamble\n" "```\nsome code\n```\n" "```py\nmore\ncode\n```\n" "some text conclusion",
             ["some code", "more\ncode"],
@@ -49,7 +50,7 @@ def test_code_block_parser(input, expected):
     [
         ("{}", True, {}),
         ('{"a": 1}', True, {"a": 1}),
-        ('```json\n{"a": 1, "b": "c"}```', True, {"a": 1, "b": "c"}),
+        ('```json\n{"a": 1, "b": "c"}\n```', True, {"a": 1, "b": "c"}),
         ("", True, ValueError),
         ("", False, None),
         ("{bad json}", True, ValueError),
@@ -85,7 +86,7 @@ def test_parse_json_no_spec(input, strict, expected):
             },
         ),
         (
-            '```{"name": "John", "children": [{"age": 1, "name": "Jane", "geo": [1.0, 2.0]}]}```',
+            '```\n{"name": "John", "children": [{"age": 1, "name": "Jane", "geo": [1.0, 2.0]}]}\n```',
             {
                 "name": "John",
                 "children": [
