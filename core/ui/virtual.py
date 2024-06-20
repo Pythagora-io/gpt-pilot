@@ -37,6 +37,12 @@ class VirtualUI(UIBase):
     async def send_key_expired(self, message: Optional[str]):
         pass
 
+    async def send_app_finished(self):
+        pass
+
+    async def send_feature_finished(self):
+        pass
+
     async def ask_question(
         self,
         question: str,

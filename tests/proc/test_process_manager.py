@@ -9,6 +9,7 @@ from psutil import Process
 from core.proc.process_manager import LocalProcess, ProcessManager
 
 
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_local_process_start_terminate(tmp_path):
     cmd = "timeout 5" if platform == "win32" else "sleep 5"

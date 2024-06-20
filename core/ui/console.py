@@ -37,6 +37,12 @@ class PlainConsoleUI(UIBase):
         if message:
             await self.send_message(message)
 
+    async def send_app_finished(self):
+        pass
+
+    async def send_feature_finished(self):
+        pass
+
     async def ask_question(
         self,
         question: str,
