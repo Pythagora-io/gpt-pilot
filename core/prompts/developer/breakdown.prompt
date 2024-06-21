@@ -21,11 +21,12 @@ Now, tell me all the code that needs to be written to implement ONLY this task a
 
 {% include "partials/doc_snippets.prompt" %}
 
-**IMPORTANT**
 {%- if state.epics|length == 1 %}
+**IMPORTANT**
 Remember, I created an empty folder where I will start writing files that you tell me and that are needed for this app.
 {% endif %}
 {% include "partials/relative_paths.prompt" %}
+
 DO NOT specify commands to create any folders or files, they will be created automatically - just specify the relative path to each file that needs to be written.
 
 {% include "partials/file_naming.prompt" %}
