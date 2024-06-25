@@ -121,15 +121,33 @@ class UIBase:
         """
         raise NotImplementedError()
 
-    async def send_app_finished(self):
+    async def send_app_finished(
+        self,
+        app_id: Optional[str] = None,
+        app_name: Optional[str] = None,
+        folder_name: Optional[str] = None,
+    ):
         """
         Send the app finished message.
+
+        :param app_id: App ID.
+        :param app_name: App name.
+        :param folder_name: Folder name.
         """
         raise NotImplementedError()
 
-    async def send_feature_finished(self):
+    async def send_feature_finished(
+        self,
+        app_id: Optional[str] = None,
+        app_name: Optional[str] = None,
+        folder_name: Optional[str] = None,
+    ):
         """
         Send the feature finished message.
+
+        :param app_id: App ID.
+        :param app_name: App name.
+        :param folder_name: Folder name.
         """
         raise NotImplementedError()
 

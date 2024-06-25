@@ -34,13 +34,23 @@ class VirtualUI(UIBase):
         else:
             print(message)
 
-    async def send_key_expired(self, message: Optional[str]):
+    async def send_key_expired(self, message: Optional[str] = None):
         pass
 
-    async def send_app_finished(self):
+    async def send_app_finished(
+        self,
+        app_id: Optional[str] = None,
+        app_name: Optional[str] = None,
+        folder_name: Optional[str] = None,
+    ):
         pass
 
-    async def send_feature_finished(self):
+    async def send_feature_finished(
+        self,
+        app_id: Optional[str] = None,
+        app_name: Optional[str] = None,
+        folder_name: Optional[str] = None,
+    ):
         pass
 
     async def ask_question(
