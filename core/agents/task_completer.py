@@ -38,8 +38,16 @@ class TaskCompleter(BaseAgent):
 
         if current_task_index1 == len(tasks):
             if source == "app":
-                await self.ui.send_app_finished()
+                await self.ui.send_app_finished(
+                    app_id=str(self.state_manager.project.id),
+                    app_name=self.state_manager.project.name,
+                    folder_name=self.state_manager.project.folder_name,
+                )
             elif source == "feature":
-                await self.ui.send_feature_finished()
+                await self.ui.send_feature_finished(
+                    app_id=str(self.state_manager.project.id),
+                    app_name=self.state_manager.project.name,
+                    folder_name=self.state_manager.project.folder_name,
+                )
 
         return AgentResponse.done(self)

@@ -199,11 +199,35 @@ class IPCClientUI(UIBase):
     async def send_key_expired(self, message: Optional[str] = None):
         await self._send(MessageType.KEY_EXPIRED)
 
-    async def send_app_finished(self):
-        await self._send(MessageType.APP_FINISHED)
+    async def send_app_finished(
+        self,
+        app_id: Optional[str] = None,
+        app_name: Optional[str] = None,
+        folder_name: Optional[str] = None,
+    ):
+        await self._send(
+            MessageType.APP_FINISHED,
+            content={
+                "app_id": app_id,
+                "app_name": app_name,
+                "folder_name": folder_name,
+            },
+        )
 
-    async def send_feature_finished(self):
-        await self._send(MessageType.FEATURE_FINISHED)
+    async def send_feature_finished(
+        self,
+        app_id: Optional[str] = None,
+        app_name: Optional[str] = None,
+        folder_name: Optional[str] = None,
+    ):
+        await self._send(
+            MessageType.FEATURE_FINISHED,
+            content={
+                "app_id": app_id,
+                "app_name": app_name,
+                "folder_name": folder_name,
+            },
+        )
 
     async def ask_question(
         self,
