@@ -97,6 +97,8 @@ class AgentConvo(Convo):
             else:
                 return d
 
+        # We want to make the schema as simple as possible to avoid confusing the LLM,
+        # so we remove (dereference) all the refs we can and show the "final" schema version.
         schema_txt = json.dumps(remove_defs(jsonref.loads(json.dumps(model.model_json_schema()))))
         self.user(
             f"IMPORTANT: Your response MUST conform to this JSON schema:\n```\n{schema_txt}\n```."
