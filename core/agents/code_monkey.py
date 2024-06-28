@@ -57,10 +57,12 @@ class CodeMonkey(BaseAgent):
         user_feedback = None
         user_feedback_qa = None
         llm = self.get_llm()
+
         if iterations:
-            instructions = iterations[-1]["description"]
-            user_feedback = iterations[-1]["user_feedback"]
-            user_feedback_qa = iterations[-1]["user_feedback_qa"]
+            last_iteration = iterations[-1]
+            instructions = last_iteration.get("description")
+            user_feedback = last_iteration.get("user_feedback")
+            user_feedback_qa = last_iteration.get("user_feedback_qa")
         else:
             instructions = self.current_state.current_task["instructions"]
 
