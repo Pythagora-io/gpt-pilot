@@ -7,4 +7,7 @@ The solution was to add the entire content of all the files that have routes def
 them, and this prompt selects those files.
 
 #}
+{% include "partials/project_details.prompt" %}
+{% include "partials/files_list.prompt" %}
+
 Your task is to identify all the files, from the above list, that have routes defined in them. Return just the file paths as a JSON list named "files", DO NOT return anything else. If there are no files with routes, return an empty list.
