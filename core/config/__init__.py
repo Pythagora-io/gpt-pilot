@@ -28,6 +28,7 @@ DEFAULT_IGNORE_PATHS = [
     "*.csv",
     "*.log",
     "go.sum",
+    "migration_lock.toml",
 ]
 IGNORE_SIZE_THRESHOLD = 50000  # 50K+ files are ignored by default
 

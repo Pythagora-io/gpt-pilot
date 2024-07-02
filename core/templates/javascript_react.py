@@ -1,28 +1,12 @@
-from core.proc.process_manager import ProcessManager
+from .base import BaseProjectTemplate, NoOptions
 
 
-async def install_hook(process_manager: ProcessManager):
-    """
-    Command to run to complete the project scaffolding setup.
-
-    :param process_manager: ProcessManager instance to run the install commands with.
-    """
-    await process_manager.run_command("npm install")
-
-
-JAVASCRIPT_REACT = {
-    "path": "javascript_react",
-    "description": "React web app using Vite devserver/bundler",
-    "summary": "\n".join(
-        [
-            "* Initial setup with Vite for fast development",
-            "* Basic project structure for React development",
-            "* Development server setup for hot reloading",
-            "* Minimal configuration to get started with React",
-        ]
-    ),
-    "install_hook": install_hook,
-    "files": {
+class JavascriptReactProjectTemplate(BaseProjectTemplate):
+    stack = "frontend"
+    name = "javascript_react"
+    path = "javascript_react"
+    description = "React web app using Vite devserver/bundler"
+    file_descriptions = {
         "vite.config.js": "Configuration file for Vite, a fast developer-friendly Javascript bundler/devserver.",
         "index.html": "Main entry point for the project. It includes a basic HTML structure with a root div element and a script tag importing a JavaScript file named main.jsx using the module type. References: src/main.jsx",
         ".eslintrc.cjs": "Configuration file for ESLint, a static code analysis tool for identifying problematic patterns found in JavaScript code. It defines rules for linting JavaScript code with a focus on React applications.",
@@ -34,5 +18,18 @@ JAVASCRIPT_REACT = {
         "src/App.jsx": "Defines a functional component that serves as the root component in the project. The component is exported as the default export. References: src/App.css",
         "src/main.jsx": "Main entry point for a React application. It imports necessary modules, renders the main component 'App' inside a 'React.StrictMode' component, and mounts it to the root element in the HTML document. References: App.jsx, index.css",
         "src/assets/.gitkeep": "Empty file",
-    },
-}
+    }
+    summary = "\n".join(
+        [
+            "* Initial setup with Vite for fast development",
+            "* Basic project structure for React development",
+            "* Development server setup for hot reloading",
+            "* Minimal configuration to get started with React",
+            "* Frontend-only, compatible with any backend stack",
+        ]
+    )
+    options_class = NoOptions
+    options_description = ""
+
+    async def install_hook(self):
+        await self.process_manager.run_command("npm install")

@@ -95,6 +95,7 @@ def parse_arguments() -> Namespace:
         --import-v0: Import data from a v0 (gpt-pilot) database with the given path
         --email: User's email address, if provided
         --extension-version: Version of the VSCode extension, if used
+        --no-check: Disable initial LLM API check
     :return: Parsed arguments object.
     """
     version = get_version()
@@ -134,6 +135,7 @@ def parse_arguments() -> Namespace:
     )
     parser.add_argument("--email", help="User's email address", required=False)
     parser.add_argument("--extension-version", help="Version of the VSCode extension", required=False)
+    parser.add_argument("--no-check", help="Disable initial LLM API check", action="store_true")
     return parser.parse_args()
 
 

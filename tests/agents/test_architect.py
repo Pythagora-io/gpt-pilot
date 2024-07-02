@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from core.agents.architect import Architect, Architecture, PackageDependency, SystemDependency
+from core.agents.architect import Architect, Architecture, PackageDependency, SystemDependency, TemplateSelection
 from core.agents.response import ResponseType
 from core.ui.base import UserInput
 
@@ -16,28 +16,32 @@ async def test_run(agentcontext):
 
     arch = Architect(sm, ui, process_manager=pm)
     arch.get_llm = mock_get_llm(
-        return_value=Architecture(
-            architecture="dummy arch",
-            system_dependencies=[
-                SystemDependency(
-                    name="docker",
-                    description="Docker is a containerization platform.",
-                    test="docker --version",
-                    required_locally=True,
-                )
-            ],
-            package_dependencies=[
-                PackageDependency(
-                    name="express",
-                    description="Express is a Node.js framework.",
-                )
-            ],
-            template="javascript_react",
-        )
+        side_effect=[
+            TemplateSelection(
+                architecture="dummy arch",
+                template="javascript_react",
+            ),
+            Architecture(
+                system_dependencies=[
+                    SystemDependency(
+                        name="docker",
+                        description="Docker is a containerization platform.",
+                        test="docker --version",
+                        required_locally=True,
+                    )
+                ],
+                package_dependencies=[
+                    PackageDependency(
+                        name="express",
+                        description="Express is a Node.js framework.",
+                    )
+                ],
+            ),
+        ]
     )
     response = await arch.run()
 
-    arch.get_llm.return_value.assert_awaited_once()
+    arch.get_llm.return_value.assert_awaited()
     ui.ask_question.assert_awaited_once()
     pm.run_command.assert_awaited_once_with("docker --version")
 
@@ -48,4 +52,4 @@ async def test_run(agentcontext):
     assert sm.current_state.specification.architecture == "dummy arch"
     assert sm.current_state.specification.system_dependencies[0]["name"] == "docker"
     assert sm.current_state.specification.package_dependencies[0]["name"] == "express"
-    assert sm.current_state.specification.template == "javascript_react"
+    assert "javascript_react" in sm.current_state.specification.templates

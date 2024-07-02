@@ -106,6 +106,7 @@ class ErrorHandler(BaseAgent):
             {
                 "id": uuid4().hex,
                 "user_feedback": f"Error running command: {cmd}",
+                "user_feedback_qa": None,
                 "description": llm_response,
                 "alternative_solutions": [],
                 "attempts": 1,

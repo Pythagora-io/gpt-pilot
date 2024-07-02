@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -9,8 +10,12 @@ from core.db.models import Specification
 from core.llm.parser import JSONParser
 from core.log import get_logger
 from core.telemetry import telemetry
+from core.templates.base import BaseProjectTemplate, NoOptions
 from core.templates.example_project import EXAMPLE_PROJECTS
-from core.templates.registry import PROJECT_TEMPLATES, ProjectTemplateEnum
+from core.templates.registry import (
+    PROJECT_TEMPLATES,
+    ProjectTemplateEnum,
+)
 from core.ui.base import ProjectStage
 
 ARCHITECTURE_STEP_NAME = "Project architecture"
@@ -19,6 +24,14 @@ WARN_FRAMEWORKS = ["next.js", "vue", "vue.js", "svelte", "angular"]
 WARN_FRAMEWORKS_URL = "https://github.com/Pythagora-io/gpt-pilot/wiki/Using-GPT-Pilot-with-frontend-frameworks"
 
 log = get_logger(__name__)
+
+
+class AppType(str, Enum):
+    WEB = "web-app"
+    API = "api-service"
+    MOBILE = "mobile-app"
+    DESKTOP = "desktop-app"
+    CLI = "cli-tool"
 
 
 # FIXME: all the reponse pydantic models should be strict (see config._StrictModel), also check if we
@@ -54,9 +67,9 @@ class PackageDependency(BaseModel):
 
 
 class Architecture(BaseModel):
-    architecture: str = Field(
-        None,
-        description="General description of the app architecture.",
+    app_type: AppType = Field(
+        AppType.WEB,
+        description="Type of the app to build.",
     )
     system_dependencies: list[SystemDependency] = Field(
         None,
@@ -66,9 +79,16 @@ class Architecture(BaseModel):
         None,
         description="List of framework/language-specific packages used by the app.",
     )
+
+
+class TemplateSelection(BaseModel):
+    architecture: str = Field(
+        None,
+        description="General description of the app architecture.",
+    )
     template: Optional[ProjectTemplateEnum] = Field(
         None,
-        description="Project template to use for the app, if any (optional, can be null).",
+        description="Project template to use for the app, or null if no template is a good fit.",
     )
 
 
@@ -89,23 +109,70 @@ class Architect(BaseAgent):
         await self.check_system_dependencies(spec)
 
         self.next_state.specification = spec
-        telemetry.set("template", spec.template)
+        telemetry.set("templates", spec.templates)
         self.next_state.action = ARCHITECTURE_STEP_NAME
         return AgentResponse.done(self)
 
-    async def plan_architecture(self, spec: Specification):
-        await self.send_message("Planning project architecture ...")
+    async def select_templates(self, spec: Specification) -> dict[str, BaseProjectTemplate]:
+        """
+        Select project template(s) to use based on the project description.
+
+        Although the Pythagora database models support multiple projects, this
+        function will achoose at most one project template, as we currently don't
+        have templates that could be used together in a single project.
+
+        :param spec: Project specification.
+        :return: Dictionary of selected project templates.
+        """
+        await self.send_message("Selecting starter templates ...")
 
         llm = self.get_llm()
-        convo = AgentConvo(self).template("technologies", templates=PROJECT_TEMPLATES).require_schema(Architecture)
+        convo = (
+            AgentConvo(self)
+            .template(
+                "select_templates",
+                templates=PROJECT_TEMPLATES,
+            )
+            .require_schema(TemplateSelection)
+        )
+        tpl: TemplateSelection = await llm(convo, parser=JSONParser(TemplateSelection))
+        templates = {}
+        if tpl.template:
+            template_class = PROJECT_TEMPLATES.get(tpl.template)
+            if template_class:
+                options = await self.configure_template(spec, template_class)
+                templates[tpl.template] = template_class(
+                    options,
+                    self.state_manager,
+                    self.process_manager,
+                )
+
+        return tpl.architecture, templates
+
+    async def plan_architecture(self, spec: Specification):
+        await self.send_message("Planning project architecture ...")
+        architecture_description, templates = await self.select_templates(spec)
+
+        await self.send_message("Picking technologies to use ...")
+
+        llm = self.get_llm()
+        convo = (
+            AgentConvo(self)
+            .template(
+                "technologies",
+                templates=templates,
+                architecture=architecture_description,
+            )
+            .require_schema(Architecture)
+        )
         arch: Architecture = await llm(convo, parser=JSONParser(Architecture))
 
         await self.check_compatibility(arch)
 
-        spec.architecture = arch.architecture
+        spec.architecture = architecture_description
+        spec.templates = {t.name: t.options_dict for t in templates.values()}
         spec.system_dependencies = [d.model_dump() for d in arch.system_dependencies]
         spec.package_dependencies = [d.model_dump() for d in arch.package_dependencies]
-        spec.template = arch.template.value if arch.template else None
 
     async def check_compatibility(self, arch: Architecture) -> bool:
         warn_system_deps = [dep.name for dep in arch.system_dependencies if dep.name.lower() in WARN_SYSTEM_DEPS]
@@ -113,7 +180,7 @@ class Architect(BaseAgent):
 
         if warn_system_deps:
             await self.ask_question(
-                f"Warning: GPT Pilot doesn't officially support {', '.join(warn_system_deps)}. "
+                f"Warning: Pythagora doesn't officially support {', '.join(warn_system_deps)}. "
                 f"You can try to use {'it' if len(warn_system_deps) == 1 else 'them'}, but you may run into problems.",
                 buttons={"continue": "Continue"},
                 buttons_only=True,
@@ -122,7 +189,7 @@ class Architect(BaseAgent):
 
         if warn_package_deps:
             await self.ask_question(
-                f"Warning: GPT Pilot works best with vanilla JavaScript. "
+                f"Warning: Pythagora works best with vanilla JavaScript. "
                 f"You can try try to use {', '.join(warn_package_deps)}, but you may run into problems. "
                 f"Visit {WARN_FRAMEWORKS_URL} for more information.",
                 buttons={"continue": "Continue"},
@@ -142,8 +209,8 @@ class Architect(BaseAgent):
         spec.architecture = arch["architecture"]
         spec.system_dependencies = arch["system_dependencies"]
         spec.package_dependencies = arch["package_dependencies"]
-        spec.template = arch["template"]
-        telemetry.set("template", spec.template)
+        spec.templates = arch["templates"]
+        telemetry.set("templates", spec.templates)
 
     async def check_system_dependencies(self, spec: Specification):
         """
@@ -157,6 +224,7 @@ class Architect(BaseAgent):
         deps = spec.system_dependencies
 
         for dep in deps:
+            await self.send_message(f"Checking if {dep['name']} is available ...")
             status_code, _, _ = await self.process_manager.run_command(dep["test"])
             dep["installed"] = bool(status_code == 0)
             if status_code != 0:
@@ -174,11 +242,30 @@ class Architect(BaseAgent):
             else:
                 await self.send_message(f"✅ {dep['name']} is available.")
 
-        telemetry.set(
-            "architecture",
-            {
-                "description": spec.architecture,
-                "system_dependencies": deps,
-                "package_dependencies": spec.package_dependencies,
-            },
+    async def configure_template(self, spec: Specification, template_class: BaseProjectTemplate) -> BaseModel:
+        """
+        Ask the LLM to configure the template options.
+
+        Based on the project description, the LLM should pick the options that
+        make the most sense. If template has no options, the method is a no-op
+        and returns an empty options model.
+
+        :param spec: Project specification.
+        :param template_class: Template that needs to be configured.
+        :return: Configured options model.
+        """
+        if template_class.options_class is NoOptions:
+            # If template has no options, no need to ask LLM for anything
+            return NoOptions()
+
+        llm = self.get_llm()
+        convo = (
+            AgentConvo(self)
+            .template(
+                "configure_template",
+                project_description=spec.description,
+                project_template=template_class,
+            )
+            .require_schema(template_class.options_class)
         )
+        return await llm(convo, parser=JSONParser(template_class.options_class))

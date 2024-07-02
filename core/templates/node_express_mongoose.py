@@ -1,31 +1,12 @@
-from core.proc.process_manager import ProcessManager
+from .base import BaseProjectTemplate, NoOptions
 
 
-async def install_hook(process_manager: ProcessManager):
-    """
-    Command to run to complete the project scaffolding setup.
-
-    :param process_manager: ProcessManager instance to run the install commands with.
-    """
-    await process_manager.run_command("npm install")
-
-
-NODE_EXPRESS_MONGOOSE = {
-    "path": "node_express_mongoose",
-    "description": "Node + Express + MongoDB web app with session-based authentication, EJS views and Bootstrap 5",
-    "summary": "\n".join(
-        [
-            "* initial Node + Express setup",
-            "* User model in Mongoose ORM with username and password fields, ensuring username is unique and hashing passwords with bcrypt prior to saving to the database",
-            "* session-based authentication using username + password (hashed using bcrypt) in routes/authRoutes.js, using express-session",
-            "* authentication middleware to protect routes that require login",
-            "* EJS view engine, html head, header and footer EJS partials, with included Boostrap 5.x CSS and JS",
-            "* routes and EJS views for login, register, and home (main) page",
-            "* config loading from environment using dotenv with a placeholder .env.example file: you will need to create a .env file with your own values",
-        ]
-    ),
-    "install_hook": install_hook,
-    "files": {
+class NodeExpressMongooseProjectTemplate(BaseProjectTemplate):
+    stack = "backend"
+    name = "node_express_mongoose"
+    path = "node_express_mongoose"
+    description = "Node + Express + MongoDB web app with session-based authentication, EJS views and Bootstrap 5"
+    file_descriptions = {
         ".env.example": "The .env.example file serves as a template for setting up environment variables used in the application. It provides placeholders for values such as the port number, MongoDB database URL, and session secret string.",
         ".env": "This file is a configuration file in the form of a .env file. It contains environment variables used by the application, such as the port to listen on, the MongoDB database URL, and the session secret string.",
         "server.js": "This `server.js` file sets up an Express server with MongoDB database connection, session management using connect-mongo, templating engine EJS, static file serving, authentication routes, error handling, and request logging. [References: dotenv, mongoose, express, express-session, connect-mongo, ./routes/authRoutes]",
@@ -41,5 +22,20 @@ NODE_EXPRESS_MONGOOSE = {
         "models/User.js": "This file defines a Mongoose model for a user with fields for username and password. It includes a pre-save hook to hash the user's password before saving it to the database using bcrypt. [References: mongoose, bcrypt]",
         "public/js/main.js": "The main.js file is a placeholder for future JavaScript code. It currently does not contain any specific functionality.",
         "public/css/style.css": "This file is a placeholder for custom styles. It does not contain any specific styles but is intended for adding custom CSS styles.",
-    },
-}
+    }
+    summary = "\n".join(
+        [
+            "* initial Node + Express setup",
+            "* User model in Mongoose ORM with username and password fields, ensuring username is unique and hashing passwords with bcrypt prior to saving to the database",
+            "* session-based authentication using username + password (hashed using bcrypt) in routes/authRoutes.js, using express-session",
+            "* authentication middleware to protect routes that require login",
+            "* EJS view engine, html head, header and footer EJS partials, with included Boostrap 5.x CSS and JS",
+            "* routes and EJS views for login, register, and home (main) page",
+            "* config loading from environment using dotenv with a placeholder .env.example file: you will need to create a .env file with your own values",
+        ]
+    )
+    options_class = NoOptions
+    options_description = ""
+
+    async def install_hook(self):
+        await self.process_manager.run_command("npm install")

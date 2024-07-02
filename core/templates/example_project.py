@@ -18,13 +18,13 @@ Functional Specification:
 - Todos persist between sessions using the browser's local storage. The application saves any changes to the todo list (additions or state changes) in local storage and retrieves this data when the application is reloaded.
 
 Technical Specification:
-- Platform/Technologies: The application is a web application developed using React. No backend technologies are required.
+- Platform/Technologies: The application is a web application developed using React on frontend and Express on the backend, using SQLite as the database.
 - Styling: Use Bootstrap 5 for a simple and functional interface. Load Boostrap from the CDN (don't install it locally):
     - https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css
     - https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js
 - State Management: Directly in the React component
     - make sure to initialize the state from the local storage as default (... = useState(JSON.parse(localStorage.getItem('todos')) || []) to avoid race conditions
-- Data Persistence: The application uses the browser's local storage to persist todos between sessions. It stores the array of todos as a JSON string and parses this data on application load.
+- Data Persistence: Using the SQLite database on the backend via a REST API.
 """
 
 EXAMPLE_PROJECT_ARCHITECTURE = {
@@ -47,7 +47,9 @@ EXAMPLE_PROJECT_ARCHITECTURE = {
         {"name": "react-dom", "description": "Serves as the entry point to the DOM and server renderers for React."},
         {"name": "bootstrap", "description": "Frontend framework for developing responsive and mobile-first websites."},
     ],
-    "template": "javascript_react",
+    "templates": {
+        "javascript_react": {},
+    },
 }
 
 EXAMPLE_PROJECT_PLAN = [

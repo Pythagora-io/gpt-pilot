@@ -8,6 +8,16 @@ from typing import Any, Callable
 from jinja2 import Environment, FileSystemLoader
 
 
+def escape_string(str: str) -> str:
+    """
+    Escape special characters in a string
+
+    :param str: The string to escape
+    :return: The escaped string
+    """
+    return str.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+
+
 class Renderer:
     """
     Render a Jinja template
@@ -40,7 +50,7 @@ class Renderer:
             keep_trailing_newline=True,
         )
         # Add filters here
-        # self.jinja_env.filters["qstr"] = qstr
+        self.jinja_env.filters["escape_string"] = escape_string
 
     def render_template(self, template: str, context: Any) -> str:
         """
