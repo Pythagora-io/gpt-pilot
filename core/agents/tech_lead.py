@@ -17,19 +17,19 @@ from core.ui.base import ProjectStage, success_source
 log = get_logger(__name__)
 
 
-class Task(BaseModel):
-    description: str = Field(description=("Very detailed description of a development task."))
+class Epic(BaseModel):
+    description: str = Field(description=("Description of an epic."))
 
 
 class DevelopmentPlan(BaseModel):
-    plan: list[Task] = Field(description="List of development tasks that need to be done to implement the entire plan.")
+    plan: list[Epic] = Field(description="List of epics that need to be done to implement the entire plan.")
 
 
 class UpdatedDevelopmentPlan(BaseModel):
-    updated_current_epic: Task = Field(
-        description="Updated detailed description of what was implemented while working on the current development task."
+    updated_current_epic: Epic = Field(
+        description="Updated description of what was implemented while working on the current epic."
     )
-    plan: list[Task] = Field(description="List of unfinished development tasks.")
+    plan: list[Epic] = Field(description="List of unfinished epics.")
 
 
 class TechLead(BaseAgent):

@@ -181,12 +181,11 @@ class Developer(BaseAgent):
         )
         response: str = await llm(convo)
 
-        # FIXME: check if this is correct, as sqlalchemy can't figure out modifications
-        # to attributes; however, self.next is not saved yet so maybe this is fine
         self.next_state.tasks[current_task_index] = {
             **task,
             "instructions": response,
         }
+        self.next_state.flag_tasks_as_modified()
 
         await self.send_message("Breaking down the task into steps ...")
         convo.assistant(response).template("parse_task").require_schema(TaskSteps)

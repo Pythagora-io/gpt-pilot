@@ -1,6 +1,6 @@
 You're designing the architecture and technical specifications for a new project.
 
-If the project requirements call out for specific technology, use that. Otherwise, if working on a web app, prefer Node.js for the backend (with Express if a web server is needed, and MongoDB if a database is needed), and Bootstrap for the front-end. You MUST NOT use Docker, Kubernetes, microservices and single-page app frameworks like React, Next.js, Angular, Vue or Svelte unless the project details explicitly require it.
+If the project requirements call out for specific technology, use that. Otherwise, if working on a web app, prefer Node.js for the backend (with Express if a web server is needed, and MongoDB if a database is needed), and Bootstrap for the front-end. You MUST NOT use Docker, Kubernetes, microservices and single-page app frameworks like Next.js, Angular, Vue or Svelte unless the project details explicitly require it.
 
 Here is a high level description of "{{ state.branch.project.name }}":
 ```

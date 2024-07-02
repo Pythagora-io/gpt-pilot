@@ -1,7 +1,7 @@
 import pytest
 
 from core.agents.response import ResponseType
-from core.agents.tech_lead import DevelopmentPlan, Task, TechLead, UpdatedDevelopmentPlan
+from core.agents.tech_lead import DevelopmentPlan, Epic, TechLead, UpdatedDevelopmentPlan
 from core.db.models import Complexity
 from core.db.models.project_state import TaskStatus
 from core.ui.base import UserInput
@@ -87,8 +87,8 @@ async def test_plan_epic(agentcontext):
     tl.get_llm = mock_get_llm(
         return_value=DevelopmentPlan(
             plan=[
-                Task(description="Task 1"),
-                Task(description="Task 2"),
+                Epic(description="Task 1"),
+                Epic(description="Task 2"),
             ]
         )
     )
@@ -122,8 +122,8 @@ async def test_update_epic(agentcontext):
     tl = TechLead(sm, ui)
     tl.get_llm = mock_get_llm(
         return_value=UpdatedDevelopmentPlan(
-            updated_current_epic=Task(description="Updated Just Finished"),
-            plan=[Task(description="Alternative Future Task")],
+            updated_current_epic=Epic(description="Updated Just Finished"),
+            plan=[Epic(description="Alternative Future Task")],
         )
     )
 

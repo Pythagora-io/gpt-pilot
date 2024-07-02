@@ -159,11 +159,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         """Returns the list of file paths that have routes defined in them."""
 
         llm = self.get_llm(ROUTE_FILES_AGENT_NAME)
-        convo = (
-            self._get_task_convo()
-            .template("get_route_files", task=self.current_state.current_task)
-            .require_schema(RouteFilePaths)
-        )
+        convo = AgentConvo(self).template("get_route_files").require_schema(RouteFilePaths)
         file_list = await llm(convo, parser=JSONParser(RouteFilePaths))
         route_files: set[str] = set(file_list.files)
 
