@@ -19,7 +19,6 @@ from core.agents.tech_lead import TechLead
 from core.agents.tech_writer import TechnicalWriter
 from core.agents.troubleshooter import Troubleshooter
 from core.db.models.project_state import TaskStatus
-from core.db.models.specification import Complexity
 from core.log import get_logger
 from core.telemetry import telemetry
 from core.ui.base import ProjectStage
@@ -180,6 +179,8 @@ class Orchestrator(BaseAgent):
                 return Developer(self.state_manager, self.ui, prev_response=prev_response)
             if prev_response.type == ResponseType.IMPORT_PROJECT:
                 return Importer(self.state_manager, self.ui, prev_response=prev_response)
+            if prev_response.type == ResponseType.EXTERNAL_DOCS_REQUIRED:
+                return ExternalDocumentation(self.state_manager, self.ui, prev_response=prev_response)
 
         if not state.specification.description:
             if state.files:
@@ -198,9 +199,6 @@ class Orchestrator(BaseAgent):
         ):
             # Ask the Tech Lead to break down the initial project or feature into tasks and apply project templates
             return TechLead(self.state_manager, self.ui, process_manager=self.process_manager)
-
-        if state.current_task and state.docs is None and state.specification.complexity != Complexity.SIMPLE:
-            return ExternalDocumentation(self.state_manager, self.ui)
 
         # Current task status must be checked before Developer is called because we might want
         # to skip it instead of breaking it down
