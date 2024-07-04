@@ -42,6 +42,9 @@ class ResponseType(str, Enum):
     IMPORT_PROJECT = "import-project"
     """User wants to import an existing project."""
 
+    EXTERNAL_DOCS_REQUIRED = "external-docs-required"
+    """We need to fetch external docs for a task."""
+
 
 class AgentResponse:
     type: ResponseType = ResponseType.DONE
@@ -137,3 +140,7 @@ class AgentResponse:
     @staticmethod
     def import_project(agent: "BaseAgent") -> "AgentResponse":
         return AgentResponse(type=ResponseType.IMPORT_PROJECT, agent=agent)
+
+    @staticmethod
+    def external_docs_required(agent: "BaseAgent") -> "AgentResponse":
+        return AgentResponse(type=ResponseType.EXTERNAL_DOCS_REQUIRED, agent=agent)

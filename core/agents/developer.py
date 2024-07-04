@@ -8,6 +8,7 @@ from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse, ResponseType
 from core.db.models.project_state import TaskStatus
+from core.db.models.specification import Complexity
 from core.llm.parser import JSONParser
 from core.log import get_logger
 from core.telemetry import telemetry
@@ -77,9 +78,16 @@ class Developer(BaseAgent):
 
         # By default, we want to ask the user if they want to run the task,
         # except in certain cases (such as they've just edited it).
-        if not self.current_state.current_task.get("run_always", False):
+        # The check for docs is here to prevent us from asking the user whether we should
+        # run the task twice - we'll only ask if we haven't yet checked for docs.
+        if not self.current_state.current_task.get("run_always", False) and self.current_state.docs is None:
             if not await self.ask_to_execute_task():
                 return AgentResponse.done(self)
+
+        if self.current_state.docs is None and self.current_state.specification.complexity != Complexity.SIMPLE:
+            # We check for external docs here, to make sure we only fetch the docs
+            # if the task is actually being done.
+            return AgentResponse.external_docs_required(self)
 
         return await self.breakdown_current_task()
 
