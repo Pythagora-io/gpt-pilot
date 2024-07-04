@@ -213,12 +213,6 @@ class Developer(BaseAgent):
         )
         return AgentResponse.done(self)
 
-    async def get_external_docs(self):
-        # TODO: hook into external docs here
-        # TODO: make sure to add the docs both in current_state (so it can be used right)
-        # away in the task breakdown, and next_state, so it's stored in the database
-        pass
-
     async def get_relevant_files(
         self, user_feedback: Optional[str] = None, solution_description: Optional[str] = None
     ) -> AgentResponse:
