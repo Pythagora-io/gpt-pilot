@@ -8,6 +8,7 @@ We've broken the development of the project down to these tasks:
 ```
 {% for task in state.tasks %}
 {{ loop.index }}. {{ task.description }}{% if task.get("status") == "done" %} (completed){% endif %}
+
 {% endfor %}
 ```
 
