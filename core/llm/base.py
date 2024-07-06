@@ -243,6 +243,7 @@ class BaseLLMClient:
                 # us confirm that we've breached the token limit, but Anthropic doesn't,
                 # so we can't be certain that's the problem in Anthropic case.
                 # Here we try to detect that and tell the user what happened.
+                log.info(f"API status error: {err}")
                 err_code = err.response.json().get("error", {}).get("code", "")
                 if err_code in ("request_too_large", "context_length_exceeded", "string_above_max_length"):
                     # Handle OpenAI and Groq token limit exceeded
