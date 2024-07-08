@@ -42,7 +42,7 @@ async def test_run(agentcontext):
     response = await arch.run()
 
     arch.get_llm.return_value.assert_awaited()
-    ui.ask_question.assert_awaited_once()
+    assert ui.ask_question.await_count == 2
     pm.run_command.assert_awaited_once_with("docker --version")
 
     assert response.type == ResponseType.DONE
