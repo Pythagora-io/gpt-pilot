@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -113,12 +113,12 @@ class Architect(BaseAgent):
         self.next_state.action = ARCHITECTURE_STEP_NAME
         return AgentResponse.done(self)
 
-    async def select_templates(self, spec: Specification) -> dict[str, BaseProjectTemplate]:
+    async def select_templates(self, spec: Specification) -> tuple[str, dict[ProjectTemplateEnum, Any]]:
         """
         Select project template(s) to use based on the project description.
 
         Although the Pythagora database models support multiple projects, this
-        function will achoose at most one project template, as we currently don't
+        function will choose at most one project template, as we currently don't
         have templates that could be used together in a single project.
 
         :param spec: Project specification.
@@ -138,6 +138,19 @@ class Architect(BaseAgent):
         tpl: TemplateSelection = await llm(convo, parser=JSONParser(TemplateSelection))
         templates = {}
         if tpl.template:
+            answer = await self.ask_question(
+                f"Do you want to use the '{tpl.template.name}' template?",
+                buttons={"yes": "Yes", "no": "No"},
+                default="yes",
+                buttons_only=True,
+                hint="Project templates are here to speed up start of your app development and save tokens and time.\n"
+                "Choose 'Yes' to use suggested template for your app.\n"
+                "If you choose 'No', project will be created from scratch.",
+            )
+
+            if answer.button == "no":
+                return tpl.architecture, templates
+
             template_class = PROJECT_TEMPLATES.get(tpl.template)
             if template_class:
                 options = await self.configure_template(spec, template_class)
