@@ -116,7 +116,11 @@ class AnthropicClient(BaseLLMClient):
         except ValueError:
             return datetime.timedelta(seconds=5)
 
-        now = datetime.datetime.now(tz=zoneinfo.ZoneInfo("UTC"))
+        try:
+            now = datetime.datetime.now(tz=zoneinfo.ZoneInfo("UTC"))
+        except zoneinfo.ZoneInfoNotFoundError:
+            now = datetime.datetime.now(tz=datetime.timezone.utc)
+
         return reset_time - now
 
 
