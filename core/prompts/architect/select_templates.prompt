@@ -7,19 +7,23 @@ Here is a high level description of "{{ state.branch.project.name }}":
 {{ state.specification.description }}
 ```
 
-You have an option to use project templates that implement standard boilerplate/scaffolding so you can start faster and be more productive. To be considered, a template must be compatible with the project requirements (it doesn't need to implement everything that will be used in the project, just a useful subset of needed technologies). You should pick one template that's the best match for this project.
+You have an option to use project templates that implement standard boilerplate/scaffolding so you can start faster and be more productive. To be considered, a template must be compatible with the project requirements:
+* if the project description has specific technology requirements, don't consider templates that choose different tech (eg. a different framework or library)
+* to be considered, the template must use compatible technologies and implement a useful subset of required functionality
 
-If no project templates are a good match, don't pick any! It's better to start from scratch than to use a template that is not a good fit for the project and then spend time reworking it to fit the requirements.
+If no project templates are a good match, don't pick any! It's better to start from scratch than to use a template that is not a good fit for the project (for example, don't use a react frontend if a different framework or plain html/css is required) and then spend time reworking it to fit the requirements. If you do choose to pick a template, choose the one that's the best match for this project.
 
 Here are the available project templates:
+
 {% for template in templates.values() %}
 ### {{ template.name }} ({{ template.stack }})
+
 {{ template.description }}
 
 Contains:
 {{ template.summary }}
-{% endfor %}
 
+{% endfor %}
 Output your response in a valid JSON format like in this example:
 ```json
 {
