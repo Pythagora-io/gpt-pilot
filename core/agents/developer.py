@@ -91,24 +91,27 @@ class Developer(BaseAgent):
 
         return await self.breakdown_current_task()
 
-    async def breakdown_current_iteration(self, review_feedback: Optional[str] = None) -> AgentResponse:
+    async def breakdown_current_iteration(self, task_review_feedback: Optional[str] = None) -> AgentResponse:
         """
         Breaks down current iteration or task review into steps.
 
-        :param review_feedback: If provided, the task review feedback is broken down instead of the current iteration
+        :param task_review_feedback: If provided, the task review feedback is broken down instead of the current iteration
         :return: AgentResponse.done(self) when the breakdown is done
         """
+        current_task = self.current_state.current_task
 
-        if review_feedback is not None:
+        if task_review_feedback is not None:
             iteration = None
-            description = review_feedback
+            current_task["task_review_feedback"] = task_review_feedback
+            description = task_review_feedback
             user_feedback = ""
             source = "review"
             n_tasks = 1
-            log.debug(f"Breaking down the task review feedback {review_feedback}")
+            log.debug(f"Breaking down the task review feedback {task_review_feedback}")
             await self.send_message("Breaking down the task review feedback...")
         else:
             iteration = self.current_state.current_iteration
+            current_task["task_review_feedback"] = None
             if iteration is None:
                 log.error("Iteration breakdown called but there's no current iteration or task review, possible bug?")
                 return AgentResponse.done(self)
@@ -125,7 +128,7 @@ class Developer(BaseAgent):
         await self.ui.send_task_progress(
             n_tasks,  # iterations and reviews can be created only one at a time, so we are always on last one
             n_tasks,
-            self.current_state.current_task["description"],
+            current_task["description"],
             source,
             "in-progress",
             self.current_state.get_source_index(source),
@@ -138,7 +141,7 @@ class Developer(BaseAgent):
             AgentConvo(self)
             .template(
                 "iteration",
-                current_task=self.current_state.current_task,
+                current_task=current_task,
                 user_feedback=user_feedback,
                 user_feedback_qa=None,
                 next_solution_to_try=None,
@@ -158,22 +161,28 @@ class Developer(BaseAgent):
         else:
             self.next_state.action = "Task review feedback"
 
+        current_task_index = self.current_state.tasks.index(current_task)
+        self.next_state.tasks[current_task_index] = {
+            **current_task,
+        }
+        self.next_state.flag_tasks_as_modified()
         return AgentResponse.done(self)
 
     async def breakdown_current_task(self) -> AgentResponse:
-        task = self.current_state.current_task
+        current_task = self.current_state.current_task
+        current_task["task_review_feedback"] = None
         source = self.current_state.current_epic.get("source", "app")
         await self.ui.send_task_progress(
-            self.current_state.tasks.index(self.current_state.current_task) + 1,
+            self.current_state.tasks.index(current_task) + 1,
             len(self.current_state.tasks),
-            self.current_state.current_task["description"],
+            current_task["description"],
             source,
             "in-progress",
             self.current_state.get_source_index(source),
             self.current_state.tasks,
         )
 
-        log.debug(f"Breaking down the current task: {task['description']}")
+        log.debug(f"Breaking down the current task: {current_task['description']}")
         await self.send_message("Thinking about how to implement this task ...")
 
         log.debug(f"Current state files: {len(self.current_state.files)}, relevant {self.current_state.relevant_files}")
@@ -181,16 +190,20 @@ class Developer(BaseAgent):
         if self.current_state.files and self.current_state.relevant_files is None:
             await self.get_relevant_files()
 
-        current_task_index = self.current_state.tasks.index(task)
+        current_task_index = self.current_state.tasks.index(current_task)
 
         llm = self.get_llm()
         convo = AgentConvo(self).template(
-            "breakdown", task=task, iteration=None, current_task_index=current_task_index, docs=self.current_state.docs
+            "breakdown",
+            task=current_task,
+            iteration=None,
+            current_task_index=current_task_index,
+            docs=self.current_state.docs,
         )
         response: str = await llm(convo)
 
         self.next_state.tasks[current_task_index] = {
-            **task,
+            **current_task,
             "instructions": response,
         }
         self.next_state.flag_tasks_as_modified()

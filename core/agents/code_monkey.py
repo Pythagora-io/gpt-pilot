@@ -58,7 +58,9 @@ class CodeMonkey(BaseAgent):
         user_feedback_qa = None
         llm = self.get_llm()
 
-        if iterations:
+        if "task_review_feedback" in task and task["task_review_feedback"]:
+            instructions = task.get("task_review_feedback")
+        elif iterations:
             last_iteration = iterations[-1]
             instructions = last_iteration.get("description")
             user_feedback = last_iteration.get("user_feedback")
