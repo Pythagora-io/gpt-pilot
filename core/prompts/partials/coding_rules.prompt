@@ -6,7 +6,7 @@ You must implement everything mentioned in the instructions that is related to t
 
 ## Rule 2: Output format
 You must output the COMPLETE NEW VERSION of this file in following format:
----format---
+---start_of_format---
 ```
 the full contents of the updated file, without skipping over any content
 ```

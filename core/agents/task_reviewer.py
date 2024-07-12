@@ -47,7 +47,7 @@ class TaskReviewer(BaseAgent):
         )
         llm_response: str = await llm(convo, temperature=0.7)
 
-        if llm_response.strip().lower() == "done":
+        if "done" in llm_response.strip().lower()[-6:]:
             return AgentResponse.done(self)
         else:
             return AgentResponse.task_review_feedback(self, llm_response)
