@@ -7,7 +7,6 @@ from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.mixins import IterationPromptMixin
 from core.agents.response import AgentResponse
-from core.config import ROUTE_FILES_AGENT_NAME
 from core.db.models.file import File
 from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser, OptionalCodeBlockParser
@@ -158,7 +157,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
     async def _get_route_files(self) -> list[File]:
         """Returns the list of file paths that have routes defined in them."""
 
-        llm = self.get_llm(ROUTE_FILES_AGENT_NAME)
+        llm = self.get_llm()
         convo = AgentConvo(self).template("get_route_files").require_schema(RouteFilePaths)
         file_list = await llm(convo, parser=JSONParser(RouteFilePaths))
         route_files: set[str] = set(file_list.files)
