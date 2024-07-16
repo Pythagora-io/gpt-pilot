@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse, ResponseType
-from core.config import DESCRIBE_FILES_AGENT_NAME
+from core.config import CODE_MONKEY_AGENT_NAME, DESCRIBE_FILES_AGENT_NAME
 from core.llm.parser import JSONParser, OptionalCodeBlockParser
 from core.log import get_logger
 
@@ -56,7 +56,7 @@ class CodeMonkey(BaseAgent):
         iterations = self.current_state.iterations
         user_feedback = None
         user_feedback_qa = None
-        llm = self.get_llm()
+        llm = self.get_llm(CODE_MONKEY_AGENT_NAME)
 
         if "task_review_feedback" in task and task["task_review_feedback"]:
             instructions = task.get("task_review_feedback")
