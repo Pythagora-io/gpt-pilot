@@ -8,7 +8,7 @@ from core.agents.convo import AgentConvo
 from core.agents.mixins import IterationPromptMixin
 from core.agents.response import AgentResponse
 from core.db.models.file import File
-from core.db.models.project_state import TaskStatus
+from core.db.models.project_state import IterationStatus, TaskStatus
 from core.llm.parser import JSONParser, OptionalCodeBlockParser
 from core.log import get_logger
 from core.telemetry import telemetry
@@ -32,7 +32,29 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
     agent_type = "troubleshooter"
     display_name = "Troubleshooter"
 
-    async def run(self) -> AgentResponse:
+    async def run(self):
+        if self.current_state.unfinished_iterations:
+            if self.current_state.current_iteration.get("status") == IterationStatus.FIND_SOLUTION:
+                return await self.propose_solution()
+            else:
+                raise ValueError("There is unfinished iteration but it's not in FIND_SOLUTION state.")
+        else:
+            return await self.create_iteration()
+
+    async def propose_solution(self) -> AgentResponse:
+        user_feedback = self.current_state.current_iteration.get("user_feedback")
+        user_feedback_qa = self.current_state.current_iteration.get("user_feedback_qa")
+        logs_data = self.current_state.current_iteration.get("logs_data")
+
+        llm_solution = await self.find_solution(user_feedback, user_feedback_qa=user_feedback_qa, logs_data=logs_data)
+
+        self.next_state.current_iteration["description"] = llm_solution
+        self.next_state.current_iteration["status"] = IterationStatus.IMPLEMENT
+        self.next_state.flag_iterations_as_modified()
+
+        return AgentResponse.done(self)
+
+    async def create_iteration(self) -> AgentResponse:
         run_command = await self.get_run_command()
 
         user_instructions = self.current_state.current_task.get("test_instructions")
@@ -67,13 +89,16 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         if is_loop:
             if last_iteration["alternative_solutions"]:
                 # If we already have alternative solutions, it means we were already in a loop.
+                # todo check setting status
                 return self.try_next_alternative_solution(user_feedback, user_feedback_qa)
             else:
                 # Newly detected loop, set up an empty new iteration to trigger ProblemSolver
-                llm_solution = ""
+                llm_solution = None
+                iteration_status = IterationStatus.IMPLEMENT
                 await self.trace_loop("loop-feedback")
         else:
-            llm_solution = await self.find_solution(user_feedback, user_feedback_qa=user_feedback_qa)
+            llm_solution = None
+            iteration_status = IterationStatus.CHECK_LOGS
 
         self.next_state.iterations = self.current_state.iterations + [
             {
@@ -85,7 +110,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
                 # FIXME - this is incorrect if this is a new problem; otherwise we could
                 # just count the iterations
                 "attempts": 1,
-                "completed": False,
+                "status": iteration_status,
             }
         ]
         if len(self.next_state.iterations) == LOOP_THRESHOLD:
@@ -225,8 +250,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         """
         Call the ProblemSolver to try an alternative solution.
 
-        Stores the user feedback and sets iteration state (not completed, no description)
-        so that ProblemSolver will be triggered.
+        Stores the user feedback and sets iteration state so that ProblemSolver will be triggered.
 
         :param user_feedback: User feedback to store in the iteration state.
         :param user_feedback_qa: Additional questions/answers about the problem.
@@ -237,7 +261,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         next_state_iteration["user_feedback"] = user_feedback
         next_state_iteration["user_feedback_qa"] = user_feedback_qa
         next_state_iteration["attempts"] += 1
-        next_state_iteration["completed"] = False
+        next_state_iteration["status"] = IterationStatus.PROBLEM_SOLVER
         self.next_state.flag_iterations_as_modified()
         self.next_state.action = f"Alternative solution (attempt #{next_state_iteration['attempts']})"
         return AgentResponse.done(self)

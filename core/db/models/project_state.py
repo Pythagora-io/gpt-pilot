@@ -30,6 +30,18 @@ class TaskStatus:
     SKIPPED = "skipped"
 
 
+class IterationStatus:
+    """Status of an iteration."""
+
+    CHECK_LOGS = "check_logs"
+    AWAITING_LOGGING = "awaiting_logging"
+    AWAITING_TEST = "awaiting_test"
+    FIND_SOLUTION = "find_solution"
+    PROBLEM_SOLVER = "problem_solver"
+    IMPLEMENT = "implement"
+    DONE = "done"
+
+
 class ProjectState(Base):
     __tablename__ = "project_states"
     __table_args__ = (
@@ -105,7 +117,7 @@ class ProjectState(Base):
 
         :return: List of unfinished iterations.
         """
-        return [iteration for iteration in self.iterations if not iteration.get("completed")]
+        return [iteration for iteration in self.iterations if iteration.get("status") != IterationStatus.DONE]
 
     @property
     def current_iteration(self) -> Optional[dict]:

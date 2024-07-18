@@ -1,0 +1,13 @@
+Answer ONLY with this:
+```
+{
+    "steps": [
+        {
+            "save_file": {
+                "path": "index.js"
+            },
+            "type": "save_file"
+        }
+    ]
+}
+```

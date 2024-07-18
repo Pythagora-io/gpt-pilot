@@ -10,6 +10,7 @@ from core.agents.executor import Executor
 from core.agents.external_docs import ExternalDocumentation
 from core.agents.human_input import HumanInput
 from core.agents.importer import Importer
+from core.agents.logger import Logger
 from core.agents.problem_solver import ProblemSolver
 from core.agents.response import AgentResponse, ResponseType
 from core.agents.spec_writer import SpecWriter
@@ -18,7 +19,7 @@ from core.agents.task_reviewer import TaskReviewer
 from core.agents.tech_lead import TechLead
 from core.agents.tech_writer import TechnicalWriter
 from core.agents.troubleshooter import Troubleshooter
-from core.db.models.project_state import TaskStatus
+from core.db.models.project_state import IterationStatus, TaskStatus
 from core.log import get_logger
 from core.telemetry import telemetry
 from core.ui.base import ProjectStage
@@ -226,12 +227,20 @@ class Orchestrator(BaseAgent):
             return self.create_agent_for_step(state.current_step)
 
         if state.unfinished_iterations:
-            if state.current_iteration["description"]:
+            if state.current_iteration["status"] == IterationStatus.CHECK_LOGS:
+                # Ask the Logger to check if more logs in the code are needed
+                return Logger(self.state_manager, self.ui)
+            elif state.current_iteration["status"] == IterationStatus.AWAITING_TEST:
+                # Ask the Logger to ask user to test new logs
+                return Logger(self.state_manager, self.ui)
+            elif state.current_iteration["status"] == IterationStatus.FIND_SOLUTION:
+                # Find solution to the iteration problem
+                return Troubleshooter(self.state_manager, self.ui)
+            elif state.current_iteration["status"] == IterationStatus.IMPLEMENT:
                 # Break down the next iteration into steps
-                return Developer(self.state_manager, self.ui)
-            else:
-                # We need to iterate over the current task but there's no solution, as Pythagora
-                # is stuck in a loop, and ProblemSolver needs to find alternative solutions.
+                return CodeMonkey(self.state_manager, self.ui)
+            elif state.current_iteration["status"] == IterationStatus.PROBLEM_SOLVER:
+                # Call Problem Solver if the user said "I'm stuck in a loop"
                 return ProblemSolver(self.state_manager, self.ui)
 
         # We have just finished the task, call Troubleshooter to ask the user to review

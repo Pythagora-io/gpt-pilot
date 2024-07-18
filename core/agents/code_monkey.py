@@ -68,14 +68,27 @@ class CodeMonkey(BaseAgent):
         else:
             instructions = self.current_state.current_task["instructions"]
 
-        convo = AgentConvo(self).template(
-            "implement_changes",
-            file_name=file_name,
-            file_content=file_content,
-            instructions=instructions,
-            user_feedback=user_feedback,
-            user_feedback_qa=user_feedback_qa,
-        )
+        if self.step.get("source") == "logger":
+            logs_data = self.current_state.current_iteration.get("logs_data")
+            convo = AgentConvo(self).template(
+                "add_logs",
+                file_name=file_name,
+                file_content=file_content,
+                instructions=instructions,
+                user_feedback=user_feedback,
+                user_feedback_qa=user_feedback_qa,
+                logs_data=logs_data,
+            )
+        else:
+            convo = AgentConvo(self).template(
+                "implement_changes",
+                file_name=file_name,
+                file_content=file_content,
+                instructions=instructions,
+                user_feedback=user_feedback,
+                user_feedback_qa=user_feedback_qa,
+            )
+
         if feedback:
             convo.assistant(f"```\n{self.prev_response.data['new_content']}\n```\n").template(
                 "review_feedback",

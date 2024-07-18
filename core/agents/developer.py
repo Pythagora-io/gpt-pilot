@@ -1,11 +1,11 @@
-from enum import Enum
-from typing import Annotated, Literal, Optional, Union
+from typing import Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
+from core.agents.mixins import TaskSteps
 from core.agents.response import AgentResponse, ResponseType
 from core.db.models.project_state import TaskStatus
 from core.db.models.specification import Complexity
@@ -14,47 +14,6 @@ from core.log import get_logger
 from core.telemetry import telemetry
 
 log = get_logger(__name__)
-
-
-class StepType(str, Enum):
-    COMMAND = "command"
-    SAVE_FILE = "save_file"
-    HUMAN_INTERVENTION = "human_intervention"
-
-
-class CommandOptions(BaseModel):
-    command: str = Field(description="Command to run")
-    timeout: int = Field(description="Timeout in seconds")
-    success_message: str = ""
-
-
-class SaveFileOptions(BaseModel):
-    path: str
-
-
-class SaveFileStep(BaseModel):
-    type: Literal[StepType.SAVE_FILE] = StepType.SAVE_FILE
-    save_file: SaveFileOptions
-
-
-class CommandStep(BaseModel):
-    type: Literal[StepType.COMMAND] = StepType.COMMAND
-    command: CommandOptions
-
-
-class HumanInterventionStep(BaseModel):
-    type: Literal[StepType.HUMAN_INTERVENTION] = StepType.HUMAN_INTERVENTION
-    human_intervention_description: str
-
-
-Step = Annotated[
-    Union[SaveFileStep, CommandStep, HumanInterventionStep],
-    Field(discriminator="type"),
-]
-
-
-class TaskSteps(BaseModel):
-    steps: list[Step]
 
 
 class RelevantFiles(BaseModel):
