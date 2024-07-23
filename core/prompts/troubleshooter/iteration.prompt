@@ -4,7 +4,8 @@ You are working on an app called "{{ state.branch.project.name }}" and you need 
 
 {% if state.tasks and state.current_task %}
 Development process of this app was split into smaller tasks. Here is the list of all tasks:
-```{% for task in state.tasks %}
+```
+{% for task in state.tasks %}
 {{ loop.index }}. {{ task.description }}
 {% endfor %}
 ```
