@@ -45,6 +45,9 @@ class ResponseType(str, Enum):
     EXTERNAL_DOCS_REQUIRED = "external-docs-required"
     """We need to fetch external docs for a task."""
 
+    NEW_FEATURE_REQUESTED = "new-feature-requested"
+    """User wants to add a new feature to project specification."""
+
 
 class AgentResponse:
     type: ResponseType = ResponseType.DONE
@@ -144,3 +147,7 @@ class AgentResponse:
     @staticmethod
     def external_docs_required(agent: "BaseAgent") -> "AgentResponse":
         return AgentResponse(type=ResponseType.EXTERNAL_DOCS_REQUIRED, agent=agent)
+
+    @staticmethod
+    def new_feature_requested(agent: "BaseAgent") -> "AgentResponse":
+        return AgentResponse(type=ResponseType.NEW_FEATURE_REQUESTED, agent=agent)

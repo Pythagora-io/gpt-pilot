@@ -182,7 +182,8 @@ class Orchestrator(BaseAgent):
                 return Importer(self.state_manager, self.ui, prev_response=prev_response)
             if prev_response.type == ResponseType.EXTERNAL_DOCS_REQUIRED:
                 return ExternalDocumentation(self.state_manager, self.ui, prev_response=prev_response)
-
+            if prev_response.type == ResponseType.NEW_FEATURE_REQUESTED:
+                return SpecWriter(self.state_manager, self.ui, prev_response=prev_response)
         if not state.specification.description:
             if state.files:
                 # The project has been imported, but not analyzed yet

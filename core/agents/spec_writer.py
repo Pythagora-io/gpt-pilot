@@ -1,6 +1,6 @@
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
-from core.agents.response import AgentResponse
+from core.agents.response import AgentResponse, ResponseType
 from core.db.models import Complexity
 from core.llm.parser import StringParser
 from core.log import get_logger
@@ -26,6 +26,12 @@ class SpecWriter(BaseAgent):
     display_name = "Spec Writer"
 
     async def run(self) -> AgentResponse:
+        if self.prev_response and self.prev_response.type == ResponseType.NEW_FEATURE_REQUESTED:
+            return await self.update_spec()
+        else:
+            return await self.initialize_spec()
+
+    async def initialize_spec(self) -> AgentResponse:
         response = await self.ask_question(
             "Describe your app in as much detail as possible",
             allow_empty=False,
@@ -71,6 +77,39 @@ class SpecWriter(BaseAgent):
         self.next_state.specification.complexity = complexity
         telemetry.set("initial_prompt", spec)
         telemetry.set("is_complex_app", complexity != Complexity.SIMPLE)
+
+        self.next_state.action = SPEC_STEP_NAME
+        return AgentResponse.new_feature_requested(self)
+
+    async def update_spec(self) -> AgentResponse:
+        response = await self.ask_question(
+            "Describe the new feature you want to add",
+            allow_empty=False,
+            buttons={
+                # FIXME: must be lowercase becase VSCode doesn't recognize it otherwise. Needs a fix in the extension
+                "cancel": "cancel",
+            },
+        )
+        if response.cancelled:
+            return AgentResponse.error(self, "No feature description")
+
+        if response.button == "cancel":
+            return AgentResponse.error(self, "No feature description")
+
+        feature_description = response.text.strip()
+
+        await self.send_message("Adding new feature to project specification ...")
+        llm = self.get_llm()
+        convo = AgentConvo(self).template("add_new_feature", feature_description=feature_description)
+        llm_response: str = await llm(convo, temperature=0, parser=StringParser())
+        updated_spec = llm_response.strip()
+
+        self.next_state.specification = self.current_state.specification.clone()
+        self.next_state.specification.description = updated_spec
+
+        telemetry.set(
+            "initial_prompt", updated_spec
+        )  # TODO Check if a separate telemetry variable needed for updated spec
 
         self.next_state.action = SPEC_STEP_NAME
         return AgentResponse.done(self)
