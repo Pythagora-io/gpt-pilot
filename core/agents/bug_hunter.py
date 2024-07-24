@@ -105,7 +105,7 @@ class BugHunter(BaseAgent):
             "fix_attempted": False
         }]
 
-        if False and hunt_conclusion.conclusion == magic_words.PROBLEM_IDENTIFIED:
+        if hunt_conclusion.conclusion == magic_words.PROBLEM_IDENTIFIED:
             # if no need for logs, implement iteration same as before
             self.next_state.current_iteration["status"] = IterationStatus.AWAITING_BUG_FIX
             await self.send_message("The bug is found - I'm  attempting to fix it.")

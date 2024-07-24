@@ -33,7 +33,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
     agent_type = "troubleshooter"
     display_name = "Troubleshooter"
 
-    async def run(self):
+    async def run(self) -> AgentResponse:
         if self.current_state.unfinished_iterations:
             if self.current_state.current_iteration.get("status") == IterationStatus.FIND_SOLUTION:
                 return await self.propose_solution()
@@ -98,7 +98,9 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
                 await self.trace_loop("loop-feedback")
         elif bug_report is not None:
             iteration_status = IterationStatus.HUNTING_FOR_BUG
-        elif change_description is not None:
+        else:
+            # should be - elif change_description is not None: - but to prevent bugs with the extension
+            # this might be caused if we show the input field instead of buttons
             iteration_status = IterationStatus.FIND_SOLUTION
 
 
