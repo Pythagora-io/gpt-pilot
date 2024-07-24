@@ -1,0 +1,13 @@
+{% if read_files %}
+Here are the files that you wanted to read:
+---START_OF_FILES---
+{% for file in read_files %}
+File **`{{ file.path }}`** ({{file.content.content.splitlines()|length}} lines of code):
+```
+{{ file.content.content }}```
+
+{% endfor %}
+---END_OF_FILES---
+{% endif %}
+
+{% include "partials/filter_files_actions.prompt" %}

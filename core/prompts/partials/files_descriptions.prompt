@@ -1,0 +1,4 @@
+These files are currently implemented in the project:
+{% for file in state.files %}
+* `{{ file.path }}{% if file.meta.get("description") %}: {{file.meta.description}}{% endif %}`
+{% endfor %}

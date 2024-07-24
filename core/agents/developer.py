@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
+from core.agents.mixins import RelevantFilesMixin
 from core.agents.response import AgentResponse, ResponseType
 from core.db.models.project_state import TaskStatus
 from core.db.models.specification import Complexity
@@ -57,11 +58,7 @@ class TaskSteps(BaseModel):
     steps: list[Step]
 
 
-class RelevantFiles(BaseModel):
-    relevant_files: list[str] = Field(description="List of relevant files for the current task.")
-
-
-class Developer(BaseAgent):
+class Developer(RelevantFilesMixin, BaseAgent):
     agent_type = "developer"
     display_name = "Developer"
 
@@ -141,7 +138,6 @@ class Developer(BaseAgent):
             AgentConvo(self)
             .template(
                 "iteration",
-                current_task=current_task,
                 user_feedback=user_feedback,
                 user_feedback_qa=None,
                 next_solution_to_try=None,
@@ -224,31 +220,6 @@ class Developer(BaseAgent):
                 "num_epics": len(self.current_state.epics),
             },
         )
-        return AgentResponse.done(self)
-
-    async def get_relevant_files(
-        self, user_feedback: Optional[str] = None, solution_description: Optional[str] = None
-    ) -> AgentResponse:
-        log.debug("Getting relevant files for the current task")
-        await self.send_message("Figuring out which project files are relevant for the next task ...")
-
-        llm = self.get_llm()
-        convo = (
-            AgentConvo(self)
-            .template(
-                "filter_files",
-                current_task=self.current_state.current_task,
-                user_feedback=user_feedback,
-                solution_description=solution_description,
-            )
-            .require_schema(RelevantFiles)
-        )
-
-        llm_response: list[str] = await llm(convo, parser=JSONParser(RelevantFiles), temperature=0)
-
-        existing_files = {file.path for file in self.current_state.files}
-        self.next_state.relevant_files = [path for path in llm_response.relevant_files if path in existing_files]
-
         return AgentResponse.done(self)
 
     def set_next_steps(self, response: TaskSteps, source: str):

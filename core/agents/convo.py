@@ -105,3 +105,7 @@ class AgentConvo(Convo):
             f"YOU MUST NEVER add any additional fields to your response, and NEVER add additional preamble like 'Here is your JSON'."
         )
         return self
+
+    def remove_last_x_messages(self, x: int) -> "AgentConvo":
+        self.messages = self.messages[:-x]
+        return self
