@@ -38,6 +38,7 @@ class IterationStatus:
     AWAITING_USER_TEST = "awaiting_user_test"
     AWAITING_BUG_FIX = "awaiting_bug_fix"
     AWAITING_BUG_REPRODUCTION = "awaiting_bug_reproduction"
+    IMPLEMENT_SOLUTION = "implement_solution"
     FIND_SOLUTION = "find_solution"
     PROBLEM_SOLVER = "problem_solver"
     DONE = "done"

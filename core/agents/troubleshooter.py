@@ -50,7 +50,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         llm_solution = await self.find_solution(user_feedback, user_feedback_qa=user_feedback_qa, bug_hunting_cycles=bug_hunting_cycles)
 
         self.next_state.current_iteration["description"] = llm_solution
-        self.next_state.current_iteration["status"] = IterationStatus.AWAITING_BUG_FIX
+        self.next_state.current_iteration["status"] = IterationStatus.IMPLEMENT_SOLUTION
         self.next_state.flag_iterations_as_modified()
 
         return AgentResponse.done(self)
@@ -93,8 +93,8 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
                 # If we already have alternative solutions, it means we were already in a loop.
                 return self.try_next_alternative_solution(user_feedback, user_feedback_qa)
             else:
-                # Newly detected loop, set up an empty new iteration to trigger ProblemSolver
-                iteration_status = IterationStatus.AWAITING_BUG_FIX
+                # Newly detected loop
+                iteration_status = IterationStatus.PROBLEM_SOLVER
                 await self.trace_loop("loop-feedback")
         elif bug_report is not None:
             iteration_status = IterationStatus.HUNTING_FOR_BUG

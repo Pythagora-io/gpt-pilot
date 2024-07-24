@@ -231,7 +231,8 @@ class Orchestrator(BaseAgent):
                 # Ask the Logger to check if more logs in the code are needed
                 return BugHunter(self.state_manager, self.ui)
             elif (state.current_iteration["status"] == IterationStatus.AWAITING_LOGGING or
-                  state.current_iteration["status"] == IterationStatus.AWAITING_BUG_FIX):
+                  state.current_iteration["status"] == IterationStatus.AWAITING_BUG_FIX or
+                  state.current_iteration["status"] == IterationStatus.IMPLEMENT_SOLUTION):
                 # Ask the Logger to ask user to test new logs
                 return Developer(self.state_manager, self.ui)
             elif (state.current_iteration["status"] == IterationStatus.AWAITING_USER_TEST or
@@ -241,9 +242,6 @@ class Orchestrator(BaseAgent):
             elif state.current_iteration["status"] == IterationStatus.FIND_SOLUTION:
                 # Find solution to the iteration problem
                 return Troubleshooter(self.state_manager, self.ui)
-            # elif state.current_iteration["status"] == IterationStatus.AWAITING_BUG_FIX:
-            #     # Break down the next iteration into steps
-            #     return Developer(self.state_manager, self.ui)
             elif state.current_iteration["status"] == IterationStatus.PROBLEM_SOLVER:
                 # Call Problem Solver if the user said "I'm stuck in a loop"
                 return ProblemSolver(self.state_manager, self.ui)

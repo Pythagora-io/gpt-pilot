@@ -99,7 +99,7 @@ class ProblemSolver(IterationPromptMixin, BaseAgent):
         self.next_state_iteration["alternative_solutions"][index]["tried"] = True
         self.next_state_iteration["description"] = llm_solution
         self.next_state_iteration["attempts"] = self.iteration["attempts"] + 1
-        self.next_state_iteration["status"] = IterationStatus.AWAITING_BUG_FIX
+        self.next_state_iteration["status"] = IterationStatus.PROBLEM_SOLVER
         self.next_state.flag_iterations_as_modified()
         return AgentResponse.done(self)
 
