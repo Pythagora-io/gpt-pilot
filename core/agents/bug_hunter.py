@@ -20,35 +20,6 @@ class StepType(str, Enum):
     GET_ADDITIONAL_FILES = "get_additional_files"
 
 
-class Log(BaseModel):
-    filePath: str
-    referenceCodeSnippet: str = Field(description="Five lines of code before the line where the log needs to be added. Make sure that this contains **ONLY** the code that is currently written in the file. It must not contain the log that you want to add.")
-    log: str
-
-
-class AddLog(BaseModel):
-    type: Literal[StepType.ADD_LOG] = StepType.ADD_LOG
-    logsToAdd: list[Log]
-
-
-class ExplainProblem(BaseModel):
-    type: Literal[StepType.EXPLAIN_PROBLEM] = StepType.EXPLAIN_PROBLEM
-    problem_explanation: str
-
-
-class GetAdditionalFiles(BaseModel):
-    type: Literal[StepType.GET_ADDITIONAL_FILES] = StepType.GET_ADDITIONAL_FILES
-    filePath: str
-
-
-# TODO enable LLM to ask for more files
-class LoggingOptions(BaseModel):
-    decision: Annotated[
-        Union[AddLog, ExplainProblem, GetAdditionalFiles],
-        Field(discriminator="type"),
-    ]
-
-
 class HuntConclusionType(str, Enum):
     ADD_LOGS = magic_words.ADD_LOGS
     PROBLEM_IDENTIFIED = magic_words.PROBLEM_IDENTIFIED

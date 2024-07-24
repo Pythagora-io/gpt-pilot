@@ -26,6 +26,5 @@ Focus on solving this issue in the following way:
 {{ next_solution_to_try }}
 ```
 {% endif %}
-{#{% include "partials/doc_snippets.prompt" %}#}
 
 Based on this information, you need to tell me in 2-3 sentences how can I reproduce the issue that the user experienced.
