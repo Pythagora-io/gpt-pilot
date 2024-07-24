@@ -1,0 +1,12 @@
+{% if backend_logs is not none %}Here are the logs we added to the backend:
+```
+{{ backend_logs }}
+```
+{% endif %}{% if frontend_logs is not none %}
+Here are the logs we added to the frontend:
+```
+{{ frontend_logs }}
+```
+{% endif %}{% if fix_attempted %}
+The problem wasn't solved with the last changes. You have 2 options - to tell me exactly where is the problem happening or to add more logs to better determine where is the problem. If you think we should add more logs around the code to better understand the problem, tell me code snippets in which we should add the logs. If you think you know where the issue is, don't add any new logs but explain what log print tell point you to the problem, what the problem is, what is the solution to this problem and how the solution will fix the problem. What is your answer?
+{% endif %}

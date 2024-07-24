@@ -30,6 +30,19 @@ class TaskStatus:
     SKIPPED = "skipped"
 
 
+class IterationStatus:
+    """Status of an iteration."""
+
+    HUNTING_FOR_BUG = "check_logs"
+    AWAITING_LOGGING = "awaiting_logging"
+    AWAITING_USER_TEST = "awaiting_user_test"
+    AWAITING_BUG_FIX = "awaiting_bug_fix"
+    AWAITING_BUG_REPRODUCTION = "awaiting_bug_reproduction"
+    FIND_SOLUTION = "find_solution"
+    PROBLEM_SOLVER = "problem_solver"
+    DONE = "done"
+
+
 class ProjectState(Base):
     __tablename__ = "project_states"
     __table_args__ = (
@@ -105,7 +118,7 @@ class ProjectState(Base):
 
         :return: List of unfinished iterations.
         """
-        return [iteration for iteration in self.iterations if not iteration.get("completed")]
+        return [iteration for iteration in self.iterations if iteration.get("status") != IterationStatus.DONE]
 
     @property
     def current_iteration(self) -> Optional[dict]:
@@ -285,7 +298,7 @@ class ProjectState(Base):
             raise ValueError("Current state is read-only (already has a next state).")
 
         log.debug(f"Completing iteration {self.unfinished_iterations[0]}")
-        self.unfinished_iterations[0]["completed"] = True
+        self.unfinished_iterations[0]["status"] = IterationStatus.DONE
         self.flag_iterations_as_modified()
 
     def flag_iterations_as_modified(self):

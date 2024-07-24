@@ -3,6 +3,7 @@ from uuid import uuid4
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse
+from core.db.models.project_state import IterationStatus
 from core.log import get_logger
 
 log = get_logger(__name__)
@@ -110,7 +111,7 @@ class ErrorHandler(BaseAgent):
                 "description": llm_response,
                 "alternative_solutions": [],
                 "attempts": 1,
-                "completed": False,
+                "status": IterationStatus.HUNTING_FOR_BUG,
             }
         ]
         # TODO: maybe have ProjectState.finished_steps as well? would make the debug/ran_command prompts nicer too

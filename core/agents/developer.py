@@ -1,60 +1,19 @@
-from enum import Enum
-from typing import Annotated, Literal, Optional, Union
+from typing import Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
+from core.agents.mixins import TaskSteps
 from core.agents.response import AgentResponse, ResponseType
-from core.db.models.project_state import TaskStatus
+from core.db.models.project_state import IterationStatus, TaskStatus
 from core.db.models.specification import Complexity
 from core.llm.parser import JSONParser
 from core.log import get_logger
 from core.telemetry import telemetry
 
 log = get_logger(__name__)
-
-
-class StepType(str, Enum):
-    COMMAND = "command"
-    SAVE_FILE = "save_file"
-    HUMAN_INTERVENTION = "human_intervention"
-
-
-class CommandOptions(BaseModel):
-    command: str = Field(description="Command to run")
-    timeout: int = Field(description="Timeout in seconds")
-    success_message: str = ""
-
-
-class SaveFileOptions(BaseModel):
-    path: str
-
-
-class SaveFileStep(BaseModel):
-    type: Literal[StepType.SAVE_FILE] = StepType.SAVE_FILE
-    save_file: SaveFileOptions
-
-
-class CommandStep(BaseModel):
-    type: Literal[StepType.COMMAND] = StepType.COMMAND
-    command: CommandOptions
-
-
-class HumanInterventionStep(BaseModel):
-    type: Literal[StepType.HUMAN_INTERVENTION] = StepType.HUMAN_INTERVENTION
-    human_intervention_description: str
-
-
-Step = Annotated[
-    Union[SaveFileStep, CommandStep, HumanInterventionStep],
-    Field(discriminator="type"),
-]
-
-
-class TaskSteps(BaseModel):
-    steps: list[Step]
 
 
 class RelevantFiles(BaseModel):
@@ -109,6 +68,17 @@ class Developer(BaseAgent):
             n_tasks = 1
             log.debug(f"Breaking down the task review feedback {task_review_feedback}")
             await self.send_message("Breaking down the task review feedback...")
+        elif (self.current_state.current_iteration["status"] == IterationStatus.AWAITING_BUG_FIX or
+              self.current_state.current_iteration["status"] == IterationStatus.AWAITING_LOGGING):
+            iteration = self.current_state.current_iteration
+            current_task["task_review_feedback"] = None
+
+            description = iteration["bug_hunting_cycles"][-1]["human_readable_instructions"]
+            user_feedback = iteration["user_feedback"]
+            source = "bug_hunt"
+            n_tasks = len(self.next_state.iterations)
+            log.debug(f"Breaking down the logging cycle {description}")
+            await self.send_message("Breaking down the current iteration logging cycle ...")
         else:
             iteration = self.current_state.current_iteration
             current_task["task_review_feedback"] = None
@@ -156,8 +126,14 @@ class Developer(BaseAgent):
         self.set_next_steps(response, source)
 
         if iteration:
-            self.next_state.complete_iteration()
-            self.next_state.action = f"Troubleshooting #{len(self.current_state.iterations)}"
+            # fixme please :cry:
+            if ("status" in iteration) and (iteration["status"] == IterationStatus.AWAITING_BUG_FIX or
+                    iteration["status"] == IterationStatus.AWAITING_LOGGING):
+                self.next_state.current_iteration["status"] = IterationStatus.AWAITING_BUG_REPRODUCTION if (
+                        iteration["status"] == IterationStatus.AWAITING_LOGGING) else IterationStatus.AWAITING_USER_TEST
+            else:
+                self.next_state.complete_iteration()
+                self.next_state.action = f"Troubleshooting #{len(self.current_state.iterations)}"
         else:
             self.next_state.action = "Task review feedback"
 
@@ -265,7 +241,9 @@ class Developer(BaseAgent):
             }
             for step in response.steps
         ]
-        if len(self.next_state.unfinished_steps) > 0 and source != "review":
+        if (len(self.next_state.unfinished_steps) > 0 and
+                source != "review" and
+                self.next_state.current_iteration["status"] != IterationStatus.AWAITING_LOGGING):
             self.next_state.steps += [
                 # TODO: add refactor step here once we have the refactor agent
                 {

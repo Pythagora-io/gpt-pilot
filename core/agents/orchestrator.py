@@ -2,6 +2,7 @@ from typing import Optional
 
 from core.agents.architect import Architect
 from core.agents.base import BaseAgent
+from core.agents.bug_hunter import BugHunter
 from core.agents.code_monkey import CodeMonkey
 from core.agents.code_reviewer import CodeReviewer
 from core.agents.developer import Developer
@@ -18,7 +19,7 @@ from core.agents.task_reviewer import TaskReviewer
 from core.agents.tech_lead import TechLead
 from core.agents.tech_writer import TechnicalWriter
 from core.agents.troubleshooter import Troubleshooter
-from core.db.models.project_state import TaskStatus
+from core.db.models.project_state import IterationStatus, TaskStatus
 from core.log import get_logger
 from core.telemetry import telemetry
 from core.ui.base import ProjectStage
@@ -226,12 +227,25 @@ class Orchestrator(BaseAgent):
             return self.create_agent_for_step(state.current_step)
 
         if state.unfinished_iterations:
-            if state.current_iteration["description"]:
-                # Break down the next iteration into steps
+            if state.current_iteration["status"] == IterationStatus.HUNTING_FOR_BUG:
+                # Ask the Logger to check if more logs in the code are needed
+                return BugHunter(self.state_manager, self.ui)
+            elif (state.current_iteration["status"] == IterationStatus.AWAITING_LOGGING or
+                  state.current_iteration["status"] == IterationStatus.AWAITING_BUG_FIX):
+                # Ask the Logger to ask user to test new logs
                 return Developer(self.state_manager, self.ui)
-            else:
-                # We need to iterate over the current task but there's no solution, as Pythagora
-                # is stuck in a loop, and ProblemSolver needs to find alternative solutions.
+            elif (state.current_iteration["status"] == IterationStatus.AWAITING_USER_TEST or
+                  state.current_iteration["status"] == IterationStatus.AWAITING_BUG_REPRODUCTION):
+                # Ask the Logger to ask user to test new logs
+                return BugHunter(self.state_manager, self.ui)
+            elif state.current_iteration["status"] == IterationStatus.FIND_SOLUTION:
+                # Find solution to the iteration problem
+                return Troubleshooter(self.state_manager, self.ui)
+            # elif state.current_iteration["status"] == IterationStatus.AWAITING_BUG_FIX:
+            #     # Break down the next iteration into steps
+            #     return Developer(self.state_manager, self.ui)
+            elif state.current_iteration["status"] == IterationStatus.PROBLEM_SOLVER:
+                # Call Problem Solver if the user said "I'm stuck in a loop"
                 return ProblemSolver(self.state_manager, self.ui)
 
         # We have just finished the task, call Troubleshooter to ask the user to review

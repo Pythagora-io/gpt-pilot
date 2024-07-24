@@ -9,7 +9,7 @@ from core.agents.mixins import IterationPromptMixin
 from core.agents.response import AgentResponse
 from core.config import ROUTE_FILES_AGENT_NAME
 from core.db.models.file import File
-from core.db.models.project_state import TaskStatus
+from core.db.models.project_state import IterationStatus, TaskStatus
 from core.llm.parser import JSONParser, OptionalCodeBlockParser
 from core.log import get_logger
 from core.telemetry import telemetry
@@ -33,7 +33,29 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
     agent_type = "troubleshooter"
     display_name = "Troubleshooter"
 
-    async def run(self) -> AgentResponse:
+    async def run(self):
+        if self.current_state.unfinished_iterations:
+            if self.current_state.current_iteration.get("status") == IterationStatus.FIND_SOLUTION:
+                return await self.propose_solution()
+            else:
+                raise ValueError("There is unfinished iteration but it's not in FIND_SOLUTION state.")
+        else:
+            return await self.create_iteration()
+
+    async def propose_solution(self) -> AgentResponse:
+        user_feedback = self.current_state.current_iteration.get("user_feedback")
+        user_feedback_qa = self.current_state.current_iteration.get("user_feedback_qa")
+        bug_hunting_cycles = self.current_state.current_iteration.get("bug_hunting_cycles")
+
+        llm_solution = await self.find_solution(user_feedback, user_feedback_qa=user_feedback_qa, bug_hunting_cycles=bug_hunting_cycles)
+
+        self.next_state.current_iteration["description"] = llm_solution
+        self.next_state.current_iteration["status"] = IterationStatus.AWAITING_BUG_FIX
+        self.next_state.flag_iterations_as_modified()
+
+        return AgentResponse.done(self)
+
+    async def create_iteration(self) -> AgentResponse:
         run_command = await self.get_run_command()
 
         user_instructions = self.current_state.current_task.get("test_instructions")
@@ -54,7 +76,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         # use "current_iteration" here
         last_iteration = self.current_state.iterations[-1] if len(self.current_state.iterations) >= 3 else None
 
-        should_iterate, is_loop, user_feedback = await self.get_user_feedback(
+        should_iterate, is_loop, bug_report, change_description = await self.get_user_feedback(
             run_command,
             user_instructions,
             last_iteration is not None,
@@ -63,6 +85,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
             # User tested and reported no problems, we're done with the task
             return await self.complete_task()
 
+        user_feedback = bug_report or change_description
         user_feedback_qa = await self.generate_bug_report(run_command, user_instructions, user_feedback)
 
         if is_loop:
@@ -71,24 +94,30 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
                 return self.try_next_alternative_solution(user_feedback, user_feedback_qa)
             else:
                 # Newly detected loop, set up an empty new iteration to trigger ProblemSolver
-                llm_solution = ""
+                iteration_status = IterationStatus.AWAITING_BUG_FIX
                 await self.trace_loop("loop-feedback")
-        else:
-            llm_solution = await self.find_solution(user_feedback, user_feedback_qa=user_feedback_qa)
+        elif bug_report is not None:
+            iteration_status = IterationStatus.HUNTING_FOR_BUG
+        elif change_description is not None:
+            iteration_status = IterationStatus.FIND_SOLUTION
+
 
         self.next_state.iterations = self.current_state.iterations + [
             {
                 "id": uuid4().hex,
                 "user_feedback": user_feedback,
                 "user_feedback_qa": user_feedback_qa,
-                "description": llm_solution,
+                "description": change_description,
                 "alternative_solutions": [],
                 # FIXME - this is incorrect if this is a new problem; otherwise we could
                 # just count the iterations
                 "attempts": 1,
-                "completed": False,
+                "status": iteration_status,
+                "bug_hunting_cycles": [],
             }
         ]
+
+        self.next_state.flag_iterations_as_modified()
         if len(self.next_state.iterations) == LOOP_THRESHOLD:
             await self.trace_loop("loop-start")
 
@@ -187,6 +216,11 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         feedback (eg. if they just clicked on "Continue" or "I'm stuck in a loop").
         """
 
+        bug_report = None
+        change_description = None
+        is_loop = False
+        should_iterate = True
+
         test_message = "Can you check if the app works please?"
         if user_instructions:
             hint = " Here is a description of what should be working:\n\n" + user_instructions
@@ -194,15 +228,19 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         if run_command:
             await self.ui.send_run_command(run_command)
 
-        buttons = {"continue": "continue"}
+        buttons = {
+            "continue": "Everything works",
+            "change": "I want to make a change",
+            "bug": "There is an issue"
+        }
         if last_iteration:
             buttons["loop"] = "I'm stuck in a loop"
 
-        user_response = await self.ask_question(test_message, buttons=buttons, default="continue", hint=hint)
+        user_response = await self.ask_question(test_message, buttons=buttons, default="continue", buttons_only=True, hint=hint)
         if user_response.button == "continue" or user_response.cancelled:
-            return False, False, ""
+            should_iterate = False
 
-        if user_response.button == "loop":
+        elif user_response.button == "loop":
             await telemetry.trace_code_event(
                 "stuck-in-loop",
                 {
@@ -218,16 +256,23 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
                     },
                 },
             )
-            return True, True, ""
+            is_loop = True
 
-        return True, False, user_response.text
+        elif user_response.button == "change":
+            user_description = await self.ask_question("Please describe the change you want to make (one at the time please)")
+            change_description = user_description.text
+
+        elif user_response.button == "bug":
+            user_description = await self.ask_question("Please describe the issue you found (one at the time please)")
+            bug_report = user_description.text
+
+        return should_iterate, is_loop, bug_report, change_description
 
     def try_next_alternative_solution(self, user_feedback: str, user_feedback_qa: list[str]) -> AgentResponse:
         """
         Call the ProblemSolver to try an alternative solution.
 
-        Stores the user feedback and sets iteration state (not completed, no description)
-        so that ProblemSolver will be triggered.
+        Stores the user feedback and sets iteration state so that ProblemSolver will be triggered.
 
         :param user_feedback: User feedback to store in the iteration state.
         :param user_feedback_qa: Additional questions/answers about the problem.
@@ -238,7 +283,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         next_state_iteration["user_feedback"] = user_feedback
         next_state_iteration["user_feedback_qa"] = user_feedback_qa
         next_state_iteration["attempts"] += 1
-        next_state_iteration["completed"] = False
+        next_state_iteration["status"] = IterationStatus.PROBLEM_SOLVER
         self.next_state.flag_iterations_as_modified()
         self.next_state.action = f"Alternative solution (attempt #{next_state_iteration['attempts']})"
         return AgentResponse.done(self)

@@ -1,0 +1,43 @@
+Ok, now, take your response and convert it to a list of actionable steps that will be executed by a machine.
+Analyze the entire message, think step by step and make sure that you don't omit any information
+when converting this message to steps.
+
+Each step can be either:
+
+* `command` - command to run (must be able to run on a {{ os }} machine, assume current working directory is project root folder)
+* `save_file` - create or update ONE file (only provide file path, not contents)
+* `human_intervention` - if you need the human to do something, use this type of step and explain in details what you want the human to do. NEVER use `human_intervention` for testing, as testing will be done separately by a dedicated QA after all the steps are done. Also you MUST NOT use `human_intervention` to ask the human to write or review code.
+
+**IMPORTANT**: If multiple changes are required for same file, you must provide single `save_file` step for each file.
+
+{% include "partials/file_naming.prompt" %}
+{% include "partials/relative_paths.prompt" %}
+{% include "partials/execution_order.prompt" %}
+{% include "partials/human_intervention_explanation.prompt" %}
+
+**IMPORTANT**: Remember, NEVER output human intervention steps to do manual tests or coding tasks, even if the previous message asks for it! The testing will be done *after* these steps and you MUST NOT include testing in these steps.
+
+Examples:
+------------------------example_1---------------------------
+```
+{
+  "tasks": [
+    {
+      "type": "save_file",
+      "save_file": {
+        "path": "server.js"
+      },
+    },
+    {
+      "type": "command",
+      "command": {
+        "command": "mv index.js public/index.js"",
+        "timeout": 5,
+        "success_message": "",
+        "command_id": "move_index_file"
+      }
+    }
+  ]
+}
+```
+------------------------end_of_example_1---------------------------
