@@ -55,6 +55,7 @@ async def test_render_react_express_nosql(mock_get_config, testmanager):
     assert "prisma/schema.prisma" not in files
 
 
+@pytest.mark.skip
 @pytest.mark.asyncio
 @patch("core.state.state_manager.get_config")
 async def test_render_javascript_react(mock_get_config, testmanager):

@@ -19,7 +19,7 @@ async def test_run(agentcontext):
         side_effect=[
             TemplateSelection(
                 architecture="dummy arch",
-                template="javascript_react",
+                template="node_express_mongoose",
             ),
             Architecture(
                 system_dependencies=[
@@ -52,4 +52,4 @@ async def test_run(agentcontext):
     assert sm.current_state.specification.architecture == "dummy arch"
     assert sm.current_state.specification.system_dependencies[0]["name"] == "docker"
     assert sm.current_state.specification.package_dependencies[0]["name"] == "express"
-    assert "javascript_react" in sm.current_state.specification.templates
+    assert "node_express_mongoose" in sm.current_state.specification.templates
