@@ -68,8 +68,7 @@ class Developer(BaseAgent):
             n_tasks = 1
             log.debug(f"Breaking down the task review feedback {task_review_feedback}")
             await self.send_message("Breaking down the task review feedback...")
-        elif (self.current_state.current_iteration["status"] == IterationStatus.AWAITING_BUG_FIX or
-              self.current_state.current_iteration["status"] == IterationStatus.AWAITING_LOGGING):
+        elif self.current_state.current_iteration["status"] in (IterationStatus.AWAITING_BUG_FIX, IterationStatus.AWAITING_LOGGING):
             iteration = self.current_state.current_iteration
             current_task["task_review_feedback"] = None
 
@@ -126,14 +125,16 @@ class Developer(BaseAgent):
         self.set_next_steps(response, source)
 
         if iteration:
-            # fixme please :cry:
-            if ("status" in iteration) and (iteration["status"] == IterationStatus.AWAITING_BUG_FIX or
-                    iteration["status"] == IterationStatus.AWAITING_LOGGING):
-                self.next_state.current_iteration["status"] = IterationStatus.AWAITING_BUG_REPRODUCTION if (
-                        iteration["status"] == IterationStatus.AWAITING_LOGGING) else IterationStatus.AWAITING_USER_TEST
-            else:
+            if "status" not in iteration or (iteration["status"] in (IterationStatus.AWAITING_USER_TEST, IterationStatus.AWAITING_BUG_REPRODUCTION)):
+                # This is just a support for old iterations that don't have status
                 self.next_state.complete_iteration()
                 self.next_state.action = f"Troubleshooting #{len(self.current_state.iterations)}"
+            elif iteration["status"] == IterationStatus.AWAITING_BUG_FIX:
+                # If bug fixing is done, ask user to test again
+                self.next_state.current_iteration["status"] = IterationStatus.AWAITING_USER_TEST
+            elif iteration["status"] == IterationStatus.AWAITING_LOGGING:
+                # If logging is done, ask user to reproduce the bug
+                self.next_state.current_iteration["status"] = IterationStatus.AWAITING_BUG_REPRODUCTION
         else:
             self.next_state.action = "Task review feedback"
 

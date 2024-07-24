@@ -42,9 +42,9 @@ class BugHunter(BaseAgent):
             # TODO determine how to find a bug (eg. check in db, ask user a question, etc.)
             return await self.check_logs()
         elif current_iteration["status"] == IterationStatus.AWAITING_USER_TEST:
-            return await self.ask_user_to_test()
+            return await self.ask_user_to_test(False, True)
         elif current_iteration["status"] == IterationStatus.AWAITING_BUG_REPRODUCTION:
-            return await self.ask_user_to_test()
+            return await self.ask_user_to_test(True, False)
 
     async def get_bug_reproduction_instructions(self):
         llm = self.get_llm()
@@ -117,12 +117,12 @@ class BugHunter(BaseAgent):
         self.next_state.flag_iterations_as_modified()
         return AgentResponse.done(self)
 
-    async def ask_user_to_test(self):
+    async def ask_user_to_test(self, awaiting_bug_reproduction: bool = False, awaiting_user_test: bool = False):
 
-        reproduce_bug_and_get_logs = self.current_state.current_iteration["status"] == IterationStatus.AWAITING_BUG_REPRODUCTION
+        reproduce_bug_and_get_logs = awaiting_bug_reproduction
 
         await self.send_message("You can reproduce the bug like this:\n\n" + self.current_state.current_iteration["bug_reproduction_description"])
-        if self.current_state.current_iteration["status"] == IterationStatus.AWAITING_USER_TEST:
+        if awaiting_user_test:
             user_feedback = await self.ask_question(
                 "Is the bug you reported fixed now?",
                 buttons={"yes": "Yes, the issue is fixed", "no": "No"},
