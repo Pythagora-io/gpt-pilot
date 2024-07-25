@@ -7,7 +7,6 @@ from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.mixins import IterationPromptMixin
 from core.agents.response import AgentResponse
-from core.config import ROUTE_FILES_AGENT_NAME
 from core.db.models.file import File
 from core.db.models.project_state import IterationStatus, TaskStatus
 from core.llm.parser import JSONParser, OptionalCodeBlockParser
@@ -47,7 +46,9 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         user_feedback_qa = self.current_state.current_iteration.get("user_feedback_qa")
         bug_hunting_cycles = self.current_state.current_iteration.get("bug_hunting_cycles")
 
-        llm_solution = await self.find_solution(user_feedback, user_feedback_qa=user_feedback_qa, bug_hunting_cycles=bug_hunting_cycles)
+        llm_solution = await self.find_solution(
+            user_feedback, user_feedback_qa=user_feedback_qa, bug_hunting_cycles=bug_hunting_cycles
+        )
 
         self.next_state.current_iteration["description"] = llm_solution
         self.next_state.current_iteration["status"] = IterationStatus.IMPLEMENT_SOLUTION
@@ -102,7 +103,6 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
             # should be - elif change_description is not None: - but to prevent bugs with the extension
             # this might be caused if we show the input field instead of buttons
             iteration_status = IterationStatus.FIND_SOLUTION
-
 
         self.next_state.iterations = self.current_state.iterations + [
             {
@@ -189,7 +189,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
     async def _get_route_files(self) -> list[File]:
         """Returns the list of file paths that have routes defined in them."""
 
-        llm = self.get_llm(ROUTE_FILES_AGENT_NAME)
+        llm = self.get_llm()
         convo = AgentConvo(self).template("get_route_files").require_schema(RouteFilePaths)
         file_list = await llm(convo, parser=JSONParser(RouteFilePaths))
         route_files: set[str] = set(file_list.files)
@@ -230,15 +230,13 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         if run_command:
             await self.ui.send_run_command(run_command)
 
-        buttons = {
-            "continue": "Everything works",
-            "change": "I want to make a change",
-            "bug": "There is an issue"
-        }
+        buttons = {"continue": "Everything works", "change": "I want to make a change", "bug": "There is an issue"}
         if last_iteration:
             buttons["loop"] = "I'm stuck in a loop"
 
-        user_response = await self.ask_question(test_message, buttons=buttons, default="continue", buttons_only=True, hint=hint)
+        user_response = await self.ask_question(
+            test_message, buttons=buttons, default="continue", buttons_only=True, hint=hint
+        )
         if user_response.button == "continue" or user_response.cancelled:
             should_iterate = False
 
@@ -261,7 +259,9 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
             is_loop = True
 
         elif user_response.button == "change":
-            user_description = await self.ask_question("Please describe the change you want to make (one at the time please)")
+            user_description = await self.ask_question(
+                "Please describe the change you want to make (one at the time please)"
+            )
             change_description = user_description.text
 
         elif user_response.button == "bug":

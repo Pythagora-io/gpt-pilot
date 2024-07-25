@@ -34,8 +34,8 @@ IGNORE_SIZE_THRESHOLD = 50000  # 50K+ files are ignored by default
 
 # Agents with sane setup in the default configuration
 DEFAULT_AGENT_NAME = "default"
+CODE_MONKEY_AGENT_NAME = "CodeMonkey"
 DESCRIBE_FILES_AGENT_NAME = "CodeMonkey.describe_files"
-ROUTE_FILES_AGENT_NAME = "Troubleshooter.get_route_files"
 CHECK_LOGS_AGENT_NAME = "BugHunter.check_logs"
 
 # Endpoint for the external documentation
@@ -112,7 +112,7 @@ class AgentLLMConfig(_StrictModel):
     """
 
     provider: LLMProvider = LLMProvider.OPENAI
-    model: str = Field(description="Model to use", default="gpt-4-0125-preview")
+    model: str = Field(description="Model to use", default="gpt-4o-2024-05-13")
     temperature: float = Field(
         default=0.5,
         description="Temperature to use for sampling",
@@ -310,9 +310,9 @@ class Config(_StrictModel):
     agent: dict[str, AgentLLMConfig] = Field(
         default={
             DEFAULT_AGENT_NAME: AgentLLMConfig(),
+            CODE_MONKEY_AGENT_NAME: AgentLLMConfig(model="gpt-4-0125-preview", temperature=0.0),
             DESCRIBE_FILES_AGENT_NAME: AgentLLMConfig(model="gpt-3.5-turbo", temperature=0.0),
             CHECK_LOGS_AGENT_NAME: AgentLLMConfig(model="claude-3-5-sonnet-20240620", temperature=0.0),
-            ROUTE_FILES_AGENT_NAME: AgentLLMConfig(model="gpt-4o", temperature=0.0),
         }
     )
     prompt: PromptConfig = PromptConfig()

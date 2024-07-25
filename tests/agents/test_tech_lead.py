@@ -31,7 +31,7 @@ async def test_create_initial_epic(agentcontext):
 async def test_apply_project_template(agentcontext):
     sm, _, ui, _ = agentcontext
 
-    sm.current_state.specification.templates = {"javascript_react": {}}
+    sm.current_state.specification.templates = {"node_express_mongoose": {}}
     sm.current_state.epics = [{"name": "Initial Project"}]
 
     await sm.commit()

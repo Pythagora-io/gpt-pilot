@@ -44,7 +44,7 @@ Then, upon implementing these changes, your colleague came back with the followi
 {% endif %}
 
 {% if user_input != '' %}
-Your colleague who is testing the app "{{ name }}" sent you this report now:
+Your colleague who is testing the app "{{ state.branch.project.name }}" sent you this report now:
 ```
 {{ user_input }}
 ```
