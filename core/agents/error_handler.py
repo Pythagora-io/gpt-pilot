@@ -112,6 +112,7 @@ class ErrorHandler(BaseAgent):
                 "alternative_solutions": [],
                 "attempts": 1,
                 "status": IterationStatus.HUNTING_FOR_BUG,
+                "bug_hunting_cycles": [],
             }
         ]
         # TODO: maybe have ProjectState.finished_steps as well? would make the debug/ran_command prompts nicer too

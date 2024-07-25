@@ -72,7 +72,7 @@ class BugHunter(BaseAgent):
             next_solution_to_try=None,
         )
 
-        for hunting_cycle in self.current_state.current_iteration["bug_hunting_cycles"]:
+        for hunting_cycle in self.current_state.current_iteration.get("bug_hunting_cycles", []):
             convo = convo.assistant(hunting_cycle["human_readable_instructions"]).template(
                 "log_data",
                 backend_logs=hunting_cycle["backend_logs"],
@@ -116,8 +116,6 @@ class BugHunter(BaseAgent):
         return AgentResponse.done(self)
 
     async def ask_user_to_test(self, awaiting_bug_reproduction: bool = False, awaiting_user_test: bool = False):
-        reproduce_bug_and_get_logs = awaiting_bug_reproduction
-
         await self.send_message(
             "You can reproduce the bug like this:\n\n"
             + self.current_state.current_iteration["bug_reproduction_description"]
@@ -136,9 +134,9 @@ class BugHunter(BaseAgent):
             if user_feedback.button == "yes":
                 self.next_state.complete_iteration()
             else:
-                reproduce_bug_and_get_logs = True
+                awaiting_bug_reproduction = True
 
-        if reproduce_bug_and_get_logs:
+        if awaiting_bug_reproduction:
             # TODO how can we get FE and BE logs automatically?
             backend_logs = await self.ask_question(
                 "Please do exactly what you did in the last iteration, paste **BACKEND** logs here and click CONTINUE.",
