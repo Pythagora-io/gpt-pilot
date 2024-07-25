@@ -26,18 +26,9 @@ Focus on solving this issue in the following way:
 {{ next_solution_to_try }}
 ```
 {% endif %}
-{#{% include "partials/doc_snippets.prompt" %}#}
 
-Based on this information, you need to figure out where is the problem that the user described. You have 2 options - to tell me exactly where is the problem happening or to add more logs to better determine where is the problem. If you think we should add more logs around the code to better understand the problem, tell me code snippets in which we should add the logs. If you think you know where the issue is, don't add any new logs but explain what log print tell point you to the problem, what the problem is, what is the solution to this problem and how the solution will fix the problem. What is your answer?
-
-{#**IMPORTANT**
-I you decide to add logs, start the message with "{{ magic_words.ADD_LOGS }}". Make sure that the log starts with "PYTHAGORA_DEBUGGING_LOG". For example, if you want to add a log in a Python code `print("Hello, World!")`, you should put `print("PYTHAGORA_DEBUGGING_LOG: Hello, World!")` instead. This refers to **ONLY** the logs you want to add that are not in the codebase at the moment. All logs that are in the codebase already, you must not change. When you write code, you **MUST NOT** add any new lines of code except the logs.
-
-Your message will be read by a developer so you don't have to write the entire files in which you want to add logs to. Just write the lines of code where you want to add logs so that the developer reading your message understands where should they put the logs to.
+Based on this information, you need to figure out where is the problem that the user described. You have 2 options - to tell me exactly where is the problem happening or to add more logs to better determine where is the problem.
+If you think we should add more logs around the code to better understand the problem, tell me code snippets in which we should add the logs. If you think you know where the issue is, don't add any new logs but explain what log print tell point you to the problem, what the problem is, what is the solution to this problem and how the solution will fix the problem. What is your answer?
 
 **IMPORTANT**
-If you have all the information you need to solve the problem, do not add any logs but explain what is the problem, where in the code is it and how should it be fixed and end the response with with "{{ magic_words.PROBLEM_IDENTIFIED }}". Remember, if you mentioned to add any logs, you **MUST NOT** say "{{ magic_words.PROBLEM_IDENTIFIED }}".
-
-{% include "partials/file_naming.prompt" %}
-{% include "partials/relative_paths.prompt" %}
-#}
+You cannot answer with "Ensure that...", "Make sure that...", etc. In these cases, explain how should the reader of your message ensure what you want them to ensure. In most cases, they will need to add some logs to ensure something in which case tell them where to add them.
