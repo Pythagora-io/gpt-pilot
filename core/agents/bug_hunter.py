@@ -25,7 +25,9 @@ class HuntConclusionType(str, Enum):
 
 
 class HuntConclusionOptions(BaseModel):
-    conclusion: HuntConclusionType = Field(description=f"If more logs are needed to identify the problem, respond with '{magic_words.ADD_LOGS}'. If the problem is identified, respond with '{magic_words.PROBLEM_IDENTIFIED}'.")
+    conclusion: HuntConclusionType = Field(
+        description=f"If more logs are needed to identify the problem, respond with '{magic_words.ADD_LOGS}'. If the problem is identified, respond with '{magic_words.PROBLEM_IDENTIFIED}'."
+    )
 
 
 class BugHunter(BaseAgent):
@@ -47,44 +49,36 @@ class BugHunter(BaseAgent):
 
     async def get_bug_reproduction_instructions(self):
         llm = self.get_llm()
-        convo = (
-            AgentConvo(self)
-            .template(
-                "get_bug_reproduction_instructions",
-                current_task=self.current_state.current_task,
-                user_feedback=self.current_state.current_iteration["user_feedback"],
-                user_feedback_qa=self.current_state.current_iteration["user_feedback_qa"],
-                docs=self.current_state.docs,
-                next_solution_to_try=None,
-            )
+        convo = AgentConvo(self).template(
+            "get_bug_reproduction_instructions",
+            current_task=self.current_state.current_task,
+            user_feedback=self.current_state.current_iteration["user_feedback"],
+            user_feedback_qa=self.current_state.current_iteration["user_feedback_qa"],
+            docs=self.current_state.docs,
+            next_solution_to_try=None,
         )
         bug_reproduction_instructions = await llm(convo, temperature=0)
         self.next_state.current_iteration["bug_reproduction_description"] = bug_reproduction_instructions
 
     async def check_logs(self, logs_message: str = None):
         llm = self.get_llm()
-        convo = (
-            AgentConvo(self)
-            .template(
-                "iteration",
-                current_task=self.current_state.current_task,
-                user_feedback=self.current_state.current_iteration["user_feedback"],
-                user_feedback_qa=self.current_state.current_iteration["user_feedback_qa"],
-                docs=self.current_state.docs,
-                magic_words=magic_words,
-                next_solution_to_try=None
-            )
+        convo = AgentConvo(self).template(
+            "iteration",
+            current_task=self.current_state.current_task,
+            user_feedback=self.current_state.current_iteration["user_feedback"],
+            user_feedback_qa=self.current_state.current_iteration["user_feedback_qa"],
+            docs=self.current_state.docs,
+            magic_words=magic_words,
+            next_solution_to_try=None,
         )
 
         for hunting_cycle in self.current_state.current_iteration["bug_hunting_cycles"]:
-            convo = (convo
-                     .assistant(hunting_cycle["human_readable_instructions"])
-                     .template(
-                        "log_data",
-                        backend_logs=hunting_cycle["backend_logs"],
-                        frontend_logs=hunting_cycle["frontend_logs"],
-                        fix_attempted=hunting_cycle["fix_attempted"]
-                    ))
+            convo = convo.assistant(hunting_cycle["human_readable_instructions"]).template(
+                "log_data",
+                backend_logs=hunting_cycle["backend_logs"],
+                frontend_logs=hunting_cycle["frontend_logs"],
+                fix_attempted=hunting_cycle["fix_attempted"],
+            )
 
         human_readable_instructions = await llm(convo, temperature=0.5)
 
@@ -99,10 +93,14 @@ class BugHunter(BaseAgent):
         hunt_conclusion = await llm(convo, parser=JSONParser(HuntConclusionOptions), temperature=0)
 
         self.next_state.current_iteration["description"] = human_readable_instructions
-        self.next_state.current_iteration["bug_hunting_cycles"] += [{
-            "human_readable_instructions": human_readable_instructions,
-            "fix_attempted": any(c['fix_attempted'] for c in self.current_state.current_iteration["bug_hunting_cycles"])
-        }]
+        self.next_state.current_iteration["bug_hunting_cycles"] += [
+            {
+                "human_readable_instructions": human_readable_instructions,
+                "fix_attempted": any(
+                    c["fix_attempted"] for c in self.current_state.current_iteration["bug_hunting_cycles"]
+                ),
+            }
+        ]
 
         if hunt_conclusion.conclusion == magic_words.PROBLEM_IDENTIFIED:
             # if no need for logs, implement iteration same as before
@@ -117,17 +115,20 @@ class BugHunter(BaseAgent):
         return AgentResponse.done(self)
 
     async def ask_user_to_test(self, awaiting_bug_reproduction: bool = False, awaiting_user_test: bool = False):
-
         reproduce_bug_and_get_logs = awaiting_bug_reproduction
 
-        await self.send_message("You can reproduce the bug like this:\n\n" + self.current_state.current_iteration["bug_reproduction_description"])
+        await self.send_message(
+            "You can reproduce the bug like this:\n\n"
+            + self.current_state.current_iteration["bug_reproduction_description"]
+        )
         if awaiting_user_test:
             user_feedback = await self.ask_question(
                 "Is the bug you reported fixed now?",
                 buttons={"yes": "Yes, the issue is fixed", "no": "No"},
                 default="continue",
                 buttons_only=True,
-                hint="Instructions for testing:\n\n" + self.current_state.current_iteration["bug_reproduction_description"]
+                hint="Instructions for testing:\n\n"
+                + self.current_state.current_iteration["bug_reproduction_description"],
             )
             self.next_state.current_iteration["bug_hunting_cycles"][-1]["fix_attempted"] = True
 
@@ -142,14 +143,16 @@ class BugHunter(BaseAgent):
                 "Please do exactly what you did in the last iteration, paste **BACKEND** logs here and click CONTINUE.",
                 buttons={"continue": "Continue"},
                 default="continue",
-                hint="Instructions for testing:\n\n" + self.current_state.current_iteration["bug_reproduction_description"]
+                hint="Instructions for testing:\n\n"
+                + self.current_state.current_iteration["bug_reproduction_description"],
             )
 
             frontend_logs = await self.ask_question(
                 "Please paste **frontend** logs here and click CONTINUE.",
                 buttons={"continue": "Continue"},
                 default="continue",
-                hint="Instructions for testing:\n\n" + self.current_state.current_iteration["bug_reproduction_description"]
+                hint="Instructions for testing:\n\n"
+                + self.current_state.current_iteration["bug_reproduction_description"],
             )
 
             # TODO select only the logs that are new (with PYTHAGORA_DEBUGGING_LOG)
