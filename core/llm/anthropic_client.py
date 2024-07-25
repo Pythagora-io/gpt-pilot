@@ -23,7 +23,7 @@ class AnthropicClient(BaseLLMClient):
     def _init_client(self):
         self.client = AsyncAnthropic(
             api_key=self.config.api_key,
-            # base_url=self.config.base_url,
+            base_url=self.config.base_url,
             timeout=Timeout(
                 max(self.config.connect_timeout, self.config.read_timeout),
                 connect=self.config.connect_timeout,

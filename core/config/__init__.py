@@ -306,7 +306,12 @@ class Config(_StrictModel):
     Pythagora Core configuration
     """
 
-    llm: dict[LLMProvider, ProviderConfig] = Field(default={LLMProvider.OPENAI: ProviderConfig()})
+    llm: dict[LLMProvider, ProviderConfig] = Field(
+        default={
+            LLMProvider.OPENAI: ProviderConfig(),
+            LLMProvider.ANTHROPIC: ProviderConfig(),
+        }
+    )
     agent: dict[str, AgentLLMConfig] = Field(
         default={
             DEFAULT_AGENT_NAME: AgentLLMConfig(),
