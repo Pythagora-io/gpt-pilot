@@ -1,8 +1,8 @@
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse
-from core.db.models.project_state import IterationStatus
 from core.db.models import Complexity
+from core.db.models.project_state import IterationStatus
 from core.llm.parser import StringParser
 from core.log import get_logger
 from core.telemetry import telemetry
@@ -85,7 +85,9 @@ class SpecWriter(BaseAgent):
 
     async def update_spec(self) -> AgentResponse:
         feature_description = self.current_state.current_iteration["description"]
-        await self.send_message("Adding new feature to project specification ...")
+        await self.send_message(
+            f"Adding feature with the following description to project specification:\n\n{feature_description}"
+        )
         llm = self.get_llm()
         convo = AgentConvo(self).template("add_new_feature", feature_description=feature_description)
         llm_response: str = await llm(convo, temperature=0, parser=StringParser())
