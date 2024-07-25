@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse
-from core.config import BUG_HUNT_AGENT_NAME, magic_words
+from core.config import CHECK_LOGS_AGENT_NAME, magic_words
 from core.db.models.project_state import IterationStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
@@ -61,7 +61,7 @@ class BugHunter(BaseAgent):
         self.next_state.current_iteration["bug_reproduction_description"] = bug_reproduction_instructions
 
     async def check_logs(self, logs_message: str = None):
-        llm = self.get_llm(BUG_HUNT_AGENT_NAME)
+        llm = self.get_llm(CHECK_LOGS_AGENT_NAME)
         convo = AgentConvo(self).template(
             "iteration",
             current_task=self.current_state.current_task,
