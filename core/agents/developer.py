@@ -129,6 +129,10 @@ class Developer(BaseAgent):
                 # This is just a support for old iterations that don't have status
                 self.next_state.complete_iteration()
                 self.next_state.action = f"Troubleshooting #{len(self.current_state.iterations)}"
+            elif iteration["status"] == IterationStatus.IMPLEMENT_SOLUTION:
+                # If the user requested a change, then, we'll implement it and go straight back to testing
+                self.next_state.complete_iteration()
+                self.next_state.action = f"Troubleshooting #{len(self.current_state.iterations)}"
             elif iteration["status"] == IterationStatus.AWAITING_BUG_FIX:
                 # If bug fixing is done, ask user to test again
                 self.next_state.current_iteration["status"] = IterationStatus.AWAITING_USER_TEST

@@ -102,7 +102,7 @@ class BugHunter(BaseAgent):
         self.next_state.current_iteration["description"] = human_readable_instructions
         self.next_state.current_iteration["bug_hunting_cycles"] += [{
             "human_readable_instructions": human_readable_instructions,
-            "fix_attempted": False
+            "fix_attempted": any(c['fix_attempted'] for c in self.current_state.current_iteration["bug_hunting_cycles"])
         }]
 
         if hunt_conclusion.conclusion == magic_words.PROBLEM_IDENTIFIED:
