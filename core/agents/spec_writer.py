@@ -1,6 +1,7 @@
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
-from core.agents.response import AgentResponse, ResponseType
+from core.agents.response import AgentResponse
+from core.db.models.project_state import IterationStatus
 from core.db.models import Complexity
 from core.llm.parser import StringParser
 from core.log import get_logger
@@ -26,7 +27,8 @@ class SpecWriter(BaseAgent):
     display_name = "Spec Writer"
 
     async def run(self) -> AgentResponse:
-        if self.prev_response and self.prev_response.type == ResponseType.NEW_FEATURE_REQUESTED:
+        current_iteration = self.current_state.current_iteration
+        if current_iteration is not None and current_iteration["status"] == IterationStatus.NEW_FEATURE_REQUESTED:
             return await self.update_spec()
         else:
             return await self.initialize_spec()
@@ -79,25 +81,10 @@ class SpecWriter(BaseAgent):
         telemetry.set("is_complex_app", complexity != Complexity.SIMPLE)
 
         self.next_state.action = SPEC_STEP_NAME
-        return AgentResponse.new_feature_requested(self)
+        return AgentResponse.done(self)
 
     async def update_spec(self) -> AgentResponse:
-        response = await self.ask_question(
-            "Describe the new feature you want to add",
-            allow_empty=False,
-            buttons={
-                # FIXME: must be lowercase becase VSCode doesn't recognize it otherwise. Needs a fix in the extension
-                "cancel": "cancel",
-            },
-        )
-        if response.cancelled:
-            return AgentResponse.error(self, "No feature description")
-
-        if response.button == "cancel":
-            return AgentResponse.error(self, "No feature description")
-
-        feature_description = response.text.strip()
-
+        feature_description = self.current_state.current_iteration["description"]
         await self.send_message("Adding new feature to project specification ...")
         llm = self.get_llm()
         convo = AgentConvo(self).template("add_new_feature", feature_description=feature_description)
@@ -111,7 +98,8 @@ class SpecWriter(BaseAgent):
             "initial_prompt", updated_spec
         )  # TODO Check if a separate telemetry variable needed for updated spec
 
-        self.next_state.action = SPEC_STEP_NAME
+        self.next_state.current_iteration["status"] = IterationStatus.FIND_SOLUTION
+        self.next_state.flag_iterations_as_modified()
         return AgentResponse.done(self)
 
     async def check_prompt_complexity(self, prompt: str) -> str:

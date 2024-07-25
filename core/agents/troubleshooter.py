@@ -87,7 +87,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
             return await self.complete_task()
 
         user_feedback = bug_report or change_description
-        user_feedback_qa = await self.generate_bug_report(run_command, user_instructions, user_feedback)
+        user_feedback_qa = None  # await self.generate_bug_report(run_command, user_instructions, user_feedback)
 
         if is_loop:
             if last_iteration["alternative_solutions"]:
@@ -102,7 +102,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         else:
             # should be - elif change_description is not None: - but to prevent bugs with the extension
             # this might be caused if we show the input field instead of buttons
-            iteration_status = IterationStatus.FIND_SOLUTION
+            iteration_status = IterationStatus.NEW_FEATURE_REQUESTED
 
         self.next_state.iterations = self.current_state.iterations + [
             {

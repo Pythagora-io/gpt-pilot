@@ -182,8 +182,6 @@ class Orchestrator(BaseAgent):
                 return Importer(self.state_manager, self.ui, prev_response=prev_response)
             if prev_response.type == ResponseType.EXTERNAL_DOCS_REQUIRED:
                 return ExternalDocumentation(self.state_manager, self.ui, prev_response=prev_response)
-            if prev_response.type == ResponseType.NEW_FEATURE_REQUESTED:
-                return SpecWriter(self.state_manager, self.ui, prev_response=prev_response)
         if not state.specification.description:
             if state.files:
                 # The project has been imported, but not analyzed yet
@@ -253,6 +251,9 @@ class Orchestrator(BaseAgent):
             elif current_iteration_status == IterationStatus.PROBLEM_SOLVER:
                 # Call Problem Solver if the user said "I'm stuck in a loop"
                 return ProblemSolver(self.state_manager, self.ui)
+            elif current_iteration_status == IterationStatus.NEW_FEATURE_REQUESTED:
+                # Call Spec Writer to add the "change" requested by the user to project specification
+                return SpecWriter(self.state_manager, self.ui)
 
         # We have just finished the task, call Troubleshooter to ask the user to review
         return Troubleshooter(self.state_manager, self.ui)
