@@ -231,19 +231,19 @@ class Orchestrator(BaseAgent):
             if current_iteration_status == IterationStatus.HUNTING_FOR_BUG:
                 # Triggering the bug hunter to start the hunt
                 return BugHunter(self.state_manager, self.ui)
-            elif (current_iteration_status == IterationStatus.AWAITING_LOGGING):
+            elif current_iteration_status == IterationStatus.AWAITING_LOGGING:
                 # Get the developer to implement logs needed for debugging
                 return Developer(self.state_manager, self.ui)
-            elif (current_iteration_status == IterationStatus.AWAITING_BUG_FIX):
+            elif current_iteration_status == IterationStatus.AWAITING_BUG_FIX:
                 # Get the developer to implement the bug fix for debugging
                 return Developer(self.state_manager, self.ui)
-            elif (current_iteration_status == IterationStatus.IMPLEMENT_SOLUTION):
+            elif current_iteration_status == IterationStatus.IMPLEMENT_SOLUTION:
                 # Get the developer to implement the "change" requested by the user
                 return Developer(self.state_manager, self.ui)
-            elif (current_iteration_status == IterationStatus.AWAITING_USER_TEST):
+            elif current_iteration_status == IterationStatus.AWAITING_USER_TEST:
                 # Getting the bug hunter to ask the human to test the bug fix
                 return BugHunter(self.state_manager, self.ui)
-            elif (current_iteration_status == IterationStatus.AWAITING_BUG_REPRODUCTION):
+            elif current_iteration_status == IterationStatus.AWAITING_BUG_REPRODUCTION:
                 # Getting the bug hunter to ask the human to reproduce the bug
                 return BugHunter(self.state_manager, self.ui)
             elif current_iteration_status == IterationStatus.FIND_SOLUTION:
