@@ -36,6 +36,7 @@ IGNORE_SIZE_THRESHOLD = 50000  # 50K+ files are ignored by default
 DEFAULT_AGENT_NAME = "default"
 DESCRIBE_FILES_AGENT_NAME = "CodeMonkey.describe_files"
 ROUTE_FILES_AGENT_NAME = "Troubleshooter.get_route_files"
+BUG_HUNT_AGENT_NAME = "BugHunter.logs_or_fix"
 
 # Endpoint for the external documentation
 EXTERNAL_DOCUMENTATION_API = "http://docs-pythagora-io-439719575.us-east-1.elb.amazonaws.com"
@@ -310,6 +311,7 @@ class Config(_StrictModel):
         default={
             DEFAULT_AGENT_NAME: AgentLLMConfig(),
             DESCRIBE_FILES_AGENT_NAME: AgentLLMConfig(model="gpt-3.5-turbo", temperature=0.0),
+            BUG_HUNT_AGENT_NAME: AgentLLMConfig(model="claude-3-5-sonnet-20240620", temperature=0.0),
             ROUTE_FILES_AGENT_NAME: AgentLLMConfig(model="gpt-4o", temperature=0.0),
         }
     )
