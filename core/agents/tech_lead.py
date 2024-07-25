@@ -107,7 +107,8 @@ class TechLead(BaseAgent):
 
         if summaries:
             spec = self.current_state.specification.clone()
-            spec.description += "\n\n" + "\n\n".join(summaries)
+            spec.template_summary = "\n\n".join(summaries)
+
             self.next_state.specification = spec
 
     async def ask_for_new_feature(self) -> AgentResponse:

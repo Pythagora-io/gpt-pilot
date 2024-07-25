@@ -109,7 +109,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
                 "id": uuid4().hex,
                 "user_feedback": user_feedback,
                 "user_feedback_qa": user_feedback_qa,
-                "description": change_description,
+                "description": None,
                 "alternative_solutions": [],
                 # FIXME - this is incorrect if this is a new problem; otherwise we could
                 # just count the iterations

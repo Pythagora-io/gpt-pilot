@@ -28,7 +28,7 @@ class SpecWriter(BaseAgent):
 
     async def run(self) -> AgentResponse:
         current_iteration = self.current_state.current_iteration
-        if current_iteration is not None and current_iteration["status"] == IterationStatus.NEW_FEATURE_REQUESTED:
+        if current_iteration is not None and current_iteration.get("status") == IterationStatus.NEW_FEATURE_REQUESTED:
             return await self.update_spec()
         else:
             return await self.initialize_spec()
@@ -75,6 +75,7 @@ class SpecWriter(BaseAgent):
             spec = await self.review_spec(spec)
 
         self.next_state.specification = self.current_state.specification.clone()
+        self.next_state.specification.original_description = spec
         self.next_state.specification.description = spec
         self.next_state.specification.complexity = complexity
         telemetry.set("initial_prompt", spec)
@@ -84,7 +85,7 @@ class SpecWriter(BaseAgent):
         return AgentResponse.done(self)
 
     async def update_spec(self) -> AgentResponse:
-        feature_description = self.current_state.current_iteration["description"]
+        feature_description = self.current_state.current_iteration["user_feedback"]
         await self.send_message(
             f"Adding feature with the following description to project specification:\n\n{feature_description}"
         )
@@ -96,9 +97,7 @@ class SpecWriter(BaseAgent):
         self.next_state.specification = self.current_state.specification.clone()
         self.next_state.specification.description = updated_spec
 
-        telemetry.set(
-            "initial_prompt", updated_spec
-        )  # TODO Check if a separate telemetry variable needed for updated spec
+        telemetry.set("updated_prompt", updated_spec)
 
         self.next_state.current_iteration["status"] = IterationStatus.FIND_SOLUTION
         self.next_state.flag_iterations_as_modified()
