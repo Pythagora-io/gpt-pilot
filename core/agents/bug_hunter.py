@@ -140,23 +140,29 @@ class BugHunter(BaseAgent):
             # TODO how can we get FE and BE logs automatically?
             backend_logs = await self.ask_question(
                 "Please do exactly what you did in the last iteration, paste **BACKEND** logs here and click CONTINUE.",
-                buttons={"continue": "Continue"},
+                buttons={"continue": "Continue", "done": "Bug is fixed"},
                 default="continue",
                 hint="Instructions for testing:\n\n"
                 + self.current_state.current_iteration["bug_reproduction_description"],
             )
 
-            frontend_logs = await self.ask_question(
-                "Please paste **frontend** logs here and click CONTINUE.",
-                buttons={"continue": "Continue"},
-                default="continue",
-                hint="Instructions for testing:\n\n"
-                + self.current_state.current_iteration["bug_reproduction_description"],
-            )
+            if backend_logs.button == "done":
+                self.next_state.complete_iteration()
+            else:
+                frontend_logs = await self.ask_question(
+                    "Please paste **frontend** logs here and click CONTINUE.",
+                    buttons={"continue": "Continue", "done": "Bug is fixed"},
+                    default="continue",
+                    hint="Instructions for testing:\n\n"
+                    + self.current_state.current_iteration["bug_reproduction_description"],
+                )
 
-            # TODO select only the logs that are new (with PYTHAGORA_DEBUGGING_LOG)
-            self.next_state.current_iteration["bug_hunting_cycles"][-1]["backend_logs"] = backend_logs.text
-            self.next_state.current_iteration["bug_hunting_cycles"][-1]["frontend_logs"] = frontend_logs.text
-            self.next_state.current_iteration["status"] = IterationStatus.HUNTING_FOR_BUG
+                # TODO select only the logs that are new (with PYTHAGORA_DEBUGGING_LOG)
+                self.next_state.current_iteration["bug_hunting_cycles"][-1]["backend_logs"] = backend_logs.text
+                self.next_state.current_iteration["bug_hunting_cycles"][-1]["frontend_logs"] = frontend_logs.text
+                self.next_state.current_iteration["status"] = IterationStatus.HUNTING_FOR_BUG
+
+                if frontend_logs.button == "done":
+                    self.next_state.complete_iteration()
 
         return AgentResponse.done(self)
