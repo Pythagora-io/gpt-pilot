@@ -1,0 +1,6 @@
+We are working on a solving a technical problem in a codebase and here is a conclusion from a team member:
+--- TEAM_MEMBER_CONCLUSION ---
+{{ hunt_conclusion }}
+--- END_OF_TEAM_MEMBER_CONCLUSION ---
+
+Please tell me if the conclusion from the team member is to add more logs around the code or if the conclusion is that there are all information needed to fix the issue.

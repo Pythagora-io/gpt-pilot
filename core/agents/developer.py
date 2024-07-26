@@ -8,7 +8,7 @@ from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.mixins import RelevantFilesMixin
 from core.agents.response import AgentResponse, ResponseType
-from core.db.models.project_state import TaskStatus
+from core.db.models.project_state import IterationStatus, TaskStatus
 from core.db.models.specification import Complexity
 from core.llm.parser import JSONParser
 from core.log import get_logger
@@ -56,6 +56,10 @@ Step = Annotated[
 
 class TaskSteps(BaseModel):
     steps: list[Step]
+
+
+class RelevantFiles(BaseModel):
+    relevant_files: list[str] = Field(description="List of relevant files for the current task.")
 
 
 class Developer(RelevantFilesMixin, BaseAgent):
@@ -106,6 +110,19 @@ class Developer(RelevantFilesMixin, BaseAgent):
             n_tasks = 1
             log.debug(f"Breaking down the task review feedback {task_review_feedback}")
             await self.send_message("Breaking down the task review feedback...")
+        elif self.current_state.current_iteration["status"] in (
+            IterationStatus.AWAITING_BUG_FIX,
+            IterationStatus.AWAITING_LOGGING,
+        ):
+            iteration = self.current_state.current_iteration
+            current_task["task_review_feedback"] = None
+
+            description = iteration["bug_hunting_cycles"][-1]["human_readable_instructions"]
+            user_feedback = iteration["user_feedback"]
+            source = "bug_hunt"
+            n_tasks = len(self.next_state.iterations)
+            log.debug(f"Breaking down the logging cycle {description}")
+            await self.send_message("Breaking down the current iteration logging cycle ...")
         else:
             iteration = self.current_state.current_iteration
             current_task["task_review_feedback"] = None
@@ -152,8 +169,22 @@ class Developer(RelevantFilesMixin, BaseAgent):
         self.set_next_steps(response, source)
 
         if iteration:
-            self.next_state.complete_iteration()
-            self.next_state.action = f"Troubleshooting #{len(self.current_state.iterations)}"
+            if "status" not in iteration or (
+                iteration["status"] in (IterationStatus.AWAITING_USER_TEST, IterationStatus.AWAITING_BUG_REPRODUCTION)
+            ):
+                # This is just a support for old iterations that don't have status
+                self.next_state.complete_iteration()
+                self.next_state.action = f"Troubleshooting #{len(self.current_state.iterations)}"
+            elif iteration["status"] == IterationStatus.IMPLEMENT_SOLUTION:
+                # If the user requested a change, then, we'll implement it and go straight back to testing
+                self.next_state.complete_iteration()
+                self.next_state.action = f"Troubleshooting #{len(self.current_state.iterations)}"
+            elif iteration["status"] == IterationStatus.AWAITING_BUG_FIX:
+                # If bug fixing is done, ask user to test again
+                self.next_state.current_iteration["status"] = IterationStatus.AWAITING_USER_TEST
+            elif iteration["status"] == IterationStatus.AWAITING_LOGGING:
+                # If logging is done, ask user to reproduce the bug
+                self.next_state.current_iteration["status"] = IterationStatus.AWAITING_BUG_REPRODUCTION
         else:
             self.next_state.action = "Task review feedback"
 
@@ -236,7 +267,14 @@ class Developer(RelevantFilesMixin, BaseAgent):
             }
             for step in response.steps
         ]
-        if len(self.next_state.unfinished_steps) > 0 and source != "review":
+        if (
+            len(self.next_state.unfinished_steps) > 0
+            and source != "review"
+            and (
+                self.next_state.current_iteration is None
+                or self.next_state.current_iteration["status"] != IterationStatus.AWAITING_LOGGING
+            )
+        ):
             self.next_state.steps += [
                 # TODO: add refactor step here once we have the refactor agent
                 {

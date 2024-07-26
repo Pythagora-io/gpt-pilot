@@ -29,6 +29,7 @@ class IterationPromptMixin:
         *,
         user_feedback_qa: Optional[list[str]] = None,
         next_solution_to_try: Optional[str] = None,
+        bug_hunting_cycles: Optional[dict] = None,
     ) -> str:
         """
         Generate a new solution for the problem the user reported.
@@ -36,6 +37,7 @@ class IterationPromptMixin:
         :param user_feedback: User feedback about the problem.
         :param user_feedback_qa: Additional q/a about the problem provided by the user (optional).
         :param next_solution_to_try: Hint from ProblemSolver on which solution to try (optional).
+        :param bug_hunting_cycles: Data about logs that need to be added to the code (optional).
         :return: The generated solution to the problem.
         """
         llm = self.get_llm()
@@ -44,6 +46,7 @@ class IterationPromptMixin:
             user_feedback=user_feedback,
             user_feedback_qa=user_feedback_qa,
             next_solution_to_try=next_solution_to_try,
+            bug_hunting_cycles=bug_hunting_cycles,
         )
         llm_solution: str = await llm(convo)
         return llm_solution
