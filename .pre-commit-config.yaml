@@ -16,7 +16,7 @@ repos:
         name: alembic
         stages: [commit]
         types: [python]
-        entry: /Users/milijas/Code/PythagoraDev/gpt-pilot/venv/bin/alembic -c core/db/alembic.ini check
+        entry: alembic -c core/db/alembic.ini check
         language: system
         pass_filenames: false
   - repo: local
@@ -26,6 +26,6 @@ repos:
         name: pytest
         stages: [commit]
         types: [python]
-        entry: /Users/milijas/Code/PythagoraDev/gpt-pilot/venv/bin/pytest
+        entry: pytest
         language: system
         pass_filenames: false
