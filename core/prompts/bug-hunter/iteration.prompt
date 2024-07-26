@@ -1,0 +1,34 @@
+You are working on an app called "{{ state.branch.project.name }}" and you need to write code for the entire application.
+
+{% include "partials/project_details.prompt" %}
+
+{% if state.tasks and state.current_task %}
+Development process of this app was split into smaller tasks. Here is the list of all tasks:
+```{% for task in state.tasks %}
+{{ loop.index }}. {{ task.description }}
+{% endfor %}
+```
+
+You are currently working on, and have to focus only on, this task:
+```
+{{ current_task.description }}
+```
+
+{% endif %}
+A part of the app is already finished.
+{% include "partials/files_list.prompt" %}
+
+{% include "partials/user_feedback.prompt" %}
+
+{% if next_solution_to_try is not none %}
+Focus on solving this issue in the following way:
+```
+{{ next_solution_to_try }}
+```
+{% endif %}
+
+Based on this information, you need to figure out where is the problem that the user described. You have 2 options - to tell me exactly where is the problem happening or to add more logs to better determine where is the problem.
+If you think we should add more logs around the code to better understand the problem, tell me code snippets in which we should add the logs. If you think you know where the issue is, don't add any new logs but explain what log print tell point you to the problem, what the problem is, what is the solution to this problem and how the solution will fix the problem. What is your answer?
+
+**IMPORTANT**
+You cannot answer with "Ensure that...", "Make sure that...", etc. In these cases, explain how should the reader of your message ensure what you want them to ensure. In most cases, they will need to add some logs to ensure something in which case tell them where to add them.

@@ -2,6 +2,7 @@ import pytest
 from sqlalchemy import select
 
 from core.db.models import Branch, File, FileContent, Project, ProjectState
+from core.db.models.project_state import IterationStatus
 
 from .factories import create_project_state
 
@@ -150,7 +151,7 @@ async def test_completing_unfinished_iterations(testdb):
         {
             "id": "abc",
             "description": "LLM breakdown of the iteration",
-            "completed": False,
+            "status": IterationStatus.HUNTING_FOR_BUG,
         }
     ]
     testdb.add(state)

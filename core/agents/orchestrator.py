@@ -2,6 +2,7 @@ from typing import Optional
 
 from core.agents.architect import Architect
 from core.agents.base import BaseAgent
+from core.agents.bug_hunter import BugHunter
 from core.agents.code_monkey import CodeMonkey
 from core.agents.code_reviewer import CodeReviewer
 from core.agents.developer import Developer
@@ -18,7 +19,7 @@ from core.agents.task_reviewer import TaskReviewer
 from core.agents.tech_lead import TechLead
 from core.agents.tech_writer import TechnicalWriter
 from core.agents.troubleshooter import Troubleshooter
-from core.db.models.project_state import TaskStatus
+from core.db.models.project_state import IterationStatus, TaskStatus
 from core.log import get_logger
 from core.telemetry import telemetry
 from core.ui.base import ProjectStage
@@ -226,12 +227,30 @@ class Orchestrator(BaseAgent):
             return self.create_agent_for_step(state.current_step)
 
         if state.unfinished_iterations:
-            if state.current_iteration["description"]:
-                # Break down the next iteration into steps
+            current_iteration_status = state.current_iteration["status"]
+            if current_iteration_status == IterationStatus.HUNTING_FOR_BUG:
+                # Triggering the bug hunter to start the hunt
+                return BugHunter(self.state_manager, self.ui)
+            elif current_iteration_status == IterationStatus.AWAITING_LOGGING:
+                # Get the developer to implement logs needed for debugging
                 return Developer(self.state_manager, self.ui)
-            else:
-                # We need to iterate over the current task but there's no solution, as Pythagora
-                # is stuck in a loop, and ProblemSolver needs to find alternative solutions.
+            elif current_iteration_status == IterationStatus.AWAITING_BUG_FIX:
+                # Get the developer to implement the bug fix for debugging
+                return Developer(self.state_manager, self.ui)
+            elif current_iteration_status == IterationStatus.IMPLEMENT_SOLUTION:
+                # Get the developer to implement the "change" requested by the user
+                return Developer(self.state_manager, self.ui)
+            elif current_iteration_status == IterationStatus.AWAITING_USER_TEST:
+                # Getting the bug hunter to ask the human to test the bug fix
+                return BugHunter(self.state_manager, self.ui)
+            elif current_iteration_status == IterationStatus.AWAITING_BUG_REPRODUCTION:
+                # Getting the bug hunter to ask the human to reproduce the bug
+                return BugHunter(self.state_manager, self.ui)
+            elif current_iteration_status == IterationStatus.FIND_SOLUTION:
+                # Find solution to the iteration problem
+                return Troubleshooter(self.state_manager, self.ui)
+            elif current_iteration_status == IterationStatus.PROBLEM_SOLVER:
+                # Call Problem Solver if the user said "I'm stuck in a loop"
                 return ProblemSolver(self.state_manager, self.ui)
 
         # We have just finished the task, call Troubleshooter to ask the user to review

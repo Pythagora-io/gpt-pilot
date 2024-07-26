@@ -36,6 +36,7 @@ IGNORE_SIZE_THRESHOLD = 50000  # 50K+ files are ignored by default
 DEFAULT_AGENT_NAME = "default"
 CODE_MONKEY_AGENT_NAME = "CodeMonkey"
 DESCRIBE_FILES_AGENT_NAME = "CodeMonkey.describe_files"
+CHECK_LOGS_AGENT_NAME = "BugHunter.check_logs"
 
 # Endpoint for the external documentation
 EXTERNAL_DOCUMENTATION_API = "http://docs-pythagora-io-439719575.us-east-1.elb.amazonaws.com"
@@ -305,12 +306,18 @@ class Config(_StrictModel):
     Pythagora Core configuration
     """
 
-    llm: dict[LLMProvider, ProviderConfig] = Field(default={LLMProvider.OPENAI: ProviderConfig()})
+    llm: dict[LLMProvider, ProviderConfig] = Field(
+        default={
+            LLMProvider.OPENAI: ProviderConfig(),
+            LLMProvider.ANTHROPIC: ProviderConfig(),
+        }
+    )
     agent: dict[str, AgentLLMConfig] = Field(
         default={
             DEFAULT_AGENT_NAME: AgentLLMConfig(),
             CODE_MONKEY_AGENT_NAME: AgentLLMConfig(model="gpt-4-0125-preview", temperature=0.0),
             DESCRIBE_FILES_AGENT_NAME: AgentLLMConfig(model="gpt-3.5-turbo", temperature=0.0),
+            CHECK_LOGS_AGENT_NAME: AgentLLMConfig(model="claude-3-5-sonnet-20240620", temperature=0.0),
         }
     )
     prompt: PromptConfig = PromptConfig()

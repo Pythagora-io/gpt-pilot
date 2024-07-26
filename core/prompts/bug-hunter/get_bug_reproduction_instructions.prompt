@@ -1,0 +1,30 @@
+You are working on an app called "{{ state.branch.project.name }}" and you need to write code for the entire application.
+
+{% include "partials/project_details.prompt" %}
+
+{% if state.tasks and state.current_task %}
+Development process of this app was split into smaller tasks. Here is the list of all tasks:
+```{% for task in state.tasks %}
+{{ loop.index }}. {{ task.description }}
+{% endfor %}
+```
+
+You are currently working on, and have to focus only on, this task:
+```
+{{ current_task.description }}
+```
+
+{% endif %}
+A part of the app is already finished.
+{% include "partials/files_list.prompt" %}
+
+{% include "partials/user_feedback.prompt" %}
+
+{% if next_solution_to_try is not none %}
+Focus on solving this issue in the following way:
+```
+{{ next_solution_to_try }}
+```
+{% endif %}
+
+Based on this information, you need to tell me in 2-3 sentences how can I reproduce the issue that the user experienced.
