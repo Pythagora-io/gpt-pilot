@@ -1,8 +1,9 @@
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
 from core.agents.convo import AgentConvo
+from core.agents.response import AgentResponse
 from core.llm.parser import JSONParser
 from core.log import get_logger
 
@@ -59,19 +60,17 @@ class RelevantFilesMixin:
 
     async def get_relevant_files(
         self, user_feedback: Optional[str] = None, solution_description: Optional[str] = None
-    ) -> list[str | None | Any]:
+    ) -> AgentResponse:
         log.debug("Getting relevant files for the current task")
         await self.send_message("Figuring out which project files are relevant for the next task ...")
 
         done = False
         relevant_files = set()
-        read_files = None
         llm = self.get_llm()
         convo = (
             AgentConvo(self)
             .template(
                 "filter_files",
-                current_task=self.current_state.current_task,
                 user_feedback=user_feedback,
                 solution_description=solution_description,
                 relevant_files=relevant_files,
@@ -105,4 +104,4 @@ class RelevantFilesMixin:
         relevant_files = [path for path in relevant_files if path in existing_files]
         self.next_state.relevant_files = relevant_files
 
-        return relevant_files  # todo fix this
+        return AgentResponse.done(self)

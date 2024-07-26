@@ -13,7 +13,7 @@ We've broken the development of the project down to these tasks:
 
 The next task we need to work on, and have to focus on, is this task:
 ```
-{{ current_task.description }}
+{{ state.current_task.description }}
 ```
 
 {% if user_feedback %}User who was using the app sent you this feedback:

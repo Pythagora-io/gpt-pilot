@@ -58,10 +58,6 @@ class TaskSteps(BaseModel):
     steps: list[Step]
 
 
-class RelevantFiles(BaseModel):
-    relevant_files: list[str] = Field(description="List of relevant files for the current task.")
-
-
 class Developer(RelevantFilesMixin, BaseAgent):
     agent_type = "developer"
     display_name = "Developer"
@@ -137,7 +133,8 @@ class Developer(RelevantFilesMixin, BaseAgent):
             log.debug(f"Breaking down the iteration {description}")
             await self.send_message("Breaking down the current task iteration ...")
 
-        await self.get_relevant_files(user_feedback, description)
+        if self.current_state.files and self.current_state.relevant_files is None:
+            return await self.get_relevant_files(user_feedback, description)
 
         await self.ui.send_task_progress(
             n_tasks,  # iterations and reviews can be created only one at a time, so we are always on last one
@@ -215,7 +212,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
         log.debug(f"Current state files: {len(self.current_state.files)}, relevant {self.current_state.relevant_files}")
         # Check which files are relevant to the current task
         if self.current_state.files and self.current_state.relevant_files is None:
-            await self.get_relevant_files()
+            return await self.get_relevant_files()
 
         current_task_index = self.current_state.tasks.index(current_task)
 
@@ -228,6 +225,8 @@ class Developer(RelevantFilesMixin, BaseAgent):
             docs=self.current_state.docs,
         )
         response: str = await llm(convo)
+
+        await self.get_relevant_files(None, response)
 
         self.next_state.tasks[current_task_index] = {
             **current_task,
