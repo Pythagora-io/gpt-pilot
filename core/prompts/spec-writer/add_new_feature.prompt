@@ -7,15 +7,13 @@ This might include:
 * information which 3rd party packages or APIs to use or avoid
 * concrete examples of API requests/responses, library usage, or other external documentation
 
-Here is the client brief:
----PROJECT-SPECIFICATION-START---
+Here is the original project specification:
 {{ state.specification.description }}
----PROJECT-SPECIFICATION-END---
 
-Here is the specification your team came up with:
+Here is the new feature description:
 ---FEATURE-DESCRIPTION-START---
 {{ feature_description }}
 ---FEATURE-DESCRIPTION-END---
 
-In your response, output the new updated project specification. 
-If there is no feature description, just output the original project specification.
+In your response, output only the new updated project specification, without any additional messages to the user. 
+If there is no feature description just output the original project specification.

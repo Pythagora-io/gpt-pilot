@@ -1,6 +1,6 @@
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
-from core.agents.response import AgentResponse
+from core.agents.response import AgentResponse, ResponseType
 from core.db.models import Complexity
 from core.db.models.project_state import IterationStatus
 from core.llm.parser import StringParser
@@ -29,7 +29,9 @@ class SpecWriter(BaseAgent):
     async def run(self) -> AgentResponse:
         current_iteration = self.current_state.current_iteration
         if current_iteration is not None and current_iteration.get("status") == IterationStatus.NEW_FEATURE_REQUESTED:
-            return await self.update_spec()
+            return await self.update_spec(iteration_mode=True)
+        elif self.prev_response and self.prev_response.type == ResponseType.UPDATE_SPECIFICATION:
+            return await self.update_spec(iteration_mode=False)
         else:
             return await self.initialize_spec()
 
@@ -84,23 +86,40 @@ class SpecWriter(BaseAgent):
         self.next_state.action = SPEC_STEP_NAME
         return AgentResponse.done(self)
 
-    async def update_spec(self) -> AgentResponse:
-        feature_description = self.current_state.current_iteration["user_feedback"]
+    async def update_spec(self, iteration_mode) -> AgentResponse:
+        if iteration_mode:
+            feature_description = self.current_state.current_iteration["user_feedback"]
+        else:
+            feature_description = self.prev_response.data["description"]
+
         await self.send_message(
-            f"Adding feature with the following description to project specification:\n\n{feature_description}"
+            f"Making the following changes to project specification:\n\n{feature_description}\n\nUpdated project specification:"
         )
         llm = self.get_llm()
         convo = AgentConvo(self).template("add_new_feature", feature_description=feature_description)
         llm_response: str = await llm(convo, temperature=0, parser=StringParser())
         updated_spec = llm_response.strip()
+        await self.ui.generate_diff(self.current_state.specification.description, updated_spec)
+        user_response = await self.ask_question(
+            "Do you accept these changes to the project specification?",
+            buttons={"yes": "Yes", "no": "No"},
+            default="yes",
+            buttons_only=True,
+        )
+        await self.ui.close_diff()
 
-        self.next_state.specification = self.current_state.specification.clone()
-        self.next_state.specification.description = updated_spec
+        if user_response.button == "yes":
+            self.next_state.specification = self.current_state.specification.clone()
+            self.next_state.specification.description = updated_spec
+            telemetry.set("updated_prompt", updated_spec)
 
-        telemetry.set("updated_prompt", updated_spec)
+        if iteration_mode:
+            self.next_state.current_iteration["status"] = IterationStatus.FIND_SOLUTION
+            self.next_state.flag_iterations_as_modified()
+        else:
+            complexity = await self.check_prompt_complexity(user_response.text)
+            self.next_state.current_epic["complexity"] = complexity
 
-        self.next_state.current_iteration["status"] = IterationStatus.FIND_SOLUTION
-        self.next_state.flag_iterations_as_modified()
         return AgentResponse.done(self)
 
     async def check_prompt_complexity(self, prompt: str) -> str:
@@ -188,6 +207,6 @@ class SpecWriter(BaseAgent):
         llm = self.get_llm()
         llm_response: str = await llm(convo, temperature=0)
         additional_info = llm_response.strip()
-        if additional_info:
+        if additional_info and len(additional_info) > 6:
             spec += "\nAdditional info/examples:\n" + additional_info
         return spec

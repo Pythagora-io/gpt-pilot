@@ -223,7 +223,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         is_loop = False
         should_iterate = True
 
-        test_message = "Can you check if the app works please?"
+        test_message = "Please check if the app is working"
         if user_instructions:
             hint = " Here is a description of what should be working:\n\n" + user_instructions
 
@@ -259,13 +259,11 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
             is_loop = True
 
         elif user_response.button == "change":
-            user_description = await self.ask_question(
-                "Please describe the change you want to make (one at the time please)"
-            )
+            user_description = await self.ask_question("Please describe the change you want to make (one at a time)")
             change_description = user_description.text
 
         elif user_response.button == "bug":
-            user_description = await self.ask_question("Please describe the issue you found (one at the time please)")
+            user_description = await self.ask_question("Please describe the issue you found (one at a time)")
             bug_report = user_description.text
 
         return should_iterate, is_loop, bug_report, change_description

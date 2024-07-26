@@ -45,6 +45,9 @@ class ResponseType(str, Enum):
     EXTERNAL_DOCS_REQUIRED = "external-docs-required"
     """We need to fetch external docs for a task."""
 
+    UPDATE_SPECIFICATION = "update-specification"
+    """We need to update the project specification."""
+
 
 class AgentResponse:
     type: ResponseType = ResponseType.DONE
@@ -144,3 +147,13 @@ class AgentResponse:
     @staticmethod
     def external_docs_required(agent: "BaseAgent") -> "AgentResponse":
         return AgentResponse(type=ResponseType.EXTERNAL_DOCS_REQUIRED, agent=agent)
+
+    @staticmethod
+    def update_specification(agent: "BaseAgent", description: str) -> "AgentResponse":
+        return AgentResponse(
+            type=ResponseType.UPDATE_SPECIFICATION,
+            agent=agent,
+            data={
+                "description": description,
+            },
+        )

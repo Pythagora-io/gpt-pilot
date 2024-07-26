@@ -42,6 +42,8 @@ class MessageType(str, Enum):
     IMPORT_PROJECT = "importProject"
     APP_FINISHED = "appFinished"
     FEATURE_FINISHED = "featureFinished"
+    GENERATE_DIFF = "generateDiff"
+    CLOSE_DIFF = "closeDiff"
 
 
 class Message(BaseModel):
@@ -355,6 +357,19 @@ class IPCClientUI(UIBase):
             MessageType.PROJECT_STATS,
             content=stats,
         )
+
+    async def generate_diff(self, file_old: str, file_new: str):
+        await self._send(
+            MessageType.GENERATE_DIFF,
+            content={
+                "file_old": file_old,
+                "file_new": file_new,
+            },
+        )
+
+    async def close_diff(self):
+        log.debug("Sending signal to close the generated diff file")
+        await self._send(MessageType.CLOSE_DIFF)
 
     async def loading_finished(self):
         log.debug("Sending project loading finished signal to the extension")
