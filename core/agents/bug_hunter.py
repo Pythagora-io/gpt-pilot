@@ -120,6 +120,10 @@ class BugHunter(BaseAgent):
             "You can reproduce the bug like this:\n\n"
             + self.current_state.current_iteration["bug_reproduction_description"]
         )
+
+        if self.current_state.run_command:
+            await self.ui.send_run_command(self.current_state.run_command)
+
         if awaiting_user_test:
             user_feedback = await self.ask_question(
                 "Is the bug you reported fixed now?",

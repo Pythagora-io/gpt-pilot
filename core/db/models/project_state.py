@@ -119,7 +119,9 @@ class ProjectState(Base):
 
         :return: List of unfinished iterations.
         """
-        return [iteration for iteration in self.iterations if iteration.get("status") != IterationStatus.DONE]
+        return [
+            iteration for iteration in self.iterations if iteration.get("status") not in (None, IterationStatus.DONE)
+        ]
 
     @property
     def current_iteration(self) -> Optional[dict]:
