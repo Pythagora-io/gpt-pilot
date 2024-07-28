@@ -1,4 +1,18 @@
-def load_existing_apps():
+def get_existing_apps():
+    # Actual implementation to retrieve existing apps
+    # This could be a database call or reading from a file
+    apps = []
+    try:
+        with open('apps_list.txt', 'r') as file:
+            for line in file:
+                name, id = line.strip().split(',')
+                apps.append({'name': name, 'id': int(id)})
+    except FileNotFoundError:
+        print('No existing apps found.')
+    return apps
+
+# Call the function to load existing apps
+load_existing_apps()def load_existing_apps():
     # Code to load existing apps
     apps = get_existing_apps()  # Assuming this function retrieves existing apps
     if not apps:
