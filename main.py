@@ -1,4 +1,24 @@
-#!/usr/bin/env python
+def load_existing_apps():
+    # Code to load existing apps
+    apps = get_existing_apps()  # Assuming this function retrieves existing apps
+    if not apps:
+        print('No existing apps found.')
+    else:
+        for app in apps:
+            print(f'App: {app.name}, ID: {app.id}')
+    return apps
+
+def get_existing_apps():
+    # Placeholder function to simulate retrieving existing apps
+    # Replace with actual implementation
+    return [
+        {'name': 'App1', 'id': 1},
+        {'name': 'App2', 'id': 2},
+        {'name': 'App3', 'id': 3}
+    ]
+
+# Call the function to load existing apps
+load_existing_apps()#!/usr/bin/env python
 
 
 import os.path
