@@ -7,6 +7,7 @@ from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.mixins import TaskSteps
 from core.agents.response import AgentResponse, ResponseType
+from core.config import TASK_BREAKDOWN_AGENT_NAME
 from core.db.models.project_state import IterationStatus, TaskStatus
 from core.db.models.specification import Complexity
 from core.llm.parser import JSONParser
@@ -178,7 +179,7 @@ class Developer(BaseAgent):
 
         current_task_index = self.current_state.tasks.index(current_task)
 
-        llm = self.get_llm()
+        llm = self.get_llm(TASK_BREAKDOWN_AGENT_NAME)
         convo = AgentConvo(self).template(
             "breakdown",
             task=current_task,
@@ -194,6 +195,7 @@ class Developer(BaseAgent):
         }
         self.next_state.flag_tasks_as_modified()
 
+        llm = self.get_llm()
         await self.send_message("Breaking down the task into steps ...")
         convo.assistant(response).template("parse_task").require_schema(TaskSteps)
         response: TaskSteps = await llm(convo, parser=JSONParser(TaskSteps), temperature=0)
