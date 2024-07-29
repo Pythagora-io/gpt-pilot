@@ -4,21 +4,6 @@ You are working on an app called "{{ state.branch.project.name }}" and you need 
 {% include "partials/features_list.prompt" %}
 {% include "partials/files_list.prompt" %}
 
-We've broken the development of this {% if state.epics|length > 1 %}feature{% else %}app{% endif %} down to these tasks:
-```
-{% for task in state.tasks %}
-{{ loop.index }}. {{ task.description }}{% if task.get("status") == "done" %} (completed){% endif %}
-{% endfor %}
-```
-
-You are currently working on task #{{ current_task_index + 1 }} with the following description:
-```
-{{ task.description }}
-```
-{% if current_task_index != 0 %}All previous tasks are finished and you don't have to work on them.{% endif %}
-
-Now, tell me all the code that needs to be written to implement ONLY this task and have it fully working and all commands that need to be run to implement this task.
-
 {% include "partials/doc_snippets.prompt" %}
 
 {%- if state.epics|length == 1 %}
@@ -35,3 +20,19 @@ DO NOT specify commands to create any folders or files, they will be created aut
 {% include "partials/file_size_limit.prompt" %}
 
 Never use the port 5000 to run the app, it's reserved.
+
+--IMPLEMENTATION INSTRUCTIONS--
+We've broken the development of this {% if state.epics|length > 1 %}feature{% else %}app{% endif %} down to these tasks:
+```
+{% for task in state.tasks %}
+{{ loop.index }}. {{ task.description }}{% if task.get("status") == "done" %} (completed){% endif %}
+{% endfor %}
+```
+
+You are currently working on task #{{ current_task_index + 1 }} with the following description:
+```
+{{ task.description }}
+```
+{% if current_task_index != 0 %}All previous tasks are finished and you don't have to work on them.{% endif %}
+
+Now, tell me all the code that needs to be written to implement ONLY this task and have it fully working and all commands that need to be run to implement this task.
