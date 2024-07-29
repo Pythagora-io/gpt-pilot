@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse
-from core.db.models import Complexity
 from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
@@ -107,7 +106,8 @@ class TechLead(BaseAgent):
 
         if summaries:
             spec = self.current_state.specification.clone()
-            spec.description += "\n\n" + "\n\n".join(summaries)
+            spec.template_summary = "\n\n".join(summaries)
+
             self.next_state.specification = spec
 
     async def ask_for_new_feature(self) -> AgentResponse:
@@ -135,12 +135,12 @@ class TechLead(BaseAgent):
                 "description": response.text,
                 "summary": None,
                 "completed": False,
-                "complexity": Complexity.HARD,
+                "complexity": None,  # Determined and defined in SpecWriter
             }
         ]
         # Orchestrator will rerun us to break down the new feature epic
         self.next_state.action = f"Start of feature #{len(self.current_state.epics)}"
-        return AgentResponse.done(self)
+        return AgentResponse.update_specification(self, response.text)
 
     async def plan_epic(self, epic) -> AgentResponse:
         log.debug(f"Planning tasks for the epic: {epic['name']}")

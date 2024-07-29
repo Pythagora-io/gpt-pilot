@@ -87,7 +87,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
             return await self.complete_task()
 
         user_feedback = bug_report or change_description
-        user_feedback_qa = await self.generate_bug_report(run_command, user_instructions, user_feedback)
+        user_feedback_qa = None  # await self.generate_bug_report(run_command, user_instructions, user_feedback)
 
         if is_loop:
             if last_iteration["alternative_solutions"]:
@@ -102,14 +102,14 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         else:
             # should be - elif change_description is not None: - but to prevent bugs with the extension
             # this might be caused if we show the input field instead of buttons
-            iteration_status = IterationStatus.FIND_SOLUTION
+            iteration_status = IterationStatus.NEW_FEATURE_REQUESTED
 
         self.next_state.iterations = self.current_state.iterations + [
             {
                 "id": uuid4().hex,
                 "user_feedback": user_feedback,
                 "user_feedback_qa": user_feedback_qa,
-                "description": change_description,
+                "description": None,
                 "alternative_solutions": [],
                 # FIXME - this is incorrect if this is a new problem; otherwise we could
                 # just count the iterations
@@ -223,7 +223,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         is_loop = False
         should_iterate = True
 
-        test_message = "Can you check if the app works please?"
+        test_message = "Please check if the app is working"
         if user_instructions:
             hint = " Here is a description of what should be working:\n\n" + user_instructions
 
@@ -259,13 +259,11 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
             is_loop = True
 
         elif user_response.button == "change":
-            user_description = await self.ask_question(
-                "Please describe the change you want to make (one at the time please)"
-            )
+            user_description = await self.ask_question("Please describe the change you want to make (one at a time)")
             change_description = user_description.text
 
         elif user_response.button == "bug":
-            user_description = await self.ask_question("Please describe the issue you found (one at the time please)")
+            user_description = await self.ask_question("Please describe the issue you found (one at a time)")
             bug_report = user_description.text
 
         return should_iterate, is_loop, bug_report, change_description

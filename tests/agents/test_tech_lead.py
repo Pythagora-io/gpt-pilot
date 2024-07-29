@@ -56,7 +56,7 @@ async def test_ask_for_feature(agentcontext):
 
     tl = TechLead(sm, ui)
     response = await tl.run()
-    assert response.type == ResponseType.DONE
+    assert response.type == ResponseType.UPDATE_SPECIFICATION
 
     await sm.commit()
 
