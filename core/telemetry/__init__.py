@@ -82,6 +82,8 @@ class Telemetry:
             "model": config.agent["default"].model,
             # Initial prompt
             "initial_prompt": None,
+            # Updated prompt
+            "updated_prompt": None,
             # App complexity
             "is_complex_app": None,
             # Optional template used for the project

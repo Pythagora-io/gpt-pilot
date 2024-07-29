@@ -1,0 +1,19 @@
+Your team has taken the client brief and turned it into a project specification.
+Afterwards the client added a description for a new feature to be added to the project specification.
+Your job is to update the project specification so that it contains the new feature information but does not lack any of the information from the original project specification.
+
+This might include:
+* details on how the app should work
+* information which 3rd party packages or APIs to use or avoid
+* concrete examples of API requests/responses, library usage, or other external documentation
+
+Here is the original project specification:
+{{ state.specification.description }}
+
+Here is the new feature description:
+---FEATURE-DESCRIPTION-START---
+{{ feature_description }}
+---FEATURE-DESCRIPTION-END---
+
+In your response, output only the new updated project specification, without any additional messages to the user. 
+If there is no feature description just output the original project specification.

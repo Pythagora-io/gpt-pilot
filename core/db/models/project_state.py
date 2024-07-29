@@ -41,6 +41,7 @@ class IterationStatus:
     IMPLEMENT_SOLUTION = "implement_solution"
     FIND_SOLUTION = "find_solution"
     PROBLEM_SOLVER = "problem_solver"
+    NEW_FEATURE_REQUESTED = "new_feature_requested"
     DONE = "done"
 
 

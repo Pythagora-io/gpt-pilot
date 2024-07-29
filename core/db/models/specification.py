@@ -26,7 +26,9 @@ class Specification(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
     # Attributes
+    original_description: Mapped[Optional[str]] = mapped_column()
     description: Mapped[str] = mapped_column(default="")
+    template_summary: Mapped[Optional[str]] = mapped_column()
     architecture: Mapped[str] = mapped_column(default="")
     system_dependencies: Mapped[list[dict]] = mapped_column(default=list)
     package_dependencies: Mapped[list[dict]] = mapped_column(default=list)
@@ -43,7 +45,9 @@ class Specification(Base):
         Clone the specification.
         """
         clone = Specification(
+            original_description=self.original_description,
             description=self.description,
+            template_summary=self.template_summary,
             architecture=self.architecture,
             system_dependencies=self.system_dependencies,
             package_dependencies=self.package_dependencies,

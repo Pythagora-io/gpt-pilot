@@ -111,7 +111,7 @@ class ErrorHandler(BaseAgent):
                 "description": llm_response,
                 "alternative_solutions": [],
                 "attempts": 1,
-                "status": IterationStatus.HUNTING_FOR_BUG,
+                "status": IterationStatus.IMPLEMENT_SOLUTION,
                 "bug_hunting_cycles": [],
             }
         ]
