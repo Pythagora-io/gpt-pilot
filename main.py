@@ -1,4 +1,7 @@
 def get_existing_apps():
+    with open('apps_list.txt', 'r') as file:
+        apps = file.readlines()
+    return [app.strip() for app in apps]def get_existing_apps():
     # Actual implementation to retrieve existing apps
     # This could be a database call or reading from a file
     apps = []
