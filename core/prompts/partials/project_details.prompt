@@ -20,3 +20,7 @@ Here are the technologies that should be used for this project:
 * {{ tech.name }} - {{ tech.description }}
 {% endfor %}
 {% endif %}
+{% if state.specification.template_summary %}
+
+{{ state.specification.template_summary }}
+{% endif %}
