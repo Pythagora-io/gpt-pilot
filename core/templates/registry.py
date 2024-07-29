@@ -13,11 +13,11 @@ class ProjectTemplateEnum(str, Enum):
 
     # JAVASCRIPT_REACT = JavascriptReactProjectTemplate.name
     NODE_EXPRESS_MONGOOSE = NodeExpressMongooseProjectTemplate.name
-    REACT_EXPRESS = ReactExpressProjectTemplate.name
+    # REACT_EXPRESS = ReactExpressProjectTemplate.name
 
 
 PROJECT_TEMPLATES = {
     # JavascriptReactProjectTemplate.name: JavascriptReactProjectTemplate,
     NodeExpressMongooseProjectTemplate.name: NodeExpressMongooseProjectTemplate,
-    ReactExpressProjectTemplate.name: ReactExpressProjectTemplate,
+    # ReactExpressProjectTemplate.name: ReactExpressProjectTemplate,
 }
