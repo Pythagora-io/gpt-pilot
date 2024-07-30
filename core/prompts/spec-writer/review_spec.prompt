@@ -9,7 +9,7 @@ This might include:
 
 Here is the client brief:
 ---CLIENT-BRIEF-START---
-{{ state.specification.description }}
+{{ desc }}
 ---CLIENT-BRIEF-END---
 
 Here is the specification your team came up with:

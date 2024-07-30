@@ -52,6 +52,16 @@
       "provider": "anthropic",
       "model": "claude-3-5-sonnet-20240620",
       "temperature": 0.0
+    },
+    "Developer.breakdown_current_task": {
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20240620",
+      "temperature": 0.5
+    },
+    "SpecWriter": {
+      "provider": "openai",
+      "model": "gpt-4-0125-preview",
+      "temperature": 0.5
     }
   },
   // Logging configuration outputs debug log to "pythagora.log" by default. If you set this to null,
