@@ -38,6 +38,7 @@ CODE_MONKEY_AGENT_NAME = "CodeMonkey"
 DESCRIBE_FILES_AGENT_NAME = "CodeMonkey.describe_files"
 CHECK_LOGS_AGENT_NAME = "BugHunter.check_logs"
 TASK_BREAKDOWN_AGENT_NAME = "Developer.breakdown_current_task"
+SPEC_WRITER_AGENT_NAME = "SpecWriter"
 
 # Endpoint for the external documentation
 EXTERNAL_DOCUMENTATION_API = "http://docs-pythagora-io-439719575.us-east-1.elb.amazonaws.com"
@@ -112,7 +113,7 @@ class AgentLLMConfig(_StrictModel):
     AgentLLMConfig is not specified, default will be used.
     """
 
-    provider: LLMProvider = LLMProvider.OPENAI
+    provider: Optional[LLMProvider] = Field(default=LLMProvider.OPENAI, description="LLM provider")
     model: str = Field(description="Model to use", default="gpt-4o-2024-05-13")
     temperature: float = Field(
         default=0.5,
@@ -318,8 +319,17 @@ class Config(_StrictModel):
             DEFAULT_AGENT_NAME: AgentLLMConfig(),
             CODE_MONKEY_AGENT_NAME: AgentLLMConfig(model="gpt-4-0125-preview", temperature=0.0),
             DESCRIBE_FILES_AGENT_NAME: AgentLLMConfig(model="gpt-3.5-turbo", temperature=0.0),
-            CHECK_LOGS_AGENT_NAME: AgentLLMConfig(model="claude-3-5-sonnet-20240620", temperature=0.5),
-            TASK_BREAKDOWN_AGENT_NAME: AgentLLMConfig(model="claude-3-5-sonnet-20240620", temperature=0.5),
+            CHECK_LOGS_AGENT_NAME: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20240620",
+                temperature=0.5,
+            ),
+            TASK_BREAKDOWN_AGENT_NAME: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20240620",
+                temperature=0.5,
+            ),
+            SPEC_WRITER_AGENT_NAME: AgentLLMConfig(model="gpt-4-0125-preview", temperature=0.0),
         }
     )
     prompt: PromptConfig = PromptConfig()

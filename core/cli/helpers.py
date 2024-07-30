@@ -27,7 +27,7 @@ def parse_llm_endpoint(value: str) -> Optional[tuple[LLMProvider, str]]:
     Option syntax is: --llm-endpoint <provider>:<url>
 
     :param value: Argument value.
-    :return: Tuple with LLM provider and URL, or None if if the option wasn't provided.
+    :return: Tuple with LLM provider and URL, or None if the option wasn't provided.
     """
     if not value:
         return None

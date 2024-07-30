@@ -1,6 +1,7 @@
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse, ResponseType
+from core.config import SPEC_WRITER_AGENT_NAME
 from core.db.models import Complexity
 from core.db.models.project_state import IterationStatus
 from core.llm.parser import StringParser
@@ -95,7 +96,7 @@ class SpecWriter(BaseAgent):
         await self.send_message(
             f"Making the following changes to project specification:\n\n{feature_description}\n\nUpdated project specification:"
         )
-        llm = self.get_llm()
+        llm = self.get_llm(SPEC_WRITER_AGENT_NAME)
         convo = AgentConvo(self).template("add_new_feature", feature_description=feature_description)
         llm_response: str = await llm(convo, temperature=0, parser=StringParser())
         updated_spec = llm_response.strip()
@@ -124,7 +125,7 @@ class SpecWriter(BaseAgent):
 
     async def check_prompt_complexity(self, prompt: str) -> str:
         await self.send_message("Checking the complexity of the prompt ...")
-        llm = self.get_llm()
+        llm = self.get_llm(SPEC_WRITER_AGENT_NAME)
         convo = AgentConvo(self).template("prompt_complexity", prompt=prompt)
         llm_response: str = await llm(convo, temperature=0, parser=StringParser())
         return llm_response.lower()
@@ -154,7 +155,7 @@ class SpecWriter(BaseAgent):
         )
         await self.send_message(msg)
 
-        llm = self.get_llm()
+        llm = self.get_llm(SPEC_WRITER_AGENT_NAME)
         convo = AgentConvo(self).template("ask_questions").user(spec)
         n_questions = 0
         n_answers = 0
@@ -204,7 +205,7 @@ class SpecWriter(BaseAgent):
 
     async def review_spec(self, spec: str) -> str:
         convo = AgentConvo(self).template("review_spec", spec=spec)
-        llm = self.get_llm()
+        llm = self.get_llm(SPEC_WRITER_AGENT_NAME)
         llm_response: str = await llm(convo, temperature=0)
         additional_info = llm_response.strip()
         if additional_info and len(additional_info) > 6:
