@@ -81,7 +81,8 @@ class SpecWriter(BaseAgent):
         self.next_state.specification.original_description = user_description
         self.next_state.specification.description = reviewed_spec
         self.next_state.specification.complexity = complexity
-        telemetry.set("initial_prompt", reviewed_spec)
+        telemetry.set("initial_prompt", user_description)
+        telemetry.set("updated_prompt", reviewed_spec)
         telemetry.set("is_complex_app", complexity != Complexity.SIMPLE)
 
         self.next_state.action = SPEC_STEP_NAME
