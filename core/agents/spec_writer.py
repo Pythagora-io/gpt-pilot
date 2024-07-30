@@ -62,26 +62,27 @@ class SpecWriter(BaseAgent):
             # nothing but repeat the question. We reproduce this bug for bug here.
             return AgentResponse.done(self)
 
-        spec = response.text.strip()
+        user_description = response.text.strip()
 
-        complexity = await self.check_prompt_complexity(spec)
+        complexity = await self.check_prompt_complexity(user_description)
         await telemetry.trace_code_event(
             "project-description",
             {
-                "initial_prompt": spec,
+                "initial_prompt": user_description,
                 "complexity": complexity,
             },
         )
 
-        if len(spec) < ANALYZE_THRESHOLD and complexity != Complexity.SIMPLE:
-            spec = await self.analyze_spec(spec)
-            spec = await self.review_spec(spec)
+        if len(user_description) < ANALYZE_THRESHOLD and complexity != Complexity.SIMPLE:
+            initial_spec = await self.analyze_spec(user_description)
+            reviewed_spec = await self.review_spec(desc=user_description, spec=initial_spec)
 
         self.next_state.specification = self.current_state.specification.clone()
-        self.next_state.specification.original_description = spec
-        self.next_state.specification.description = spec
+        self.next_state.specification.original_description = user_description
+        self.next_state.specification.description = reviewed_spec
         self.next_state.specification.complexity = complexity
-        telemetry.set("initial_prompt", spec)
+        telemetry.set("initial_prompt", user_description)
+        telemetry.set("updated_prompt", reviewed_spec)
         telemetry.set("is_complex_app", complexity != Complexity.SIMPLE)
 
         self.next_state.action = SPEC_STEP_NAME
@@ -203,11 +204,11 @@ class SpecWriter(BaseAgent):
                 n_answers += 1
                 convo.user(user_response.text)
 
-    async def review_spec(self, spec: str) -> str:
-        convo = AgentConvo(self).template("review_spec", spec=spec)
+    async def review_spec(self, desc: str, spec: str) -> str:
+        convo = AgentConvo(self).template("review_spec", desc=desc, spec=spec)
         llm = self.get_llm(SPEC_WRITER_AGENT_NAME)
         llm_response: str = await llm(convo, temperature=0)
         additional_info = llm_response.strip()
         if additional_info and len(additional_info) > 6:
-            spec += "\nAdditional info/examples:\n" + additional_info
+            spec += "\n\nAdditional info/examples:\n\n" + additional_info
         return spec
