@@ -146,6 +146,7 @@ class BugHunter(BaseAgent):
                 "Please do exactly what you did in the last iteration, paste **BACKEND** logs here and click CONTINUE.",
                 buttons={"continue": "Continue", "done": "Bug is fixed"},
                 default="continue",
+                sec_input_request=True,
                 hint="Instructions for testing:\n\n"
                 + self.current_state.current_iteration["bug_reproduction_description"],
             )

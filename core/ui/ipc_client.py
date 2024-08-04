@@ -44,6 +44,7 @@ class MessageType(str, Enum):
     FEATURE_FINISHED = "featureFinished"
     GENERATE_DIFF = "generateDiff"
     CLOSE_DIFF = "closeDiff"
+    SECOND_INPUT_REQUEST = "sec_input_request"
 
 
 class Message(BaseModel):
@@ -239,6 +240,7 @@ class IPCClientUI(UIBase):
         default: Optional[str] = None,
         buttons_only: bool = False,
         allow_empty: bool = False,
+        sec_input_request: bool = False,
         hint: Optional[str] = None,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
@@ -254,6 +256,14 @@ class IPCClientUI(UIBase):
             await self._send(MessageType.VERBOSE, content=question, category=category)
 
         await self._send(MessageType.USER_INPUT_REQUEST, content=question, category=category)
+
+        if sec_input_request:
+            await self._send(
+                MessageType.SECOND_INPUT_REQUEST,
+                content="Can we share some additional information please?",
+                category=category,
+            )
+
         if buttons:
             buttons_str = "/".join(buttons.values())
             if buttons_only:

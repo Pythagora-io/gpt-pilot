@@ -70,6 +70,7 @@ class BaseAgent:
         buttons_only: bool = False,
         initial_text: Optional[str] = None,
         allow_empty: bool = False,
+        sec_input_request: bool = False,
         hint: Optional[str] = None,
     ) -> UserInput:
         """
@@ -84,6 +85,7 @@ class BaseAgent:
         :param default: Default button to select.
         :param buttons_only: Only display buttons, no text input.
         :param allow_empty: Allow empty input.
+        :param sec_input_request: Show second input to the user.
         :param hint: Text to display in a popup as a hint to the question.
         :param initial_text: Initial text input.
         :return: User response.
@@ -94,6 +96,7 @@ class BaseAgent:
             default=default,
             buttons_only=buttons_only,
             allow_empty=allow_empty,
+            sec_input_request=sec_input_request,
             hint=hint,
             initial_text=initial_text,
             source=self.ui_source,
