@@ -77,6 +77,7 @@ class BugHunter(BaseAgent):
                 "log_data",
                 backend_logs=hunting_cycle["backend_logs"],
                 frontend_logs=hunting_cycle["frontend_logs"],
+                user_input=hunting_cycle["user_input"],
                 fix_attempted=hunting_cycle["fix_attempted"],
             )
 
@@ -165,6 +166,7 @@ class BugHunter(BaseAgent):
                 # TODO select only the logs that are new (with PYTHAGORA_DEBUGGING_LOG)
                 self.next_state.current_iteration["bug_hunting_cycles"][-1]["backend_logs"] = backend_logs.text
                 self.next_state.current_iteration["bug_hunting_cycles"][-1]["frontend_logs"] = frontend_logs.text
+                self.next_state.current_iteration["bug_hunting_cycles"][-1]["user_input"] = frontend_logs.user_input
                 self.next_state.current_iteration["status"] = IterationStatus.HUNTING_FOR_BUG
 
                 if frontend_logs.button == "done":

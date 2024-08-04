@@ -1,4 +1,5 @@
-{% if backend_logs is not none %}Here are the logs we added to the backend:
+{% if user_input is not none %}{{ user_input }}
+{% endif %}{% if backend_logs is not none %}Here are the logs we added to the backend:
 ```
 {{ backend_logs }}
 ```
