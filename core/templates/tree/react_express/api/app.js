@@ -28,8 +28,8 @@ app.use(cors());
 {% if options.auth %}
 
 // Authentication routes
-app.use(authRoutes);
 app.use(authenticateWithToken);
+app.use(authRoutes);
 {% endif %}
 
 app.use(apiRoutes);

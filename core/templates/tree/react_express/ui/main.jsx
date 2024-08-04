@@ -1,3 +1,6 @@
+{% if options.auth %}
+import axios from 'axios'
+{% endif %}
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { createBrowserRouter, RouterProvider, useLocation } from "react-router-dom"
@@ -9,6 +12,15 @@ import Home from './pages/Home.jsx'
 {% if options.auth %}
 import Register from './pages/Register.jsx'
 import Login from './pages/Login.jsx'
+
+// Add auth token to every API request if we have it
+axios.interceptors.request.use(config => {
+  const token = localStorage.getItem("token");
+  if (token && !config.headers.Authorization) {
+    config.headers.Authorization = `Token ${token}`
+  }
+  return config
+})
 {% endif %}
 
 function PageNotFound() {
