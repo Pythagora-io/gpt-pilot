@@ -77,8 +77,6 @@ class SpecWriter(BaseAgent):
         if len(user_description) < ANALYZE_THRESHOLD and complexity != Complexity.SIMPLE:
             initial_spec = await self.analyze_spec(user_description)
             reviewed_spec = await self.review_spec(desc=user_description, spec=initial_spec)
-        else:
-            initial_spec = reviewed_spec = user_description
 
         self.next_state.specification = self.current_state.specification.clone()
         self.next_state.specification.original_description = user_description
