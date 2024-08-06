@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse
+from core.config import GET_RELEVANT_FILES_AGENT_NAME
 from core.llm.parser import JSONParser
 from core.log import get_logger
 
@@ -66,7 +67,7 @@ class RelevantFilesMixin:
 
         done = False
         relevant_files = set()
-        llm = self.get_llm()
+        llm = self.get_llm(GET_RELEVANT_FILES_AGENT_NAME)
         convo = (
             AgentConvo(self)
             .template(
@@ -78,7 +79,7 @@ class RelevantFilesMixin:
             .require_schema(RelevantFiles)
         )
 
-        while not done:
+        while not done and len(convo.messages) < 13:
             llm_response: RelevantFiles = await llm(convo, parser=JSONParser(RelevantFiles), temperature=0)
 
             # Check if there are files to add to the list
