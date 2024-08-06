@@ -12,7 +12,7 @@ Development process of this app was split into smaller tasks. Here is the list o
 
 You are currently working on, and have to focus only on, this task:
 ```
-{{ current_task.description }}
+{{ state.current_task.description }}
 ```
 
 {% endif %}

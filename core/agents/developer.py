@@ -1,11 +1,12 @@
-from typing import Optional
+from enum import Enum
+from typing import Annotated, Literal, Optional, Union
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
-from core.agents.mixins import TaskSteps
+from core.agents.mixins import RelevantFilesMixin
 from core.agents.response import AgentResponse, ResponseType
 from core.config import TASK_BREAKDOWN_AGENT_NAME
 from core.db.models.project_state import IterationStatus, TaskStatus
@@ -17,11 +18,48 @@ from core.telemetry import telemetry
 log = get_logger(__name__)
 
 
-class RelevantFiles(BaseModel):
-    relevant_files: list[str] = Field(description="List of relevant files for the current task.")
+class StepType(str, Enum):
+    COMMAND = "command"
+    SAVE_FILE = "save_file"
+    HUMAN_INTERVENTION = "human_intervention"
 
 
-class Developer(BaseAgent):
+class CommandOptions(BaseModel):
+    command: str = Field(description="Command to run")
+    timeout: int = Field(description="Timeout in seconds")
+    success_message: str = ""
+
+
+class SaveFileOptions(BaseModel):
+    path: str
+
+
+class SaveFileStep(BaseModel):
+    type: Literal[StepType.SAVE_FILE] = StepType.SAVE_FILE
+    save_file: SaveFileOptions
+
+
+class CommandStep(BaseModel):
+    type: Literal[StepType.COMMAND] = StepType.COMMAND
+    command: CommandOptions
+
+
+class HumanInterventionStep(BaseModel):
+    type: Literal[StepType.HUMAN_INTERVENTION] = StepType.HUMAN_INTERVENTION
+    human_intervention_description: str
+
+
+Step = Annotated[
+    Union[SaveFileStep, CommandStep, HumanInterventionStep],
+    Field(discriminator="type"),
+]
+
+
+class TaskSteps(BaseModel):
+    steps: list[Step]
+
+
+class Developer(RelevantFilesMixin, BaseAgent):
     agent_type = "developer"
     display_name = "Developer"
 
@@ -96,7 +134,8 @@ class Developer(BaseAgent):
             log.debug(f"Breaking down the iteration {description}")
             await self.send_message("Breaking down the current task iteration ...")
 
-        await self.get_relevant_files(user_feedback, description)
+        if self.current_state.files and self.current_state.relevant_files is None:
+            return await self.get_relevant_files(user_feedback, description)
 
         await self.ui.send_task_progress(
             n_tasks,  # iterations and reviews can be created only one at a time, so we are always on last one
@@ -114,7 +153,6 @@ class Developer(BaseAgent):
             AgentConvo(self)
             .template(
                 "iteration",
-                current_task=current_task,
                 user_feedback=user_feedback,
                 user_feedback_qa=None,
                 next_solution_to_try=None,
@@ -175,7 +213,7 @@ class Developer(BaseAgent):
         log.debug(f"Current state files: {len(self.current_state.files)}, relevant {self.current_state.relevant_files}")
         # Check which files are relevant to the current task
         if self.current_state.files and self.current_state.relevant_files is None:
-            await self.get_relevant_files()
+            return await self.get_relevant_files()
 
         current_task_index = self.current_state.tasks.index(current_task)
 
@@ -188,6 +226,8 @@ class Developer(BaseAgent):
             docs=self.current_state.docs,
         )
         response: str = await llm(convo)
+
+        await self.get_relevant_files(None, response)
 
         self.next_state.tasks[current_task_index] = {
             **current_task,
@@ -212,31 +252,6 @@ class Developer(BaseAgent):
                 "num_epics": len(self.current_state.epics),
             },
         )
-        return AgentResponse.done(self)
-
-    async def get_relevant_files(
-        self, user_feedback: Optional[str] = None, solution_description: Optional[str] = None
-    ) -> AgentResponse:
-        log.debug("Getting relevant files for the current task")
-        await self.send_message("Figuring out which project files are relevant for the next task ...")
-
-        llm = self.get_llm()
-        convo = (
-            AgentConvo(self)
-            .template(
-                "filter_files",
-                current_task=self.current_state.current_task,
-                user_feedback=user_feedback,
-                solution_description=solution_description,
-            )
-            .require_schema(RelevantFiles)
-        )
-
-        llm_response: list[str] = await llm(convo, parser=JSONParser(RelevantFiles), temperature=0)
-
-        existing_files = {file.path for file in self.current_state.files}
-        self.next_state.relevant_files = [path for path in llm_response.relevant_files if path in existing_files]
-
         return AgentResponse.done(self)
 
     def set_next_steps(self, response: TaskSteps, source: str):
