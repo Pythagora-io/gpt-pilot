@@ -29,6 +29,7 @@ class MessageType(str, Enum):
     USER_INPUT_REQUEST = "user_input_request"
     INFO = "info"
     PROGRESS = "progress"
+    DEBUGGING_LOGS = "debugging_logs"
     RUN_COMMAND = "run_command"
     OPEN_FILE = "openFile"
     PROJECT_FOLDER_NAME = "project_folder_name"
@@ -329,6 +330,15 @@ class IPCClientUI(UIBase):
                     "source": task_source,
                 }
             },
+        )
+
+    async def send_data_about_logs(
+        self,
+        data_about_logs: dict,
+    ):
+        await self._send(
+            MessageType.DEBUGGING_LOGS,
+            content=data_about_logs,
         )
 
     async def send_run_command(self, run_command: str):

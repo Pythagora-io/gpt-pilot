@@ -233,6 +233,9 @@ class Orchestrator(BaseAgent):
             if current_iteration_status == IterationStatus.HUNTING_FOR_BUG:
                 # Triggering the bug hunter to start the hunt
                 return BugHunter(self.state_manager, self.ui)
+            elif current_iteration_status == IterationStatus.START_PAIR_PROGRAMMING:
+                # Pythagora cannot solve the issue so we're starting pair programming
+                return BugHunter(self.state_manager, self.ui)
             elif current_iteration_status == IterationStatus.AWAITING_LOGGING:
                 # Get the developer to implement logs needed for debugging
                 return Developer(self.state_manager, self.ui)

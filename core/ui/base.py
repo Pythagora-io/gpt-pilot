@@ -231,6 +231,18 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    # TODO: fix!!!
+    async def send_data_about_logs(
+        self,
+        data_about_logs: dict,
+    ):
+        """
+        Send the data about debugging logs.
+
+        :param data_about_logs: Data about logs.
+        """
+        raise NotImplementedError()
+
     async def send_run_command(self, run_command: str):
         """
         Send a run command to the UI.

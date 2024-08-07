@@ -111,6 +111,12 @@ class VirtualUI(UIBase):
     ):
         pass
 
+    async def send_data_about_logs(
+        self,
+        data_about_logs: dict,
+    ):
+        pass
+
     async def send_run_command(self, run_command: str):
         pass
 
