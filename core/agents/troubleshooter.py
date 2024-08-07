@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
-from core.agents.mixins import IterationPromptMixin
+from core.agents.mixins import IterationPromptMixin, RelevantFilesMixin
 from core.agents.response import AgentResponse
 from core.db.models.file import File
 from core.db.models.project_state import IterationStatus, TaskStatus
@@ -28,7 +28,7 @@ class RouteFilePaths(BaseModel):
     files: list[str] = Field(description="List of paths for files that contain routes")
 
 
-class Troubleshooter(IterationPromptMixin, BaseAgent):
+class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
     agent_type = "troubleshooter"
     display_name = "Troubleshooter"
 
@@ -102,6 +102,7 @@ class Troubleshooter(IterationPromptMixin, BaseAgent):
         else:
             # should be - elif change_description is not None: - but to prevent bugs with the extension
             # this might be caused if we show the input field instead of buttons
+            await self.get_relevant_files(user_feedback)
             iteration_status = IterationStatus.NEW_FEATURE_REQUESTED
 
         self.next_state.iterations = self.current_state.iterations + [

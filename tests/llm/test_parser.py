@@ -141,7 +141,8 @@ def test_parse_json_with_spec(input, expected):
         with pytest.raises(ValueError):
             parser(input)
     else:
-        assert parser(input).model_dump() == expected
+        result = parser(input)
+        assert result.model_dump() == {**expected, "original_response": input.strip()}
 
 
 def test_parse_json_schema():

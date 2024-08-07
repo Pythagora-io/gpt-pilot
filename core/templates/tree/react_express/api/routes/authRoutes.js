@@ -61,4 +61,8 @@ router.post('/api/auth/password', requireUser, async (req, res) => {
   res.status(204).send();
 });
 
+router.get('/api/auth/me', requireUser, async (req, res) => {
+  return res.status(200).json(req.user);
+});
+
 export default router;

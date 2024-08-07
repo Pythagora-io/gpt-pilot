@@ -28,6 +28,11 @@ class TaskReviewer(BaseAgent):
             # Some iterations are created by the task reviewer and have no user feedback
             if iteration["user_feedback"]
         ]
+        bug_hunter_instructions = [
+            iteration["bug_hunting_cycles"][-1]["human_readable_instructions"].replace("```", "").strip()
+            for iteration in self.current_state.iterations
+            if iteration["bug_hunting_cycles"]
+        ]
 
         files_before_modification = self.current_state.modified_files
         files_after_modification = [
@@ -40,10 +45,10 @@ class TaskReviewer(BaseAgent):
         # TODO instead of sending files before and after maybe add nice way to show diff for multiple files
         convo = AgentConvo(self).template(
             "review_task",
-            current_task=self.current_state.current_task,
             all_feedbacks=all_feedbacks,
             files_before_modification=files_before_modification,
             files_after_modification=files_after_modification,
+            bug_hunter_instructions=bug_hunter_instructions,
         )
         llm_response: str = await llm(convo, temperature=0.7)
 
