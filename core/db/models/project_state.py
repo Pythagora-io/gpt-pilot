@@ -304,6 +304,7 @@ class ProjectState(Base):
 
         log.debug(f"Completing iteration {self.unfinished_iterations[0]}")
         self.unfinished_iterations[0]["status"] = IterationStatus.DONE
+        self.relevant_files = None
         self.flag_iterations_as_modified()
 
     def flag_iterations_as_modified(self):

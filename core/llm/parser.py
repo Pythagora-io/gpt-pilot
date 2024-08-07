@@ -3,7 +3,7 @@ import re
 from enum import Enum
 from typing import Optional, Union
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, create_model
 
 
 class MultiCodeBlockParser:
@@ -86,6 +86,7 @@ class JSONParser:
     def __init__(self, spec: Optional[BaseModel] = None, strict: bool = True):
         self.spec = spec
         self.strict = strict or (spec is not None)
+        self.original_response = None
 
     @property
     def schema(self):
@@ -102,7 +103,8 @@ class JSONParser:
         return "\n".join(error_txt)
 
     def __call__(self, text: str) -> Union[BaseModel, dict, None]:
-        text = text.strip()
+        self.original_response = text.strip()  # Store the original text
+        text = self.original_response
         if text.startswith("```"):
             try:
                 text = CodeBlockParser()(text)
@@ -130,7 +132,17 @@ class JSONParser:
         except Exception as err:
             raise ValueError(f"Error parsing JSON: {err}") from err
 
-        return model
+        # Create a new model that includes the original model fields and the original text
+        ExtendedModel = create_model(
+            f"Extended{self.spec.__name__}",
+            original_response=(str, ...),
+            **{field_name: (field.annotation, field.default) for field_name, field in self.spec.__fields__.items()},
+        )
+
+        # Instantiate the extended model
+        extended_model = ExtendedModel(original_response=self.original_response, **model.dict())
+
+        return extended_model
 
 
 class EnumParser:

@@ -129,6 +129,9 @@ class VirtualUI(UIBase):
     async def send_project_stats(self, stats: dict):
         pass
 
+    async def generate_diff(self, file_old: str, file_new: str):
+        pass
+
     async def loading_finished(self):
         pass
 

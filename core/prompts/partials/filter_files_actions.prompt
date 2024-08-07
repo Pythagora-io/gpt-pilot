@@ -1,0 +1,14 @@
+Here is the current relevant files list:
+{% if relevant_files %}{{ relevant_files }}{% else %}[]{% endif %}
+
+Now, with multiple iterations you have to find relevant files for the current task. Here are commands that you can use:
+- `read_files` - List of files that you want to read.
+- `add_files` - Add file to the list of relevant files.
+- `remove_files` - Remove file from the list of relevant files.
+- `finished` - Boolean command that you will use when you finish with finding relevant files.
+
+Make sure to follow these rules:
+- All files that you want to read or add to the list of relevant files, must exist in the project. Do not ask to read or add file that does not exist! In the first message you have list of all files that currently exist in the project.
+- Do not repeat actions that you have already done. For example if you already added "index.js" to the list of relevant files you must not add it again.
+- You must read the file before adding it to the list of relevant files. Do not `add_files` that you didn't read and see the content of the file.
+- Focus only on your current task `{{ state.current_task.description }}` when selecting relevant files.
