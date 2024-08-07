@@ -194,7 +194,20 @@ class BugHunter(BaseAgent):
 
         data_about_logs = await llm(convo, parser=JSONParser(ImportantLogsForDebugging), temperature=0.5)
 
-        await self.ui.send_data_about_logs(data_about_logs)
+        await self.ui.send_data_about_logs(
+            {
+                "logs": [
+                    {
+                        "currentLog": d.currentOutput,
+                        "expectedLog": d.expectedOutput,
+                        "explanation": d.explanation,
+                        "filePath": d.filePath,
+                        "logCode": d.logCode,
+                    }
+                    for d in data_about_logs.logs
+                ]
+            }
+        )
 
         while True:
             self.next_state.current_iteration["initial_explanation"] = initial_explanation
