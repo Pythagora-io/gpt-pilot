@@ -1,0 +1,6 @@
+The human is sending you a hint about how to solve this bug. Here is what human said:
+```
+{{ human_hint }}
+```
+
+Now, based on this hint, break down exactly what the problem is, what is the solution to this problem and how can we implement this solution so that the bug is fixed.
