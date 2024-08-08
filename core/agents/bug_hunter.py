@@ -178,7 +178,7 @@ class BugHunter(BaseAgent):
     async def start_pair_programming(self):
         llm = self.get_llm()
         convo = self.generate_iteration_convo_so_far(True)
-        # TODO: structure this output better
+        convo.remove_last_x_messages(1)
         convo = convo.template("problem_explanation")
         initial_explanation = await llm(convo, temperature=0.5)
 
@@ -205,15 +205,15 @@ class BugHunter(BaseAgent):
         while True:
             self.next_state.current_iteration["initial_explanation"] = initial_explanation
             next_step = await self.ask_question(
-                "How do you want to approach this?",
+                "What do you want to do?",
                 buttons={
                     "question": "I have a question",
                     "done": "I fixed the bug myself",
                     "tell_me_more": "Tell me more about the bug",
-                    "additional_user_info": "I have a hint for Pythagora",
-                    "solution_tip": "I think I know where the problem is",
+                    "solution_hint": "I think I know where the problem is",
                     "other": "Other",
                 },
+                buttons_only=True,
                 default="continue",
                 hint="Instructions for testing:\n\n"
                 + self.current_state.current_iteration["bug_reproduction_description"],
@@ -225,10 +225,11 @@ class BugHunter(BaseAgent):
             if len(convo.messages) > 10:
                 convo.trim(1, 2)
 
+            # TODO: in the future improve with a separate conversation that parses the user info and goes into an appropriate if statement
             if next_step.button == "done":
                 self.next_state.complete_iteration()
+                break
             elif next_step.button == "question":
-                # TODO: in the future improve with a separate conversation and autonomous parsing of user info
                 user_response = await self.ask_question("Oh, cool, what would you like to know?")
                 convo = convo.template("ask_a_question", question=user_response.text)
                 llm_answer = await llm(convo, temperature=0.5)
@@ -243,17 +244,34 @@ class BugHunter(BaseAgent):
                 convo = convo.template("ask_a_question", question=user_response.text)
                 llm_answer = await llm(convo, temperature=0.5)
                 await self.send_message(llm_answer)
-            elif next_step.button in ["additional_user_info", "solution_tip"]:
-                user_response = await self.ask_question("Oh, cool, what would you like to know?")
-                await self.continue_on(convo, next_step.button, user_response)
+            elif next_step.button == "solution_hint":
+                human_hint_label = "Amazing!!! How do you think we can solve this bug?"
+                while True:
+                    human_hint = await self.ask_question(human_hint_label)
+                    convo = convo.template("instructions_from_human_hint", human_hint=human_hint.text)
+                    llm = self.get_llm(CHECK_LOGS_AGENT_NAME)
+                    human_readable_instructions = await llm(convo, temperature=0.5)
+                    human_approval = await self.ask_question(
+                        "Can I implement this solution?", buttons={"yes": "Yes", "no": "No"}, buttons_only=True
+                    )
+                    llm = self.get_llm()
+                    if human_approval.button == "yes":
+                        self.set_data_for_next_hunting_cycle(
+                            human_readable_instructions, IterationStatus.AWAITING_BUG_FIX
+                        )
+                        self.next_state.flag_iterations_as_modified()
+                        break
+                    else:
+                        human_hint_label = "Oh, my bad, what did I misunderstand?"
+                break
             elif next_step.button == "tell_me_more":
                 convo.template("tell_me_more")
                 response = await llm(convo, temperature=0.5)
                 await self.send_message(response)
                 continue
 
-            # TODO: send telemetry so we know what do users mostly click here!
-            return AgentResponse.done(self)
+        # TODO: send telemetry so we know what do users mostly click here!
+        return AgentResponse.done(self)
 
     def generate_iteration_convo_so_far(self, omit_last_cycle=False):
         convo = AgentConvo(self).template(
