@@ -93,23 +93,13 @@ class BugHunter(BaseAgent):
         llm = self.get_llm()
         hunt_conclusion = await llm(convo, parser=JSONParser(HuntConclusionOptions), temperature=0)
 
-        self.next_state.current_iteration["description"] = human_readable_instructions
-        self.next_state.current_iteration["bug_hunting_cycles"] += [
-            {
-                "human_readable_instructions": human_readable_instructions,
-                "fix_attempted": any(
-                    c["fix_attempted"] for c in self.current_state.current_iteration["bug_hunting_cycles"]
-                ),
-            }
-        ]
-
         if hunt_conclusion.conclusion == magic_words.PROBLEM_IDENTIFIED:
             # if no need for logs, implement iteration same as before
-            self.next_state.current_iteration["status"] = IterationStatus.AWAITING_BUG_FIX
+            self.set_data_for_next_hunting_cycle(human_readable_instructions, IterationStatus.AWAITING_BUG_FIX)
             await self.send_message("The bug is found - I'm  attempting to fix it.")
         else:
             # if logs are needed, add logging steps
-            self.next_state.current_iteration["status"] = IterationStatus.AWAITING_LOGGING
+            self.set_data_for_next_hunting_cycle(human_readable_instructions, IterationStatus.AWAITING_LOGGING)
             await self.send_message("Adding more logs to identify the bug.")
 
         self.next_state.flag_iterations_as_modified()
@@ -289,6 +279,19 @@ class BugHunter(BaseAgent):
             )
 
         return convo
+
+    def set_data_for_next_hunting_cycle(self, human_readable_instructions, new_status):
+        self.next_state.current_iteration["description"] = human_readable_instructions
+        self.next_state.current_iteration["bug_hunting_cycles"] += [
+            {
+                "human_readable_instructions": human_readable_instructions,
+                "fix_attempted": any(
+                    c["fix_attempted"] for c in self.current_state.current_iteration["bug_hunting_cycles"]
+                ),
+            }
+        ]
+
+        self.next_state.current_iteration["status"] = new_status
 
     async def continue_on(self, convo, button_value, user_response):
         llm = self.get_llm()
