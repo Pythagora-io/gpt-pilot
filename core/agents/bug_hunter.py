@@ -115,7 +115,7 @@ class BugHunter(BaseAgent):
 
         last_iteration = self.current_state.iterations[-1] if len(self.current_state.iterations) >= 3 else None
         if last_iteration:
-            buttons["loop"] = "I'm stuck in a loop"
+            buttons["loop"] = "Start Pair Programming"
 
         if self.current_state.run_command:
             await self.ui.send_run_command(self.current_state.run_command)

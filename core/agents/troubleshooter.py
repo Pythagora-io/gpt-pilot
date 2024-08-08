@@ -216,7 +216,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         If "is_loop" is True, Pythagora is stuck in a loop and needs to consider alternative solutions.
 
         The last element in the tuple is the user feedback, which may be empty if the user provided no
-        feedback (eg. if they just clicked on "Continue" or "I'm stuck in a loop").
+        feedback (eg. if they just clicked on "Continue" or "Start Pair Programming").
         """
 
         bug_report = None
@@ -233,7 +233,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
 
         buttons = {"continue": "Everything works", "change": "I want to make a change", "bug": "There is an issue"}
         if last_iteration:
-            buttons["loop"] = "I'm stuck in a loop"
+            buttons["loop"] = "Start Pair Programming"
 
         user_response = await self.ask_question(
             test_message, buttons=buttons, default="continue", buttons_only=True, hint=hint
