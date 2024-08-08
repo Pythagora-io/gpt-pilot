@@ -32,6 +32,9 @@ class HuntConclusionOptions(BaseModel):
 
 class ImportantLog(BaseModel):
     logCode: str = Field(description="Actual line of code that prints the log.")
+    shouldBeDifferent: bool = Field(
+        description="Whether the current output should be different from the expected output."
+    )
     filePath: str = Field(description="Path to the file in which the log exists.")
     currentOutput: str = Field(description="Current output of the log.")
     expectedOutput: str = Field(description="Expected output of the log.")
@@ -77,7 +80,6 @@ class BugHunter(BaseAgent):
     async def check_logs(self, logs_message: str = None):
         llm = self.get_llm(CHECK_LOGS_AGENT_NAME)
         convo = self.generate_iteration_convo_so_far()
-
         human_readable_instructions = await llm(convo, temperature=0.5)
 
         convo = (
@@ -203,6 +205,7 @@ class BugHunter(BaseAgent):
                         "explanation": d.explanation,
                         "filePath": d.filePath,
                         "logCode": d.logCode,
+                        "shouldBeDifferent": d.shouldBeDifferent,
                     }
                     for d in data_about_logs.logs
                 ]
