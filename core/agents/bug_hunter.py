@@ -137,6 +137,8 @@ class BugHunter(BaseAgent):
                 self.next_state.complete_iteration()
             elif user_feedback.button == "start_pair_programming":
                 self.next_state.current_iteration["status"] = IterationStatus.START_PAIR_PROGRAMMING
+                # TODO: Leon check if this is needed
+                self.next_state.flag_iterations_as_modified()
             else:
                 awaiting_bug_reproduction = True
 
@@ -156,6 +158,8 @@ class BugHunter(BaseAgent):
                 self.next_state.complete_iteration()
             elif backend_logs.button == "start_pair_programming":
                 self.next_state.current_iteration["status"] = IterationStatus.START_PAIR_PROGRAMMING
+                # TODO: Leon check if this is needed
+                self.next_state.flag_iterations_as_modified()
             else:
                 frontend_logs = await self.ask_question(
                     "Please paste **frontend** logs here and click CONTINUE.",
@@ -291,9 +295,9 @@ class BugHunter(BaseAgent):
         for hunting_cycle in hunting_cycles:
             convo = convo.assistant(hunting_cycle["human_readable_instructions"]).template(
                 "log_data",
-                backend_logs=hunting_cycle["backend_logs"],
-                frontend_logs=hunting_cycle["frontend_logs"],
-                fix_attempted=hunting_cycle["fix_attempted"],
+                backend_logs=hunting_cycle.get("backend_logs"),
+                frontend_logs=hunting_cycle.get("frontend_logs"),
+                fix_attempted=hunting_cycle.get("fix_attempted"),
             )
 
         return convo
