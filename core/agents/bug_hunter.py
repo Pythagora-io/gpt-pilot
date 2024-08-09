@@ -115,7 +115,7 @@ class BugHunter(BaseAgent):
 
         last_iteration = self.current_state.iterations[-1] if len(self.current_state.iterations) >= 3 else None
         if last_iteration:
-            buttons["loop"] = "Start Pair Programming"
+            buttons["start_pair_programming"] = "Start Pair Programming"
 
         if self.current_state.run_command:
             await self.ui.send_run_command(self.current_state.run_command)
@@ -135,7 +135,7 @@ class BugHunter(BaseAgent):
 
             if user_feedback.button == "yes":
                 self.next_state.complete_iteration()
-            elif user_feedback.button == "loop":
+            elif user_feedback.button == "start_pair_programming":
                 self.next_state.current_iteration["status"] = IterationStatus.START_PAIR_PROGRAMMING
             else:
                 awaiting_bug_reproduction = True
@@ -154,7 +154,7 @@ class BugHunter(BaseAgent):
 
             if backend_logs.button == "done":
                 self.next_state.complete_iteration()
-            elif backend_logs.button == "loop":
+            elif backend_logs.button == "start_pair_programming":
                 self.next_state.current_iteration["status"] = IterationStatus.START_PAIR_PROGRAMMING
             else:
                 frontend_logs = await self.ask_question(
