@@ -45,6 +45,7 @@ class MessageType(str, Enum):
     FEATURE_FINISHED = "featureFinished"
     GENERATE_DIFF = "generateDiff"
     CLOSE_DIFF = "closeDiff"
+    IMPORTANT_STREAM = "importantStream"
 
 
 class Message(BaseModel):
@@ -360,6 +361,12 @@ class IPCClientUI(UIBase):
         await self._send(
             MessageType.PROJECT_FOLDER_NAME,
             content=basename(path),
+        )
+
+    async def start_important_stream(self):
+        await self._send(
+            MessageType.IMPORTANT_STREAM,
+            content={},
         )
 
     async def send_project_stats(self, stats: dict):

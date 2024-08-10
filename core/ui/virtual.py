@@ -126,6 +126,9 @@ class VirtualUI(UIBase):
     async def send_project_root(self, path: str):
         pass
 
+    async def start_important_stream(self):
+        pass
+
     async def send_project_stats(self, stats: dict):
         pass
 

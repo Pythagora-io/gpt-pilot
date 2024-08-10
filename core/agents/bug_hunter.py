@@ -184,6 +184,7 @@ class BugHunter(BaseAgent):
         convo = self.generate_iteration_convo_so_far(True)
         convo.remove_last_x_messages(1)
         convo = convo.template("problem_explanation")
+        await self.ui.start_important_stream()
         initial_explanation = await llm(convo, temperature=0.5)
 
         convo = convo.template("data_about_logs").require_schema(ImportantLogsForDebugging)
@@ -236,16 +237,19 @@ class BugHunter(BaseAgent):
             elif next_step.button == "question":
                 user_response = await self.ask_question("Oh, cool, what would you like to know?")
                 convo = convo.template("ask_a_question", question=user_response.text)
+                await self.ui.start_important_stream()
                 llm_answer = await llm(convo, temperature=0.5)
                 await self.send_message(llm_answer)
             elif next_step.button == "tell_me_more":
                 convo.template("tell_me_more")
+                await self.ui.start_important_stream()
                 response = await llm(convo, temperature=0.5)
                 await self.send_message(response)
             elif next_step.button == "other":
                 # this is the same as "question" - we want to keep an option for users to click to understand if we're missing something with other options
                 user_response = await self.ask_question("Let me know what you think...")
                 convo = convo.template("ask_a_question", question=user_response.text)
+                await self.ui.start_important_stream()
                 llm_answer = await llm(convo, temperature=0.5)
                 await self.send_message(llm_answer)
             elif next_step.button == "solution_hint":
@@ -253,6 +257,7 @@ class BugHunter(BaseAgent):
                 while True:
                     human_hint = await self.ask_question(human_hint_label)
                     convo = convo.template("instructions_from_human_hint", human_hint=human_hint.text)
+                    await self.ui.start_important_stream()
                     llm = self.get_llm(CHECK_LOGS_AGENT_NAME)
                     human_readable_instructions = await llm(convo, temperature=0.5)
                     human_approval = await self.ask_question(
@@ -270,6 +275,7 @@ class BugHunter(BaseAgent):
                 break
             elif next_step.button == "tell_me_more":
                 convo.template("tell_me_more")
+                await self.ui.start_important_stream()
                 response = await llm(convo, temperature=0.5)
                 await self.send_message(response)
                 continue

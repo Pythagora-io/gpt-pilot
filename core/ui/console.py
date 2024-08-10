@@ -151,5 +151,8 @@ class PlainConsoleUI(UIBase):
     async def import_project(self, project_dir: str):
         pass
 
+    async def start_important_stream(self):
+        pass
+
 
 __all__ = ["PlainConsoleUI"]
