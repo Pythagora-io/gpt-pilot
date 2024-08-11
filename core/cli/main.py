@@ -88,6 +88,7 @@ async def llm_api_check(ui: UIBase) -> bool:
                 log.warning(f"API check for {llm_config.provider.value} failed.")
             else:
                 log.info(f"API check for {llm_config.provider.value} succeeded.")
+                checked_llms.add(llm_config.provider)
         except APIError as err:
             await ui.send_message(
                 f"API check for {llm_config.provider.value} failed with: {err}",
