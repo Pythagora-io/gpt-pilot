@@ -61,6 +61,16 @@ class BaseAgent:
         """
         await self.ui.send_message(message + "\n", source=self.ui_source)
 
+    async def send_modified_files(self, files: dict[str, str, str]):
+        """
+        Send modified files to the user.
+
+        Convenience method, uses `UIBase.send_modified_files()` to send the files,
+        setting the correct files.
+        :param files: Files to send.
+        """
+        await self.ui.send_modified_files(files)
+
     async def ask_question(
         self,
         question: str,

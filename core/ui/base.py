@@ -230,7 +230,16 @@ class UIBase:
         :param task_source: Source of the task, one of: 'app', 'feature', 'debugger', 'troubleshooting', 'review'.
         """
         raise NotImplementedError()
+    async def send_modified_files(
+        self,
+        modified_files: dict[str, str,str],
+    ):
+       """
+         Send a list of modified files to the UI.
 
+         :param modified_files: List of modified files.
+       """
+       raise NotImplementedError()
     async def send_run_command(self, run_command: str):
         """
         Send a run command to the UI.
