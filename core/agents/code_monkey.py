@@ -62,8 +62,18 @@ class CodeMonkey(BaseAgent):
             instructions = task.get("task_review_feedback")
         elif iterations:
             last_iteration = iterations[-1]
-            instructions = last_iteration.get("description")
-            user_feedback = last_iteration.get("user_feedback")
+            user_feedback = None
+
+            if len(last_iteration["bug_hunting_cycles"]) > 0:
+                instructions = last_iteration["bug_hunting_cycles"][-1]["human_readable_instructions"]
+                user_feedback = last_iteration["bug_hunting_cycles"][-1]["user_feedback"]
+            else:
+                instructions = last_iteration.get("description")
+
+            if user_feedback is None:
+                user_feedback = last_iteration.get("user_feedback")
+
+            # TODO: remove this or update once we add back QnA with the user
             user_feedback_qa = last_iteration.get("user_feedback_qa")
         else:
             instructions = self.current_state.current_task["instructions"]
