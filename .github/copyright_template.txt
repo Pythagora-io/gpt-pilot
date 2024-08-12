@@ -1,0 +1,2 @@
+Copyright (c) 2024 Pythagora Technologies Inc. All rights reserved.
+This project is licensed under the terms of the FSL-1.1-MIT license.
