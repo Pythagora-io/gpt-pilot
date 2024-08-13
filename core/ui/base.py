@@ -307,6 +307,12 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def close_diff(self):
+        """
+        Close all diff views.
+        """
+        raise NotImplementedError()
+
     async def loading_finished(self):
         """
         Notify the UI that loading has finished.
