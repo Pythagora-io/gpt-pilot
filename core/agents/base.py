@@ -69,6 +69,7 @@ class BaseAgent:
         setting the correct files.
         :param files: Files to send.
         """
+
         await self.ui.send_modified_files(files)
 
     async def ask_question(
