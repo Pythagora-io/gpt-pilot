@@ -29,6 +29,7 @@ class MessageType(str, Enum):
     USER_INPUT_REQUEST = "user_input_request"
     INFO = "info"
     PROGRESS = "progress"
+    DEBUGGING_LOGS = "debugging_logs"
     RUN_COMMAND = "run_command"
     OPEN_FILE = "openFile"
     PROJECT_FOLDER_NAME = "project_folder_name"
@@ -45,6 +46,7 @@ class MessageType(str, Enum):
     GENERATE_DIFF = "generateDiff"
     CLOSE_DIFF = "closeDiff"
     MODIFIED_FILES = "modifiedFiles"
+    IMPORTANT_STREAM = "importantStream"
 
 
 class Message(BaseModel):
@@ -341,6 +343,15 @@ class IPCClientUI(UIBase):
             },
         )
 
+    async def send_data_about_logs(
+        self,
+        data_about_logs: dict,
+    ):
+        await self._send(
+            MessageType.DEBUGGING_LOGS,
+            content=data_about_logs,
+        )
+
     async def send_run_command(self, run_command: str):
         await self._send(
             MessageType.RUN_COMMAND,
@@ -360,6 +371,12 @@ class IPCClientUI(UIBase):
         await self._send(
             MessageType.PROJECT_FOLDER_NAME,
             content=basename(path),
+        )
+
+    async def start_important_stream(self):
+        await self._send(
+            MessageType.IMPORTANT_STREAM,
+            content={},
         )
 
     async def send_project_stats(self, stats: dict):

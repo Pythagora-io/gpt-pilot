@@ -124,6 +124,12 @@ class PlainConsoleUI(UIBase):
     ):
         pass
 
+    async def send_data_about_logs(
+        self,
+        data_about_logs: dict,
+    ):
+        pass
+
     async def send_run_command(self, run_command: str):
         pass
 
@@ -139,6 +145,9 @@ class PlainConsoleUI(UIBase):
     async def generate_diff(self, file_old: str, file_new: str):
         pass
 
+    async def close_diff(self):
+        pass
+
     async def loading_finished(self):
         pass
 
@@ -149,6 +158,9 @@ class PlainConsoleUI(UIBase):
         pass
 
     async def import_project(self, project_dir: str):
+        pass
+
+    async def start_important_stream(self):
         pass
 
 

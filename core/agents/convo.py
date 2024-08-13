@@ -88,6 +88,15 @@ class AgentConvo(Convo):
         child.prompt_log = deepcopy(self.prompt_log)
         return child
 
+    def trim(self, trim_index: int, trim_count: int) -> "AgentConvo":
+        """
+        Trim the conversation starting from the given index by 1 message.
+        :param trim_index:
+        :return:
+        """
+        self.messages = self.messages[:trim_index] + self.messages[trim_index + trim_count :]
+        return self
+
     def require_schema(self, model: BaseModel) -> "AgentConvo":
         def remove_defs(d):
             if isinstance(d, dict):
@@ -107,5 +116,8 @@ class AgentConvo(Convo):
         return self
 
     def remove_last_x_messages(self, x: int) -> "AgentConvo":
+        """
+        Remove the last `x` messages from the conversation.
+        """
         self.messages = self.messages[:-x]
         return self

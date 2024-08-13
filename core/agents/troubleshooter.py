@@ -216,7 +216,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         If "is_loop" is True, Pythagora is stuck in a loop and needs to consider alternative solutions.
 
         The last element in the tuple is the user feedback, which may be empty if the user provided no
-        feedback (eg. if they just clicked on "Continue" or "I'm stuck in a loop").
+        feedback (eg. if they just clicked on "Continue" or "Start Pair Programming").
         """
 
         bug_report = None
@@ -233,7 +233,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
 
         buttons = {"continue": "Everything works", "change": "I want to make a change", "bug": "There is an issue"}
         if last_iteration:
-            buttons["loop"] = "I'm stuck in a loop"
+            buttons["start_pair_programming"] = "Start Pair Programming"
 
         user_response = await self.ask_question(
             test_message, buttons=buttons, default="continue", buttons_only=True, hint=hint
@@ -241,9 +241,9 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         if user_response.button == "continue" or user_response.cancelled:
             should_iterate = False
 
-        elif user_response.button == "loop":
+        elif user_response.button == "start_pair_programming":
             await telemetry.trace_code_event(
-                "stuck-in-loop",
+                "pair-programming-started",
                 {
                     "clicked": True,
                     "task_index": self.current_state.tasks.index(self.current_state.current_task) + 1,

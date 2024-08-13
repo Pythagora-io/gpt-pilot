@@ -111,6 +111,12 @@ class VirtualUI(UIBase):
     ):
         pass
 
+    async def send_data_about_logs(
+        self,
+        data_about_logs: dict,
+    ):
+        pass
+
     async def send_modified_files(
         self,
         modified_files: dict[str, str, str],
@@ -126,10 +132,16 @@ class VirtualUI(UIBase):
     async def send_project_root(self, path: str):
         pass
 
+    async def start_important_stream(self):
+        pass
+
     async def send_project_stats(self, stats: dict):
         pass
 
     async def generate_diff(self, file_old: str, file_new: str):
+        pass
+
+    async def close_diff(self):
         pass
 
     async def loading_finished(self):

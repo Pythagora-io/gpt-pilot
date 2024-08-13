@@ -119,7 +119,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
             source = "bug_hunt"
             n_tasks = len(self.next_state.iterations)
             log.debug(f"Breaking down the logging cycle {description}")
-            await self.send_message("Breaking down the current iteration logging cycle ...")
+            await self.send_message("Breaking down the current bug hunting cycle ...")
         else:
             iteration = self.current_state.current_iteration
             current_task["task_review_feedback"] = None

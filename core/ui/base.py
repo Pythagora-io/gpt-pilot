@@ -242,6 +242,17 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def send_data_about_logs(
+        self,
+        data_about_logs: dict,
+    ):
+        """
+        Send the data about debugging logs.
+
+        :param data_about_logs: Data about logs.
+        """
+        raise NotImplementedError()
+
     async def send_run_command(self, run_command: str):
         """
         Send a run command to the UI.
@@ -267,6 +278,13 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def start_important_stream(self, path: str):
+        """
+        Tell the extension that next stream should be visible and rendered as markdown
+
+        """
+        raise NotImplementedError()
+
     async def send_project_stats(self, stats: dict):
         """
         Send project statistics to the UI.
@@ -286,6 +304,12 @@ class UIBase:
 
         :param file_old: Old file content.
         :param file_new: New file content.
+        """
+        raise NotImplementedError()
+
+    async def close_diff(self):
+        """
+        Close all diff views.
         """
         raise NotImplementedError()
 
