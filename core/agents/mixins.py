@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse
-from core.config import GET_RELEVANT_FILES_AGENT_NAME
+from core.config import GET_RELEVANT_FILES_AGENT_NAME, TROUBLESHOOTER_BUG_REPORT
 from core.llm.parser import JSONParser
 from core.log import get_logger
 
@@ -42,7 +42,7 @@ class IterationPromptMixin:
         :param bug_hunting_cycles: Data about logs that need to be added to the code (optional).
         :return: The generated solution to the problem.
         """
-        llm = self.get_llm()
+        llm = self.get_llm(TROUBLESHOOTER_BUG_REPORT)
         convo = AgentConvo(self).template(
             "iteration",
             user_feedback=user_feedback,
