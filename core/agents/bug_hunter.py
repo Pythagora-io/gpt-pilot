@@ -169,13 +169,22 @@ class BugHunter(BaseAgent):
                     + self.current_state.current_iteration["bug_reproduction_description"],
                 )
 
+                if frontend_logs.button == "done":
+                    self.next_state.complete_iteration()
+                else:
+                    user_feedback = await self.ask_question(
+                        "Do you want to add anything else to help Pythagora solve this bug?",
+                        buttons={"continue": "Continue", "done": "Bug is fixed"},
+                        default="continue",
+                        hint="Instructions for testing:\n\n"
+                        + self.current_state.current_iteration["bug_reproduction_description"],
+                    )
+
                 # TODO select only the logs that are new (with PYTHAGORA_DEBUGGING_LOG)
                 self.next_state.current_iteration["bug_hunting_cycles"][-1]["backend_logs"] = backend_logs.text
                 self.next_state.current_iteration["bug_hunting_cycles"][-1]["frontend_logs"] = frontend_logs.text
+                self.next_state.current_iteration["bug_hunting_cycles"][-1]["user_feedback"] = user_feedback.text
                 self.next_state.current_iteration["status"] = IterationStatus.HUNTING_FOR_BUG
-
-                if frontend_logs.button == "done":
-                    self.next_state.complete_iteration()
 
         return AgentResponse.done(self)
 
@@ -304,6 +313,7 @@ class BugHunter(BaseAgent):
                 backend_logs=hunting_cycle.get("backend_logs"),
                 frontend_logs=hunting_cycle.get("frontend_logs"),
                 fix_attempted=hunting_cycle.get("fix_attempted"),
+                user_feedback=hunting_cycle.get("user_feedback"),
             )
 
         return convo
