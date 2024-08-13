@@ -102,7 +102,6 @@ class Orchestrator(BaseAgent):
                     "Clicking 'No' means Pythagora will restore (overwrite) all files to the last stored state.\n",
                 ]
             )
-
             use_changes = await self.ask_question(
                 question="Would you like to keep your changes?",
                 buttons={

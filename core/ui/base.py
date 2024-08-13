@@ -301,7 +301,6 @@ class UIBase:
 
         :param description: Project description.
         """
-
         raise NotImplementedError()
 
     async def send_features_list(self, features: list[str]):
