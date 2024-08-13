@@ -111,6 +111,12 @@ class VirtualUI(UIBase):
     ):
         pass
 
+    async def send_modified_files(
+        self,
+        modified_files: dict[str, str, str],
+    ):
+        pass
+
     async def send_run_command(self, run_command: str):
         pass
 
