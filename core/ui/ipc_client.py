@@ -45,6 +45,7 @@ class MessageType(str, Enum):
     FEATURE_FINISHED = "featureFinished"
     GENERATE_DIFF = "generateDiff"
     CLOSE_DIFF = "closeDiff"
+    MODIFIED_FILES = "modifiedFiles"
     IMPORTANT_STREAM = "importantStream"
 
 
@@ -312,6 +313,15 @@ class IPCClientUI(UIBase):
                 },
                 "all_tasks": tasks,
             },
+        )
+
+    async def send_modified_files(
+        self,
+        modified_files: dict[str, str, str],
+    ):
+        await self._send(
+            MessageType.MODIFIED_FILES,
+            content={"files": modified_files},
         )
 
     async def send_step_progress(

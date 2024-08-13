@@ -118,6 +118,12 @@ class PlainConsoleUI(UIBase):
     ):
         pass
 
+    async def send_modified_files(
+        self,
+        modified_files: dict[str, str, str],
+    ):
+        pass
+
     async def send_data_about_logs(
         self,
         data_about_logs: dict,
