@@ -9,6 +9,7 @@ from core.config import CHECK_LOGS_AGENT_NAME, magic_words
 from core.db.models.project_state import IterationStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
+from core.telemetry import telemetry
 
 log = get_logger(__name__)
 
@@ -137,7 +138,6 @@ class BugHunter(BaseAgent):
                 self.next_state.complete_iteration()
             elif user_feedback.button == "start_pair_programming":
                 self.next_state.current_iteration["status"] = IterationStatus.START_PAIR_PROGRAMMING
-                # TODO: Leon check if this is needed
                 self.next_state.flag_iterations_as_modified()
             else:
                 awaiting_bug_reproduction = True
@@ -158,7 +158,6 @@ class BugHunter(BaseAgent):
                 self.next_state.complete_iteration()
             elif backend_logs.button == "start_pair_programming":
                 self.next_state.current_iteration["status"] = IterationStatus.START_PAIR_PROGRAMMING
-                # TODO: Leon check if this is needed
                 self.next_state.flag_iterations_as_modified()
             else:
                 frontend_logs = await self.ask_question(
@@ -191,7 +190,8 @@ class BugHunter(BaseAgent):
     async def start_pair_programming(self):
         llm = self.get_llm()
         convo = self.generate_iteration_convo_so_far(True)
-        convo.remove_last_x_messages(1)
+        if len(convo.messages) > 1:
+            convo.remove_last_x_messages(1)
         convo = convo.template("problem_explanation")
         await self.ui.start_important_stream()
         initial_explanation = await llm(convo, temperature=0.5)
@@ -231,6 +231,19 @@ class BugHunter(BaseAgent):
                 default="continue",
                 hint="Instructions for testing:\n\n"
                 + self.current_state.current_iteration["bug_reproduction_description"],
+            )
+
+            await telemetry.trace_code_event(
+                "pair-programming",
+                {
+                    "button": next_step.button,
+                    "num_tasks": len(self.current_state.tasks),
+                    "num_epics": len(self.current_state.epics),
+                    "num_iterations": len(self.current_state.iterations),
+                    "app_id": str(self.state_manager.project.id),
+                    "app_name": self.state_manager.project.name,
+                    "folder_name": self.state_manager.project.folder_name,
+                },
             )
 
             # TODO: remove when Leon checks
@@ -289,7 +302,6 @@ class BugHunter(BaseAgent):
                 await self.send_message(response)
                 continue
 
-        # TODO: send telemetry so we know what do users mostly click here!
         return AgentResponse.done(self)
 
     def generate_iteration_convo_so_far(self, omit_last_cycle=False):
