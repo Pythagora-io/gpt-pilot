@@ -337,7 +337,11 @@ class Config(_StrictModel):
                 temperature=0.5,
             ),
             SPEC_WRITER_AGENT_NAME: AgentLLMConfig(model="gpt-4-0125-preview", temperature=0.0),
-            GET_RELEVANT_FILES_AGENT_NAME: AgentLLMConfig(model="claude-3-5-sonnet-20240620", temperature=0.0),
+            GET_RELEVANT_FILES_AGENT_NAME: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20240620",
+                temperature=0.0,
+            ),
         }
     )
     prompt: PromptConfig = PromptConfig()
