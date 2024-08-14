@@ -100,6 +100,10 @@ class Executor(BaseAgent):
 
         log.info(f"Running command `{cmd}` with timeout {timeout}s")
         status_code, stdout, stderr = await self.process_manager.run_command(cmd, timeout=timeout)
+
+        # FIXME: ErrorHandler isn't debugged with BugHunter - we should move all commands to run before testing and debug them with BugHunter
+        return AgentResponse.done(self)
+
         llm_response = await self.check_command_output(cmd, timeout, stdout, stderr, status_code)
 
         duration = (datetime.now(timezone.utc) - started_at).total_seconds()
