@@ -34,7 +34,7 @@ You are currently working on task #{{ current_task_index + 1 }} with the followi
 ```
 {{ task.description }}
 ```
-{% if task.pre_breakdown_testing_instructions is not none %}
+{% if task.get('pre_breakdown_testing_instructions') is not none %}
 Here is how this task should be tested:
 ```
 {{ task.pre_breakdown_testing_instructions }}
