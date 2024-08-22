@@ -18,6 +18,7 @@ DO NOT specify commands to create any folders or files, they will be created aut
 {% include "partials/execution_order.prompt" %}
 {% include "partials/human_intervention_explanation.prompt" %}
 {% include "partials/file_size_limit.prompt" %}
+{% include "partials/breakdown_code_instructions.prompt" %}
 
 Never use the port 5000 to run the app, it's reserved.
 
@@ -33,6 +34,12 @@ You are currently working on task #{{ current_task_index + 1 }} with the followi
 ```
 {{ task.description }}
 ```
+{% if task.pre_breakdown_testing_instructions is not none %}
+Here is how this task should be tested:
+```
+{{ task.pre_breakdown_testing_instructions }}
+```{% endif %}
+
 {% if current_task_index != 0 %}All previous tasks are finished and you don't have to work on them.{% endif %}
 
 Now, tell me all the code that needs to be written to implement ONLY this task and have it fully working and all commands that need to be run to implement this task.

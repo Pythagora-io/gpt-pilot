@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse
+from core.config import TECH_LEAD_PLANNING
 from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
@@ -20,15 +21,24 @@ class Epic(BaseModel):
     description: str = Field(description=("Description of an epic."))
 
 
+class Task(BaseModel):
+    description: str = Field(description="Description of a task.")
+    testing_instructions: str = Field(description="Instructions for testing the task.")
+
+
 class DevelopmentPlan(BaseModel):
     plan: list[Epic] = Field(description="List of epics that need to be done to implement the entire plan.")
+
+
+class EpicPlan(BaseModel):
+    plan: list[Task] = Field(description="List of tasks that need to be done to implement the entire epic.")
 
 
 class UpdatedDevelopmentPlan(BaseModel):
     updated_current_epic: Epic = Field(
         description="Updated description of what was implemented while working on the current epic."
     )
-    plan: list[Epic] = Field(description="List of unfinished epics.")
+    plan: list[Task] = Field(description="List of unfinished epics.")
 
 
 class TechLead(BaseAgent):
@@ -146,7 +156,7 @@ class TechLead(BaseAgent):
         log.debug(f"Planning tasks for the epic: {epic['name']}")
         await self.send_message("Starting to create the action plan for development ...")
 
-        llm = self.get_llm()
+        llm = self.get_llm(TECH_LEAD_PLANNING)
         convo = (
             AgentConvo(self)
             .template(
@@ -160,15 +170,30 @@ class TechLead(BaseAgent):
         )
 
         response: DevelopmentPlan = await llm(convo, parser=JSONParser(DevelopmentPlan))
-        self.next_state.tasks = self.current_state.tasks + [
-            {
-                "id": uuid4().hex,
-                "description": task.description,
-                "instructions": None,
-                "status": TaskStatus.TODO,
-            }
-            for task in response.plan
-        ]
+
+        convo.remove_last_x_messages(1)
+        formatted_tasks = [f"Epic #{index}: {task.description}" for index, task in enumerate(response.plan, start=1)]
+        tasks_string = "\n\n".join(formatted_tasks)
+        convo = convo.assistant(tasks_string)
+
+        for epic_number, epic in enumerate(response.plan, start=1):
+            log.debug(f"Adding epic: {epic.description}")
+            convo = convo.template(
+                "epic_breakdown", epic_number=epic_number, epic_description=epic.description
+            ).require_schema(EpicPlan)
+            epic_plan: EpicPlan = await llm(convo, parser=JSONParser(EpicPlan))
+            self.next_state.tasks = self.next_state.tasks + [
+                {
+                    "id": uuid4().hex,
+                    "description": task.description,
+                    "instructions": None,
+                    "pre_breakdown_testing_instructions": task.testing_instructions,
+                    "status": TaskStatus.TODO,
+                }
+                for task in epic_plan.plan
+            ]
+            convo.remove_last_x_messages(2)
+
         await telemetry.trace_code_event(
             "development-plan",
             {
@@ -220,6 +245,7 @@ class TechLead(BaseAgent):
                 "id": uuid4().hex,
                 "description": task.description,
                 "instructions": None,
+                "pre_breakdown_testing_instructions": task.testing_instructions,
                 "status": TaskStatus.TODO,
             }
             for task in response.plan

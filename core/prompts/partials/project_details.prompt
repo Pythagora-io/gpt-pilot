@@ -3,10 +3,6 @@ Here is a high level description of "{{ state.branch.project.name }}":
 {{ state.specification.description }}
 ```
 
-{% if state.specification.architecture %}
-Here is a short description of the project architecture:
-{{ state.specification.architecture }}
-{% endif %}
 {% if state.specification.system_dependencies %}
 
 Here are the technologies that should be used for this project:

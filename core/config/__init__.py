@@ -39,6 +39,7 @@ DESCRIBE_FILES_AGENT_NAME = "CodeMonkey.describe_files"
 CHECK_LOGS_AGENT_NAME = "BugHunter.check_logs"
 TASK_BREAKDOWN_AGENT_NAME = "Developer.breakdown_current_task"
 TROUBLESHOOTER_BUG_REPORT = "Troubleshooter.generate_bug_report"
+TECH_LEAD_PLANNING = "TechLead.plan_epic"
 SPEC_WRITER_AGENT_NAME = "SpecWriter"
 GET_RELEVANT_FILES_AGENT_NAME = "get_relevant_files"
 
@@ -332,6 +333,11 @@ class Config(_StrictModel):
                 temperature=0.5,
             ),
             TROUBLESHOOTER_BUG_REPORT: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20240620",
+                temperature=0.5,
+            ),
+            TECH_LEAD_PLANNING: AgentLLMConfig(
                 provider=LLMProvider.ANTHROPIC,
                 model="claude-3-5-sonnet-20240620",
                 temperature=0.5,
