@@ -335,7 +335,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
         )
         if user_response.button == "cancel" or user_response.cancelled:
             # User hasn't edited the task so we can execute it immediately as is
-            return True
+            return await self.ask_to_execute_task()
 
         self.next_state.current_task["description"] = user_response.text
         self.next_state.current_task["run_always"] = True
