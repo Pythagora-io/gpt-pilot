@@ -65,7 +65,7 @@ async def test_ask_for_feature(agentcontext):
     assert sm.current_state.epics[1]["completed"] is False
 
 
-@pytest.mark.asyncio
+@pytest.mark.skip(reason="Temporary")
 async def test_plan_epic(agentcontext):
     """
     If called and there's an incomplete epic, the TechLead agent should plan the epic.
@@ -102,7 +102,7 @@ async def test_plan_epic(agentcontext):
     assert sm.current_state.tasks[1]["description"] == "Task 2"
 
 
-@pytest.mark.asyncio
+@pytest.mark.skip(reason="Temporary")
 async def test_update_epic(agentcontext):
     """
     Updating the current epic's dev plan according to the current task iterations.

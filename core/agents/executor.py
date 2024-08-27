@@ -54,7 +54,6 @@ class Executor(BaseAgent):
             output_handler=self.output_handler,
             exit_handler=self.exit_handler,
         )
-        self.stream_output = True
 
     def for_step(self, step):
         # FIXME: not needed, refactor to use self.current_state.current_step
@@ -142,7 +141,7 @@ class Executor(BaseAgent):
     async def check_command_output(
         self, cmd: str, timeout: Optional[int], stdout: str, stderr: str, status_code: int
     ) -> CommandResult:
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         convo = (
             AgentConvo(self)
             .template(

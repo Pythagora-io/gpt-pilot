@@ -63,7 +63,7 @@ async def test_get_llm(mock_BaseLLMClient):
     mock_client = AsyncMock(return_value=("response", "log"))
     mock_OpenAIClient.return_value = mock_client
 
-    llm = agent.get_llm()
+    llm = agent.get_llm(stream_output=True)
 
     mock_BaseLLMClient.for_provider.assert_called_once_with("openai")
 

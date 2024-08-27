@@ -42,7 +42,7 @@ class IterationPromptMixin:
         :param bug_hunting_cycles: Data about logs that need to be added to the code (optional).
         :return: The generated solution to the problem.
         """
-        llm = self.get_llm(TROUBLESHOOTER_BUG_REPORT)
+        llm = self.get_llm(TROUBLESHOOTER_BUG_REPORT, stream_output=True)
         convo = AgentConvo(self).template(
             "iteration",
             user_feedback=user_feedback,
@@ -63,8 +63,6 @@ class RelevantFilesMixin:
         self, user_feedback: Optional[str] = None, solution_description: Optional[str] = None
     ) -> AgentResponse:
         log.debug("Getting relevant files for the current task")
-        await self.send_message("Figuring out which project files are relevant for the next task ...")
-
         done = False
         relevant_files = set()
         llm = self.get_llm(GET_RELEVANT_FILES_AGENT_NAME)

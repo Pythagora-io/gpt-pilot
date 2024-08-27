@@ -108,8 +108,6 @@ class CodeMonkey(BaseAgent):
                 continue
 
             log.debug(f"Describing file {file.path}")
-            await self.send_message(f"Describing file {file.path} ...")
-
             convo = (
                 AgentConvo(self)
                 .template(

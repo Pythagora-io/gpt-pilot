@@ -52,7 +52,7 @@ class TechnicalWriter(BaseAgent):
     async def create_readme(self):
         await self.send_message("Creating README ...")
 
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         convo = AgentConvo(self).template("create_readme")
         llm_response: str = await llm(convo)
         await self.state_manager.save_file("README.md", llm_response)

@@ -156,7 +156,7 @@ class TechLead(BaseAgent):
         log.debug(f"Planning tasks for the epic: {epic['name']}")
         await self.send_message("Starting to create the action plan for development ...")
 
-        llm = self.get_llm(TECH_LEAD_PLANNING)
+        llm = self.get_llm(TECH_LEAD_PLANNING, stream_output=True)
         convo = (
             AgentConvo(self)
             .template(
@@ -220,7 +220,7 @@ class TechLead(BaseAgent):
         log.debug(f"Updating development plan for {epic['name']}")
         await self.send_message("Updating development plan ...")
 
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         convo = (
             AgentConvo(self)
             .template(

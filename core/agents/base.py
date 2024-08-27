@@ -34,7 +34,6 @@ class BaseAgent:
         """
         self.ui_source = AgentSource(self.display_name, self.agent_type)
         self.ui = ui
-        self.stream_output = True
         self.state_manager = state_manager
         self.process_manager = process_manager
         self.prev_response = prev_response
@@ -106,13 +105,11 @@ class BaseAgent:
         Handle streamed response from the LLM.
 
         Serves as a callback to `AgentBase.llm()` so it can stream the responses to the UI.
-        This can be turned on/off on a pe-request basis by setting `BaseAgent.stream_output`
-        to True or False.
 
         :param content: Response content.
         """
-        if self.stream_output:
-            await self.ui.send_stream_chunk(content, source=self.ui_source)
+
+        await self.ui.send_stream_chunk(content, source=self.ui_source)
 
         if content is None:
             await self.ui.send_message("", source=self.ui_source)
@@ -150,7 +147,7 @@ class BaseAgent:
 
         return False
 
-    def get_llm(self, name=None) -> Callable:
+    def get_llm(self, name=None, stream_output=False) -> Callable:
         """
         Get a new instance of the agent-specific LLM client.
 
@@ -170,7 +167,8 @@ class BaseAgent:
 
         llm_config = config.llm_for_agent(name)
         client_class = BaseLLMClient.for_provider(llm_config.provider)
-        llm_client = client_class(llm_config, stream_handler=self.stream_handler, error_handler=self.error_handler)
+        stream_handler = self.stream_handler if stream_output else None
+        llm_client = client_class(llm_config, stream_handler=stream_handler, error_handler=self.error_handler)
 
         async def client(convo, **kwargs) -> Any:
             """
