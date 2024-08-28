@@ -54,7 +54,7 @@ class Importer(BaseAgent):
         await self.state_manager.commit()
 
     async def analyze_project(self):
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
 
         self.send_message("Inspecting most important project files ...")
 

@@ -66,7 +66,7 @@ class BugHunter(BaseAgent):
             return await self.start_pair_programming()
 
     async def get_bug_reproduction_instructions(self):
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         convo = AgentConvo(self).template(
             "get_bug_reproduction_instructions",
             current_task=self.current_state.current_task,
@@ -79,7 +79,7 @@ class BugHunter(BaseAgent):
         self.next_state.current_iteration["bug_reproduction_description"] = bug_reproduction_instructions
 
     async def check_logs(self, logs_message: str = None):
-        llm = self.get_llm(CHECK_LOGS_AGENT_NAME)
+        llm = self.get_llm(CHECK_LOGS_AGENT_NAME, stream_output=True)
         convo = self.generate_iteration_convo_so_far()
         human_readable_instructions = await llm(convo, temperature=0.5)
 
@@ -91,17 +91,17 @@ class BugHunter(BaseAgent):
             )
             .require_schema(HuntConclusionOptions)
         )
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         hunt_conclusion = await llm(convo, parser=JSONParser(HuntConclusionOptions), temperature=0)
 
         if hunt_conclusion.conclusion == magic_words.PROBLEM_IDENTIFIED:
             # if no need for logs, implement iteration same as before
             self.set_data_for_next_hunting_cycle(human_readable_instructions, IterationStatus.AWAITING_BUG_FIX)
-            await self.send_message("The bug is found - I'm  attempting to fix it.")
+            await self.send_message("Found the bug - I'm attempting to fix it ...")
         else:
             # if logs are needed, add logging steps
             self.set_data_for_next_hunting_cycle(human_readable_instructions, IterationStatus.AWAITING_LOGGING)
-            await self.send_message("Adding more logs to identify the bug.")
+            await self.send_message("Adding more logs to identify the bug ...")
 
         self.next_state.flag_iterations_as_modified()
         return AgentResponse.done(self)
@@ -147,7 +147,7 @@ class BugHunter(BaseAgent):
             buttons["continue"] = "Continue"
             buttons["done"] = "Bug is fixed"
             backend_logs = await self.ask_question(
-                "Please do exactly what you did in the last iteration, paste **BACKEND** logs here and click CONTINUE.",
+                "Please do exactly what you did in the last iteration, paste the BACKEND logs here and click CONTINUE.",
                 buttons=buttons,
                 default="continue",
                 hint="Instructions for testing:\n\n"
@@ -161,7 +161,7 @@ class BugHunter(BaseAgent):
                 self.next_state.flag_iterations_as_modified()
             else:
                 frontend_logs = await self.ask_question(
-                    "Please paste **frontend** logs here and click CONTINUE.",
+                    "Please paste the FRONTEND logs here and click CONTINUE.",
                     buttons={"continue": "Continue", "done": "Bug is fixed"},
                     default="continue",
                     hint="Instructions for testing:\n\n"
@@ -188,7 +188,7 @@ class BugHunter(BaseAgent):
         return AgentResponse.done(self)
 
     async def start_pair_programming(self):
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         convo = self.generate_iteration_convo_so_far(True)
         if len(convo.messages) > 1:
             convo.remove_last_x_messages(1)
@@ -280,12 +280,12 @@ class BugHunter(BaseAgent):
                     human_hint = await self.ask_question(human_hint_label)
                     convo = convo.template("instructions_from_human_hint", human_hint=human_hint.text)
                     await self.ui.start_important_stream()
-                    llm = self.get_llm(CHECK_LOGS_AGENT_NAME)
+                    llm = self.get_llm(CHECK_LOGS_AGENT_NAME, stream_output=True)
                     human_readable_instructions = await llm(convo, temperature=0.5)
                     human_approval = await self.ask_question(
                         "Can I implement this solution?", buttons={"yes": "Yes", "no": "No"}, buttons_only=True
                     )
-                    llm = self.get_llm()
+                    llm = self.get_llm(stream_output=True)
                     if human_approval.button == "yes":
                         self.set_data_for_next_hunting_cycle(
                             human_readable_instructions, IterationStatus.AWAITING_BUG_FIX
@@ -344,7 +344,7 @@ class BugHunter(BaseAgent):
         self.next_state.current_iteration["status"] = new_status
 
     async def continue_on(self, convo, button_value, user_response):
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         convo = convo.template("continue_on")
         continue_on = await llm(convo, temperature=0.5)
         return continue_on

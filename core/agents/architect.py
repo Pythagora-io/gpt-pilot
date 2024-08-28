@@ -126,7 +126,7 @@ class Architect(BaseAgent):
         """
         await self.send_message("Selecting starter templates ...")
 
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         convo = (
             AgentConvo(self)
             .template(
@@ -168,7 +168,7 @@ class Architect(BaseAgent):
 
         await self.send_message("Picking technologies to use ...")
 
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         convo = (
             AgentConvo(self)
             .template(
@@ -271,7 +271,7 @@ class Architect(BaseAgent):
             # If template has no options, no need to ask LLM for anything
             return NoOptions()
 
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         convo = (
             AgentConvo(self)
             .template(

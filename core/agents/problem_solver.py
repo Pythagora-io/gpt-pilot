@@ -46,7 +46,7 @@ class ProblemSolver(IterationPromptMixin, BaseAgent):
         return await self.try_alternative_solutions()
 
     async def generate_alternative_solutions(self):
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         convo = (
             AgentConvo(self)
             .template(

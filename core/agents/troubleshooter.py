@@ -174,7 +174,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
 
         route_files = await self._get_route_files()
 
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         convo = self._get_task_convo().template(
             "define_user_review_goal", task=self.current_state.current_task, route_files=route_files
         )
@@ -304,7 +304,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         :return: Additional questions and answers to generate a better bug report.
         """
         additional_qa = []
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         convo = (
             AgentConvo(self)
             .template(

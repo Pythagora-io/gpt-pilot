@@ -217,7 +217,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
 
         current_task_index = self.current_state.tasks.index(current_task)
 
-        llm = self.get_llm(TASK_BREAKDOWN_AGENT_NAME)
+        llm = self.get_llm(TASK_BREAKDOWN_AGENT_NAME, stream_output=True)
         convo = AgentConvo(self).template(
             "breakdown",
             task=current_task,
@@ -236,7 +236,6 @@ class Developer(RelevantFilesMixin, BaseAgent):
         self.next_state.flag_tasks_as_modified()
 
         llm = self.get_llm()
-        await self.send_message("Breaking down the task into steps ...")
         convo.assistant(response).template("parse_task").require_schema(TaskSteps)
         response: TaskSteps = await llm(convo, parser=JSONParser(TaskSteps), temperature=0)
 
@@ -302,8 +301,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
             buttons["skip"] = "Skip Task"
 
         description = self.current_state.current_task["description"]
-        await self.send_message("Starting new task with description:")
-        await self.send_message(description)
+        await self.send_message("Starting new task with description:\n\n" + description)
         user_response = await self.ask_question(
             "Do you want to execute the above task?",
             buttons=buttons,

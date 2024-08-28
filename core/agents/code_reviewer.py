@@ -179,21 +179,21 @@ class CodeReviewer(BaseAgent):
         )
 
         if len(hunks_to_apply) == len(hunks):
-            await self.send_message("Applying entire change")
+            # await self.send_message("Applying entire change")
             log.info(f"Applying entire change to {file_name}")
             return new_content, None
 
         elif len(hunks_to_apply) == 0:
             if hunks_to_rework:
-                await self.send_message(
-                    f"Requesting rework for {len(hunks_to_rework)} changes with reason: {llm_response.review_notes}"
-                )
+                # await self.send_message(
+                #     f"Requesting rework for {len(hunks_to_rework)} changes with reason: {llm_response.review_notes}"
+                # )
                 log.info(f"Requesting rework for {len(hunks_to_rework)} changes to {file_name} (0 hunks to apply)")
                 return old_content, review_log
             else:
                 # If everything can be safely ignored, it's probably because the files already implement the changes
                 # from previous tasks (which can happen often). Insisting on a change here is likely to cause problems.
-                await self.send_message(f"Rejecting entire change with reason: {llm_response.review_notes}")
+                # await self.send_message(f"Rejecting entire change with reason: {llm_response.review_notes}")
                 log.info(f"Rejecting entire change to {file_name} with reason: {llm_response.review_notes}")
                 return old_content, None
 
