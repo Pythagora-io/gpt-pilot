@@ -21,7 +21,6 @@ class TaskReviewer(BaseAgent):
         """
 
         log.debug(f"Reviewing code changes for task {self.current_state.current_task['description']}")
-        # await self.send_message("Reviewing the task implementation ...")
         all_feedbacks = [
             iteration["user_feedback"].replace("```", "").strip()
             for iteration in self.current_state.iterations

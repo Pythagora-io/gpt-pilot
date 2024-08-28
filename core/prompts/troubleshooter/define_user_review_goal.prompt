@@ -45,4 +45,3 @@ Expected result: Form is submitted, page is reloaded and "Thank you" message is 
 ---end_of_example---
 
 If nothing needs to be tested for this task, instead of outputting the steps, just output a single word: DONE
-Make sure you do not output any duplicate steps.
