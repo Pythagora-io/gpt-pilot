@@ -269,13 +269,13 @@ class BugHunter(BaseAgent):
                 await self.send_message(response)
             elif next_step.button == "other":
                 # this is the same as "question" - we want to keep an option for users to click to understand if we're missing something with other options
-                user_response = await self.ask_question("Let me know what you think...")
+                user_response = await self.ask_question("Let me know what you think ...")
                 convo = convo.template("ask_a_question", question=user_response.text)
                 await self.ui.start_important_stream()
                 llm_answer = await llm(convo, temperature=0.5)
                 await self.send_message(llm_answer)
             elif next_step.button == "solution_hint":
-                human_hint_label = "Amazing!!! How do you think we can solve this bug?"
+                human_hint_label = "Amazing! How do you think we can solve this bug?"
                 while True:
                     human_hint = await self.ask_question(human_hint_label)
                     convo = convo.template("instructions_from_human_hint", human_hint=human_hint.text)

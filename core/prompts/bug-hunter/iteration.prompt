@@ -20,6 +20,11 @@ A part of the app is already finished.
 
 {% include "partials/user_feedback.prompt" %}
 
+Here are the test instructions the user was following when the issue occurred:
+```
+{{ current_task.test_instructions }}
+```
+
 {% if next_solution_to_try is not none %}
 Focus on solving this issue in the following way:
 ```
