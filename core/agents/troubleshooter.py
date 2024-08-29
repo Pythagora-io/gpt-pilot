@@ -231,9 +231,12 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         if run_command:
             await self.ui.send_run_command(run_command)
 
-        buttons = {"continue": "Everything works", "change": "I want to make a change", "bug": "There is an issue"}
-        if last_iteration:
-            buttons["start_pair_programming"] = "Start Pair Programming"
+        buttons = {
+            "continue": "Everything works",
+            "change": "I want to make a change",
+            "bug": "There is an issue",
+            "start_pair_programming": "Start Pair Programming",
+        }
 
         user_response = await self.ask_question(
             test_message, buttons=buttons, default="continue", buttons_only=True, hint=hint
