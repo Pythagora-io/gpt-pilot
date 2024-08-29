@@ -112,7 +112,7 @@ class BugHunter(BaseAgent):
             + self.current_state.current_iteration["bug_reproduction_description"]
         )
 
-        buttons = {"start_pair_programming": "Start Pair Programming"}
+        buttons = {}
 
         if self.current_state.run_command:
             await self.ui.send_run_command(self.current_state.run_command)
@@ -120,6 +120,8 @@ class BugHunter(BaseAgent):
         if awaiting_user_test:
             buttons["yes"] = "Yes, the issue is fixed"
             buttons["no"] = "No"
+            buttons["start_pair_programming"] = "Start Pair Programming"
+
             user_feedback = await self.ask_question(
                 "Is the bug you reported fixed now?",
                 buttons=buttons,
