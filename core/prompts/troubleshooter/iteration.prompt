@@ -23,7 +23,7 @@ A part of the app is already finished.
 
 Here are the test instructions the user was following when the issue occurred:
 ```
-{{ current_task.test_instructions }}
+{{ state.current_task.test_instructions }}
 ```
 
 {% if next_solution_to_try is not none %}
