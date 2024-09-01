@@ -244,7 +244,18 @@ class BaseLLMClient:
                 # so we can't be certain that's the problem in Anthropic case.
                 # Here we try to detect that and tell the user what happened.
                 log.info(f"API status error: {err}")
-                err_code = err.response.json().get("error", {}).get("code", "")
+                try:
+                    if hasattr(err, "response"):
+                        if err.response.headers.get("Content-Type", "").startswith("application/json"):
+                            err_code = err.response.json().get("error", {}).get("code", "")
+                        else:
+                            err_code = str(err.response.text)
+                    elif isinstance(err, str):
+                        err_code = err
+                    else:
+                        err_code = json.dumps(err)
+                except Exception as e:
+                    err_code = f"Error parsing response: {str(e)}"
                 if err_code in ("request_too_large", "context_length_exceeded", "string_above_max_length"):
                     # Handle OpenAI and Groq token limit exceeded
                     # OpenAI will return `string_above_max_length` for prompts more than 1M characters
