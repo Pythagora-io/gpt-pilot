@@ -85,24 +85,20 @@ async def llm_api_check(ui: UIBase) -> bool:
         client_class = BaseLLMClient.for_provider(llm_config.provider)
         llm_client = client_class(llm_config, stream_handler=handler, error_handler=handler)
         try:
-            await ui.send_message(
-                f"API check for {llm_config.provider.value} {llm_config.model} !",
-                source=pythagora_source,
-            )
             resp = await llm_client.api_check()
             if not resp:
-                log.warning(f"API check for {llm_config.provider.value} failed.")
-                return False
-            else:
                 await ui.send_message(
-                    f"DONE {llm_config.provider.value} {llm_config.model} !",
+                    f"API check for {llm_config.provider.value} {llm_config.model} failed.",
                     source=pythagora_source,
                 )
-                log.info(f"API check for {llm_config.provider.value} succeeded.")
+                log.warning(f"API check for {llm_config.provider.value} {llm_config.model} failed.")
+                return False
+            else:
+                log.info(f"API check for {llm_config.provider.value} {llm_config.model} succeeded.")
                 return True
         except APIError as err:
             await ui.send_message(
-                f"API check for {llm_config.provider.value} failed with: {err}",
+                f"API check for {llm_config.provider.value} {llm_config.model} failed with: {err}",
                 source=pythagora_source,
             )
             log.warning(f"API check for {llm_config.provider.value} failed with: {err}")
