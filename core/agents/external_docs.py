@@ -44,6 +44,9 @@ class ExternalDocumentation(BaseAgent):
     display_name = "Documentation"
 
     async def run(self) -> AgentResponse:
+        await self._store_docs([], [])
+        return AgentResponse.done(self)
+
         if self.current_state.specification.example_project:
             log.debug("Example project detected, no documentation selected.")
             available_docsets = []

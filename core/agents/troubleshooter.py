@@ -7,6 +7,7 @@ from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.mixins import IterationPromptMixin, RelevantFilesMixin
 from core.agents.response import AgentResponse
+from core.config import TROUBLESHOOTER_GET_RUN_COMMAND
 from core.db.models.file import File
 from core.db.models.project_state import IterationStatus, TaskStatus
 from core.llm.parser import JSONParser, OptionalCodeBlockParser
@@ -161,7 +162,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
 
         await self.send_message("Figuring out how to run the app ...")
 
-        llm = self.get_llm()
+        llm = self.get_llm(TROUBLESHOOTER_GET_RUN_COMMAND)
         convo = self._get_task_convo().template("get_run_command")
 
         # Although the prompt is explicit about not using "```", LLM may still return it
@@ -231,9 +232,12 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         if run_command:
             await self.ui.send_run_command(run_command)
 
-        buttons = {"continue": "Everything works", "change": "I want to make a change", "bug": "There is an issue"}
-        if last_iteration:
-            buttons["start_pair_programming"] = "Start Pair Programming"
+        buttons = {
+            "continue": "Everything works",
+            "change": "I want to make a change",
+            "bug": "There is an issue",
+            "start_pair_programming": "Start Pair Programming",
+        }
 
         user_response = await self.ask_question(
             test_message, buttons=buttons, default="continue", buttons_only=True, hint=hint
