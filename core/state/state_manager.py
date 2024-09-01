@@ -258,7 +258,7 @@ class StateManager:
             request_log.duration,
             request_log.status != LLMRequestStatus.SUCCESS,
         )
-        LLMRequest.from_request_log(self.current_state, agent, request_log)
+        await LLMRequest.from_request_log(self.current_state, agent, request_log)
 
     async def log_user_input(self, question: str, response: UserInputData):
         """

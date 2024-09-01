@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from sqlalchemy import ForeignKey, inspect
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -42,7 +43,7 @@ class LLMRequest(Base):
     project_state: Mapped["ProjectState"] = relationship(back_populates="llm_requests", lazy="raise")
 
     @classmethod
-    def from_request_log(
+    async def from_request_log(
         cls,
         project_state: "ProjectState",
         agent: Optional["BaseAgent"],
@@ -59,7 +60,7 @@ class LLMRequest(Base):
         :param request_log: Request log.
         :return: Newly created LLM request log in the database.
         """
-        session = inspect(project_state).async_session
+        session: AsyncSession = inspect(project_state).async_session
 
         obj = cls(
             project_state=project_state,
@@ -78,4 +79,5 @@ class LLMRequest(Base):
             error=request_log.error,
         )
         session.add(obj)
+        await session.flush()
         return obj

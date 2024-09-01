@@ -1,10 +1,10 @@
-from typing import Optional
+import asyncio
+from typing import List, Optional
 
 from core.agents.architect import Architect
 from core.agents.base import BaseAgent
 from core.agents.bug_hunter import BugHunter
 from core.agents.code_monkey import CodeMonkey
-from core.agents.code_reviewer import CodeReviewer
 from core.agents.developer import Developer
 from core.agents.error_handler import ErrorHandler
 from core.agents.executor import Executor
@@ -63,8 +63,19 @@ class Orchestrator(BaseAgent):
             await self.update_stats()
 
             agent = self.create_agent(response)
-            log.debug(f"Running agent {agent.__class__.__name__} (step {self.current_state.step_index})")
-            response = await agent.run()
+
+            # In case where agent is a list, run all agents in parallel.
+            # Only one agent type can be run in parallel at a time (for now). See handle_parallel_responses().
+            if isinstance(agent, list):
+                tasks = [single_agent.run() for single_agent in agent]
+                log.debug(
+                    f"Running agents {[a.__class__.__name__ for a in agent]} (step {self.current_state.step_index})"
+                )
+                responses = await asyncio.gather(*tasks)
+                response = self.handle_parallel_responses(agent[0], responses)
+            else:
+                log.debug(f"Running agent {agent.__class__.__name__} (step {self.current_state.step_index})")
+                response = await agent.run()
 
             if response.type == ResponseType.EXIT:
                 log.debug(f"Agent {agent.__class__.__name__} requested exit")
@@ -76,6 +87,31 @@ class Orchestrator(BaseAgent):
 
         # TODO: rollback changes to "next" so they aren't accidentally committed?
         return True
+
+    def handle_parallel_responses(self, agent: BaseAgent, responses: List[AgentResponse]) -> AgentResponse:
+        """
+        Handle responses from agents that were run in parallel.
+
+        This method is called when multiple agents are run in parallel, and it
+        should return a single response that represents the combined responses
+        of all agents.
+
+        :param agent: The original agent that was run in parallel.
+        :param responses: List of responses from all agents.
+        :return: Combined response.
+        """
+        response = AgentResponse.done(agent)
+        if isinstance(agent, CodeMonkey):
+            files = []
+            for single_response in responses:
+                if single_response.type == ResponseType.INPUT_REQUIRED:
+                    files += single_response.data.get("files", [])
+                    break
+            if files:
+                response = AgentResponse.input_required(agent, files)
+            return response
+        else:
+            raise ValueError(f"Unhandled parallel agent type: {agent.__class__.__name__}")
 
     async def offline_changes_check(self):
         """
@@ -161,16 +197,12 @@ class Orchestrator(BaseAgent):
 
         return import_files_response
 
-    def create_agent(self, prev_response: Optional[AgentResponse]) -> BaseAgent:
+    def create_agent(self, prev_response: Optional[AgentResponse]) -> list[BaseAgent] | BaseAgent:
         state = self.current_state
 
         if prev_response:
             if prev_response.type in [ResponseType.CANCEL, ResponseType.ERROR]:
                 return ErrorHandler(self.state_manager, self.ui, prev_response=prev_response)
-            if prev_response.type == ResponseType.CODE_REVIEW:
-                return CodeReviewer(self.state_manager, self.ui, prev_response=prev_response)
-            if prev_response.type == ResponseType.CODE_REVIEW_FEEDBACK:
-                return CodeMonkey(self.state_manager, self.ui, prev_response=prev_response, step=state.current_step)
             if prev_response.type == ResponseType.DESCRIBE_FILES:
                 return CodeMonkey(self.state_manager, self.ui, prev_response=prev_response)
             if prev_response.type == ResponseType.INPUT_REQUIRED:
@@ -264,10 +296,14 @@ class Orchestrator(BaseAgent):
         # We have just finished the task, call Troubleshooter to ask the user to review
         return Troubleshooter(self.state_manager, self.ui)
 
-    def create_agent_for_step(self, step: dict) -> BaseAgent:
+    def create_agent_for_step(self, step: dict) -> list[BaseAgent] | BaseAgent:
         step_type = step.get("type")
         if step_type == "save_file":
-            return CodeMonkey(self.state_manager, self.ui, step=step)
+            steps = self.current_state.get_steps_of_type("save_file")
+            parallel = []
+            for step in steps:
+                parallel.append(CodeMonkey(self.state_manager, self.ui, step=step))
+            return parallel
         elif step_type == "command":
             return self.executor.for_step(step)
         elif step_type == "human_intervention":
