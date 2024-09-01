@@ -50,6 +50,9 @@ class ExternalDocumentation(BaseAgent):
         else:
             available_docsets = await self._get_available_docsets()
 
+        await self._store_docs([], available_docsets)
+        return AgentResponse.done(self)
+
         selected_docsets = await self._select_docsets(available_docsets)
         await telemetry.trace_code_event("docsets_used", selected_docsets)
 
