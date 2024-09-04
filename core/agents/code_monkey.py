@@ -67,6 +67,7 @@ class CodeMonkey(BaseAgent):
             while not code_review_done:
                 review_response = await self.run_code_review(data)
                 if isinstance(review_response, AgentResponse):
+                    await self.send_message(f"DONE implementing file {data['path']}")
                     return review_response
                 data = await self.implement_changes(review_response)
 
