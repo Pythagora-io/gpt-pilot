@@ -176,23 +176,35 @@ class TechLead(BaseAgent):
         tasks_string = "\n\n".join(formatted_tasks)
         convo = convo.assistant(tasks_string)
 
-        for epic_number, epic in enumerate(response.plan, start=1):
-            log.debug(f"Adding epic: {epic.description}")
-            convo = convo.template(
-                "epic_breakdown", epic_number=epic_number, epic_description=epic.description
-            ).require_schema(EpicPlan)
-            epic_plan: EpicPlan = await llm(convo, parser=JSONParser(EpicPlan))
+        if epic.get("source") == "feature":
             self.next_state.tasks = self.next_state.tasks + [
                 {
                     "id": uuid4().hex,
                     "description": task.description,
                     "instructions": None,
-                    "pre_breakdown_testing_instructions": task.testing_instructions,
+                    "pre_breakdown_testing_instructions": None,
                     "status": TaskStatus.TODO,
                 }
-                for task in epic_plan.plan
+                for task in response.plan
             ]
-            convo.remove_last_x_messages(2)
+        else:
+            for epic_number, epic in enumerate(response.plan, start=1):
+                log.debug(f"Adding epic: {epic.description}")
+                convo = convo.template(
+                    "epic_breakdown", epic_number=epic_number, epic_description=epic.description
+                ).require_schema(EpicPlan)
+                epic_plan: EpicPlan = await llm(convo, parser=JSONParser(EpicPlan))
+                self.next_state.tasks = self.next_state.tasks + [
+                    {
+                        "id": uuid4().hex,
+                        "description": task.description,
+                        "instructions": None,
+                        "pre_breakdown_testing_instructions": task.testing_instructions,
+                        "status": TaskStatus.TODO,
+                    }
+                    for task in epic_plan.plan
+                ]
+                convo.remove_last_x_messages(2)
 
         await telemetry.trace_code_event(
             "development-plan",
