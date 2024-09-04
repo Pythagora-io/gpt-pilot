@@ -167,6 +167,8 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
 
         # Although the prompt is explicit about not using "```", LLM may still return it
         llm_response: str = await llm(convo, temperature=0, parser=OptionalCodeBlockParser())
+        if len(llm_response) < 5:
+            llm_response = ""
         self.next_state.run_command = llm_response
         return llm_response
 

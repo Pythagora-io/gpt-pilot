@@ -37,6 +37,7 @@ DEFAULT_AGENT_NAME = "default"
 CODE_MONKEY_AGENT_NAME = "CodeMonkey"
 DESCRIBE_FILES_AGENT_NAME = "CodeMonkey.describe_files"
 CHECK_LOGS_AGENT_NAME = "BugHunter.check_logs"
+PARSE_TASK_AGENT_NAME = "Developer.parse_task"
 TASK_BREAKDOWN_AGENT_NAME = "Developer.breakdown_current_task"
 TROUBLESHOOTER_BUG_REPORT = "Troubleshooter.generate_bug_report"
 TROUBLESHOOTER_GET_RUN_COMMAND = "Troubleshooter.get_run_command"
@@ -321,14 +322,26 @@ class Config(_StrictModel):
     agent: dict[str, AgentLLMConfig] = Field(
         default={
             DEFAULT_AGENT_NAME: AgentLLMConfig(),
-            CODE_MONKEY_AGENT_NAME: AgentLLMConfig(model="gpt-4-0125-preview", temperature=0.0),
-            DESCRIBE_FILES_AGENT_NAME: AgentLLMConfig(model="gpt-3.5-turbo", temperature=0.0),
             CHECK_LOGS_AGENT_NAME: AgentLLMConfig(
                 provider=LLMProvider.ANTHROPIC,
                 model="claude-3-5-sonnet-20240620",
                 temperature=0.5,
             ),
+            CODE_MONKEY_AGENT_NAME: AgentLLMConfig(model="gpt-4-0125-preview", temperature=0.0),
+            DESCRIBE_FILES_AGENT_NAME: AgentLLMConfig(model="gpt-3.5-turbo", temperature=0.0),
+            GET_RELEVANT_FILES_AGENT_NAME: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20240620",
+                temperature=0.0,
+            ),
+            PARSE_TASK_AGENT_NAME: AgentLLMConfig(model="gpt-4-0125-preview", temperature=0.0),
+            SPEC_WRITER_AGENT_NAME: AgentLLMConfig(model="gpt-4-0125-preview", temperature=0.0),
             TASK_BREAKDOWN_AGENT_NAME: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20240620",
+                temperature=0.5,
+            ),
+            TECH_LEAD_PLANNING: AgentLLMConfig(
                 provider=LLMProvider.ANTHROPIC,
                 model="claude-3-5-sonnet-20240620",
                 temperature=0.5,
@@ -339,17 +352,6 @@ class Config(_StrictModel):
                 temperature=0.5,
             ),
             TROUBLESHOOTER_GET_RUN_COMMAND: AgentLLMConfig(
-                provider=LLMProvider.ANTHROPIC,
-                model="claude-3-5-sonnet-20240620",
-                temperature=0,
-            ),
-            TECH_LEAD_PLANNING: AgentLLMConfig(
-                provider=LLMProvider.ANTHROPIC,
-                model="claude-3-5-sonnet-20240620",
-                temperature=0.5,
-            ),
-            SPEC_WRITER_AGENT_NAME: AgentLLMConfig(model="gpt-4-0125-preview", temperature=0.0),
-            GET_RELEVANT_FILES_AGENT_NAME: AgentLLMConfig(
                 provider=LLMProvider.ANTHROPIC,
                 model="claude-3-5-sonnet-20240620",
                 temperature=0.0,

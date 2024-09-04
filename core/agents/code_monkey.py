@@ -85,7 +85,10 @@ class CodeMonkey(BaseAgent):
             await self.send_message(f"Reworking changes I made to {file_name} ...")
         else:
             log.debug(f"Implementing file {file_name}")
-            await self.send_message(f"{'Updating existing' if file_content else 'Creating new'} file {file_name} ...")
+            if data is None:
+                await self.send_message(f"Reworking file {file_name} ...")
+            else:
+                await self.send_message(f"{'Updating existing' if file_content else 'Creating new'} file {file_name}")
             self.next_state.action = "Updating files"
             attempt = 1
             feedback = None
