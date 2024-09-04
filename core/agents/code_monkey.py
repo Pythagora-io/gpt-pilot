@@ -86,9 +86,9 @@ class CodeMonkey(BaseAgent):
         else:
             log.debug(f"Implementing file {file_name}")
             if data is None:
-                await self.send_message(f"Reworking file {file_name} ...")
-            else:
                 await self.send_message(f"{'Updating existing' if file_content else 'Creating new'} file {file_name}")
+            else:
+                await self.send_message(f"Reworking file {file_name} ...")
             self.next_state.action = "Updating files"
             attempt = 1
             feedback = None
@@ -177,7 +177,7 @@ class CodeMonkey(BaseAgent):
     # ------------------------------
 
     async def run_code_review(self, data: Optional[dict]) -> AgentResponse | dict:
-        await self.send_message(f"Running code review for {data['path']} ...")
+        await self.send_message(f"Reviewing code changes implemented in {data['path']} ...")
         if (
             data is not None
             and not data["old_content"]
