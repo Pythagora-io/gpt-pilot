@@ -168,7 +168,7 @@ class SpecWriter(BaseAgent):
                 # The response is too long for it to be a question, assume it's the spec
                 confirm = await self.ask_question(
                     (
-                        "Can we proceed with this project description? If so, just press ENTER. "
+                        "Can we proceed with this project description? If so, just press CTRL/CMD + ENTER. "
                         "Otherwise, please tell me what's missing or what you'd like to add."
                     ),
                     allow_empty=True,
