@@ -35,6 +35,7 @@ IGNORE_SIZE_THRESHOLD = 50000  # 50K+ files are ignored by default
 # Agents with sane setup in the default configuration
 DEFAULT_AGENT_NAME = "default"
 CODE_MONKEY_AGENT_NAME = "CodeMonkey"
+CODE_REVIEW_AGENT_NAME = "CodeMonkey.code_review"
 DESCRIBE_FILES_AGENT_NAME = "CodeMonkey.describe_files"
 CHECK_LOGS_AGENT_NAME = "BugHunter.check_logs"
 PARSE_TASK_AGENT_NAME = "Developer.parse_task"
@@ -328,6 +329,11 @@ class Config(_StrictModel):
                 temperature=0.5,
             ),
             CODE_MONKEY_AGENT_NAME: AgentLLMConfig(model="gpt-4-0125-preview", temperature=0.0),
+            CODE_REVIEW_AGENT_NAME: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20240620",
+                temperature=0.0,
+            ),
             DESCRIBE_FILES_AGENT_NAME: AgentLLMConfig(model="gpt-3.5-turbo", temperature=0.0),
             GET_RELEVANT_FILES_AGENT_NAME: AgentLLMConfig(
                 provider=LLMProvider.ANTHROPIC,

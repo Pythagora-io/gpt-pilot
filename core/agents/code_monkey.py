@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse, ResponseType
-from core.config import CODE_MONKEY_AGENT_NAME, DESCRIBE_FILES_AGENT_NAME
+from core.config import CODE_MONKEY_AGENT_NAME, CODE_REVIEW_AGENT_NAME, DESCRIBE_FILES_AGENT_NAME
 from core.llm.parser import JSONParser, OptionalCodeBlockParser
 from core.log import get_logger
 
@@ -256,7 +256,7 @@ class CodeMonkey(BaseAgent):
 
         hunks = self.get_diff_hunks(file_name, old_content, new_content)
 
-        llm = self.get_llm()
+        llm = self.get_llm(CODE_REVIEW_AGENT_NAME)
         convo = (
             self._get_task_convo()
             .template(
