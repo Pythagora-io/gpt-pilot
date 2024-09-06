@@ -119,8 +119,8 @@ class AgentLLMConfig(_StrictModel):
     AgentLLMConfig is not specified, default will be used.
     """
 
-    provider: Optional[LLMProvider] = Field(default=LLMProvider.OPENAI, description="LLM provider")
-    model: str = Field(description="Model to use", default="gpt-4o-2024-05-13")
+    provider: Optional[LLMProvider] = Field(default=LLMProvider.ANTHROPIC, description="LLM provider")
+    model: str = Field(description="Model to use", default="claude-3-5-sonnet-20240620")
     temperature: float = Field(
         default=0.5,
         description="Temperature to use for sampling",
