@@ -80,4 +80,5 @@ class LLMRequest(Base):
         )
         session.add(obj)
         await session.flush()
+        await session.commit()
         return obj

@@ -1,6 +1,9 @@
 import os.path
+import traceback
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
+
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from core.config import FileSystemType, get_config
 from core.db.models import Branch, ExecLog, File, FileContent, LLMRequest, Project, ProjectState, UserInput
@@ -192,6 +195,10 @@ class StateManager:
 
         return self.current_state
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
+    async def commit_with_retry(self):
+        await self.current_session.commit()
+
     async def commit(self) -> ProjectState:
         """
         Commit the new project state to the database.
@@ -201,35 +208,43 @@ class StateManager:
 
         :return: The committed state.
         """
-        if self.next_state is None:
-            raise ValueError("No state to commit.")
-        if self.current_session is None:
-            raise ValueError("No database session open.")
+        try:
+            if self.next_state is None:
+                raise ValueError("No state to commit.")
+            if self.current_session is None:
+                raise ValueError("No database session open.")
 
-        await self.current_session.commit()
+            log.debug("Committing session")
+            await self.commit_with_retry()
+            log.debug("Session committed successfully")
 
-        # Having a shorter-lived sessions is considered a good practice in SQLAlchemy,
-        # so we close and recreate the session for each state. This uses db
-        # connection from a connection pool, so it is fast. Note that SQLite uses
-        # no connection pool by default because it's all in-process so it's fast anyway.
-        self.current_session.expunge_all()
-        await self.session_manager.close()
-        self.current_session = await self.session_manager.start()
+            # Having a shorter-lived sessions is considered a good practice in SQLAlchemy,
+            # so we close and recreate the session for each state. This uses db
+            # connection from a connection pool, so it is fast. Note that SQLite uses
+            # no connection pool by default because it's all in-process so it's fast anyway.
+            self.current_session.expunge_all()
+            await self.session_manager.close()
+            self.current_session = await self.session_manager.start()
 
-        self.current_state = self.next_state
-        self.current_session.add(self.next_state)
-        self.next_state = await self.current_state.create_next_state()
+            self.current_state = self.next_state
+            self.current_session.add(self.next_state)
+            self.next_state = await self.current_state.create_next_state()
 
-        # After the next_state becomes the current_state, we need to load
-        # the FileContent model, which was previously loaded by the load_project(),
-        # but is not populated by the `create_next_state()`
-        for f in self.current_state.files:
-            await f.awaitable_attrs.content
+            # After the next_state becomes the current_state, we need to load
+            # the FileContent model, which was previously loaded by the load_project(),
+            # but is not populated by the `create_next_state()`
+            for f in self.current_state.files:
+                await f.awaitable_attrs.content
 
-        telemetry.inc("num_steps")
+            telemetry.inc("num_steps")
 
-        # FIXME: write a test to verify files (and file content) are preloaded
-        return self.current_state
+            # FIXME: write a test to verify files (and file content) are preloaded
+            return self.current_state
+
+        except Exception as e:
+            log.error(f"Error during commit: {str(e)}")
+            log.error(traceback.format_exc())
+            raise
 
     async def rollback(self):
         """
