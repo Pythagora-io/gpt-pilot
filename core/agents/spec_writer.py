@@ -41,8 +41,6 @@ class SpecWriter(BaseAgent):
             "Describe your app in as much detail as possible",
             allow_empty=False,
             buttons={
-                # FIXME: must be lowercase becase VSCode doesn't recognize it otherwise. Needs a fix in the extension
-                "continue": "continue",
                 "example": "Start an example project",
                 "import": "Import an existing project",
             },
@@ -55,11 +53,6 @@ class SpecWriter(BaseAgent):
 
         if response.button == "example":
             await self.prepare_example_project(DEFAULT_EXAMPLE_PROJECT)
-            return AgentResponse.done(self)
-
-        elif response.button == "continue":
-            # FIXME: Workaround for the fact that VSCode "continue" button does
-            # nothing but repeat the question. We reproduce this bug for bug here.
             return AgentResponse.done(self)
 
         user_description = response.text.strip()
@@ -165,25 +158,26 @@ class SpecWriter(BaseAgent):
         while True:
             response: str = await llm(convo)
             if len(response) > 500:
-                # The response is too long for it to be a question, assume it's the spec
+                # The response is too long for it to be a question, assume it's the updated spec
                 confirm = await self.ask_question(
                     (
-                        "Can we proceed with this project description? If so, just press CTRL/CMD + ENTER. "
+                        "Can we proceed with this project description? If so, just press Continue. "
                         "Otherwise, please tell me what's missing or what you'd like to add."
                     ),
                     allow_empty=True,
-                    buttons={"continue": "continue"},
+                    buttons={"continue": "Continue"},
                 )
                 if confirm.cancelled or confirm.button == "continue" or confirm.text == "":
+                    updated_spec = response.strip()
                     await telemetry.trace_code_event(
                         "spec-writer-questions",
                         {
                             "num_questions": n_questions,
                             "num_answers": n_answers,
-                            "new_spec": spec,
+                            "new_spec": updated_spec,
                         },
                     )
-                    return spec
+                    return updated_spec
                 convo.user(confirm.text)
 
             else:
@@ -200,7 +194,7 @@ class SpecWriter(BaseAgent):
                         "Please output the spec now, without additional comments or questions."
                     )
                     response: str = await llm(convo)
-                    return response
+                    return response.strip()
 
                 n_answers += 1
                 convo.user(user_response.text)
@@ -208,6 +202,7 @@ class SpecWriter(BaseAgent):
     async def review_spec(self, desc: str, spec: str) -> str:
         convo = AgentConvo(self).template("review_spec", desc=desc, spec=spec)
         llm = self.get_llm(SPEC_WRITER_AGENT_NAME, stream_output=True)
+        await self.send_message("\n\nAdditional info/examples:\n\n")
         llm_response: str = await llm(convo, temperature=0)
         additional_info = llm_response.strip()
         if additional_info and len(additional_info) > 6:
