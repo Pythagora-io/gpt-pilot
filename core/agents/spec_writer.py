@@ -201,10 +201,11 @@ class SpecWriter(BaseAgent):
 
     async def review_spec(self, desc: str, spec: str) -> str:
         convo = AgentConvo(self).template("review_spec", desc=desc, spec=spec)
-        llm = self.get_llm(SPEC_WRITER_AGENT_NAME, stream_output=True)
-        await self.send_message("\n\nAdditional info/examples:\n\n")
+        llm = self.get_llm(SPEC_WRITER_AGENT_NAME)
         llm_response: str = await llm(convo, temperature=0)
         additional_info = llm_response.strip()
         if additional_info and len(additional_info) > 6:
             spec += "\n\nAdditional info/examples:\n\n" + additional_info
+            await self.send_message(f"\n\nAdditional info/examples:\n\n {additional_info}")
+
         return spec
