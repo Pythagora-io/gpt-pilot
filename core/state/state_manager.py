@@ -1,3 +1,4 @@
+import asyncio
 import os.path
 import traceback
 from typing import TYPE_CHECKING, Optional
@@ -46,6 +47,7 @@ class StateManager:
         self.current_state = None
         self.next_state = None
         self.current_session = None
+        self.blockDb = False
 
     async def list_projects(self) -> list[Project]:
         """
@@ -268,12 +270,25 @@ class StateManager:
 
         :param request_log: The request log to log.
         """
-        telemetry.record_llm_request(
-            request_log.prompt_tokens + request_log.completion_tokens,
-            request_log.duration,
-            request_log.status != LLMRequestStatus.SUCCESS,
-        )
-        await LLMRequest.from_request_log(self.current_state, agent, request_log)
+        while self.blockDb:
+            await asyncio.sleep(0.1)  # Wait if blocked
+
+        try:
+            self.blockDb = True  # Set the block
+
+            telemetry.record_llm_request(
+                request_log.prompt_tokens + request_log.completion_tokens,
+                request_log.duration,
+                request_log.status != LLMRequestStatus.SUCCESS,
+            )
+            await LLMRequest.from_request_log(self.current_state, agent, request_log)
+
+        except Exception as e:
+            if self.ui:
+                await self.ui.send_message(f"An error occurred: {e}")
+
+        finally:
+            self.blockDb = False  # Unset the block
 
     async def log_user_input(self, question: str, response: UserInputData):
         """

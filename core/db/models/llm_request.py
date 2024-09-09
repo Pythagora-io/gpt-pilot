@@ -79,6 +79,4 @@ class LLMRequest(Base):
             error=request_log.error,
         )
         session.add(obj)
-        await session.flush()
-        await session.commit()
         return obj
