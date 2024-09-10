@@ -8,7 +8,7 @@ from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.mixins import RelevantFilesMixin
 from core.agents.response import AgentResponse, ResponseType
-from core.config import TASK_BREAKDOWN_AGENT_NAME
+from core.config import PARSE_TASK_AGENT_NAME, TASK_BREAKDOWN_AGENT_NAME
 from core.db.models.project_state import IterationStatus, TaskStatus
 from core.db.models.specification import Complexity
 from core.llm.parser import JSONParser
@@ -146,7 +146,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
             self.current_state.get_source_index(source),
             self.current_state.tasks,
         )
-        llm = self.get_llm()
+        llm = self.get_llm(PARSE_TASK_AGENT_NAME)
         # FIXME: In case of iteration, parse_task depends on the context (files, tasks, etc) set there.
         # Ideally this prompt would be self-contained.
         convo = (
@@ -235,7 +235,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
         }
         self.next_state.flag_tasks_as_modified()
 
-        llm = self.get_llm()
+        llm = self.get_llm(PARSE_TASK_AGENT_NAME)
         convo.assistant(response).template("parse_task").require_schema(TaskSteps)
         response: TaskSteps = await llm(convo, parser=JSONParser(TaskSteps), temperature=0)
 

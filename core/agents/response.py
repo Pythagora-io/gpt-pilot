@@ -24,12 +24,6 @@ class ResponseType(str, Enum):
     EXIT = "exit"
     """Pythagora should exit."""
 
-    CODE_REVIEW = "code-review"
-    """Agent is requesting a review of the created code."""
-
-    CODE_REVIEW_FEEDBACK = "code-review-feedback"
-    """Agent is providing feedback on the code review."""
-
     DESCRIBE_FILES = "describe-files"
     """Analysis of the files in the project is requested."""
 
@@ -81,46 +75,6 @@ class AgentResponse:
     @staticmethod
     def exit(agent: "ErrorHandler") -> "AgentResponse":
         return AgentResponse(type=ResponseType.EXIT, agent=agent)
-
-    @staticmethod
-    def code_review(
-        agent: "BaseAgent",
-        path: str,
-        instructions: str,
-        old_content: str,
-        new_content: str,
-        attempt: int,
-    ) -> "AgentResponse":
-        return AgentResponse(
-            type=ResponseType.CODE_REVIEW,
-            agent=agent,
-            data={
-                "path": path,
-                "instructions": instructions,
-                "old_content": old_content,
-                "new_content": new_content,
-                "attempt": attempt,
-            },
-        )
-
-    @staticmethod
-    def code_review_feedback(
-        agent: "BaseAgent",
-        new_content: str,
-        approved_content: str,
-        feedback: str,
-        attempt: int,
-    ) -> "AgentResponse":
-        return AgentResponse(
-            type=ResponseType.CODE_REVIEW_FEEDBACK,
-            agent=agent,
-            data={
-                "new_content": new_content,
-                "approved_content": approved_content,
-                "feedback": feedback,
-                "attempt": attempt,
-            },
-        )
 
     @staticmethod
     def describe_files(agent: "BaseAgent") -> "AgentResponse":

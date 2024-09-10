@@ -1,3 +1,5 @@
+import time
+
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -33,6 +35,16 @@ class SessionManager:
         self.recursion_depth = 0
 
         event.listen(self.engine.sync_engine, "connect", self._on_connect)
+        event.listen(self.engine.sync_engine, "before_cursor_execute", self.before_cursor_execute)
+        event.listen(self.engine.sync_engine, "after_cursor_execute", self.after_cursor_execute)
+
+    def before_cursor_execute(self, conn, cursor, statement, parameters, context, executemany):
+        conn.info.setdefault("query_start_time", []).append(time.time())
+        log.debug(f"Executing SQL: {statement}")
+
+    def after_cursor_execute(self, conn, cursor, statement, parameters, context, executemany):
+        total = time.time() - conn.info["query_start_time"].pop(-1)
+        log.debug(f"SQL execution time: {total:.3f} seconds")
 
     def _on_connect(self, dbapi_connection, _):
         """Connection event handler"""
@@ -44,6 +56,7 @@ class SessionManager:
             # it's a local file. PostgreSQL or other database use a real connection pool
             # by default.
             dbapi_connection.execute("pragma foreign_keys=on")
+            dbapi_connection.execute("PRAGMA journal_mode=WAL;")
 
     async def start(self) -> AsyncSession:
         if self.session is not None:
