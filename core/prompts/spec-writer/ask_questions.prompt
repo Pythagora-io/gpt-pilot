@@ -40,7 +40,7 @@ Important note: don't ask trivial questions for obvious or unimportant parts of 
     * Should the "Hello World" message be static text served directly from the server, or would you like it implemented via JavaScript on the client side?
   * Explanation: There's no need to micromanage the developer(s) and designer(s), the client would've specified these details if they were important.
 
-If you ask such trivial questions, the client will think you're stupid and will leave. DOn'T DO THAT
+If you ask such trivial questions, the client will think you're stupid and will leave. DON'T DO THAT
 
 Think carefully about what a developer must know to be able to build the app. The specification must address all of this information, otherwise the AI software developer will not be able to build the app.
 
