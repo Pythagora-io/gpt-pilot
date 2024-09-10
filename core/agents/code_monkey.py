@@ -1,7 +1,7 @@
 import re
 from difflib import unified_diff
 from enum import Enum
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -177,7 +177,7 @@ class CodeMonkey(BaseAgent):
     # CODE REVIEW
     # ------------------------------
 
-    async def run_code_review(self, data: Optional[dict]) -> AgentResponse | dict:
+    async def run_code_review(self, data: Optional[dict]) -> Union[AgentResponse, dict]:
         await self.send_message(f"Reviewing code changes implemented in {data['path']} ...")
         if (
             data is not None
