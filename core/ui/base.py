@@ -298,6 +298,15 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def send_file_status(self, file_path: str, file_status: str):
+        """
+        Send file status.
+
+        :param file_path: File path.
+        :param file_status: File status.
+        """
+        raise NotImplementedError()
+
     async def generate_diff(self, file_old: str, file_new: str):
         """
         Generate a diff between two files.

@@ -68,6 +68,7 @@ class CodeMonkey(BaseAgent):
                 review_response = await self.run_code_review(data)
                 if isinstance(review_response, AgentResponse):
                     await self.send_message(f"DONE implementing file {data['path']}")
+                    await self.ui.send_file_status(data["path"], "done")
                     return review_response
                 data = await self.implement_changes(review_response)
 
@@ -84,12 +85,15 @@ class CodeMonkey(BaseAgent):
             feedback = data["feedback"]
             log.debug(f"Fixing file {file_name} after review feedback: {feedback} ({attempt}. attempt)")
             await self.send_message(f"Reworking changes I made to {file_name} ...")
+            await self.ui.send_file_status(file_name, "reworking")
         else:
             log.debug(f"Implementing file {file_name}")
             if data is None:
                 await self.send_message(f"{'Updating existing' if file_content else 'Creating new'} file {file_name}")
+                await self.ui.send_file_status(file_name, "updating" if file_content else "creating")
             else:
                 await self.send_message(f"Reworking file {file_name} ...")
+                await self.ui.send_file_status(file_name, "reworking")
             self.next_state.action = "Updating files"
             attempt = 1
             feedback = None
@@ -179,6 +183,7 @@ class CodeMonkey(BaseAgent):
 
     async def run_code_review(self, data: Optional[dict]) -> Union[AgentResponse, dict]:
         await self.send_message(f"Reviewing code changes implemented in {data['path']} ...")
+        await self.ui.send_file_status(data["path"], "reviewing")
         if (
             data is not None
             and not data["old_content"]
