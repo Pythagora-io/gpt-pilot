@@ -43,7 +43,7 @@ class LLMRequest(Base):
     project_state: Mapped["ProjectState"] = relationship(back_populates="llm_requests", lazy="raise")
 
     @classmethod
-    async def from_request_log(
+    def from_request_log(
         cls,
         project_state: "ProjectState",
         agent: Optional["BaseAgent"],

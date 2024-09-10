@@ -281,7 +281,7 @@ class StateManager:
                 request_log.duration,
                 request_log.status != LLMRequestStatus.SUCCESS,
             )
-            await LLMRequest.from_request_log(self.current_state, agent, request_log)
+            LLMRequest.from_request_log(self.current_state, agent, request_log)
 
         except Exception as e:
             if self.ui:
