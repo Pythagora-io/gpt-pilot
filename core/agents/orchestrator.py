@@ -1,5 +1,5 @@
 import asyncio
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from core.agents.architect import Architect
 from core.agents.base import BaseAgent
@@ -197,7 +197,7 @@ class Orchestrator(BaseAgent):
 
         return import_files_response
 
-    def create_agent(self, prev_response: Optional[AgentResponse]) -> list[BaseAgent] | BaseAgent:
+    def create_agent(self, prev_response: Optional[AgentResponse]) -> Union[List[BaseAgent], BaseAgent]:
         state = self.current_state
 
         if prev_response:
@@ -296,7 +296,7 @@ class Orchestrator(BaseAgent):
         # We have just finished the task, call Troubleshooter to ask the user to review
         return Troubleshooter(self.state_manager, self.ui)
 
-    def create_agent_for_step(self, step: dict) -> list[BaseAgent] | BaseAgent:
+    def create_agent_for_step(self, step: dict) -> Union[List[BaseAgent], BaseAgent]:
         step_type = step.get("type")
         if step_type == "save_file":
             steps = self.current_state.get_steps_of_type("save_file")
