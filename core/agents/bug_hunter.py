@@ -134,12 +134,15 @@ class BugHunter(BaseAgent):
             else:
                 awaiting_bug_reproduction = True
 
+        buttons = {}
+
         if awaiting_bug_reproduction:
             # TODO how can we get FE and BE logs automatically?
-            buttons["continue"] = "Continue"
+            buttons["continue"] = "Continue without logs"
             buttons["done"] = "Bug is fixed"
+            buttons["start_pair_programming"] = "Start Pair Programming"
             backend_logs = await self.ask_question(
-                "Please do exactly what you did in the last iteration, paste the BACKEND logs here and click CONTINUE.",
+                "Please test the app again and paste the BACKEND logs here:",
                 buttons=buttons,
                 default="continue",
                 hint="Instructions for testing:\n\n"
@@ -153,8 +156,8 @@ class BugHunter(BaseAgent):
                 self.next_state.flag_iterations_as_modified()
             else:
                 frontend_logs = await self.ask_question(
-                    "Please paste the FRONTEND logs here and click CONTINUE.",
-                    buttons={"continue": "Continue", "done": "Bug is fixed"},
+                    "Please paste the FRONTEND logs here:",
+                    buttons={"continue": "Continue without logs", "done": "Bug is fixed"},
                     default="continue",
                     hint="Instructions for testing:\n\n"
                     + self.current_state.current_iteration["bug_reproduction_description"],
@@ -164,8 +167,8 @@ class BugHunter(BaseAgent):
                     self.next_state.complete_iteration()
                 else:
                     user_feedback = await self.ask_question(
-                        "Do you want to add anything else to help Pythagora solve this bug?",
-                        buttons={"continue": "Continue", "done": "Bug is fixed"},
+                        "Please add any additional feedback that could help Pythagora solve this bug.",
+                        buttons={"continue": "Continue without feedback", "done": "Bug is fixed"},
                         default="continue",
                         hint="Instructions for testing:\n\n"
                         + self.current_state.current_iteration["bug_reproduction_description"],
