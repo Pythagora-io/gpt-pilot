@@ -45,6 +45,7 @@ class MessageType(str, Enum):
     FEATURE_FINISHED = "featureFinished"
     GENERATE_DIFF = "generateDiff"
     CLOSE_DIFF = "closeDiff"
+    FILE_STATUS = "fileStatus"
     MODIFIED_FILES = "modifiedFiles"
     IMPORTANT_STREAM = "importantStream"
 
@@ -385,12 +386,26 @@ class IPCClientUI(UIBase):
             content=stats,
         )
 
-    async def generate_diff(self, file_old: str, file_new: str):
+    async def send_file_status(self, file_path: str, file_status: str):
+        await self._send(
+            MessageType.FILE_STATUS,
+            content={
+                "file_path": file_path,
+                "file_status": file_status,
+            },
+        )
+
+    async def generate_diff(
+        self, file_path: str, file_old: str, file_new: str, n_new_lines: int = 0, n_del_lines: int = 0
+    ):
         await self._send(
             MessageType.GENERATE_DIFF,
             content={
+                "file_path": file_path,
                 "file_old": file_old,
                 "file_new": file_new,
+                "n_new_lines": n_new_lines,
+                "n_del_lines": n_del_lines,
             },
         )
 

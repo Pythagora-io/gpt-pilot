@@ -67,7 +67,6 @@ class CodeMonkey(BaseAgent):
             while not code_review_done:
                 review_response = await self.run_code_review(data)
                 if isinstance(review_response, AgentResponse):
-                    await self.send_message(f"DONE implementing file {data['path']}")
                     return review_response
                 data = await self.implement_changes(review_response)
 
@@ -83,13 +82,13 @@ class CodeMonkey(BaseAgent):
             attempt = data["attempt"] + 1
             feedback = data["feedback"]
             log.debug(f"Fixing file {file_name} after review feedback: {feedback} ({attempt}. attempt)")
-            await self.send_message(f"Reworking changes I made to {file_name} ...")
+            await self.ui.send_file_status(file_name, "reworking")
         else:
             log.debug(f"Implementing file {file_name}")
             if data is None:
-                await self.send_message(f"{'Updating existing' if file_content else 'Creating new'} file {file_name}")
+                await self.ui.send_file_status(file_name, "updating" if file_content else "creating")
             else:
-                await self.send_message(f"Reworking file {file_name} ...")
+                await self.ui.send_file_status(file_name, "reworking")
             self.next_state.action = "Updating files"
             attempt = 1
             feedback = None
@@ -178,7 +177,7 @@ class CodeMonkey(BaseAgent):
     # ------------------------------
 
     async def run_code_review(self, data: Optional[dict]) -> Union[AgentResponse, dict]:
-        await self.send_message(f"Reviewing code changes implemented in {data['path']} ...")
+        await self.ui.send_file_status(data["path"], "reviewing")
         if (
             data is not None
             and not data["old_content"]
@@ -186,7 +185,7 @@ class CodeMonkey(BaseAgent):
             or data["attempt"] >= MAX_CODING_ATTEMPTS
         ):
             # we always auto-accept new files and unchanged files, or if we've tried too many times
-            return await self.accept_changes(data["path"], data["new_content"])
+            return await self.accept_changes(data["path"], data["old_content"], data["new_content"])
 
         approved_content, feedback = await self.review_change(
             data["path"],
@@ -202,17 +201,22 @@ class CodeMonkey(BaseAgent):
                 "attempt": data["attempt"],
             }
         else:
-            return await self.accept_changes(data["path"], approved_content)
+            return await self.accept_changes(data["path"], data["old_content"], approved_content)
 
-    async def accept_changes(self, path: str, content: str) -> AgentResponse:
-        await self.state_manager.save_file(path, content)
+    async def accept_changes(self, file_path: str, old_content: str, new_content: str) -> AgentResponse:
+        await self.ui.send_file_status(file_path, "done")
+
+        n_new_lines, n_del_lines = self.get_line_changes(old_content, new_content)
+        await self.ui.generate_diff(file_path, old_content, new_content, n_new_lines, n_del_lines)
+
+        await self.state_manager.save_file(file_path, new_content)
         self.next_state.complete_step()
 
-        input_required = self.state_manager.get_input_required(content)
+        input_required = self.state_manager.get_input_required(new_content)
         if input_required:
             return AgentResponse.input_required(
                 self,
-                [{"file": path, "line": line} for line in input_required],
+                [{"file": file_path, "line": line} for line in input_required],
             )
         else:
             return AgentResponse.done(self)
@@ -310,21 +314,16 @@ class CodeMonkey(BaseAgent):
         )
 
         if len(hunks_to_apply) == len(hunks):
-            # await self.send_message("Applying entire change")
             log.info(f"Applying entire change to {file_name}")
             return new_content, None
 
         elif len(hunks_to_apply) == 0:
             if hunks_to_rework:
-                # await self.send_message(
-                #     f"Requesting rework for {len(hunks_to_rework)} changes with reason: {llm_response.review_notes}"
-                # )
                 log.info(f"Requesting rework for {len(hunks_to_rework)} changes to {file_name} (0 hunks to apply)")
                 return old_content, review_log
             else:
                 # If everything can be safely ignored, it's probably because the files already implement the changes
                 # from previous tasks (which can happen often). Insisting on a change here is likely to cause problems.
-                # await self.send_message(f"Rejecting entire change with reason: {llm_response.review_notes}")
                 log.info(f"Rejecting entire change to {file_name} with reason: {llm_response.review_notes}")
                 return old_content, None
 
@@ -335,6 +334,35 @@ class CodeMonkey(BaseAgent):
             return new_content, review_log
         else:
             return new_content, None
+
+    @staticmethod
+    def get_line_changes(old_content: str, new_content: str) -> tuple[int, int]:
+        """
+        Get the number of added and deleted lines between two files.
+
+        This uses Python difflib to produce a unified diff, then counts
+        the number of added and deleted lines.
+
+        :param old_content: old file content
+        :param new_content: new file content
+        :return: a tuple (added_lines, deleted_lines)
+        """
+
+        from_lines = old_content.splitlines(keepends=True)
+        to_lines = new_content.splitlines(keepends=True)
+
+        diff_gen = unified_diff(from_lines, to_lines)
+
+        added_lines = 0
+        deleted_lines = 0
+
+        for line in diff_gen:
+            if line.startswith("+") and not line.startswith("+++"):  # Exclude the file headers
+                added_lines += 1
+            elif line.startswith("-") and not line.startswith("---"):  # Exclude the file headers
+                deleted_lines += 1
+
+        return added_lines, deleted_lines
 
     @staticmethod
     def get_diff_hunks(file_name: str, old_content: str, new_content: str) -> list[str]:
