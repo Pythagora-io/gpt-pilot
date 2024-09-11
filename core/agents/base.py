@@ -54,11 +54,11 @@ class BaseAgent:
         Send a message to the user.
 
         Convenience method, uses `UIBase.send_message()` to send the message,
-        setting the correct source.
+        setting the correct source and project state ID.
 
         :param message: Message to send.
         """
-        await self.ui.send_message(message + "\n", source=self.ui_source)
+        await self.ui.send_message(message + "\n", source=self.ui_source, project_state_id=str(self.current_state.id))
 
     async def ask_question(
         self,
@@ -75,7 +75,7 @@ class BaseAgent:
         Ask a question to the user and return the response.
 
         Convenience method, uses `UIBase.ask_question()` to
-        ask the question, setting the correct source and
+        ask the question, setting the correct source and project state ID, and
         logging the question/response.
 
         :param question: Question to ask.
@@ -96,6 +96,7 @@ class BaseAgent:
             hint=hint,
             initial_text=initial_text,
             source=self.ui_source,
+            project_state_id=str(self.current_state.id),
         )
         await self.state_manager.log_user_input(question, response)
         return response
@@ -109,10 +110,10 @@ class BaseAgent:
         :param content: Response content.
         """
 
-        await self.ui.send_stream_chunk(content, source=self.ui_source)
+        await self.ui.send_stream_chunk(content, source=self.ui_source, project_state_id=str(self.current_state.id))
 
         if content is None:
-            await self.ui.send_message("", source=self.ui_source)
+            await self.ui.send_message("", source=self.ui_source, project_state_id=str(self.current_state.id))
 
     async def error_handler(self, error: LLMError, message: Optional[str] = None) -> bool:
         """

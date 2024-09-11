@@ -97,7 +97,9 @@ class UIBase:
         """
         raise NotImplementedError()
 
-    async def send_stream_chunk(self, chunk: str, *, source: Optional[UISource] = None):
+    async def send_stream_chunk(
+        self, chunk: str, *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+    ):
         """
         Send a chunk of the stream to the UI.
 
@@ -106,7 +108,9 @@ class UIBase:
         """
         raise NotImplementedError()
 
-    async def send_message(self, message: str, *, source: Optional[UISource] = None):
+    async def send_message(
+        self, message: str, *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+    ):
         """
         Send a complete message to the UI.
 
@@ -162,6 +166,7 @@ class UIBase:
         hint: Optional[str] = None,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
+        project_state_id: Optional[str] = None,
     ) -> UserInput:
         """
         Ask the user a question.

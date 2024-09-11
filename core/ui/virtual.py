@@ -21,14 +21,18 @@ class VirtualUI(UIBase):
     async def stop(self):
         log.debug("Stopping test UI")
 
-    async def send_stream_chunk(self, chunk: Optional[str], *, source: Optional[UISource] = None):
+    async def send_stream_chunk(
+        self, chunk: Optional[str], *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+    ):
         if chunk is None:
             # end of stream
             print("", flush=True)
         else:
             print(chunk, end="", flush=True)
 
-    async def send_message(self, message: str, *, source: Optional[UISource] = None):
+    async def send_message(
+        self, message: str, *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+    ):
         if source:
             print(f"[{source}] {message}")
         else:
@@ -64,6 +68,7 @@ class VirtualUI(UIBase):
         hint: Optional[str] = None,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
+        project_state_id: Optional[str] = None,
     ) -> UserInput:
         if source:
             print(f"[{source}] {question}")

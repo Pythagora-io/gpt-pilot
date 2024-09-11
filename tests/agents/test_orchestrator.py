@@ -3,12 +3,11 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 from core.agents.orchestrator import Orchestrator
-from core.state.state_manager import StateManager
 
 
 @pytest.mark.asyncio
 async def test_offline_changes_check_restores_if_workspace_empty():
-    sm = AsyncMock(spec=StateManager)
+    sm = AsyncMock()
     sm.workspace_is_empty = Mock(return_value=False)
     ui = AsyncMock()
     orca = Orchestrator(state_manager=sm, ui=ui)
