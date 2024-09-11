@@ -66,6 +66,7 @@ EXAMPLE_PROJECT_PLAN = [
             "Integrate Boostrap 5 for styling - add CSS/JS to index.html, style App.jsx and other files as appropriate."
         ),
         "status": "todo",
+        "sub_epic_id": 1,
     }
 ]
 

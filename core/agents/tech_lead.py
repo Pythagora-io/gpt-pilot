@@ -98,6 +98,7 @@ class TechLead(ActionsConversationMixin, BaseAgent):
                 "summary": None,
                 "completed": False,
                 "complexity": self.current_state.specification.complexity,
+                "sub_epics": [],
             }
         ]
 
@@ -140,16 +141,17 @@ class TechLead(ActionsConversationMixin, BaseAgent):
         if len(self.current_state.epics) > 2:
             await self.ui.send_message("Your new feature is complete!", source=success_source)
         else:
-            await self.ui.send_message("Your app is DONE!!! You can start using it right now!", source=success_source)
+            await self.ui.send_message("Your app is DONE! You can start using it right now!", source=success_source)
 
         log.debug("Asking for new feature")
         response = await self.ask_question(
-            "Do you have a new feature to add to the project? Just write it here",
+            "Do you have a new feature to add to the project? Just write it here:",
             buttons={"continue": "continue", "end": "No, I'm done"},
-            allow_empty=True,
+            allow_empty=False,
         )
 
-        if response.cancelled or not response.text:
+        if response.button == "end" or response.cancelled or not response.text:
+            await self.ui.send_message("Thanks for using Pythagora!")
             return AgentResponse.exit(self)
 
         self.next_state.epics = self.current_state.epics + [
@@ -162,6 +164,7 @@ class TechLead(ActionsConversationMixin, BaseAgent):
                 "summary": None,
                 "completed": False,
                 "complexity": None,  # Determined and defined in SpecWriter
+                "sub_epics": [],
             }
         ]
         # Orchestrator will rerun us to break down the new feature epic
@@ -170,7 +173,7 @@ class TechLead(ActionsConversationMixin, BaseAgent):
 
     async def plan_epic(self, epic) -> AgentResponse:
         log.debug(f"Planning tasks for the epic: {epic['name']}")
-        await self.send_message("Starting to create the action plan for development ...")
+        await self.send_message("Starting to create the development plan ...")
 
         llm = self.get_llm(TECH_LEAD_PLANNING, stream_output=True)
         convo = (
@@ -194,6 +197,12 @@ class TechLead(ActionsConversationMixin, BaseAgent):
         llm = self.get_llm(TECH_LEAD_PLANNING, stream_output=True)
 
         if epic.get("source") == "feature" or epic.get("complexity") == "simple":
+            self.next_state.current_epic["sub_epics"] = [
+                {
+                    "id": 1,
+                    "description": epic["name"],
+                }
+            ]
             self.next_state.tasks = self.next_state.tasks + [
                 {
                     "id": uuid4().hex,
@@ -201,14 +210,21 @@ class TechLead(ActionsConversationMixin, BaseAgent):
                     "instructions": None,
                     "pre_breakdown_testing_instructions": None,
                     "status": TaskStatus.TODO,
+                    "sub_epic_id": 1,
                 }
                 for task in response.plan
             ]
         else:
-            for epic_number, epic in enumerate(response.plan, start=1):
-                log.debug(f"Adding epic: {epic.description}")
+            self.next_state.current_epic["sub_epics"] = self.next_state.current_epic["sub_epics"] + [
+                {
+                    "id": sub_epic_number,
+                    "description": sub_epic.description,
+                }
+                for sub_epic_number, sub_epic in enumerate(response.plan, start=1)
+            ]
+            for sub_epic_number, sub_epic in enumerate(response.plan, start=1):
                 convo = convo.template(
-                    "epic_breakdown", epic_number=epic_number, epic_description=epic.description
+                    "epic_breakdown", epic_number=sub_epic_number, epic_description=sub_epic.description
                 ).require_schema(EpicPlan)
                 epic_plan: EpicPlan = await llm(convo, parser=JSONParser(EpicPlan))
                 self.next_state.tasks = self.next_state.tasks + [
@@ -218,6 +234,7 @@ class TechLead(ActionsConversationMixin, BaseAgent):
                         "instructions": None,
                         "pre_breakdown_testing_instructions": task.testing_instructions,
                         "status": TaskStatus.TODO,
+                        "sub_epic_id": sub_epic_number,
                     }
                     for task in epic_plan.plan
                 ]
@@ -243,6 +260,12 @@ class TechLead(ActionsConversationMixin, BaseAgent):
                 "description": example["description"],
                 "completed": False,
                 "complexity": example["complexity"],
+                "sub_epics": [
+                    {
+                        "id": 1,
+                        "description": "Single Epic Example",
+                    }
+                ],
             }
         ]
         self.next_state.tasks = example["plan"]
