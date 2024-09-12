@@ -140,6 +140,7 @@ class ActionsConversationMixin:
         llm_config,
         temperature: Optional[float] = 0.5,
         max_convo_length: Optional[int] = 20,
+        stream_llm_output: Optional[bool] = False,
     ) -> tuple[AgentConvo, any]:
         """
         Loop in conversation until done.
@@ -154,7 +155,7 @@ class ActionsConversationMixin:
 
         :return: A tuple of the conversation and the final aggregated data.
         """
-        llm = self.get_llm(llm_config, stream_output=True)
+        llm = self.get_llm(llm_config, stream_output=stream_llm_output)
         convo = (
             AgentConvo(self)
             .template(

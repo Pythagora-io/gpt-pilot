@@ -246,6 +246,7 @@ class Developer(ActionsConversationMixin, RelevantFilesMixin, BaseAgent):
             schema=BreakdownActions,
             llm_config=TASK_BREAKDOWN_AGENT_NAME,
             temperature=0,
+            stream_llm_output=True,
         )
 
         instructions = response["detailed_breakdown"]

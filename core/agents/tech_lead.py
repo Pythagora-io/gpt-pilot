@@ -177,7 +177,7 @@ class TechLead(ActionsConversationMixin, BaseAgent):
 
     async def plan_epic(self, epic) -> AgentResponse:
         log.debug(f"Planning tasks for the epic: {epic['name']}")
-        await self.send_message("Starting to create the development plan ...")
+        await self.send_message("Creating the development plan ...")
 
         llm = self.get_llm(TECH_LEAD_PLANNING, stream_output=True)
         convo = (
@@ -198,15 +198,17 @@ class TechLead(ActionsConversationMixin, BaseAgent):
         formatted_tasks = [f"Epic #{index}: {task.description}" for index, task in enumerate(response.plan, start=1)]
         tasks_string = "\n\n".join(formatted_tasks)
         convo = convo.assistant(tasks_string)
-        llm = self.get_llm(TECH_LEAD_PLANNING, stream_output=True)
+        llm = self.get_llm(TECH_LEAD_PLANNING)
 
         if epic.get("source") == "feature" or epic.get("complexity") == "simple":
+            await self.send_message(f"Epic 1: {epic["name"]}")
             self.next_state.current_epic["sub_epics"] = [
                 {
                     "id": 1,
                     "description": epic["name"],
                 }
             ]
+            await self.send_message("Creating tasks for this epic ...")
             self.next_state.tasks = self.next_state.tasks + [
                 {
                     "id": uuid4().hex,
@@ -231,9 +233,11 @@ class TechLead(ActionsConversationMixin, BaseAgent):
                 for sub_epic_number, sub_epic in enumerate(response.plan, start=1)
             ]
             for sub_epic_number, sub_epic in enumerate(response.plan, start=1):
+                await self.send_message(f"Epic {sub_epic_number}: {sub_epic.description}")
                 convo = convo.template(
                     "epic_breakdown", epic_number=sub_epic_number, epic_description=sub_epic.description
                 ).require_schema(EpicPlan)
+                await self.send_message("Creating tasks for this epic ...")
                 epic_plan: EpicPlan = await llm(convo, parser=JSONParser(EpicPlan))
                 self.next_state.tasks = self.next_state.tasks + [
                     {
@@ -246,11 +250,12 @@ class TechLead(ActionsConversationMixin, BaseAgent):
                     }
                     for task in epic_plan.plan
                 ]
-                await self.ui.send_epics_and_tasks(
-                    self.next_state.current_epic["sub_epics"],
-                    self.next_state.tasks,
-                )
                 convo.remove_last_x_messages(2)
+
+            await self.ui.send_epics_and_tasks(
+                self.next_state.current_epic["sub_epics"],
+                self.next_state.tasks,
+            )
 
         await telemetry.trace_code_event(
             "development-plan",
