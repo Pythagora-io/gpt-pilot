@@ -66,10 +66,6 @@ class TechLead(ActionsConversationMixin, BaseAgent):
     display_name = "Tech Lead"
 
     async def run(self) -> AgentResponse:
-        current_task_status = self.current_state.current_task.get("status") if self.current_state.current_task else None
-        if current_task_status and current_task_status == TaskStatus.DOCUMENTED:
-            return await self.update_epic()
-
         if len(self.current_state.epics) == 0:
             if self.current_state.specification.example_project:
                 self.plan_example_project()

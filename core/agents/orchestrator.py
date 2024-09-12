@@ -244,10 +244,7 @@ class Orchestrator(BaseAgent):
             if current_task_status == TaskStatus.REVIEWED:
                 # User reviewed the task, call TechnicalWriter to see if documentation needs to be updated
                 return TechnicalWriter(self.state_manager, self.ui)
-            elif current_task_status == TaskStatus.DOCUMENTED:
-                # After documentation is done, call TechLead update the development plan (remaining tasks)
-                return TechLead(self.state_manager, self.ui)
-            elif current_task_status in [TaskStatus.EPIC_UPDATED, TaskStatus.SKIPPED]:
+            elif current_task_status in [TaskStatus.DOCUMENTED, TaskStatus.SKIPPED]:
                 # Task is fully done or skipped, call TaskCompleter to mark it as completed
                 return TaskCompleter(self.state_manager, self.ui)
 
