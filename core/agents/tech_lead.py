@@ -78,6 +78,10 @@ class TechLead(ActionsConversationMixin, BaseAgent):
         if self.current_state.specification.templates and not self.current_state.files:
             await self.apply_project_templates()
             self.next_state.action = "Apply project templates"
+            await self.ui.send_epics_and_tasks(
+                self.next_state.current_epic["sub_epics"],
+                self.next_state.tasks,
+            )
             return AgentResponse.done(self)
 
         if self.current_state.current_epic:
@@ -87,7 +91,7 @@ class TechLead(ActionsConversationMixin, BaseAgent):
             return await self.ask_for_new_feature()
 
     def create_initial_project_epic(self):
-        log.debug("Creating initial project epic")
+        log.debug("Creating initial project Epic")
         self.next_state.epics = [
             {
                 "id": uuid4().hex,
@@ -214,6 +218,10 @@ class TechLead(ActionsConversationMixin, BaseAgent):
                 }
                 for task in response.plan
             ]
+            await self.ui.send_epics_and_tasks(
+                self.next_state.current_epic["sub_epics"],
+                self.next_state.tasks,
+            )
         else:
             self.next_state.current_epic["sub_epics"] = self.next_state.current_epic["sub_epics"] + [
                 {
@@ -238,6 +246,10 @@ class TechLead(ActionsConversationMixin, BaseAgent):
                     }
                     for task in epic_plan.plan
                 ]
+                await self.ui.send_epics_and_tasks(
+                    self.next_state.current_epic["sub_epics"],
+                    self.next_state.tasks,
+                )
                 convo.remove_last_x_messages(2)
 
         await telemetry.trace_code_event(

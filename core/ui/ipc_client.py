@@ -46,6 +46,7 @@ class MessageType(str, Enum):
     GENERATE_DIFF = "generateDiff"
     CLOSE_DIFF = "closeDiff"
     FILE_STATUS = "fileStatus"
+    EPICS_AND_TASKS = "epicsAndTasks"
     MODIFIED_FILES = "modifiedFiles"
     IMPORTANT_STREAM = "importantStream"
 
@@ -308,6 +309,19 @@ class IPCClientUI(UIBase):
 
     async def send_project_stage(self, stage: ProjectStage):
         await self._send(MessageType.INFO, content=json.dumps({"project_stage": stage.value}))
+
+    async def send_epics_and_tasks(
+        self,
+        epics: list[dict],
+        tasks: list[dict],
+    ):
+        await self._send(
+            MessageType.EPICS_AND_TASKS,
+            content={
+                "epics": epics,
+                "tasks": tasks,
+            },
+        )
 
     async def send_task_progress(
         self,

@@ -102,6 +102,13 @@ class PlainConsoleUI(UIBase):
     async def send_project_stage(self, stage: ProjectStage):
         pass
 
+    async def send_epics_and_tasks(
+        self,
+        epics: list[dict],
+        tasks: list[dict],
+    ):
+        pass
+
     async def send_task_progress(
         self,
         index: int,

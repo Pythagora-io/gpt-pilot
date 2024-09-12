@@ -196,6 +196,19 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def send_epics_and_tasks(
+        self,
+        epics: list[dict] = None,
+        tasks: list[dict] = None,
+    ):
+        """
+        Send epics and tasks info to the UI.
+
+        :param epics: List of all epics.
+        :param tasks: List of all tasks.
+        """
+        raise NotImplementedError()
+
     async def send_task_progress(
         self,
         index: int,
