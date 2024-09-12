@@ -277,7 +277,7 @@ class Developer(ActionsConversationMixin, RelevantFilesMixin, BaseAgent):
     def set_next_steps(self, response: TaskSteps, source: str):
         # For logging/debugging purposes, we don't want to remove the finished steps
         # until we're done with the task.
-        unique_steps = self.remove_duplicate_steps(response)
+        unique_steps = self.remove_duplicate_steps({**response.model_dump()})
         finished_steps = [step for step in self.current_state.steps if step["completed"]]
         self.next_state.steps = finished_steps + [
             {
@@ -285,9 +285,9 @@ class Developer(ActionsConversationMixin, RelevantFilesMixin, BaseAgent):
                 "completed": False,
                 "source": source,
                 "iteration_index": len(self.current_state.iterations),
-                **step.model_dump(),
+                **step,
             }
-            for step in unique_steps.steps
+            for step in unique_steps["steps"]
         ]
         if (
             len(self.next_state.unfinished_steps) > 0
@@ -309,30 +309,22 @@ class Developer(ActionsConversationMixin, RelevantFilesMixin, BaseAgent):
             ]
         log.debug(f"Next steps: {self.next_state.unfinished_steps}")
 
-    import json
-
-    def remove_duplicate_steps(self, data: TaskSteps) -> TaskSteps:
-        unique_steps = {}
+    def remove_duplicate_steps(self, data):
+        unique_steps = []
 
         # Process steps attribute
-        for step in data.steps:
-            if isinstance(step, SaveFileStep):
-                key = (step.__class__.__name__, step.save_file.path)
-                unique_steps[key] = step
+        for step in data["steps"]:
+            if isinstance(step, SaveFileStep) and any(
+                s["type"] == "save_file" and s["save_file"]["path"] == step["save_file"]["path"] for s in unique_steps
+            ):
+                continue
+            unique_steps.append(step)
 
         # Update steps attribute
-        data.steps = list(unique_steps.values())
+        data["steps"] = unique_steps
 
-        # Process and update original_response
-        if hasattr(data, "original_response") and data.original_response:
-            original_data = json.loads(data.original_response)
-            unique_original_steps = {}
-            for step in original_data["steps"]:
-                if step["type"] == "save_file":
-                    key = (step["type"], step["save_file"]["path"])
-                    unique_original_steps[key] = step
-            original_data["steps"] = list(unique_original_steps.values())
-            data.original_response = json.dumps(original_data, indent=2)
+        # Use the serializable_steps for JSON dumping
+        data["original_response"] = json.dumps(unique_steps, indent=2)
 
         return data
 

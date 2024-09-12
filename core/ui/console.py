@@ -145,7 +145,9 @@ class PlainConsoleUI(UIBase):
     async def send_file_status(self, file_path: str, file_status: str):
         pass
 
-    async def generate_diff(self, file_old: str, file_new: str):
+    async def generate_diff(
+        self, file_path: str, file_old: str, file_new: str, n_new_lines: int = 0, n_del_lines: int = 0
+    ):
         pass
 
     async def close_diff(self):
