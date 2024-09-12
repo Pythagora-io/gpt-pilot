@@ -1,3 +1,4 @@
+import json
 from enum import Enum
 from typing import Annotated, Literal, Optional, Union
 from uuid import uuid4
@@ -6,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
-from core.agents.mixins import RelevantFilesMixin
+from core.agents.mixins import ActionsConversationMixin, DoneBooleanAction, ReadFilesAction, RelevantFilesMixin
 from core.agents.response import AgentResponse, ResponseType
 from core.config import PARSE_TASK_AGENT_NAME, TASK_BREAKDOWN_AGENT_NAME
 from core.db.models.project_state import IterationStatus, TaskStatus
@@ -59,7 +60,28 @@ class TaskSteps(BaseModel):
     steps: list[Step]
 
 
-class Developer(RelevantFilesMixin, BaseAgent):
+class HighLevelInstructions(BaseModel):
+    high_level_instructions: Optional[str] = Field(
+        description="Very short high level instructions on how to solve the task."
+    )
+
+
+class ListFilesAction(BaseModel):
+    explanation: Optional[str] = Field(description="Brief explanation for selecting each of the files.")
+    list_files: Optional[list[str]] = Field(
+        description="List of files that have to be created or modified during implementation of this task."
+    )
+
+
+class DetailedBreakdown(BaseModel):
+    detailed_breakdown: Optional[str] = Field(description="Full breakdown for implementing the task.")
+
+
+class BreakdownActions(BaseModel):
+    action: Union[ReadFilesAction, HighLevelInstructions, ListFilesAction, DetailedBreakdown, DoneBooleanAction]
+
+
+class Developer(ActionsConversationMixin, RelevantFilesMixin, BaseAgent):
     agent_type = "developer"
     display_name = "Developer"
 
@@ -217,26 +239,25 @@ class Developer(RelevantFilesMixin, BaseAgent):
 
         current_task_index = self.current_state.tasks.index(current_task)
 
-        llm = self.get_llm(TASK_BREAKDOWN_AGENT_NAME, stream_output=True)
-        convo = AgentConvo(self).template(
-            "breakdown",
-            task=current_task,
-            iteration=None,
-            current_task_index=current_task_index,
-            docs=self.current_state.docs,
+        convo, response = await self.actions_conversation(
+            data={"task": current_task, "current_task_index": current_task_index},
+            original_prompt="breakdown",
+            loop_prompt="breakdown_loop",
+            schema=BreakdownActions,
+            llm_config=TASK_BREAKDOWN_AGENT_NAME,
+            temperature=0,
         )
-        response: str = await llm(convo)
 
-        await self.get_relevant_files(None, response)
-
+        instructions = response["detailed_breakdown"]
         self.next_state.tasks[current_task_index] = {
             **current_task,
-            "instructions": response,
+            "instructions": instructions,
         }
         self.next_state.flag_tasks_as_modified()
 
         llm = self.get_llm(PARSE_TASK_AGENT_NAME)
-        convo.assistant(response).template("parse_task").require_schema(TaskSteps)
+        await self.send_message("Breaking down the task into steps ...")
+        convo.assistant(instructions).template("parse_task").require_schema(TaskSteps)
         response: TaskSteps = await llm(convo, parser=JSONParser(TaskSteps), temperature=0)
 
         # There might be state leftovers from previous tasks that we need to clean here
@@ -256,6 +277,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
     def set_next_steps(self, response: TaskSteps, source: str):
         # For logging/debugging purposes, we don't want to remove the finished steps
         # until we're done with the task.
+        unique_steps = self.remove_duplicate_steps(response)
         finished_steps = [step for step in self.current_state.steps if step["completed"]]
         self.next_state.steps = finished_steps + [
             {
@@ -265,7 +287,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
                 "iteration_index": len(self.current_state.iterations),
                 **step.model_dump(),
             }
-            for step in response.steps
+            for step in unique_steps.steps
         ]
         if (
             len(self.next_state.unfinished_steps) > 0
@@ -286,6 +308,33 @@ class Developer(RelevantFilesMixin, BaseAgent):
                 },
             ]
         log.debug(f"Next steps: {self.next_state.unfinished_steps}")
+
+    import json
+
+    def remove_duplicate_steps(self, data: TaskSteps) -> TaskSteps:
+        unique_steps = {}
+
+        # Process steps attribute
+        for step in data.steps:
+            if isinstance(step, SaveFileStep):
+                key = (step.__class__.__name__, step.save_file.path)
+                unique_steps[key] = step
+
+        # Update steps attribute
+        data.steps = list(unique_steps.values())
+
+        # Process and update original_response
+        if hasattr(data, "original_response") and data.original_response:
+            original_data = json.loads(data.original_response)
+            unique_original_steps = {}
+            for step in original_data["steps"]:
+                if step["type"] == "save_file":
+                    key = (step["type"], step["save_file"]["path"])
+                    unique_original_steps[key] = step
+            original_data["steps"] = list(unique_original_steps.values())
+            data.original_response = json.dumps(original_data, indent=2)
+
+        return data
 
     async def ask_to_execute_task(self) -> bool:
         """

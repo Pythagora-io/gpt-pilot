@@ -224,6 +224,8 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
 
         bug_report = None
         change_description = None
+        hint = None
+
         is_loop = False
         should_iterate = True
 

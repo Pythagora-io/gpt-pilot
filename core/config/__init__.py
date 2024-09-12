@@ -39,6 +39,7 @@ CODE_REVIEW_AGENT_NAME = "CodeMonkey.code_review"
 DESCRIBE_FILES_AGENT_NAME = "CodeMonkey.describe_files"
 CHECK_LOGS_AGENT_NAME = "BugHunter.check_logs"
 PARSE_TASK_AGENT_NAME = "Developer.parse_task"
+PLANNING_AGENT_NAME = "TechLead.plan_epic"
 TASK_BREAKDOWN_AGENT_NAME = "Developer.breakdown_current_task"
 TROUBLESHOOTER_BUG_REPORT = "Troubleshooter.generate_bug_report"
 TROUBLESHOOTER_GET_RUN_COMMAND = "Troubleshooter.get_run_command"
@@ -352,6 +353,11 @@ class Config(_StrictModel):
                 provider=LLMProvider.OPENAI,
                 model="gpt-4-0125-preview",
                 temperature=0.0,
+            ),
+            PLANNING_AGENT_NAME: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20240620",
+                temperature=0.5,
             ),
             SPEC_WRITER_AGENT_NAME: AgentLLMConfig(
                 provider=LLMProvider.OPENAI,

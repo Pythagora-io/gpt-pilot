@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -11,11 +11,30 @@ from core.log import get_logger
 log = get_logger(__name__)
 
 
+class ReadFilesAction(BaseModel):
+    read_files: Optional[List[str]] = Field(
+        description="List of files you want to read. All listed files must be in the project."
+    )
+
+
+class AddFilesAction(BaseModel):
+    add_files: Optional[List[str]] = Field(
+        description="List of files you want to add to the list of relevant files. All listed files must be in the project. You must read files before adding them."
+    )
+
+
+class RemoveFilesAction(BaseModel):
+    remove_files: Optional[List[str]] = Field(
+        description="List of files you want to remove from the list of relevant files. All listed files must be in the relevant files list."
+    )
+
+
+class DoneBooleanAction(BaseModel):
+    done: Optional[bool] = Field(description="Boolean flag to indicate that you are done creating breakdown.")
+
+
 class RelevantFiles(BaseModel):
-    read_files: list[str] = Field(description="List of files you want to read.")
-    add_files: list[str] = Field(description="List of files you want to add to the list of relevant files.")
-    remove_files: list[str] = Field(description="List of files you want to remove from the list of relevant files.")
-    done: bool = Field(description="Boolean flag to indicate that you are done selecting relevant files.")
+    action: Union[ReadFilesAction, AddFilesAction, RemoveFilesAction, DoneBooleanAction]
 
 
 class IterationPromptMixin:
@@ -79,28 +98,101 @@ class RelevantFilesMixin:
 
         while not done and len(convo.messages) < 13:
             llm_response: RelevantFiles = await llm(convo, parser=JSONParser(RelevantFiles), temperature=0)
+            action = llm_response.action
 
             # Check if there are files to add to the list
-            if llm_response.add_files:
+            if getattr(action, "add_files", None):
                 # Add only the files from add_files that are not already in relevant_files
-                relevant_files.update(file for file in llm_response.add_files if file not in relevant_files)
+                relevant_files.update(file for file in action.add_files if file not in relevant_files)
 
             # Check if there are files to remove from the list
-            if llm_response.remove_files:
+            if getattr(action, "remove_files", None):
                 # Remove files from relevant_files that are in remove_files
-                relevant_files.difference_update(llm_response.remove_files)
+                relevant_files.difference_update(action.remove_files)
 
-            read_files = [file for file in self.current_state.files if file.path in llm_response.read_files]
+            read_files = [file for file in self.current_state.files if file.path in getattr(action, "read_files", [])]
 
             convo.remove_last_x_messages(1)
             convo.assistant(llm_response.original_response)
             convo.template("filter_files_loop", read_files=read_files, relevant_files=relevant_files).require_schema(
                 RelevantFiles
             )
-            done = llm_response.done
+            done = getattr(action, "done", False)
 
         existing_files = {file.path for file in self.current_state.files}
         relevant_files = [path for path in relevant_files if path in existing_files]
         self.next_state.relevant_files = relevant_files
 
         return AgentResponse.done(self)
+
+
+class ActionsConversationMixin:
+    """
+    Provides a method to loop in conversation until done.
+    """
+
+    async def actions_conversation(
+        self,
+        data: any,
+        original_prompt: str,
+        loop_prompt: str,
+        schema,
+        llm_config,
+        temperature: Optional[float] = 0.5,
+        max_convo_length: Optional[int] = 20,
+    ) -> tuple[AgentConvo, any]:
+        """
+        Loop in conversation until done.
+
+        :param data: The initial data to pass into the conversation.
+        :param original_prompt: The prompt template name for the initial request.
+        :param loop_prompt: The prompt template name for the looped requests.
+        :param schema: The schema class to enforce the structure of the LLM response.
+        :param llm_config: The LLM configuration to use for the conversation.
+        :param temperature: The temperature to use for the LLM response.
+        :param max_convo_length: The maximum number of messages to allow in the conversation.
+
+        :return: A tuple of the conversation and the final aggregated data.
+        """
+        llm = self.get_llm(llm_config, stream_output=True)
+        convo = (
+            AgentConvo(self)
+            .template(
+                original_prompt,
+                **data,
+            )
+            .require_schema(schema)
+        )
+        response = await llm(convo, parser=JSONParser(schema), temperature=temperature)
+        convo.remove_last_x_messages(1)
+        convo.assistant(response.original_response)
+
+        # Initialize loop_data to store the cumulative data from the loop
+        loop_data = {
+            attr: getattr(response.action, attr, None) for attr in dir(response.action) if not attr.startswith("_")
+        }
+        loop_data["read_files"] = getattr(response.action, "read_files", [])
+        done = getattr(response.action, "done", False)
+
+        # Keep working on the task until `done` or we reach 20 messages in convo.
+        while not done and len(convo.messages) < max_convo_length:
+            convo.template(
+                loop_prompt,
+                **loop_data,
+            ).require_schema(schema)
+            response = await llm(convo, parser=JSONParser(schema), temperature=temperature)
+            convo.remove_last_x_messages(1)
+            convo.assistant(response.original_response)
+
+            # Update loop_data with new information, replacing everything except for 'read_files'
+            for attr in dir(response.action):
+                if not attr.startswith("_"):
+                    current_value = getattr(response.action, attr, None)
+                    if attr == "read_files" and current_value:
+                        loop_data[attr].extend(item for item in current_value if item not in loop_data[attr])
+                    else:
+                        loop_data[attr] = current_value
+
+            done = getattr(response.action, "done", False)
+
+        return convo, loop_data

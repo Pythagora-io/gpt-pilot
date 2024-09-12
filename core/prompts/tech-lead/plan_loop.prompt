@@ -1,0 +1,33 @@
+Continue working on creating development plan, listing everything that needs to be done for this app to be successfully implemented.
+Focus on previous messages in this conversation so that you don't repeat yourself (e.g. don't `read_files` that you already read previously because they didn't change in meantime).
+
+{% include "partials/project_tasks.prompt" %}
+
+This is your progress so far:
+{% if high_level_plan is defined and high_level_plan %}- You created high_level_plan:
+```
+{{high_level_plan}}
+```
+{% endif %}
+
+{% if read_files is defined and read_files %}- You read these files:
+```
+{{read_files}}
+```
+{% endif %}
+
+{% if development_plan is defined and development_plan %}- You created this development_plan:
+---START_OF_CURRENT_DEVELOPMENT_PLAN---
+{% for epic in development_plan %}
+{{ loop.index }}. {{ epic.description }}
+{% endfor %}
+---END_OF_CURRENT_DEVELOPMENT_PLAN---
+{% endif %}
+
+{% if review_plan is defined and review_plan %}- You reviewed the plan:
+```
+{{review_plan}}
+```
+{% endif %}
+
+{% include "partials/planning_actions.prompt" %}

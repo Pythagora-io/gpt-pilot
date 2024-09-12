@@ -53,7 +53,7 @@ class LLMRequest(Base):
         Store the request log in the database.
 
         Note this just creates the request log object. It is committed to the
-        database only when the DB session itself is comitted.
+        database only when the DB session itself is committed.
 
         :param project_state: Project state to associate the request log with.
         :param agent: Agent that made the request (if the caller was an agent).

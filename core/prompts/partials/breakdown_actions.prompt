@@ -1,0 +1,16 @@
+Your job is to figure out all details that have to be implemented for this task to be completed successfully.
+Think step by step what information do you need, what files have to be implemented for this task and what has to be implemented in those files. If you need to see content of some other files in project, you can do so with `read_files` action. Start by giving high level instructions on what needs to be done. At any point you can ask to see content of some files you haven't seen before and might be relevant for this task. Also, you can change your mind and update high level instructions, list of files that have to be created/modified or even change detailed breakdown if you noticed you missed something.
+
+While doing this you have access to the following actions:
+- `read_files` - to read the content of the files
+- `high_level_instructions` - create or update high level instructions
+- `list_files` - list all files that need to be created or updated
+- `detailed_breakdown` - create full breakdown for this task
+- `done` - boolean to indicate when you're done with the breakdown
+
+You can use only one action at a time. After each action, you will be asked what you want to do next. You can use same action you already used before (e.g. `list_files` if you want to add more files or remove some from the list).
+You must read the file using the `read_files` action before you can list it in the `list_files` action.
+You must read the file using the `read_files` action before you can suggest changes of that file in the `detailed_breakdown` action.
+Creating detailed breakdown is the most important part of your task. While working on detailed breakdown, make sure that you don't miss anything and that you provide all necessary details for this task to be completed successfully while focusing not to break any existing functionality that app might have. Detailed breakdown should be as detailed as possible, so that anyone can follow it and implement it without any additional questions. Do not leave anything for interpretation, e.g. if something can be done in multiple ways, specify which way should be used and be as clear as possible. You can put small code snippets (do not code full files, developer will do that) that have to be implemented in the files if you think that will help to understand the task better.
+
+If you want to finish creating the breakdown, just use action to set boolean flag `done` to true.

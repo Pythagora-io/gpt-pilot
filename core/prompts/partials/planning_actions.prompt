@@ -1,0 +1,14 @@
+Your job is to figure out all epics that have to be implemented for this app to work flawlessly.
+Think step by step what information do you need, what epics have to be implemented to have fully working app. Start by giving high level plan to give brief overview of how the plan will be structured. You can always change your mind and update high level plan, list of files that have to be created/modified or even change detailed breakdown if you noticed you missed something.
+
+While doing this you have access to the following actions:
+- `read_files` - to read the content of the files if there are any files in the project
+- `high_level_plan` - create high level plan
+- `development_plan` - Create full development plan for this app that consists of all epics that have to be implemented.
+- `review_plan` - Review the current development plan and if changes are needed, explain here in details what has to be changed.
+- `done` - boolean to indicate when you're done with the breakdown
+
+You can use only one action at a time. After each action, you will be asked what you want to do next. You can use same action you already used before only if you need to make a change to that action (e.g. `development_plan` only if you want to add, update or remove epics from the plan. Do not use same action to recreate exactly same plan.). Look at previous messages in conversation to see what you already did so you don't repeat yourself.
+Creating development plan is the most important part of your task and has to be done thoroughly. Once development plan is created you have to review that plan using `review_plan` action and if changes are needed, explain what has to be changed.
+
+Once the development plan is done and review of plan is done and doesn't need any changes, use action `done` and set it to true.

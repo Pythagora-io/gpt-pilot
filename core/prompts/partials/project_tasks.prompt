@@ -4,6 +4,7 @@
 
 ## Rule #1
 Every epic must have only coding involved. There should never be a epic that is only testing or ensuring something works. There shouldn't be a epic for researching, deployment, writing documentation, testing or anything that is not writing the actual code. Testing if app works will be done as part of each epic.
+Do not leave anything for interpretation, e.g. if something can be done in multiple ways, specify which way should be used and be as clear as possible.
 
 ## Rule #2
 This rule applies to epic scope.
@@ -12,13 +13,11 @@ Each epic must be deliverable that can be verified by non technical user. Each e
 ## Rule #3
 This rule applies to the number of epics you will create.
 Every app should have different number of epics depending on complexity. Think epic by epic and create the minimum number of epics that are needed to develop this app.
-Simple apps should have only 1 epic.
-Medium complexity apps should have 2-5 epics.
-Very complex apps should have 4-8 epics.
+Simple apps should have only 1 epic. More complex apps should have more epics. Do not create more epics than needed.
 
 ## Rule #4
 This rule applies to writing epic 'description'.
-Every epic must have a clear, high level, and short 1 sentence 'description'. It must be very clear so that even non technical users who are reviewing it and just moved to this project can understand what is goal for the epic.
+Every epic must have a clear, high level, and short 1-2 sentence 'description'. It must be very clear so that even non technical users who are reviewing it and just moved to this project can understand what is goal for the epic.
 
 ## Rule #5
 This rule applies to order of epics.

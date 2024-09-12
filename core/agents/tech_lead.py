@@ -1,11 +1,13 @@
+from typing import Optional, Union
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
+from core.agents.mixins import ActionsConversationMixin, DoneBooleanAction, ReadFilesAction
 from core.agents.response import AgentResponse
-from core.config import TECH_LEAD_PLANNING
+from core.config import PLANNING_AGENT_NAME, TECH_LEAD_PLANNING
 from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
@@ -30,6 +32,24 @@ class DevelopmentPlan(BaseModel):
     plan: list[Epic] = Field(description="List of epics that need to be done to implement the entire plan.")
 
 
+class HighLevelPlanAction(BaseModel):
+    high_level_plan: Optional[str] = Field(
+        description="Short high level plan on how to systematically approach this app planning."
+    )
+
+
+class DevelopmentPlanAction(BaseModel):
+    development_plan: list[Epic] = Field(description="List of epics that need to be done to implement the entire app.")
+
+
+class ReviewPlanAction(BaseModel):
+    review_plan: str = Field(description="Review if everything is ok with the current plan.")
+
+
+class PlanningActions(BaseModel):
+    action: Union[ReadFilesAction, HighLevelPlanAction, DevelopmentPlanAction, ReviewPlanAction, DoneBooleanAction]
+
+
 class EpicPlan(BaseModel):
     plan: list[Task] = Field(description="List of tasks that need to be done to implement the entire epic.")
 
@@ -41,7 +61,7 @@ class UpdatedDevelopmentPlan(BaseModel):
     plan: list[Task] = Field(description="List of unfinished epics.")
 
 
-class TechLead(BaseAgent):
+class TechLead(ActionsConversationMixin, BaseAgent):
     agent_type = "tech-lead"
     display_name = "Tech Lead"
 
@@ -156,25 +176,26 @@ class TechLead(BaseAgent):
         log.debug(f"Planning tasks for the epic: {epic['name']}")
         await self.send_message("Starting to create the action plan for development ...")
 
-        llm = self.get_llm(TECH_LEAD_PLANNING, stream_output=True)
-        convo = (
-            AgentConvo(self)
-            .template(
-                "plan",
-                epic=epic,
-                task_type=self.current_state.current_epic.get("source", "app"),
+        convo, response = await self.actions_conversation(
+            data={
+                "epic": epic,
+                "task_type": self.current_state.current_epic.get("source", "app"),
                 # FIXME: we're injecting summaries to initial description
-                existing_summary=None,
-            )
-            .require_schema(DevelopmentPlan)
+                "existing_summary": None,
+            },
+            original_prompt="plan",
+            loop_prompt="plan_loop",
+            schema=PlanningActions,
+            llm_config=PLANNING_AGENT_NAME,
+            max_convo_length=10,
         )
-
-        response: DevelopmentPlan = await llm(convo, parser=JSONParser(DevelopmentPlan))
-
         convo.remove_last_x_messages(1)
-        formatted_tasks = [f"Epic #{index}: {task.description}" for index, task in enumerate(response.plan, start=1)]
+        formatted_tasks = [
+            f"Epic #{index}: {task.description}" for index, task in enumerate(response["development_plan"], start=1)
+        ]
         tasks_string = "\n\n".join(formatted_tasks)
         convo = convo.assistant(tasks_string)
+        llm = self.get_llm(TECH_LEAD_PLANNING, stream_output=True)
 
         if epic.get("source") == "feature":
             self.next_state.tasks = self.next_state.tasks + [
@@ -185,10 +206,10 @@ class TechLead(BaseAgent):
                     "pre_breakdown_testing_instructions": None,
                     "status": TaskStatus.TODO,
                 }
-                for task in response.plan
+                for task in response["development_plan"]
             ]
         else:
-            for epic_number, epic in enumerate(response.plan, start=1):
+            for epic_number, epic in enumerate(response["development_plan"], start=1):
                 log.debug(f"Adding epic: {epic.description}")
                 convo = convo.template(
                     "epic_breakdown", epic_number=epic_number, epic_description=epic.description

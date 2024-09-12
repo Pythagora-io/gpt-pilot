@@ -1,7 +1,7 @@
 import pytest
 
 from core.agents.response import ResponseType
-from core.agents.tech_lead import DevelopmentPlan, Epic, TechLead, UpdatedDevelopmentPlan
+from core.agents.tech_lead import Epic, HighLevelPlanAction, PlanningActions, TechLead, UpdatedDevelopmentPlan
 from core.db.models import Complexity
 from core.db.models.project_state import TaskStatus
 from core.ui.base import UserInput
@@ -65,7 +65,9 @@ async def test_ask_for_feature(agentcontext):
     assert sm.current_state.epics[1]["completed"] is False
 
 
+# todo fix this test
 @pytest.mark.skip(reason="Temporary")
+@pytest.mark.asyncio
 async def test_plan_epic(agentcontext):
     """
     If called and there's an incomplete epic, the TechLead agent should plan the epic.
@@ -85,11 +87,10 @@ async def test_plan_epic(agentcontext):
 
     tl = TechLead(sm, ui)
     tl.get_llm = mock_get_llm(
-        return_value=DevelopmentPlan(
-            plan=[
-                Epic(description="Task 1"),
-                Epic(description="Task 2"),
-            ]
+        return_value=PlanningActions(
+            action=HighLevelPlanAction(
+                high_level_plan="High level  plan",
+            )
         )
     )
     response = await tl.run()

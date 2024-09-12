@@ -14,12 +14,6 @@ from core.telemetry import telemetry
 log = get_logger(__name__)
 
 
-class StepType(str, Enum):
-    ADD_LOG = "add_log"
-    EXPLAIN_PROBLEM = "explain_problem"
-    GET_ADDITIONAL_FILES = "get_additional_files"
-
-
 class HuntConclusionType(str, Enum):
     ADD_LOGS = magic_words.ADD_LOGS
     PROBLEM_IDENTIFIED = magic_words.PROBLEM_IDENTIFIED
