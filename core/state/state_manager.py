@@ -1,6 +1,7 @@
 import asyncio
 import os.path
 import traceback
+from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
@@ -48,6 +49,17 @@ class StateManager:
         self.next_state = None
         self.current_session = None
         self.blockDb = False
+
+    @asynccontextmanager
+    async def db_blocker(self):
+        while self.blockDb:
+            await asyncio.sleep(0.1)  # Wait if blocked
+
+        try:
+            self.blockDb = True  # Set the block
+            yield
+        finally:
+            self.blockDb = False  # Unset the block
 
     async def list_projects(self) -> list[Project]:
         """
@@ -270,25 +282,18 @@ class StateManager:
 
         :param request_log: The request log to log.
         """
-        while self.blockDb:
-            await asyncio.sleep(0.1)  # Wait if blocked
+        async with self.db_blocker():
+            try:
+                telemetry.record_llm_request(
+                    request_log.prompt_tokens + request_log.completion_tokens,
+                    request_log.duration,
+                    request_log.status != LLMRequestStatus.SUCCESS,
+                )
+                LLMRequest.from_request_log(self.current_state, agent, request_log)
 
-        try:
-            self.blockDb = True  # Set the block
-
-            telemetry.record_llm_request(
-                request_log.prompt_tokens + request_log.completion_tokens,
-                request_log.duration,
-                request_log.status != LLMRequestStatus.SUCCESS,
-            )
-            LLMRequest.from_request_log(self.current_state, agent, request_log)
-
-        except Exception as e:
-            if self.ui:
-                await self.ui.send_message(f"An error occurred: {e}")
-
-        finally:
-            self.blockDb = False  # Unset the block
+            except Exception as e:
+                if self.ui:
+                    await self.ui.send_message(f"An error occurred: {e}")
 
     async def log_user_input(self, question: str, response: UserInputData):
         """
@@ -380,7 +385,8 @@ class StateManager:
         self.file_system.save(path, content)
 
         hash = self.file_system.hash_string(content)
-        file_content = await FileContent.store(self.current_session, hash, content)
+        async with self.db_blocker():
+            file_content = await FileContent.store(self.current_session, hash, content)
 
         file = self.next_state.save_file(path, file_content)
         if self.ui and not from_template:
