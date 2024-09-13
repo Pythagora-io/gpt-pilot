@@ -246,10 +246,11 @@ class Developer(ActionsConversationMixin, RelevantFilesMixin, BaseAgent):
             schema=BreakdownActions,
             llm_config=TASK_BREAKDOWN_AGENT_NAME,
             temperature=0,
-            stream_llm_output=True,
         )
 
         instructions = response["detailed_breakdown"]
+        await self.send_message("Breakdown finished!")
+        await self.send_message(instructions)
         self.next_state.tasks[current_task_index] = {
             **current_task,
             "instructions": instructions,
