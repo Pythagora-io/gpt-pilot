@@ -49,6 +49,7 @@ class MessageType(str, Enum):
     EPICS_AND_TASKS = "epicsAndTasks"
     MODIFIED_FILES = "modifiedFiles"
     IMPORTANT_STREAM = "importantStream"
+    TEST_INSTRUCTIONS = "testInstructions"
 
 
 class Message(BaseModel):
@@ -416,6 +417,14 @@ class IPCClientUI(UIBase):
         await self._send(
             MessageType.PROJECT_STATS,
             content=stats,
+        )
+
+    async def send_test_instructions(self, test_instructions: str):
+        await self._send(
+            MessageType.TEST_INSTRUCTIONS,
+            content={
+                "test_instructions": test_instructions,
+            },
         )
 
     async def send_file_status(self, file_path: str, file_status: str):

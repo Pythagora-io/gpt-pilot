@@ -154,6 +154,9 @@ class PlainConsoleUI(UIBase):
     async def send_project_stats(self, stats: dict):
         pass
 
+    async def send_test_instructions(self, test_instructions: str):
+        pass
+
     async def send_file_status(self, file_path: str, file_status: str):
         pass
 

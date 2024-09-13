@@ -316,6 +316,14 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def send_test_instructions(self, test_instructions: str):
+        """
+        Send test instructions.
+
+        :param test_instructions: Test instructions.
+        """
+        raise NotImplementedError()
+
     async def send_file_status(self, file_path: str, file_status: str):
         """
         Send file status.
