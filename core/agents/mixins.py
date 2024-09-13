@@ -1,3 +1,4 @@
+import random
 from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
@@ -5,6 +6,7 @@ from pydantic import BaseModel, Field
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse
 from core.config import GET_RELEVANT_FILES_AGENT_NAME, TROUBLESHOOTER_BUG_REPORT
+from core.config.magic_words import THINKING_LOGS
 from core.llm.parser import JSONParser
 from core.log import get_logger
 
@@ -177,6 +179,8 @@ class ActionsConversationMixin:
 
         # Keep working on the task until `done` or we reach 20 messages in convo.
         while not done and len(convo.messages) < max_convo_length:
+            await self.send_message(random.choice(THINKING_LOGS))
+
             convo.template(
                 loop_prompt,
                 **loop_data,
