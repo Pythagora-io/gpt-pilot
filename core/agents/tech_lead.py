@@ -201,7 +201,7 @@ class TechLead(ActionsConversationMixin, BaseAgent):
         llm = self.get_llm(TECH_LEAD_PLANNING)
 
         if epic.get("source") == "feature" or epic.get("complexity") == "simple":
-            await self.send_message(f"Epic 1: {epic["name"]}")
+            await self.send_message(f"Epic 1: {epic['name']}")
             self.next_state.current_epic["sub_epics"] = [
                 {
                     "id": 1,
