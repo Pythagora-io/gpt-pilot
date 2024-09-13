@@ -72,7 +72,9 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
             self.next_state.flag_tasks_as_modified()
             return AgentResponse.done(self)
         else:
-            await self.send_message("Here are instruction on how to test the app:\n\n" + user_instructions)
+            await self.send_message("Here are instructions on how to test the app:\n\n" + user_instructions)
+
+        await self.ui.send_test_instructions(user_instructions)
 
         # Developer sets iteration as "completed" when it generates the step breakdown, so we can't
         # use "current_iteration" here
@@ -177,7 +179,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
 
         route_files = await self._get_route_files()
 
-        llm = self.get_llm(stream_output=True)
+        llm = self.get_llm()
         convo = self._get_task_convo().template(
             "define_user_review_goal", task=self.current_state.current_task, route_files=route_files
         )

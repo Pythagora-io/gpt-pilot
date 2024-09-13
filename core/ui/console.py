@@ -20,14 +20,18 @@ class PlainConsoleUI(UIBase):
     async def stop(self):
         log.debug("Stopping console UI")
 
-    async def send_stream_chunk(self, chunk: Optional[str], *, source: Optional[UISource] = None):
+    async def send_stream_chunk(
+        self, chunk: Optional[str], *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+    ):
         if chunk is None:
             # end of stream
             print("", flush=True)
         else:
             print(chunk, end="", flush=True)
 
-    async def send_message(self, message: str, *, source: Optional[UISource] = None):
+    async def send_message(
+        self, message: str, *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+    ):
         if source:
             print(f"[{source}] {message}")
         else:
@@ -64,6 +68,7 @@ class PlainConsoleUI(UIBase):
         hint: Optional[str] = None,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
+        project_state_id: Optional[str] = None,
     ) -> UserInput:
         if source:
             print(f"[{source}] {question}")
@@ -95,6 +100,13 @@ class PlainConsoleUI(UIBase):
             print("Please provide a valid input")
 
     async def send_project_stage(self, stage: ProjectStage):
+        pass
+
+    async def send_epics_and_tasks(
+        self,
+        epics: list[dict],
+        tasks: list[dict],
+    ):
         pass
 
     async def send_task_progress(
@@ -140,6 +152,9 @@ class PlainConsoleUI(UIBase):
         pass
 
     async def send_project_stats(self, stats: dict):
+        pass
+
+    async def send_test_instructions(self, test_instructions: str):
         pass
 
     async def send_file_status(self, file_path: str, file_status: str):

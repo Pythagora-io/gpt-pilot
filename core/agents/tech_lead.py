@@ -78,6 +78,10 @@ class TechLead(ActionsConversationMixin, BaseAgent):
         if self.current_state.specification.templates and not self.current_state.files:
             await self.apply_project_templates()
             self.next_state.action = "Apply project templates"
+            await self.ui.send_epics_and_tasks(
+                self.next_state.current_epic["sub_epics"],
+                self.next_state.tasks,
+            )
             return AgentResponse.done(self)
 
         if self.current_state.current_epic:
@@ -87,7 +91,7 @@ class TechLead(ActionsConversationMixin, BaseAgent):
             return await self.ask_for_new_feature()
 
     def create_initial_project_epic(self):
-        log.debug("Creating initial project epic")
+        log.debug("Creating initial project Epic")
         self.next_state.epics = [
             {
                 "id": uuid4().hex,
@@ -98,6 +102,7 @@ class TechLead(ActionsConversationMixin, BaseAgent):
                 "summary": None,
                 "completed": False,
                 "complexity": self.current_state.specification.complexity,
+                "sub_epics": [],
             }
         ]
 
@@ -140,16 +145,17 @@ class TechLead(ActionsConversationMixin, BaseAgent):
         if len(self.current_state.epics) > 2:
             await self.ui.send_message("Your new feature is complete!", source=success_source)
         else:
-            await self.ui.send_message("Your app is DONE!!! You can start using it right now!", source=success_source)
+            await self.ui.send_message("Your app is DONE! You can start using it right now!", source=success_source)
 
         log.debug("Asking for new feature")
         response = await self.ask_question(
-            "Do you have a new feature to add to the project? Just write it here",
+            "Do you have a new feature to add to the project? Just write it here:",
             buttons={"continue": "continue", "end": "No, I'm done"},
-            allow_empty=True,
+            allow_empty=False,
         )
 
-        if response.cancelled or not response.text:
+        if response.button == "end" or response.cancelled or not response.text:
+            await self.ui.send_message("Thanks for using Pythagora!")
             return AgentResponse.exit(self)
 
         self.next_state.epics = self.current_state.epics + [
@@ -162,6 +168,7 @@ class TechLead(ActionsConversationMixin, BaseAgent):
                 "summary": None,
                 "completed": False,
                 "complexity": None,  # Determined and defined in SpecWriter
+                "sub_epics": [],
             }
         ]
         # Orchestrator will rerun us to break down the new feature epic
@@ -170,9 +177,9 @@ class TechLead(ActionsConversationMixin, BaseAgent):
 
     async def plan_epic(self, epic) -> AgentResponse:
         log.debug(f"Planning tasks for the epic: {epic['name']}")
-        await self.send_message("Starting to create the action plan for development ...")
+        await self.send_message("Creating the development plan ...")
 
-        llm = self.get_llm(TECH_LEAD_PLANNING, stream_output=True)
+        llm = self.get_llm(TECH_LEAD_PLANNING)
         convo = (
             AgentConvo(self)
             .template(
@@ -191,9 +198,17 @@ class TechLead(ActionsConversationMixin, BaseAgent):
         formatted_tasks = [f"Epic #{index}: {task.description}" for index, task in enumerate(response.plan, start=1)]
         tasks_string = "\n\n".join(formatted_tasks)
         convo = convo.assistant(tasks_string)
-        llm = self.get_llm(TECH_LEAD_PLANNING, stream_output=True)
+        llm = self.get_llm(TECH_LEAD_PLANNING)
 
         if epic.get("source") == "feature" or epic.get("complexity") == "simple":
+            await self.send_message(f"Epic 1: {epic['name']}")
+            self.next_state.current_epic["sub_epics"] = [
+                {
+                    "id": 1,
+                    "description": epic["name"],
+                }
+            ]
+            await self.send_message("Creating tasks for this epic ...")
             self.next_state.tasks = self.next_state.tasks + [
                 {
                     "id": uuid4().hex,
@@ -201,15 +216,28 @@ class TechLead(ActionsConversationMixin, BaseAgent):
                     "instructions": None,
                     "pre_breakdown_testing_instructions": None,
                     "status": TaskStatus.TODO,
+                    "sub_epic_id": 1,
                 }
                 for task in response.plan
             ]
+            await self.ui.send_epics_and_tasks(
+                self.next_state.current_epic["sub_epics"],
+                self.next_state.tasks,
+            )
         else:
-            for epic_number, epic in enumerate(response.plan, start=1):
-                log.debug(f"Adding epic: {epic.description}")
+            self.next_state.current_epic["sub_epics"] = self.next_state.current_epic["sub_epics"] + [
+                {
+                    "id": sub_epic_number,
+                    "description": sub_epic.description,
+                }
+                for sub_epic_number, sub_epic in enumerate(response.plan, start=1)
+            ]
+            for sub_epic_number, sub_epic in enumerate(response.plan, start=1):
+                await self.send_message(f"Epic {sub_epic_number}: {sub_epic.description}")
                 convo = convo.template(
-                    "epic_breakdown", epic_number=epic_number, epic_description=epic.description
+                    "epic_breakdown", epic_number=sub_epic_number, epic_description=sub_epic.description
                 ).require_schema(EpicPlan)
+                await self.send_message("Creating tasks for this epic ...")
                 epic_plan: EpicPlan = await llm(convo, parser=JSONParser(EpicPlan))
                 self.next_state.tasks = self.next_state.tasks + [
                     {
@@ -218,10 +246,16 @@ class TechLead(ActionsConversationMixin, BaseAgent):
                         "instructions": None,
                         "pre_breakdown_testing_instructions": task.testing_instructions,
                         "status": TaskStatus.TODO,
+                        "sub_epic_id": sub_epic_number,
                     }
                     for task in epic_plan.plan
                 ]
                 convo.remove_last_x_messages(2)
+
+            await self.ui.send_epics_and_tasks(
+                self.next_state.current_epic["sub_epics"],
+                self.next_state.tasks,
+            )
 
         await telemetry.trace_code_event(
             "development-plan",
@@ -243,6 +277,12 @@ class TechLead(ActionsConversationMixin, BaseAgent):
                 "description": example["description"],
                 "completed": False,
                 "complexity": example["complexity"],
+                "sub_epics": [
+                    {
+                        "id": 1,
+                        "description": "Single Epic Example",
+                    }
+                ],
             }
         ]
         self.next_state.tasks = example["plan"]

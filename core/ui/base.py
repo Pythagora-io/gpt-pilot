@@ -97,7 +97,9 @@ class UIBase:
         """
         raise NotImplementedError()
 
-    async def send_stream_chunk(self, chunk: str, *, source: Optional[UISource] = None):
+    async def send_stream_chunk(
+        self, chunk: str, *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+    ):
         """
         Send a chunk of the stream to the UI.
 
@@ -106,7 +108,9 @@ class UIBase:
         """
         raise NotImplementedError()
 
-    async def send_message(self, message: str, *, source: Optional[UISource] = None):
+    async def send_message(
+        self, message: str, *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+    ):
         """
         Send a complete message to the UI.
 
@@ -162,6 +166,7 @@ class UIBase:
         hint: Optional[str] = None,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
+        project_state_id: Optional[str] = None,
     ) -> UserInput:
         """
         Ask the user a question.
@@ -188,6 +193,19 @@ class UIBase:
         Send a project stage to the UI.
 
         :param stage: Project stage.
+        """
+        raise NotImplementedError()
+
+    async def send_epics_and_tasks(
+        self,
+        epics: list[dict] = None,
+        tasks: list[dict] = None,
+    ):
+        """
+        Send epics and tasks info to the UI.
+
+        :param epics: List of all epics.
+        :param tasks: List of all tasks.
         """
         raise NotImplementedError()
 
@@ -295,6 +313,14 @@ class UIBase:
         * `num_tokens` - Number of tokens used for LLM requests in this session
 
         :param stats: Project statistics.
+        """
+        raise NotImplementedError()
+
+    async def send_test_instructions(self, test_instructions: str):
+        """
+        Send test instructions.
+
+        :param test_instructions: Test instructions.
         """
         raise NotImplementedError()
 

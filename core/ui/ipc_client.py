@@ -46,8 +46,10 @@ class MessageType(str, Enum):
     GENERATE_DIFF = "generateDiff"
     CLOSE_DIFF = "closeDiff"
     FILE_STATUS = "fileStatus"
+    EPICS_AND_TASKS = "epicsAndTasks"
     MODIFIED_FILES = "modifiedFiles"
     IMPORTANT_STREAM = "importantStream"
+    TEST_INSTRUCTIONS = "testInstructions"
 
 
 class Message(BaseModel):
@@ -62,6 +64,7 @@ class Message(BaseModel):
 
     type: MessageType
     category: Optional[str] = None
+    project_state_id: Optional[str] = None
     content: Union[str, dict, None] = None
 
     def to_bytes(self) -> bytes:
@@ -178,7 +181,9 @@ class IPCClientUI(UIBase):
         self.writer = None
         self.reader = None
 
-    async def send_stream_chunk(self, chunk: Optional[str], *, source: Optional[UISource] = None):
+    async def send_stream_chunk(
+        self, chunk: Optional[str], *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+    ):
         if not self.writer:
             return
 
@@ -189,9 +194,12 @@ class IPCClientUI(UIBase):
             MessageType.STREAM,
             content=chunk,
             category=source.type_name if source else None,
+            project_state_id=project_state_id,
         )
 
-    async def send_message(self, message: str, *, source: Optional[UISource] = None):
+    async def send_message(
+        self, message: str, *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+    ):
         if not self.writer:
             return
 
@@ -200,6 +208,7 @@ class IPCClientUI(UIBase):
             MessageType.VERBOSE,
             content=message,
             category=source.type_name if source else None,
+            project_state_id=project_state_id,
         )
 
     async def send_key_expired(self, message: Optional[str] = None):
@@ -246,6 +255,7 @@ class IPCClientUI(UIBase):
         hint: Optional[str] = None,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
+        project_state_id: Optional[str] = None,
     ) -> UserInput:
         if not self.writer:
             raise UIClosedError()
@@ -253,20 +263,30 @@ class IPCClientUI(UIBase):
         category = source.type_name if source else None
 
         if hint:
-            await self._send(MessageType.HINT, content=hint, category=category)
+            await self._send(MessageType.HINT, content=hint, category=category, project_state_id=project_state_id)
         else:
-            await self._send(MessageType.VERBOSE, content=question, category=category)
+            await self._send(
+                MessageType.VERBOSE, content=question, category=category, project_state_id=project_state_id
+            )
 
-        await self._send(MessageType.USER_INPUT_REQUEST, content=question, category=category)
+        await self._send(
+            MessageType.USER_INPUT_REQUEST, content=question, category=category, project_state_id=project_state_id
+        )
         if buttons:
             buttons_str = "/".join(buttons.values())
             if buttons_only:
-                await self._send(MessageType.BUTTONS_ONLY, content=buttons_str, category=category)
+                await self._send(
+                    MessageType.BUTTONS_ONLY, content=buttons_str, category=category, project_state_id=project_state_id
+                )
             else:
-                await self._send(MessageType.BUTTONS, content=buttons_str, category=category)
+                await self._send(
+                    MessageType.BUTTONS, content=buttons_str, category=category, project_state_id=project_state_id
+                )
         if initial_text:
             # FIXME: add this to base and console and document it after merging with hint PR
-            await self._send(MessageType.INPUT_PREFILL, content=initial_text, category=category)
+            await self._send(
+                MessageType.INPUT_PREFILL, content=initial_text, category=category, project_state_id=project_state_id
+            )
 
         response = await self._receive()
         answer = response.content.strip()
@@ -290,6 +310,19 @@ class IPCClientUI(UIBase):
 
     async def send_project_stage(self, stage: ProjectStage):
         await self._send(MessageType.INFO, content=json.dumps({"project_stage": stage.value}))
+
+    async def send_epics_and_tasks(
+        self,
+        epics: list[dict],
+        tasks: list[dict],
+    ):
+        await self._send(
+            MessageType.EPICS_AND_TASKS,
+            content={
+                "epics": epics,
+                "tasks": tasks,
+            },
+        )
 
     async def send_task_progress(
         self,
@@ -384,6 +417,14 @@ class IPCClientUI(UIBase):
         await self._send(
             MessageType.PROJECT_STATS,
             content=stats,
+        )
+
+    async def send_test_instructions(self, test_instructions: str):
+        await self._send(
+            MessageType.TEST_INSTRUCTIONS,
+            content={
+                "test_instructions": test_instructions,
+            },
         )
 
     async def send_file_status(self, file_path: str, file_status: str):

@@ -40,7 +40,7 @@ class TaskReviewer(BaseAgent):
             if (file.path in files_before_modification)
         ]
 
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         # TODO instead of sending files before and after maybe add nice way to show diff for multiple files
         convo = AgentConvo(self).template(
             "review_task",
