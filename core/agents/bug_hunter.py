@@ -101,10 +101,10 @@ class BugHunter(BaseAgent):
         return AgentResponse.done(self)
 
     async def ask_user_to_test(self, awaiting_bug_reproduction: bool = False, awaiting_user_test: bool = False):
-        await self.send_message(
-            "You can reproduce the bug like this:\n\n"
-            + self.current_state.current_iteration["bug_reproduction_description"]
-        )
+        test_instructions = self.current_state.current_iteration["bug_reproduction_description"]
+        await self.send_message("You can reproduce the bug like this:\n\n" + test_instructions)
+
+        await self.ui.send_test_instructions(test_instructions)
 
         buttons = {}
 
