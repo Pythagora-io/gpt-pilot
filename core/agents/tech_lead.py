@@ -179,7 +179,7 @@ class TechLead(ActionsConversationMixin, BaseAgent):
         log.debug(f"Planning tasks for the epic: {epic['name']}")
         await self.send_message("Creating the development plan ...")
 
-        llm = self.get_llm(TECH_LEAD_PLANNING, stream_output=True)
+        llm = self.get_llm(TECH_LEAD_PLANNING)
         convo = (
             AgentConvo(self)
             .template(
