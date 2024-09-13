@@ -193,7 +193,7 @@ class TechLead(ActionsConversationMixin, BaseAgent):
         convo = convo.assistant(tasks_string)
         llm = self.get_llm(TECH_LEAD_PLANNING, stream_output=True)
 
-        if epic.get("source") == "feature":
+        if epic.get("source") == "feature" or epic.get("complexity") == "simple":
             self.next_state.tasks = self.next_state.tasks + [
                 {
                     "id": uuid4().hex,
