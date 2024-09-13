@@ -7,7 +7,7 @@ from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.mixins import ActionsConversationMixin, DoneBooleanAction, ReadFilesAction
 from core.agents.response import AgentResponse
-from core.config import PLANNING_AGENT_NAME, TECH_LEAD_PLANNING
+from core.config import TECH_LEAD_PLANNING
 from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
@@ -172,23 +172,23 @@ class TechLead(ActionsConversationMixin, BaseAgent):
         log.debug(f"Planning tasks for the epic: {epic['name']}")
         await self.send_message("Starting to create the action plan for development ...")
 
-        convo, response = await self.actions_conversation(
-            data={
-                "epic": epic,
-                "task_type": self.current_state.current_epic.get("source", "app"),
+        llm = self.get_llm(TECH_LEAD_PLANNING, stream_output=True)
+        convo = (
+            AgentConvo(self)
+            .template(
+                "plan",
+                epic=epic,
+                task_type=self.current_state.current_epic.get("source", "app"),
                 # FIXME: we're injecting summaries to initial description
-                "existing_summary": None,
-            },
-            original_prompt="plan",
-            loop_prompt="plan_loop",
-            schema=PlanningActions,
-            llm_config=PLANNING_AGENT_NAME,
-            max_convo_length=10,
+                existing_summary=None,
+            )
+            .require_schema(DevelopmentPlan)
         )
+
+        response: DevelopmentPlan = await llm(convo, parser=JSONParser(DevelopmentPlan))
+
         convo.remove_last_x_messages(1)
-        formatted_tasks = [
-            f"Epic #{index}: {task.description}" for index, task in enumerate(response["development_plan"], start=1)
-        ]
+        formatted_tasks = [f"Epic #{index}: {task.description}" for index, task in enumerate(response.plan, start=1)]
         tasks_string = "\n\n".join(formatted_tasks)
         convo = convo.assistant(tasks_string)
         llm = self.get_llm(TECH_LEAD_PLANNING, stream_output=True)
@@ -202,10 +202,10 @@ class TechLead(ActionsConversationMixin, BaseAgent):
                     "pre_breakdown_testing_instructions": None,
                     "status": TaskStatus.TODO,
                 }
-                for task in response["development_plan"]
+                for task in response.plan
             ]
         else:
-            for epic_number, epic in enumerate(response["development_plan"], start=1):
+            for epic_number, epic in enumerate(response.plan, start=1):
                 log.debug(f"Adding epic: {epic.description}")
                 convo = convo.template(
                     "epic_breakdown", epic_number=epic_number, epic_description=epic.description
@@ -230,56 +230,6 @@ class TechLead(ActionsConversationMixin, BaseAgent):
                 "num_epics": len(self.current_state.epics),
             },
         )
-        return AgentResponse.done(self)
-
-    async def update_epic(self) -> AgentResponse:
-        """
-        Update the development plan for the current epic.
-        """
-        epic = self.current_state.current_epic
-        self.next_state.set_current_task_status(TaskStatus.EPIC_UPDATED)
-
-        if len(self.next_state.unfinished_tasks) == 1 or not self.current_state.iterations:
-            # Current task is still "unfinished" at this point, so if it's last task, there's nothing to update
-            return AgentResponse.done(self)
-
-        finished_tasks = [task for task in self.next_state.tasks if task["status"] == TaskStatus.DONE]
-        finished_tasks.append(self.next_state.current_task)
-
-        log.debug(f"Updating development plan for {epic['name']}")
-        await self.send_message("Updating development plan ...")
-
-        llm = self.get_llm(stream_output=True)
-        convo = (
-            AgentConvo(self)
-            .template(
-                "update_plan",
-                finished_tasks=finished_tasks,
-                task_type=self.current_state.current_epic.get("source", "app"),
-                modified_files=[f for f in self.current_state.files if f.path in self.current_state.modified_files],
-            )
-            .require_schema(UpdatedDevelopmentPlan)
-        )
-
-        response: UpdatedDevelopmentPlan = await llm(
-            convo,
-            parser=JSONParser(UpdatedDevelopmentPlan),
-            temperature=0,
-        )
-        log.debug(f"Reworded last task as: {response.updated_current_epic.description}")
-        finished_tasks[-1]["description"] = response.updated_current_epic.description
-
-        self.next_state.tasks = finished_tasks + [
-            {
-                "id": uuid4().hex,
-                "description": task.description,
-                "instructions": None,
-                "pre_breakdown_testing_instructions": task.testing_instructions,
-                "status": TaskStatus.TODO,
-            }
-            for task in response.plan
-        ]
-        log.debug(f"Updated development plan for {epic['name']}, {len(response.plan)} tasks remaining")
         return AgentResponse.done(self)
 
     def plan_example_project(self):
