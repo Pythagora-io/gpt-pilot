@@ -120,8 +120,8 @@ class AgentLLMConfig(_StrictModel):
     AgentLLMConfig is not specified, default will be used.
     """
 
-    provider: Optional[LLMProvider] = Field(default=LLMProvider.ANTHROPIC, description="LLM provider")
-    model: str = Field(description="Model to use", default="claude-3-5-sonnet-20240620")
+    provider: Optional[LLMProvider] = Field(default=LLMProvider.OPENAI, description="LLM provider")
+    model: str = Field(description="Model to use", default="gpt-4o-2024-05-13")
     temperature: float = Field(
         default=0.5,
         description="Temperature to use for sampling",
@@ -342,11 +342,6 @@ class Config(_StrictModel):
             DESCRIBE_FILES_AGENT_NAME: AgentLLMConfig(
                 provider=LLMProvider.OPENAI,
                 model="gpt-4o-mini-2024-07-18",
-                temperature=0.0,
-            ),
-            GET_RELEVANT_FILES_AGENT_NAME: AgentLLMConfig(
-                provider=LLMProvider.ANTHROPIC,
-                model="claude-3-5-sonnet-20240620",
                 temperature=0.0,
             ),
             PARSE_TASK_AGENT_NAME: AgentLLMConfig(

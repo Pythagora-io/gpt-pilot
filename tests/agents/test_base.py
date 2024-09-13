@@ -65,7 +65,7 @@ async def test_get_llm(mock_BaseLLMClient):
 
     llm = agent.get_llm(stream_output=True)
 
-    mock_BaseLLMClient.for_provider.assert_called_once_with("anthropic")
+    mock_BaseLLMClient.for_provider.assert_called_once_with("openai")
 
     mock_OpenAIClient.assert_called_once()
     assert mock_OpenAIClient.call_args.kwargs["stream_handler"] == agent.stream_handler
