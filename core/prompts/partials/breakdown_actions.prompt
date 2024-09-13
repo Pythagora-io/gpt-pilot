@@ -5,7 +5,7 @@ While doing this you have access to the following actions:
 - `read_files` - to read the content of the files
 - `high_level_instructions` - create or update high level instructions
 - `list_files` - list all files that need to be created or updated
-- `detailed_breakdown` - create full breakdown for this task
+- `detailed_breakdown` - create full breakdown for this task, including the code snippets that have to be implemented
 - `done` - boolean to indicate when you're done with the breakdown
 
 You can use only one action at a time. After each action, you will be asked what you want to do next. You can use same action you already used before (e.g. `list_files` if you want to add more files or remove some from the list).

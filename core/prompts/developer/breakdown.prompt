@@ -41,4 +41,5 @@ Here is how this task should be tested:
 
 {% if current_task_index != 0 %}All previous tasks are finished and you don't have to work on them.{% endif %}
 
+Now, tell me all the code that needs to be written to implement ONLY this task and have it fully working and all commands that need to be run to implement this task.
 {% include "partials/breakdown_actions.prompt" %}
