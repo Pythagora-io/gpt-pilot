@@ -26,5 +26,3 @@ Now, based on the project details provided{% if task_type  == 'feature' %} and n
 
 {% include "partials/project_tasks.prompt" %}
 {% endif %}
-
-{% include "partials/planning_actions.prompt" %}
