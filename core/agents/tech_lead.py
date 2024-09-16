@@ -34,13 +34,6 @@ class EpicPlan(BaseModel):
     plan: list[Task] = Field(description="List of tasks that need to be done to implement the entire epic.")
 
 
-class UpdatedDevelopmentPlan(BaseModel):
-    updated_current_epic: Epic = Field(
-        description="Updated description of what was implemented while working on the current epic."
-    )
-    plan: list[Task] = Field(description="List of unfinished epics.")
-
-
 class TechLead(BaseAgent):
     agent_type = "tech-lead"
     display_name = "Tech Lead"
