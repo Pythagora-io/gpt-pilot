@@ -1,4 +1,3 @@
-import random
 from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
@@ -6,7 +5,6 @@ from pydantic import BaseModel, Field
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse
 from core.config import GET_RELEVANT_FILES_AGENT_NAME, TROUBLESHOOTER_BUG_REPORT
-from core.config.magic_words import THINKING_LOGS
 from core.llm.parser import JSONParser
 from core.log import get_logger
 
@@ -126,78 +124,3 @@ class RelevantFilesMixin:
         self.next_state.relevant_files = relevant_files
 
         return AgentResponse.done(self)
-
-
-class ActionsConversationMixin:
-    """
-    Provides a method to loop in conversation until done.
-    """
-
-    async def actions_conversation(
-        self,
-        data: any,
-        original_prompt: str,
-        loop_prompt: str,
-        schema,
-        llm_config,
-        temperature: Optional[float] = 0.5,
-        max_convo_length: Optional[int] = 20,
-        stream_llm_output: Optional[bool] = False,
-    ) -> tuple[AgentConvo, any]:
-        """
-        Loop in conversation until done.
-
-        :param data: The initial data to pass into the conversation.
-        :param original_prompt: The prompt template name for the initial request.
-        :param loop_prompt: The prompt template name for the looped requests.
-        :param schema: The schema class to enforce the structure of the LLM response.
-        :param llm_config: The LLM configuration to use for the conversation.
-        :param temperature: The temperature to use for the LLM response.
-        :param max_convo_length: The maximum number of messages to allow in the conversation.
-
-        :return: A tuple of the conversation and the final aggregated data.
-        """
-        llm = self.get_llm(llm_config, stream_output=stream_llm_output)
-        convo = (
-            AgentConvo(self)
-            .template(
-                original_prompt,
-                **data,
-            )
-            .require_schema(schema)
-        )
-        response = await llm(convo, parser=JSONParser(schema), temperature=temperature)
-        convo.remove_last_x_messages(1)
-        convo.assistant(response.original_response)
-
-        # Initialize loop_data to store the cumulative data from the loop
-        loop_data = {
-            attr: getattr(response.action, attr, None) for attr in dir(response.action) if not attr.startswith("_")
-        }
-        loop_data["read_files"] = getattr(response.action, "read_files", [])
-        done = getattr(response.action, "done", False)
-
-        # Keep working on the task until `done` or we reach 20 messages in convo.
-        while not done and len(convo.messages) < max_convo_length:
-            await self.send_message(random.choice(THINKING_LOGS))
-
-            convo.template(
-                loop_prompt,
-                **loop_data,
-            ).require_schema(schema)
-            response = await llm(convo, parser=JSONParser(schema), temperature=temperature)
-            convo.remove_last_x_messages(1)
-            convo.assistant(response.original_response)
-
-            # Update loop_data with new information, replacing everything except for 'read_files'
-            for attr in dir(response.action):
-                if not attr.startswith("_"):
-                    current_value = getattr(response.action, attr, None)
-                    if attr == "read_files" and current_value:
-                        loop_data[attr].extend(item for item in current_value if item not in loop_data[attr])
-                    else:
-                        loop_data[attr] = current_value
-
-            done = getattr(response.action, "done", False)
-
-        return convo, loop_data

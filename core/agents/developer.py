@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
-from core.agents.mixins import ActionsConversationMixin, DoneBooleanAction, ReadFilesAction, RelevantFilesMixin
+from core.agents.mixins import RelevantFilesMixin
 from core.agents.response import AgentResponse, ResponseType
 from core.config import PARSE_TASK_AGENT_NAME, TASK_BREAKDOWN_AGENT_NAME
 from core.db.models.project_state import IterationStatus, TaskStatus
@@ -60,28 +60,7 @@ class TaskSteps(BaseModel):
     steps: list[Step]
 
 
-class HighLevelInstructions(BaseModel):
-    high_level_instructions: Optional[str] = Field(
-        description="Very short high level instructions on how to solve the task."
-    )
-
-
-class ListFilesAction(BaseModel):
-    explanation: Optional[str] = Field(description="Brief explanation for selecting each of the files.")
-    list_files: Optional[list[str]] = Field(
-        description="List of files that have to be created or modified during implementation of this task."
-    )
-
-
-class DetailedBreakdown(BaseModel):
-    detailed_breakdown: Optional[str] = Field(description="Full breakdown for implementing the task.")
-
-
-class BreakdownActions(BaseModel):
-    action: Union[ReadFilesAction, HighLevelInstructions, ListFilesAction, DetailedBreakdown, DoneBooleanAction]
-
-
-class Developer(ActionsConversationMixin, RelevantFilesMixin, BaseAgent):
+class Developer(RelevantFilesMixin, BaseAgent):
     agent_type = "developer"
     display_name = "Developer"
 
@@ -239,27 +218,27 @@ class Developer(ActionsConversationMixin, RelevantFilesMixin, BaseAgent):
 
         current_task_index = self.current_state.tasks.index(current_task)
 
-        convo, response = await self.actions_conversation(
-            data={"task": current_task, "current_task_index": current_task_index},
-            original_prompt="breakdown",
-            loop_prompt="breakdown_loop",
-            schema=BreakdownActions,
-            llm_config=TASK_BREAKDOWN_AGENT_NAME,
-            temperature=0,
+        llm = self.get_llm(TASK_BREAKDOWN_AGENT_NAME, stream_output=True)
+        convo = AgentConvo(self).template(
+            "breakdown",
+            task=current_task,
+            iteration=None,
+            current_task_index=current_task_index,
+            docs=self.current_state.docs,
         )
+        response: str = await llm(convo)
 
-        instructions = response["detailed_breakdown"]
-        await self.send_message("Breakdown finished!")
-        await self.send_message(instructions)
+        await self.get_relevant_files(None, response)
+
         self.next_state.tasks[current_task_index] = {
             **current_task,
-            "instructions": instructions,
+            "instructions": response,
         }
         self.next_state.flag_tasks_as_modified()
 
         llm = self.get_llm(PARSE_TASK_AGENT_NAME)
         await self.send_message("Breaking down the task into steps ...")
-        convo.assistant(instructions).template("parse_task").require_schema(TaskSteps)
+        convo.assistant(response).template("parse_task").require_schema(TaskSteps)
         response: TaskSteps = await llm(convo, parser=JSONParser(TaskSteps), temperature=0)
 
         # There might be state leftovers from previous tasks that we need to clean here

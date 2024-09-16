@@ -1,11 +1,9 @@
-from typing import Optional, Union
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
-from core.agents.mixins import ActionsConversationMixin, DoneBooleanAction, ReadFilesAction
 from core.agents.response import AgentResponse
 from core.config import TECH_LEAD_PLANNING
 from core.db.models.project_state import TaskStatus
@@ -32,24 +30,6 @@ class DevelopmentPlan(BaseModel):
     plan: list[Epic] = Field(description="List of epics that need to be done to implement the entire plan.")
 
 
-class HighLevelPlanAction(BaseModel):
-    high_level_plan: Optional[str] = Field(
-        description="Short high level plan on how to systematically approach this app planning."
-    )
-
-
-class DevelopmentPlanAction(BaseModel):
-    development_plan: list[Epic] = Field(description="List of epics that need to be done to implement the entire app.")
-
-
-class ReviewPlanAction(BaseModel):
-    review_plan: str = Field(description="Review if everything is ok with the current plan.")
-
-
-class PlanningActions(BaseModel):
-    action: Union[ReadFilesAction, HighLevelPlanAction, DevelopmentPlanAction, ReviewPlanAction, DoneBooleanAction]
-
-
 class EpicPlan(BaseModel):
     plan: list[Task] = Field(description="List of tasks that need to be done to implement the entire epic.")
 
@@ -61,7 +41,7 @@ class UpdatedDevelopmentPlan(BaseModel):
     plan: list[Task] = Field(description="List of unfinished epics.")
 
 
-class TechLead(ActionsConversationMixin, BaseAgent):
+class TechLead(BaseAgent):
     agent_type = "tech-lead"
     display_name = "Tech Lead"
 
