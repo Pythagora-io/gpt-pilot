@@ -1,0 +1,14 @@
+from core.agents.base import BaseAgent
+from core.agents.response import AgentResponse
+
+
+class LegacyHandler(BaseAgent):
+    agent_type = "legacy-handler"
+    display_name = "Legacy Handler"
+
+    async def run(self, data: any) -> AgentResponse:
+        if data["type"] == "review_task":
+            self.next_state.complete_step()
+            return AgentResponse.done(self)
+
+        raise ValueError(f"Unknown reason for calling Legacy Handler with data: {data}")
