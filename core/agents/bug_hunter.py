@@ -88,14 +88,18 @@ class BugHunter(BaseAgent):
         llm = self.get_llm(stream_output=True)
         hunt_conclusion = await llm(convo, parser=JSONParser(HuntConclusionOptions), temperature=0)
 
+        bug_hunting_cycles = self.current_state.current_iteration.get("bug_hunting_cycles")
+        num_bug_hunting_cycles = len(bug_hunting_cycles) if bug_hunting_cycles else 0
         if hunt_conclusion.conclusion == magic_words.PROBLEM_IDENTIFIED:
             # if no need for logs, implement iteration same as before
             self.set_data_for_next_hunting_cycle(human_readable_instructions, IterationStatus.AWAITING_BUG_FIX)
             await self.send_message("Found the bug - I'm attempting to fix it ...")
+            await self.ui.send_bug_hunter_status("fixing_bug", num_bug_hunting_cycles)
         else:
             # if logs are needed, add logging steps
             self.set_data_for_next_hunting_cycle(human_readable_instructions, IterationStatus.AWAITING_LOGGING)
             await self.send_message("Adding more logs to identify the bug ...")
+            await self.ui.send_bug_hunter_status("adding_logs", num_bug_hunting_cycles)
 
         self.next_state.flag_iterations_as_modified()
         return AgentResponse.done(self)
