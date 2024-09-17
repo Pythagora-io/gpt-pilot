@@ -16,7 +16,7 @@ Here are the detailed instructions for the current task:
 ```
 {{ current_task.instructions }}
 ```
-{# FIXME: the above stands in place of a previous (task breakdown) convo, and is duplicated in define_user_review_goal, review_task and debug prompts #}
+{# FIXME: the above stands in place of a previous (task breakdown) convo, and is duplicated in define_user_review_goal and debug prompts #}
 
 {% if task_steps and step_index is not none -%}
 The current task has been split into multiple steps, and each step is one of the following:

@@ -11,11 +11,11 @@ from core.agents.executor import Executor
 from core.agents.external_docs import ExternalDocumentation
 from core.agents.human_input import HumanInput
 from core.agents.importer import Importer
+from core.agents.legacy_handler import LegacyHandler
 from core.agents.problem_solver import ProblemSolver
 from core.agents.response import AgentResponse, ResponseType
 from core.agents.spec_writer import SpecWriter
 from core.agents.task_completer import TaskCompleter
-from core.agents.task_reviewer import TaskReviewer
 from core.agents.tech_lead import TechLead
 from core.agents.tech_writer import TechnicalWriter
 from core.agents.troubleshooter import Troubleshooter
@@ -208,8 +208,6 @@ class Orchestrator(BaseAgent):
             if prev_response.type == ResponseType.INPUT_REQUIRED:
                 # FIXME: HumanInput should be on the whole time and intercept chat/interrupt
                 return HumanInput(self.state_manager, self.ui, prev_response=prev_response)
-            if prev_response.type == ResponseType.TASK_REVIEW_FEEDBACK:
-                return Developer(self.state_manager, self.ui, prev_response=prev_response)
             if prev_response.type == ResponseType.IMPORT_PROJECT:
                 return Importer(self.state_manager, self.ui, prev_response=prev_response)
             if prev_response.type == ResponseType.EXTERNAL_DOCS_REQUIRED:
@@ -306,7 +304,7 @@ class Orchestrator(BaseAgent):
         elif step_type == "human_intervention":
             return HumanInput(self.state_manager, self.ui, step=step)
         elif step_type == "review_task":
-            return TaskReviewer(self.state_manager, self.ui)
+            return LegacyHandler(self.state_manager, self.ui, data={"type": "review_task"})
         elif step_type == "create_readme":
             return TechnicalWriter(self.state_manager, self.ui)
         else:

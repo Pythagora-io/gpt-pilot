@@ -30,9 +30,6 @@ class ResponseType(str, Enum):
     INPUT_REQUIRED = "input-required"
     """User needs to modify a line in the generated code."""
 
-    TASK_REVIEW_FEEDBACK = "task-review-feedback"
-    """Agent is providing feedback on the entire task."""
-
     IMPORT_PROJECT = "import-project"
     """User wants to import an existing project."""
 
@@ -83,16 +80,6 @@ class AgentResponse:
     @staticmethod
     def input_required(agent: "BaseAgent", files: list[dict[str, int]]) -> "AgentResponse":
         return AgentResponse(type=ResponseType.INPUT_REQUIRED, agent=agent, data={"files": files})
-
-    @staticmethod
-    def task_review_feedback(agent: "BaseAgent", feedback: str) -> "AgentResponse":
-        return AgentResponse(
-            type=ResponseType.TASK_REVIEW_FEEDBACK,
-            agent=agent,
-            data={
-                "feedback": feedback,
-            },
-        )
 
     @staticmethod
     def import_project(agent: "BaseAgent") -> "AgentResponse":
