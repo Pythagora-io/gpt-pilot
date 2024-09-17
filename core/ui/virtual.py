@@ -156,6 +156,9 @@ class VirtualUI(UIBase):
     async def send_file_status(self, file_path: str, file_status: str):
         pass
 
+    async def send_bug_hunter_status(self, status: str, num_cycles: int):
+        pass
+
     async def generate_diff(
         self, file_path: str, file_old: str, file_new: str, n_new_lines: int = 0, n_del_lines: int = 0
     ):

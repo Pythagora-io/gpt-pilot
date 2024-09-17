@@ -46,6 +46,7 @@ class MessageType(str, Enum):
     GENERATE_DIFF = "generateDiff"
     CLOSE_DIFF = "closeDiff"
     FILE_STATUS = "fileStatus"
+    BUG_HUNTER_STATUS = "bugHunterStatus"
     EPICS_AND_TASKS = "epicsAndTasks"
     MODIFIED_FILES = "modifiedFiles"
     IMPORTANT_STREAM = "importantStream"
@@ -433,6 +434,15 @@ class IPCClientUI(UIBase):
             content={
                 "file_path": file_path,
                 "file_status": file_status,
+            },
+        )
+
+    async def send_bug_hunter_status(self, status: str, num_cycles: int):
+        await self._send(
+            MessageType.BUG_HUNTER_STATUS,
+            content={
+                "status": status,
+                "num_cycles": num_cycles,
             },
         )
 

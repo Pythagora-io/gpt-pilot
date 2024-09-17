@@ -333,6 +333,15 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def send_bug_hunter_status(self, status: str, num_cycles: int):
+        """
+        Send bug hunter status.
+
+        :param status: Bug hunter status.
+        :param num_cycles: Number of Bug hunter cycles.
+        """
+        raise NotImplementedError()
+
     async def generate_diff(
         self, file_path: str, file_old: str, file_new: str, n_new_lines: int = 0, n_del_lines: int = 0
     ):
