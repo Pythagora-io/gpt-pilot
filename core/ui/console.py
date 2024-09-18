@@ -160,7 +160,7 @@ class PlainConsoleUI(UIBase):
     async def send_file_status(self, file_path: str, file_status: str):
         pass
 
-    async def send_bug_hunter_status(self, status: str):
+    async def send_bug_hunter_status(self, status: str, num_cycles: int):
         pass
 
     async def generate_diff(
