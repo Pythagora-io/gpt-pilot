@@ -465,13 +465,40 @@ class ConfigLoader:
 loader = ConfigLoader()
 
 
+def adapt_for_bedrock(config: Config) -> Config:
+    """
+    Adapt the configuration for use with Bedrock.
+
+    :param config: Configuration to adapt.
+    :return: Adapted configuration.
+    """
+    if "anthropic" not in config.llm:
+        return config
+
+    if config.llm["anthropic"].base_url is None or "bedrock/anthropic" not in config.llm["anthropic"].base_url:
+        return config
+
+    replacement_map = {
+        "claude-3-5-sonnet-20240620": "anthropic.claude-3-5-sonnet-20240620-v1:0",
+        "claude-3-sonnet-20240229": "anthropic.claude-3-sonnet-20240229-v1:0",
+        "claude-3-haiku-20240307": "anthropic.claude-3-haiku-20240307-v1:0",
+        "claude-3-opus-20240229": "anthropic.claude-3-opus-20240229-v1:0",
+    }
+
+    for agent in config.agent:
+        if config.agent[agent].model in replacement_map:
+            config.agent[agent].model = replacement_map[config.agent[agent].model]
+
+    return config
+
+
 def get_config() -> Config:
     """
     Return current configuration.
 
     :return: Current configuration object.
     """
-    return loader.config
+    return adapt_for_bedrock(loader.config)
 
 
 __all__ = ["loader", "get_config"]
