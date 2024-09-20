@@ -161,7 +161,6 @@ class BugHunter(BaseAgent):
                 buttons = {
                     "copy_frontend_logs": "Copy Frontend Logs",
                     "continue": "Continue without logs",
-                    "done": "Bug is fixed",
                 }
                 frontend_logs = await self.ask_question(
                     "Please share the relevant Frontend logs",
@@ -171,17 +170,14 @@ class BugHunter(BaseAgent):
                     + self.current_state.current_iteration["bug_reproduction_description"],
                 )
 
-                if frontend_logs.button == "done":
-                    self.next_state.complete_iteration()
-                else:
-                    buttons = {"continue": "Continue without feedback"}
-                    user_feedback = await self.ask_question(
-                        "Please add any additional feedback that could help Pythagora solve this bug",
-                        buttons=buttons,
-                        default="continue",
-                        hint="Instructions for testing:\n\n"
-                        + self.current_state.current_iteration["bug_reproduction_description"],
-                    )
+                buttons = {"continue": "Continue without feedback"}
+                user_feedback = await self.ask_question(
+                    "Please add any additional feedback that could help Pythagora solve this bug",
+                    buttons=buttons,
+                    default="continue",
+                    hint="Instructions for testing:\n\n"
+                    + self.current_state.current_iteration["bug_reproduction_description"],
+                )
 
                 # TODO select only the logs that are new (with PYTHAGORA_DEBUGGING_LOG)
                 self.next_state.current_iteration["bug_hunting_cycles"][-1]["backend_logs"] = backend_logs.text
