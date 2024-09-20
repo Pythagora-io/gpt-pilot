@@ -174,7 +174,7 @@ class BugHunter(BaseAgent):
                 if frontend_logs.button == "done":
                     self.next_state.complete_iteration()
                 else:
-                    buttons = {"continue": "Continue without feedback", "done": "Bug is fixed"}
+                    buttons = {"continue": "Continue without feedback"}
                     user_feedback = await self.ask_question(
                         "Please add any additional feedback that could help Pythagora solve this bug",
                         buttons=buttons,
