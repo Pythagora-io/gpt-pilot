@@ -8,21 +8,21 @@
       "base_url": null,
       "api_key": null,
       "connect_timeout": 60.0,
-      "read_timeout": 10.0
+      "read_timeout": 20.0
     },
     // Example config for Anthropic (see https://docs.anthropic.com/docs/api-reference)
     "anthropic": {
       "base_url": "https://api.anthropic.com",
       "api_key": "your-api-key",
       "connect_timeout": 60.0,
-      "read_timeout": 10.0
+      "read_timeout": 20.0
     },
     // Example config for Azure OpenAI (see https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#chat-completions)
     "azure": {
       "base_url": "https://your-resource-name.openai.azure.com/",
       "api_key": "your-api-key",
       "connect_timeout": 60.0,
-      "read_timeout": 10.0,
+      "read_timeout": 20.0,
       "extra": {
         "azure_deployment": "your-azure-deployment-id",
         "api_version": "2024-02-01"
