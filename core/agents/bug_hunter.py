@@ -53,10 +53,13 @@ class BugHunter(BaseAgent):
             # TODO determine how to find a bug (eg. check in db, ask user a question, etc.)
             return await self.check_logs()
         elif current_iteration["status"] == IterationStatus.AWAITING_USER_TEST:
+            await self.ui.send_bug_hunter_status("close_status", 0)
             return await self.ask_user_to_test(False, True)
         elif current_iteration["status"] == IterationStatus.AWAITING_BUG_REPRODUCTION:
+            await self.ui.send_bug_hunter_status("close_status", 0)
             return await self.ask_user_to_test(True, False)
         elif current_iteration["status"] == IterationStatus.START_PAIR_PROGRAMMING:
+            await self.ui.send_bug_hunter_status("close_status", 0)
             return await self.start_pair_programming()
 
     async def get_bug_reproduction_instructions(self):
@@ -93,7 +96,7 @@ class BugHunter(BaseAgent):
         if hunt_conclusion.conclusion == magic_words.PROBLEM_IDENTIFIED:
             # if no need for logs, implement iteration same as before
             self.set_data_for_next_hunting_cycle(human_readable_instructions, IterationStatus.AWAITING_BUG_FIX)
-            await self.send_message("Found the bug - I'm attempting to fix it ...")
+            await self.send_message("Found the bug. I'm attempting to fix it ...")
             await self.ui.send_bug_hunter_status("fixing_bug", num_bug_hunting_cycles)
         else:
             # if logs are needed, add logging steps
@@ -110,16 +113,11 @@ class BugHunter(BaseAgent):
 
         await self.ui.send_test_instructions(test_instructions)
 
-        buttons = {}
-
         if self.current_state.run_command:
             await self.ui.send_run_command(self.current_state.run_command)
 
         if awaiting_user_test:
-            buttons["yes"] = "Yes, the issue is fixed"
-            buttons["no"] = "No"
-            buttons["start_pair_programming"] = "Start Pair Programming"
-
+            buttons = {"yes": "Yes, the issue is fixed", "no": "No", "start_pair_programming": "Start Pair Programming"}
             user_feedback = await self.ask_question(
                 "Is the bug you reported fixed now?",
                 buttons=buttons,
@@ -138,15 +136,16 @@ class BugHunter(BaseAgent):
             else:
                 awaiting_bug_reproduction = True
 
-        buttons = {}
-
         if awaiting_bug_reproduction:
             # TODO how can we get FE and BE logs automatically?
-            buttons["continue"] = "Continue without logs"
-            buttons["done"] = "Bug is fixed"
-            buttons["start_pair_programming"] = "Start Pair Programming"
+            buttons = {
+                "copy_backend_logs": "Copy Backend Logs",
+                "continue": "Continue without logs",
+                "done": "Bug is fixed",
+                "start_pair_programming": "Start Pair Programming",
+            }
             backend_logs = await self.ask_question(
-                "Please test the app again and paste the BACKEND logs here:",
+                "Please test the App again and share the relevant Backend logs",
                 buttons=buttons,
                 default="continue",
                 hint="Instructions for testing:\n\n"
@@ -159,9 +158,14 @@ class BugHunter(BaseAgent):
                 self.next_state.current_iteration["status"] = IterationStatus.START_PAIR_PROGRAMMING
                 self.next_state.flag_iterations_as_modified()
             else:
+                buttons = {
+                    "copy_frontend_logs": "Copy Frontend Logs",
+                    "continue": "Continue without logs",
+                    "done": "Bug is fixed",
+                }
                 frontend_logs = await self.ask_question(
-                    "Please paste the FRONTEND logs here:",
-                    buttons={"continue": "Continue without logs", "done": "Bug is fixed"},
+                    "Please share the relevant Frontend logs",
+                    buttons=buttons,
                     default="continue",
                     hint="Instructions for testing:\n\n"
                     + self.current_state.current_iteration["bug_reproduction_description"],
@@ -170,9 +174,10 @@ class BugHunter(BaseAgent):
                 if frontend_logs.button == "done":
                     self.next_state.complete_iteration()
                 else:
+                    buttons = {"continue": "Continue without feedback", "done": "Bug is fixed"}
                     user_feedback = await self.ask_question(
-                        "Please add any additional feedback that could help Pythagora solve this bug.",
-                        buttons={"continue": "Continue without feedback", "done": "Bug is fixed"},
+                        "Please add any additional feedback that could help Pythagora solve this bug",
+                        buttons=buttons,
                         default="continue",
                         hint="Instructions for testing:\n\n"
                         + self.current_state.current_iteration["bug_reproduction_description"],

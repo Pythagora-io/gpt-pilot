@@ -274,7 +274,9 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
             change_description = user_description.text
 
         elif user_response.button == "bug":
-            user_description = await self.ask_question("Please describe the issue you found (one at a time)")
+            user_description = await self.ask_question(
+                "Please describe the issue you found (one at a time)", buttons={"copy_server_logs": "Copy Server Logs"}
+            )
             bug_report = user_description.text
 
         return should_iterate, is_loop, bug_report, change_description
