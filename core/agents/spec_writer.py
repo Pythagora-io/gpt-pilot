@@ -120,7 +120,7 @@ class SpecWriter(BaseAgent):
 
     async def check_prompt_complexity(self, prompt: str) -> str:
         await self.send_message("Checking the complexity of the prompt ...")
-        llm = self.get_llm(SPEC_WRITER_AGENT_NAME, stream_output=True)
+        llm = self.get_llm(SPEC_WRITER_AGENT_NAME)
         convo = AgentConvo(self).template("prompt_complexity", prompt=prompt)
         llm_response: str = await llm(convo, temperature=0, parser=StringParser())
         return llm_response.lower()

@@ -106,7 +106,6 @@ class Developer(RelevantFilesMixin, BaseAgent):
             source = "bug_hunt"
             n_tasks = len(self.next_state.iterations)
             log.debug(f"Breaking down the logging cycle {description}")
-            await self.send_message("Breaking down the current bug hunting cycle ...")
         else:
             iteration = self.current_state.current_iteration
             if iteration is None:
@@ -118,11 +117,11 @@ class Developer(RelevantFilesMixin, BaseAgent):
             source = "troubleshooting"
             n_tasks = len(self.next_state.iterations)
             log.debug(f"Breaking down the iteration {description}")
-            await self.send_message("Breaking down the current task iteration ...")
 
         if self.current_state.files and self.current_state.relevant_files is None:
             return await self.get_relevant_files(user_feedback, description)
 
+        await self.send_message("Breaking down the task into steps ...")
         await self.ui.send_task_progress(
             n_tasks,  # iterations and reviews can be created only one at a time, so we are always on last one
             n_tasks,
@@ -193,7 +192,6 @@ class Developer(RelevantFilesMixin, BaseAgent):
         )
 
         log.debug(f"Breaking down the current task: {current_task['description']}")
-        await self.send_message("Thinking about how to implement this task ...")
 
         log.debug(f"Current state files: {len(self.current_state.files)}, relevant {self.current_state.relevant_files}")
         # Check which files are relevant to the current task
@@ -201,6 +199,8 @@ class Developer(RelevantFilesMixin, BaseAgent):
             return await self.get_relevant_files()
 
         current_task_index = self.current_state.tasks.index(current_task)
+
+        await self.send_message("Thinking about how to implement this task ...")
 
         llm = self.get_llm(TASK_BREAKDOWN_AGENT_NAME, stream_output=True)
         convo = AgentConvo(self).template(

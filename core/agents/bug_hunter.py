@@ -88,7 +88,7 @@ class BugHunter(BaseAgent):
             )
             .require_schema(HuntConclusionOptions)
         )
-        llm = self.get_llm(stream_output=True)
+        llm = self.get_llm()
         hunt_conclusion = await llm(convo, parser=JSONParser(HuntConclusionOptions), temperature=0)
 
         bug_hunting_cycles = self.current_state.current_iteration.get("bug_hunting_cycles")
