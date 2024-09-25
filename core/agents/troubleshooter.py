@@ -93,7 +93,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         user_feedback_qa = None  # await self.generate_bug_report(run_command, user_instructions, user_feedback)
 
         if is_loop:
-            if last_iteration["alternative_solutions"]:
+            if last_iteration is not None and last_iteration.get("alternative_solutions"):
                 # If we already have alternative solutions, it means we were already in a loop.
                 return self.try_next_alternative_solution(user_feedback, user_feedback_qa)
             else:
@@ -242,7 +242,6 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
             "continue": "Everything works",
             "change": "I want to make a change",
             "bug": "There is an issue",
-            "start_pair_programming": "Start Pair Programming",
         }
 
         user_response = await self.ask_question(
@@ -251,31 +250,16 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         if user_response.button == "continue" or user_response.cancelled:
             should_iterate = False
 
-        elif user_response.button == "start_pair_programming":
-            await telemetry.trace_code_event(
-                "pair-programming-started",
-                {
-                    "clicked": True,
-                    "task_index": self.current_state.tasks.index(self.current_state.current_task) + 1,
-                    "num_tasks": len(self.current_state.tasks),
-                    "num_epics": len(self.current_state.epics),
-                    "num_iterations": len(self.current_state.iterations),
-                    "num_steps": len(self.current_state.steps),
-                    "architecture": {
-                        "system_dependencies": self.current_state.specification.system_dependencies,
-                        "app_dependencies": self.current_state.specification.package_dependencies,
-                    },
-                },
-            )
-            is_loop = True
-
         elif user_response.button == "change":
-            user_description = await self.ask_question("Please describe the change you want to make (one at a time)")
+            user_description = await self.ask_question(
+                "Please describe the change you want to make to the project specification (one at a time)"
+            )
             change_description = user_description.text
 
         elif user_response.button == "bug":
             user_description = await self.ask_question(
-                "Please describe the issue you found (one at a time)", buttons={"copy_server_logs": "Copy Server Logs"}
+                "Please describe the issue you found (one at a time) and share any relevant server logs",
+                buttons={"copy_server_logs": "Copy Server Logs"},
             )
             bug_report = user_description.text
 

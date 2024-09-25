@@ -196,8 +196,8 @@ class BugHunter(BaseAgent):
         await self.ui.start_important_stream()
         initial_explanation = await llm(convo, temperature=0.5)
 
+        llm = self.get_llm()
         convo = convo.template("data_about_logs").require_schema(ImportantLogsForDebugging)
-
         data_about_logs = await llm(convo, parser=JSONParser(ImportantLogsForDebugging), temperature=0.5)
 
         await self.ui.send_data_about_logs(
