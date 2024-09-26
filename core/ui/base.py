@@ -356,6 +356,12 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def stop_app(self):
+        """
+        Stop the App.
+        """
+        raise NotImplementedError()
+
     async def close_diff(self):
         """
         Close all diff views.

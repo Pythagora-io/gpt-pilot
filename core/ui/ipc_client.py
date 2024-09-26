@@ -51,6 +51,7 @@ class MessageType(str, Enum):
     MODIFIED_FILES = "modifiedFiles"
     IMPORTANT_STREAM = "importantStream"
     TEST_INSTRUCTIONS = "testInstructions"
+    STOP_APP = "stopApp"
 
 
 class Message(BaseModel):
@@ -459,6 +460,10 @@ class IPCClientUI(UIBase):
                 "n_del_lines": n_del_lines,
             },
         )
+
+    async def stop_app(self):
+        log.debug("Sending signal to stop the App")
+        await self._send(MessageType.STOP_APP)
 
     async def close_diff(self):
         log.debug("Sending signal to close the generated diff file")

@@ -74,6 +74,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         else:
             await self.send_message("Here are instructions on how to test the app:\n\n" + user_instructions)
 
+        await self.ui.stop_app()
         await self.ui.send_test_instructions(user_instructions)
 
         # Developer sets iteration as "completed" when it generates the step breakdown, so we can't
