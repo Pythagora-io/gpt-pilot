@@ -55,7 +55,17 @@ class TechLead(BaseAgent):
                 self.next_state.current_epic["sub_epics"],
                 self.next_state.tasks,
             )
-            return AgentResponse.done(self)
+
+            inputs = []
+            for file in self.next_state.files:
+                input_required = self.state_manager.get_input_required(file.content.content)
+                if input_required:
+                    inputs += [{"file": file.path, "line": line} for line in input_required]
+
+            if inputs:
+                return AgentResponse.input_required(self, inputs)
+            else:
+                return AgentResponse.done(self)
 
         if self.current_state.current_epic:
             self.next_state.action = "Create a development plan"
