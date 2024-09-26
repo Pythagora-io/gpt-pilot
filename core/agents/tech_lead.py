@@ -120,6 +120,9 @@ class TechLead(BaseAgent):
         else:
             await self.ui.send_message("Your app is DONE! You can start using it right now!", source=success_source)
 
+        if self.current_state.run_command:
+            await self.ui.send_run_command(self.current_state.run_command)
+
         log.debug("Asking for new feature")
         response = await self.ask_question(
             "Do you have a new feature to add to the project? Just write it here:",
