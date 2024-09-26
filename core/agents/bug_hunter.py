@@ -145,7 +145,7 @@ class BugHunter(BaseAgent):
                 "start_pair_programming": "Start Pair Programming",
             }
             backend_logs = await self.ask_question(
-                "Please test the App again and share the relevant Backend logs",
+                "Please share the relevant Backend logs",
                 buttons=buttons,
                 default="continue",
                 hint="Instructions for testing:\n\n"
