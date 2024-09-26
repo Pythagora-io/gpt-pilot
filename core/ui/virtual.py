@@ -164,6 +164,9 @@ class VirtualUI(UIBase):
     ):
         pass
 
+    async def stop_app(self):
+        pass
+
     async def close_diff(self):
         pass
 

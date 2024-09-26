@@ -108,9 +108,9 @@ class BugHunter(BaseAgent):
         return AgentResponse.done(self)
 
     async def ask_user_to_test(self, awaiting_bug_reproduction: bool = False, awaiting_user_test: bool = False):
+        await self.ui.stop_app()
         test_instructions = self.current_state.current_iteration["bug_reproduction_description"]
         await self.send_message("You can reproduce the bug like this:\n\n" + test_instructions)
-
         await self.ui.send_test_instructions(test_instructions)
 
         if self.current_state.run_command:
@@ -145,7 +145,7 @@ class BugHunter(BaseAgent):
                 "start_pair_programming": "Start Pair Programming",
             }
             backend_logs = await self.ask_question(
-                "Please test the App again and share the relevant Backend logs",
+                "Please share the relevant Backend logs",
                 buttons=buttons,
                 default="continue",
                 hint="Instructions for testing:\n\n"
