@@ -109,7 +109,6 @@ class SpecWriter(BaseAgent):
             default="yes",
             buttons_only=True,
         )
-        await self.ui.close_diff()
 
         if user_response.button == "yes":
             self.next_state.specification = self.current_state.specification.clone()
