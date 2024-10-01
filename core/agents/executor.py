@@ -141,7 +141,7 @@ class Executor(BaseAgent):
     async def check_command_output(
         self, cmd: str, timeout: Optional[int], stdout: str, stderr: str, status_code: int
     ) -> CommandResult:
-        llm = self.get_llm(stream_output=True)
+        llm = self.get_llm()
         convo = (
             AgentConvo(self)
             .template(
