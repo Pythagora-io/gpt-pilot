@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gpt-pilot"
-version = "0.2.23"
+version = "1.0.0"
 description = "Build complete apps using AI agents"
 authors = ["Senko Rasic <senko@pythagora.ai>"]
 license = "FSL-1.1-MIT"
