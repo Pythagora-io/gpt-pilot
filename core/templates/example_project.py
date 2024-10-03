@@ -19,7 +19,7 @@ Functional Specification:
 
 Technical Specification:
 - Platform/Technologies: The application is a web application developed using React on frontend and Express on the backend, using SQLite as the database.
-- Styling: Use Bootstrap 5 for a simple and functional interface. Load Boostrap from the CDN (don't install it locally):
+- Styling: Use Bootstrap 5 for a simple and functional interface. Load Bootstrap from the CDN (don't install it locally):
     - https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css
     - https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js
 - State Management: Directly in the React component
@@ -63,7 +63,7 @@ EXAMPLE_PROJECT_PLAN = [
             "Upon confirmation, dispatch an action to add the new todo to the state with a default state of open. "
             "Ensure the component also updates the local storage with the new list of todos. "
             "Finally, use TodoList and AddTodo components in App component to implement the required functionality. "
-            "Integrate Boostrap 5 for styling - add CSS/JS to index.html, style App.jsx and other files as appropriate."
+            "Integrate Bootstrap 5 for styling - add CSS/JS to index.html, style App.jsx and other files as appropriate."
         ),
         "status": "todo",
         "sub_epic_id": 1,
