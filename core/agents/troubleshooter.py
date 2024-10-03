@@ -72,7 +72,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
             self.next_state.flag_tasks_as_modified()
             return AgentResponse.done(self)
         else:
-            await self.send_message("Here are instructions on how to test the app:\n\n" + user_instructions)
+            await self.send_message("Start the app and test it by following these steps:\n\n" + user_instructions)
 
         await self.ui.stop_app()
         await self.ui.send_test_instructions(user_instructions)

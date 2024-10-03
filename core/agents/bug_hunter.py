@@ -110,7 +110,7 @@ class BugHunter(BaseAgent):
     async def ask_user_to_test(self, awaiting_bug_reproduction: bool = False, awaiting_user_test: bool = False):
         await self.ui.stop_app()
         test_instructions = self.current_state.current_iteration["bug_reproduction_description"]
-        await self.send_message("You can reproduce the bug like this:\n\n" + test_instructions)
+        await self.send_message("Start the app and test it by following these instructions:\n\n" + test_instructions)
         await self.ui.send_test_instructions(test_instructions)
 
         if self.current_state.run_command:
