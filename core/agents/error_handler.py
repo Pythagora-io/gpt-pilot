@@ -85,7 +85,7 @@ class ErrorHandler(BaseAgent):
             log.info("Skipping command error debug (requested by user)")
             return AgentResponse.done(self)
 
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         convo = AgentConvo(self).template(
             "debug",
             task_steps=self.current_state.steps,

@@ -42,6 +42,7 @@ class IterationStatus:
     FIND_SOLUTION = "find_solution"
     PROBLEM_SOLVER = "problem_solver"
     NEW_FEATURE_REQUESTED = "new_feature_requested"
+    START_PAIR_PROGRAMMING = "start_pair_programming"
     DONE = "done"
 
 
@@ -433,3 +434,12 @@ class ProjectState(Base):
             return len([step for step in steps if step.get("type") == "review_task"])
 
         return 1
+
+    def get_steps_of_type(self, step_type: str) -> [dict]:
+        """
+        Get list of unfinished steps with specific type.
+
+        :return: List of steps, or empty list if there are no unfinished steps of that type.
+        """
+        li = self.unfinished_steps
+        return [step for step in li if step.get("type") == step_type] if li else []

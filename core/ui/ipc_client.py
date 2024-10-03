@@ -29,6 +29,7 @@ class MessageType(str, Enum):
     USER_INPUT_REQUEST = "user_input_request"
     INFO = "info"
     PROGRESS = "progress"
+    DEBUGGING_LOGS = "debugging_logs"
     RUN_COMMAND = "run_command"
     OPEN_FILE = "openFile"
     PROJECT_FOLDER_NAME = "project_folder_name"
@@ -44,6 +45,13 @@ class MessageType(str, Enum):
     FEATURE_FINISHED = "featureFinished"
     GENERATE_DIFF = "generateDiff"
     CLOSE_DIFF = "closeDiff"
+    FILE_STATUS = "fileStatus"
+    BUG_HUNTER_STATUS = "bugHunterStatus"
+    EPICS_AND_TASKS = "epicsAndTasks"
+    MODIFIED_FILES = "modifiedFiles"
+    IMPORTANT_STREAM = "importantStream"
+    TEST_INSTRUCTIONS = "testInstructions"
+    STOP_APP = "stopApp"
 
 
 class Message(BaseModel):
@@ -58,6 +66,7 @@ class Message(BaseModel):
 
     type: MessageType
     category: Optional[str] = None
+    project_state_id: Optional[str] = None
     content: Union[str, dict, None] = None
 
     def to_bytes(self) -> bytes:
@@ -174,7 +183,9 @@ class IPCClientUI(UIBase):
         self.writer = None
         self.reader = None
 
-    async def send_stream_chunk(self, chunk: Optional[str], *, source: Optional[UISource] = None):
+    async def send_stream_chunk(
+        self, chunk: Optional[str], *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+    ):
         if not self.writer:
             return
 
@@ -185,9 +196,12 @@ class IPCClientUI(UIBase):
             MessageType.STREAM,
             content=chunk,
             category=source.type_name if source else None,
+            project_state_id=project_state_id,
         )
 
-    async def send_message(self, message: str, *, source: Optional[UISource] = None):
+    async def send_message(
+        self, message: str, *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+    ):
         if not self.writer:
             return
 
@@ -196,6 +210,7 @@ class IPCClientUI(UIBase):
             MessageType.VERBOSE,
             content=message,
             category=source.type_name if source else None,
+            project_state_id=project_state_id,
         )
 
     async def send_key_expired(self, message: Optional[str] = None):
@@ -242,6 +257,7 @@ class IPCClientUI(UIBase):
         hint: Optional[str] = None,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
+        project_state_id: Optional[str] = None,
     ) -> UserInput:
         if not self.writer:
             raise UIClosedError()
@@ -249,20 +265,30 @@ class IPCClientUI(UIBase):
         category = source.type_name if source else None
 
         if hint:
-            await self._send(MessageType.HINT, content=hint, category=category)
+            await self._send(MessageType.HINT, content=hint, category=category, project_state_id=project_state_id)
         else:
-            await self._send(MessageType.VERBOSE, content=question, category=category)
+            await self._send(
+                MessageType.VERBOSE, content=question, category=category, project_state_id=project_state_id
+            )
 
-        await self._send(MessageType.USER_INPUT_REQUEST, content=question, category=category)
+        await self._send(
+            MessageType.USER_INPUT_REQUEST, content=question, category=category, project_state_id=project_state_id
+        )
         if buttons:
             buttons_str = "/".join(buttons.values())
             if buttons_only:
-                await self._send(MessageType.BUTTONS_ONLY, content=buttons_str, category=category)
+                await self._send(
+                    MessageType.BUTTONS_ONLY, content=buttons_str, category=category, project_state_id=project_state_id
+                )
             else:
-                await self._send(MessageType.BUTTONS, content=buttons_str, category=category)
+                await self._send(
+                    MessageType.BUTTONS, content=buttons_str, category=category, project_state_id=project_state_id
+                )
         if initial_text:
             # FIXME: add this to base and console and document it after merging with hint PR
-            await self._send(MessageType.INPUT_PREFILL, content=initial_text, category=category)
+            await self._send(
+                MessageType.INPUT_PREFILL, content=initial_text, category=category, project_state_id=project_state_id
+            )
 
         response = await self._receive()
         answer = response.content.strip()
@@ -286,6 +312,19 @@ class IPCClientUI(UIBase):
 
     async def send_project_stage(self, stage: ProjectStage):
         await self._send(MessageType.INFO, content=json.dumps({"project_stage": stage.value}))
+
+    async def send_epics_and_tasks(
+        self,
+        epics: list[dict],
+        tasks: list[dict],
+    ):
+        await self._send(
+            MessageType.EPICS_AND_TASKS,
+            content={
+                "epics": epics,
+                "tasks": tasks,
+            },
+        )
 
     async def send_task_progress(
         self,
@@ -312,6 +351,15 @@ class IPCClientUI(UIBase):
             },
         )
 
+    async def send_modified_files(
+        self,
+        modified_files: dict[str, str, str],
+    ):
+        await self._send(
+            MessageType.MODIFIED_FILES,
+            content={"files": modified_files},
+        )
+
     async def send_step_progress(
         self,
         index: int,
@@ -329,6 +377,15 @@ class IPCClientUI(UIBase):
                     "source": task_source,
                 }
             },
+        )
+
+    async def send_data_about_logs(
+        self,
+        data_about_logs: dict,
+    ):
+        await self._send(
+            MessageType.DEBUGGING_LOGS,
+            content=data_about_logs,
         )
 
     async def send_run_command(self, run_command: str):
@@ -352,20 +409,61 @@ class IPCClientUI(UIBase):
             content=basename(path),
         )
 
+    async def start_important_stream(self):
+        await self._send(
+            MessageType.IMPORTANT_STREAM,
+            content={},
+        )
+
     async def send_project_stats(self, stats: dict):
         await self._send(
             MessageType.PROJECT_STATS,
             content=stats,
         )
 
-    async def generate_diff(self, file_old: str, file_new: str):
+    async def send_test_instructions(self, test_instructions: str):
+        await self._send(
+            MessageType.TEST_INSTRUCTIONS,
+            content={
+                "test_instructions": test_instructions,
+            },
+        )
+
+    async def send_file_status(self, file_path: str, file_status: str):
+        await self._send(
+            MessageType.FILE_STATUS,
+            content={
+                "file_path": file_path,
+                "file_status": file_status,
+            },
+        )
+
+    async def send_bug_hunter_status(self, status: str, num_cycles: int):
+        await self._send(
+            MessageType.BUG_HUNTER_STATUS,
+            content={
+                "status": status,
+                "num_cycles": num_cycles,
+            },
+        )
+
+    async def generate_diff(
+        self, file_path: str, file_old: str, file_new: str, n_new_lines: int = 0, n_del_lines: int = 0
+    ):
         await self._send(
             MessageType.GENERATE_DIFF,
             content={
+                "file_path": file_path,
                 "file_old": file_old,
                 "file_new": file_new,
+                "n_new_lines": n_new_lines,
+                "n_del_lines": n_del_lines,
             },
         )
+
+    async def stop_app(self):
+        log.debug("Sending signal to stop the App")
+        await self._send(MessageType.STOP_APP)
 
     async def close_diff(self):
         log.debug("Sending signal to close the generated diff file")

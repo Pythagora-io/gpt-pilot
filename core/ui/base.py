@@ -97,7 +97,9 @@ class UIBase:
         """
         raise NotImplementedError()
 
-    async def send_stream_chunk(self, chunk: str, *, source: Optional[UISource] = None):
+    async def send_stream_chunk(
+        self, chunk: str, *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+    ):
         """
         Send a chunk of the stream to the UI.
 
@@ -106,7 +108,9 @@ class UIBase:
         """
         raise NotImplementedError()
 
-    async def send_message(self, message: str, *, source: Optional[UISource] = None):
+    async def send_message(
+        self, message: str, *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+    ):
         """
         Send a complete message to the UI.
 
@@ -162,6 +166,7 @@ class UIBase:
         hint: Optional[str] = None,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
+        project_state_id: Optional[str] = None,
     ) -> UserInput:
         """
         Ask the user a question.
@@ -188,6 +193,19 @@ class UIBase:
         Send a project stage to the UI.
 
         :param stage: Project stage.
+        """
+        raise NotImplementedError()
+
+    async def send_epics_and_tasks(
+        self,
+        epics: list[dict] = None,
+        tasks: list[dict] = None,
+    ):
+        """
+        Send epics and tasks info to the UI.
+
+        :param epics: List of all epics.
+        :param tasks: List of all tasks.
         """
         raise NotImplementedError()
 
@@ -231,6 +249,28 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def send_modified_files(
+        self,
+        modified_files: dict[str, str, str],
+    ):
+        """
+        Send a list of modified files to the UI.
+
+        :param modified_files: List of modified files.
+        """
+        raise NotImplementedError()
+
+    async def send_data_about_logs(
+        self,
+        data_about_logs: dict,
+    ):
+        """
+        Send the data about debugging logs.
+
+        :param data_about_logs: Data about logs.
+        """
+        raise NotImplementedError()
+
     async def send_run_command(self, run_command: str):
         """
         Send a run command to the UI.
@@ -256,6 +296,13 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def start_important_stream(self, path: str):
+        """
+        Tell the extension that next stream should be visible and rendered as markdown
+
+        """
+        raise NotImplementedError()
+
     async def send_project_stats(self, stats: dict):
         """
         Send project statistics to the UI.
@@ -269,12 +316,55 @@ class UIBase:
         """
         raise NotImplementedError()
 
-    async def generate_diff(self, file_old: str, file_new: str):
+    async def send_test_instructions(self, test_instructions: str):
+        """
+        Send test instructions.
+
+        :param test_instructions: Test instructions.
+        """
+        raise NotImplementedError()
+
+    async def send_file_status(self, file_path: str, file_status: str):
+        """
+        Send file status.
+
+        :param file_path: File path.
+        :param file_status: File status.
+        """
+        raise NotImplementedError()
+
+    async def send_bug_hunter_status(self, status: str, num_cycles: int):
+        """
+        Send bug hunter status.
+
+        :param status: Bug hunter status.
+        :param num_cycles: Number of Bug hunter cycles.
+        """
+        raise NotImplementedError()
+
+    async def generate_diff(
+        self, file_path: str, file_old: str, file_new: str, n_new_lines: int = 0, n_del_lines: int = 0
+    ):
         """
         Generate a diff between two files.
 
+        :param file_path File path.
         :param file_old: Old file content.
         :param file_new: New file content.
+        :param n_new_lines: Number of new lines.
+        :param n_del_lines: Number of deleted lines.
+        """
+        raise NotImplementedError()
+
+    async def stop_app(self):
+        """
+        Stop the App.
+        """
+        raise NotImplementedError()
+
+    async def close_diff(self):
+        """
+        Close all diff views.
         """
         raise NotImplementedError()
 

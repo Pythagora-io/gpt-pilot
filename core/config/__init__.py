@@ -35,9 +35,14 @@ IGNORE_SIZE_THRESHOLD = 50000  # 50K+ files are ignored by default
 # Agents with sane setup in the default configuration
 DEFAULT_AGENT_NAME = "default"
 CODE_MONKEY_AGENT_NAME = "CodeMonkey"
+CODE_REVIEW_AGENT_NAME = "CodeMonkey.code_review"
 DESCRIBE_FILES_AGENT_NAME = "CodeMonkey.describe_files"
 CHECK_LOGS_AGENT_NAME = "BugHunter.check_logs"
+PARSE_TASK_AGENT_NAME = "Developer.parse_task"
 TASK_BREAKDOWN_AGENT_NAME = "Developer.breakdown_current_task"
+TROUBLESHOOTER_BUG_REPORT = "Troubleshooter.generate_bug_report"
+TROUBLESHOOTER_GET_RUN_COMMAND = "Troubleshooter.get_run_command"
+TECH_LEAD_PLANNING = "TechLead.plan_epic"
 SPEC_WRITER_AGENT_NAME = "SpecWriter"
 GET_RELEVANT_FILES_AGENT_NAME = "get_relevant_files"
 
@@ -96,7 +101,7 @@ class ProviderConfig(_StrictModel):
         ge=0.0,
     )
     read_timeout: float = Field(
-        default=10.0,
+        default=20.0,
         description="Timeout (in seconds) for receiving a new chunk of data from the response stream",
         ge=0.0,
     )
@@ -151,7 +156,7 @@ class LLMConfig(_StrictModel):
         ge=0.0,
     )
     read_timeout: float = Field(
-        default=10.0,
+        default=20.0,
         description="Timeout (in seconds) for receiving a new chunk of data from the response stream",
         ge=0.0,
     )
@@ -318,20 +323,56 @@ class Config(_StrictModel):
     agent: dict[str, AgentLLMConfig] = Field(
         default={
             DEFAULT_AGENT_NAME: AgentLLMConfig(),
-            CODE_MONKEY_AGENT_NAME: AgentLLMConfig(model="gpt-4-0125-preview", temperature=0.0),
-            DESCRIBE_FILES_AGENT_NAME: AgentLLMConfig(model="gpt-3.5-turbo", temperature=0.0),
             CHECK_LOGS_AGENT_NAME: AgentLLMConfig(
                 provider=LLMProvider.ANTHROPIC,
                 model="claude-3-5-sonnet-20240620",
                 temperature=0.5,
+            ),
+            CODE_MONKEY_AGENT_NAME: AgentLLMConfig(
+                provider=LLMProvider.OPENAI,
+                model="gpt-4-0125-preview",
+                temperature=0.0,
+            ),
+            CODE_REVIEW_AGENT_NAME: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20240620",
+                temperature=0.0,
+            ),
+            DESCRIBE_FILES_AGENT_NAME: AgentLLMConfig(
+                provider=LLMProvider.OPENAI,
+                model="gpt-4o-mini-2024-07-18",
+                temperature=0.0,
+            ),
+            PARSE_TASK_AGENT_NAME: AgentLLMConfig(
+                provider=LLMProvider.OPENAI,
+                model="gpt-4-0125-preview",
+                temperature=0.0,
+            ),
+            SPEC_WRITER_AGENT_NAME: AgentLLMConfig(
+                provider=LLMProvider.OPENAI,
+                model="gpt-4-0125-preview",
+                temperature=0.0,
             ),
             TASK_BREAKDOWN_AGENT_NAME: AgentLLMConfig(
                 provider=LLMProvider.ANTHROPIC,
                 model="claude-3-5-sonnet-20240620",
                 temperature=0.5,
             ),
-            SPEC_WRITER_AGENT_NAME: AgentLLMConfig(model="gpt-4-0125-preview", temperature=0.0),
-            GET_RELEVANT_FILES_AGENT_NAME: AgentLLMConfig(model="claude-3-5-sonnet-20240620", temperature=0.0),
+            TECH_LEAD_PLANNING: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20240620",
+                temperature=0.5,
+            ),
+            TROUBLESHOOTER_BUG_REPORT: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20240620",
+                temperature=0.5,
+            ),
+            TROUBLESHOOTER_GET_RUN_COMMAND: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20240620",
+                temperature=0.0,
+            ),
         }
     )
     prompt: PromptConfig = PromptConfig()
@@ -424,13 +465,40 @@ class ConfigLoader:
 loader = ConfigLoader()
 
 
+def adapt_for_bedrock(config: Config) -> Config:
+    """
+    Adapt the configuration for use with Bedrock.
+
+    :param config: Configuration to adapt.
+    :return: Adapted configuration.
+    """
+    if "anthropic" not in config.llm:
+        return config
+
+    if config.llm["anthropic"].base_url is None or "bedrock/anthropic" not in config.llm["anthropic"].base_url:
+        return config
+
+    replacement_map = {
+        "claude-3-5-sonnet-20240620": "us.anthropic.claude-3-5-sonnet-20240620-v1:0",
+        "claude-3-sonnet-20240229": "us.anthropic.claude-3-sonnet-20240229-v1:0",
+        "claude-3-haiku-20240307": "us.anthropic.claude-3-haiku-20240307-v1:0",
+        "claude-3-opus-20240229": "us.anthropic.claude-3-opus-20240229-v1:0",
+    }
+
+    for agent in config.agent:
+        if config.agent[agent].model in replacement_map:
+            config.agent[agent].model = replacement_map[config.agent[agent].model]
+
+    return config
+
+
 def get_config() -> Config:
     """
     Return current configuration.
 
     :return: Current configuration object.
     """
-    return loader.config
+    return adapt_for_bedrock(loader.config)
 
 
 __all__ = ["loader", "get_config"]

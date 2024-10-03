@@ -92,7 +92,7 @@ async def test_send_message():
 
         connected = await ui.start()
         assert connected is True
-        await ui.send_message("Hello from the other side ♫", source=src)
+        await ui.send_message("Hello from the other side ♫", source=src, project_state_id="123")
         await ui.stop()
 
     assert messages == [
@@ -100,11 +100,13 @@ async def test_send_message():
             "type": "verbose",
             "content": "Hello from the other side ♫",
             "category": "agent:product-owner",
+            "project_state_id": "123",
         },
         {
             "type": "exit",
             "content": None,
             "category": None,
+            "project_state_id": None,
         },
     ]
 
@@ -121,7 +123,7 @@ async def test_stream():
         assert connected is True
 
         for word in ["Hello", "world"]:
-            await ui.send_stream_chunk(word, source=src)
+            await ui.send_stream_chunk(word, source=src, project_state_id="123")
             await asyncio.sleep(0.01)
         await ui.stop()
 
@@ -130,16 +132,19 @@ async def test_stream():
             "type": "stream",
             "content": "Hello",
             "category": "agent:product-owner",
+            "project_state_id": "123",
         },
         {
             "type": "stream",
             "content": "world",
             "category": "agent:product-owner",
+            "project_state_id": "123",
         },
         {
             "type": "exit",
             "content": None,
             "category": None,
+            "project_state_id": None,
         },
     ]
 

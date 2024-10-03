@@ -1,21 +1,21 @@
-from typing import Optional
+import asyncio
+from typing import List, Optional, Union
 
 from core.agents.architect import Architect
 from core.agents.base import BaseAgent
 from core.agents.bug_hunter import BugHunter
 from core.agents.code_monkey import CodeMonkey
-from core.agents.code_reviewer import CodeReviewer
 from core.agents.developer import Developer
 from core.agents.error_handler import ErrorHandler
 from core.agents.executor import Executor
 from core.agents.external_docs import ExternalDocumentation
 from core.agents.human_input import HumanInput
 from core.agents.importer import Importer
+from core.agents.legacy_handler import LegacyHandler
 from core.agents.problem_solver import ProblemSolver
 from core.agents.response import AgentResponse, ResponseType
 from core.agents.spec_writer import SpecWriter
 from core.agents.task_completer import TaskCompleter
-from core.agents.task_reviewer import TaskReviewer
 from core.agents.tech_lead import TechLead
 from core.agents.tech_writer import TechnicalWriter
 from core.agents.troubleshooter import Troubleshooter
@@ -63,8 +63,19 @@ class Orchestrator(BaseAgent):
             await self.update_stats()
 
             agent = self.create_agent(response)
-            log.debug(f"Running agent {agent.__class__.__name__} (step {self.current_state.step_index})")
-            response = await agent.run()
+
+            # In case where agent is a list, run all agents in parallel.
+            # Only one agent type can be run in parallel at a time (for now). See handle_parallel_responses().
+            if isinstance(agent, list):
+                tasks = [single_agent.run() for single_agent in agent]
+                log.debug(
+                    f"Running agents {[a.__class__.__name__ for a in agent]} (step {self.current_state.step_index})"
+                )
+                responses = await asyncio.gather(*tasks)
+                response = self.handle_parallel_responses(agent[0], responses)
+            else:
+                log.debug(f"Running agent {agent.__class__.__name__} (step {self.current_state.step_index})")
+                response = await agent.run()
 
             if response.type == ResponseType.EXIT:
                 log.debug(f"Agent {agent.__class__.__name__} requested exit")
@@ -77,6 +88,31 @@ class Orchestrator(BaseAgent):
         # TODO: rollback changes to "next" so they aren't accidentally committed?
         return True
 
+    def handle_parallel_responses(self, agent: BaseAgent, responses: List[AgentResponse]) -> AgentResponse:
+        """
+        Handle responses from agents that were run in parallel.
+
+        This method is called when multiple agents are run in parallel, and it
+        should return a single response that represents the combined responses
+        of all agents.
+
+        :param agent: The original agent that was run in parallel.
+        :param responses: List of responses from all agents.
+        :return: Combined response.
+        """
+        response = AgentResponse.done(agent)
+        if isinstance(agent, CodeMonkey):
+            files = []
+            for single_response in responses:
+                if single_response.type == ResponseType.INPUT_REQUIRED:
+                    files += single_response.data.get("files", [])
+                    break
+            if files:
+                response = AgentResponse.input_required(agent, files)
+            return response
+        else:
+            raise ValueError(f"Unhandled parallel agent type: {agent.__class__.__name__}")
+
     async def offline_changes_check(self):
         """
         Check for changes outside Pythagora.
@@ -86,7 +122,7 @@ class Orchestrator(BaseAgent):
         """
 
         log.info("Checking for offline changes.")
-        modified_files = await self.state_manager.get_modified_files()
+        modified_files = await self.state_manager.get_modified_files_with_content()
 
         if self.state_manager.workspace_is_empty():
             # NOTE: this will currently get triggered on a new project, but will do
@@ -95,7 +131,7 @@ class Orchestrator(BaseAgent):
             await self.state_manager.restore_files()
         elif modified_files:
             await self.send_message(f"We found {len(modified_files)} new and/or modified files.")
-
+            await self.ui.send_modified_files(modified_files)
             hint = "".join(
                 [
                     "If you would like Pythagora to import those changes, click 'Yes'.\n",
@@ -161,23 +197,17 @@ class Orchestrator(BaseAgent):
 
         return import_files_response
 
-    def create_agent(self, prev_response: Optional[AgentResponse]) -> BaseAgent:
+    def create_agent(self, prev_response: Optional[AgentResponse]) -> Union[List[BaseAgent], BaseAgent]:
         state = self.current_state
 
         if prev_response:
             if prev_response.type in [ResponseType.CANCEL, ResponseType.ERROR]:
                 return ErrorHandler(self.state_manager, self.ui, prev_response=prev_response)
-            if prev_response.type == ResponseType.CODE_REVIEW:
-                return CodeReviewer(self.state_manager, self.ui, prev_response=prev_response)
-            if prev_response.type == ResponseType.CODE_REVIEW_FEEDBACK:
-                return CodeMonkey(self.state_manager, self.ui, prev_response=prev_response, step=state.current_step)
             if prev_response.type == ResponseType.DESCRIBE_FILES:
                 return CodeMonkey(self.state_manager, self.ui, prev_response=prev_response)
             if prev_response.type == ResponseType.INPUT_REQUIRED:
                 # FIXME: HumanInput should be on the whole time and intercept chat/interrupt
                 return HumanInput(self.state_manager, self.ui, prev_response=prev_response)
-            if prev_response.type == ResponseType.TASK_REVIEW_FEEDBACK:
-                return Developer(self.state_manager, self.ui, prev_response=prev_response)
             if prev_response.type == ResponseType.IMPORT_PROJECT:
                 return Importer(self.state_manager, self.ui, prev_response=prev_response)
             if prev_response.type == ResponseType.EXTERNAL_DOCS_REQUIRED:
@@ -212,10 +242,7 @@ class Orchestrator(BaseAgent):
             if current_task_status == TaskStatus.REVIEWED:
                 # User reviewed the task, call TechnicalWriter to see if documentation needs to be updated
                 return TechnicalWriter(self.state_manager, self.ui)
-            elif current_task_status == TaskStatus.DOCUMENTED:
-                # After documentation is done, call TechLead update the development plan (remaining tasks)
-                return TechLead(self.state_manager, self.ui)
-            elif current_task_status in [TaskStatus.EPIC_UPDATED, TaskStatus.SKIPPED]:
+            elif current_task_status in [TaskStatus.DOCUMENTED, TaskStatus.SKIPPED]:
                 # Task is fully done or skipped, call TaskCompleter to mark it as completed
                 return TaskCompleter(self.state_manager, self.ui)
 
@@ -232,6 +259,9 @@ class Orchestrator(BaseAgent):
             current_iteration_status = state.current_iteration["status"]
             if current_iteration_status == IterationStatus.HUNTING_FOR_BUG:
                 # Triggering the bug hunter to start the hunt
+                return BugHunter(self.state_manager, self.ui)
+            elif current_iteration_status == IterationStatus.START_PAIR_PROGRAMMING:
+                # Pythagora cannot solve the issue so we're starting pair programming
                 return BugHunter(self.state_manager, self.ui)
             elif current_iteration_status == IterationStatus.AWAITING_LOGGING:
                 # Get the developer to implement logs needed for debugging
@@ -261,16 +291,20 @@ class Orchestrator(BaseAgent):
         # We have just finished the task, call Troubleshooter to ask the user to review
         return Troubleshooter(self.state_manager, self.ui)
 
-    def create_agent_for_step(self, step: dict) -> BaseAgent:
+    def create_agent_for_step(self, step: dict) -> Union[List[BaseAgent], BaseAgent]:
         step_type = step.get("type")
         if step_type == "save_file":
-            return CodeMonkey(self.state_manager, self.ui, step=step)
+            steps = self.current_state.get_steps_of_type("save_file")
+            parallel = []
+            for step in steps:
+                parallel.append(CodeMonkey(self.state_manager, self.ui, step=step))
+            return parallel
         elif step_type == "command":
             return self.executor.for_step(step)
         elif step_type == "human_intervention":
             return HumanInput(self.state_manager, self.ui, step=step)
         elif step_type == "review_task":
-            return TaskReviewer(self.state_manager, self.ui)
+            return LegacyHandler(self.state_manager, self.ui, data={"type": "review_task"})
         elif step_type == "create_readme":
             return TechnicalWriter(self.state_manager, self.ui)
         else:

@@ -1,1 +1,17 @@
 /* Placeholder for custom styles */
+body {
+    padding-bottom: 60px;
+}
+
+footer {
+    height: 40px;
+}
+
+nav.navbar {
+    padding: 10px 20px;
+}
+
+.pythagora-logo {
+    height: 20px;
+    margin-left: 5px;
+}

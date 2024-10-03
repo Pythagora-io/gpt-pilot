@@ -7,6 +7,7 @@ from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.mixins import IterationPromptMixin, RelevantFilesMixin
 from core.agents.response import AgentResponse
+from core.config import TROUBLESHOOTER_GET_RUN_COMMAND
 from core.db.models.file import File
 from core.db.models.project_state import IterationStatus, TaskStatus
 from core.llm.parser import JSONParser, OptionalCodeBlockParser
@@ -71,7 +72,10 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
             self.next_state.flag_tasks_as_modified()
             return AgentResponse.done(self)
         else:
-            await self.send_message("Here are instruction on how to test the app:\n\n" + user_instructions)
+            await self.send_message("Here are instructions on how to test the app:\n\n" + user_instructions)
+
+        await self.ui.stop_app()
+        await self.ui.send_test_instructions(user_instructions)
 
         # Developer sets iteration as "completed" when it generates the step breakdown, so we can't
         # use "current_iteration" here
@@ -90,7 +94,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         user_feedback_qa = None  # await self.generate_bug_report(run_command, user_instructions, user_feedback)
 
         if is_loop:
-            if last_iteration["alternative_solutions"]:
+            if last_iteration is not None and last_iteration.get("alternative_solutions"):
                 # If we already have alternative solutions, it means we were already in a loop.
                 return self.try_next_alternative_solution(user_feedback, user_feedback_qa)
             else:
@@ -161,11 +165,13 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
 
         await self.send_message("Figuring out how to run the app ...")
 
-        llm = self.get_llm()
+        llm = self.get_llm(TROUBLESHOOTER_GET_RUN_COMMAND)
         convo = self._get_task_convo().template("get_run_command")
 
         # Although the prompt is explicit about not using "```", LLM may still return it
         llm_response: str = await llm(convo, temperature=0, parser=OptionalCodeBlockParser())
+        if len(llm_response) < 5:
+            llm_response = ""
         self.next_state.run_command = llm_response
         return llm_response
 
@@ -216,11 +222,13 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         If "is_loop" is True, Pythagora is stuck in a loop and needs to consider alternative solutions.
 
         The last element in the tuple is the user feedback, which may be empty if the user provided no
-        feedback (eg. if they just clicked on "Continue" or "I'm stuck in a loop").
+        feedback (eg. if they just clicked on "Continue" or "Start Pair Programming").
         """
 
         bug_report = None
         change_description = None
+        hint = None
+
         is_loop = False
         should_iterate = True
 
@@ -231,9 +239,11 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         if run_command:
             await self.ui.send_run_command(run_command)
 
-        buttons = {"continue": "Everything works", "change": "I want to make a change", "bug": "There is an issue"}
-        if last_iteration:
-            buttons["loop"] = "I'm stuck in a loop"
+        buttons = {
+            "continue": "Everything works",
+            "change": "I want to make a change",
+            "bug": "There is an issue",
+        }
 
         user_response = await self.ask_question(
             test_message, buttons=buttons, default="continue", buttons_only=True, hint=hint
@@ -241,30 +251,17 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         if user_response.button == "continue" or user_response.cancelled:
             should_iterate = False
 
-        elif user_response.button == "loop":
-            await telemetry.trace_code_event(
-                "stuck-in-loop",
-                {
-                    "clicked": True,
-                    "task_index": self.current_state.tasks.index(self.current_state.current_task) + 1,
-                    "num_tasks": len(self.current_state.tasks),
-                    "num_epics": len(self.current_state.epics),
-                    "num_iterations": len(self.current_state.iterations),
-                    "num_steps": len(self.current_state.steps),
-                    "architecture": {
-                        "system_dependencies": self.current_state.specification.system_dependencies,
-                        "app_dependencies": self.current_state.specification.package_dependencies,
-                    },
-                },
-            )
-            is_loop = True
-
         elif user_response.button == "change":
-            user_description = await self.ask_question("Please describe the change you want to make (one at a time)")
+            user_description = await self.ask_question(
+                "Please describe the change you want to make to the project specification (one at a time)"
+            )
             change_description = user_description.text
 
         elif user_response.button == "bug":
-            user_description = await self.ask_question("Please describe the issue you found (one at a time)")
+            user_description = await self.ask_question(
+                "Please describe the issue you found (one at a time) and share any relevant server logs",
+                buttons={"copy_server_logs": "Copy Server Logs"},
+            )
             bug_report = user_description.text
 
         return should_iterate, is_loop, bug_report, change_description
@@ -304,7 +301,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         :return: Additional questions and answers to generate a better bug report.
         """
         additional_qa = []
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         convo = (
             AgentConvo(self)
             .template(

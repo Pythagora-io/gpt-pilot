@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse
+from core.config import TECH_LEAD_PLANNING
 from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
@@ -20,15 +21,17 @@ class Epic(BaseModel):
     description: str = Field(description=("Description of an epic."))
 
 
+class Task(BaseModel):
+    description: str = Field(description="Description of a task.")
+    testing_instructions: str = Field(description="Instructions for testing the task.")
+
+
 class DevelopmentPlan(BaseModel):
     plan: list[Epic] = Field(description="List of epics that need to be done to implement the entire plan.")
 
 
-class UpdatedDevelopmentPlan(BaseModel):
-    updated_current_epic: Epic = Field(
-        description="Updated description of what was implemented while working on the current epic."
-    )
-    plan: list[Epic] = Field(description="List of unfinished epics.")
+class EpicPlan(BaseModel):
+    plan: list[Task] = Field(description="List of tasks that need to be done to implement the entire epic.")
 
 
 class TechLead(BaseAgent):
@@ -36,10 +39,6 @@ class TechLead(BaseAgent):
     display_name = "Tech Lead"
 
     async def run(self) -> AgentResponse:
-        current_task_status = self.current_state.current_task.get("status") if self.current_state.current_task else None
-        if current_task_status and current_task_status == TaskStatus.DOCUMENTED:
-            return await self.update_epic()
-
         if len(self.current_state.epics) == 0:
             if self.current_state.specification.example_project:
                 self.plan_example_project()
@@ -52,7 +51,21 @@ class TechLead(BaseAgent):
         if self.current_state.specification.templates and not self.current_state.files:
             await self.apply_project_templates()
             self.next_state.action = "Apply project templates"
-            return AgentResponse.done(self)
+            await self.ui.send_epics_and_tasks(
+                self.next_state.current_epic["sub_epics"],
+                self.next_state.tasks,
+            )
+
+            inputs = []
+            for file in self.next_state.files:
+                input_required = self.state_manager.get_input_required(file.content.content)
+                if input_required:
+                    inputs += [{"file": file.path, "line": line} for line in input_required]
+
+            if inputs:
+                return AgentResponse.input_required(self, inputs)
+            else:
+                return AgentResponse.done(self)
 
         if self.current_state.current_epic:
             self.next_state.action = "Create a development plan"
@@ -61,7 +74,7 @@ class TechLead(BaseAgent):
             return await self.ask_for_new_feature()
 
     def create_initial_project_epic(self):
-        log.debug("Creating initial project epic")
+        log.debug("Creating initial project Epic")
         self.next_state.epics = [
             {
                 "id": uuid4().hex,
@@ -72,6 +85,7 @@ class TechLead(BaseAgent):
                 "summary": None,
                 "completed": False,
                 "complexity": self.current_state.specification.complexity,
+                "sub_epics": [],
             }
         ]
 
@@ -114,16 +128,20 @@ class TechLead(BaseAgent):
         if len(self.current_state.epics) > 2:
             await self.ui.send_message("Your new feature is complete!", source=success_source)
         else:
-            await self.ui.send_message("Your app is DONE!!! You can start using it right now!", source=success_source)
+            await self.ui.send_message("Your app is DONE! You can start using it right now!", source=success_source)
+
+        if self.current_state.run_command:
+            await self.ui.send_run_command(self.current_state.run_command)
 
         log.debug("Asking for new feature")
         response = await self.ask_question(
-            "Do you have a new feature to add to the project? Just write it here",
+            "Do you have a new feature to add to the project? Just write it here:",
             buttons={"continue": "continue", "end": "No, I'm done"},
-            allow_empty=True,
+            allow_empty=False,
         )
 
-        if response.cancelled or not response.text:
+        if response.button == "end" or response.cancelled or not response.text:
+            await self.ui.send_message("Thanks for using Pythagora!")
             return AgentResponse.exit(self)
 
         self.next_state.epics = self.current_state.epics + [
@@ -136,6 +154,7 @@ class TechLead(BaseAgent):
                 "summary": None,
                 "completed": False,
                 "complexity": None,  # Determined and defined in SpecWriter
+                "sub_epics": [],
             }
         ]
         # Orchestrator will rerun us to break down the new feature epic
@@ -144,9 +163,9 @@ class TechLead(BaseAgent):
 
     async def plan_epic(self, epic) -> AgentResponse:
         log.debug(f"Planning tasks for the epic: {epic['name']}")
-        await self.send_message("Starting to create the action plan for development ...")
+        await self.send_message("Creating the development plan ...")
 
-        llm = self.get_llm()
+        llm = self.get_llm(TECH_LEAD_PLANNING)
         convo = (
             AgentConvo(self)
             .template(
@@ -160,15 +179,70 @@ class TechLead(BaseAgent):
         )
 
         response: DevelopmentPlan = await llm(convo, parser=JSONParser(DevelopmentPlan))
-        self.next_state.tasks = self.current_state.tasks + [
-            {
-                "id": uuid4().hex,
-                "description": task.description,
-                "instructions": None,
-                "status": TaskStatus.TODO,
-            }
-            for task in response.plan
-        ]
+
+        convo.remove_last_x_messages(1)
+        formatted_tasks = [f"Epic #{index}: {task.description}" for index, task in enumerate(response.plan, start=1)]
+        tasks_string = "\n\n".join(formatted_tasks)
+        convo = convo.assistant(tasks_string)
+        llm = self.get_llm(TECH_LEAD_PLANNING)
+
+        if epic.get("source") == "feature" or epic.get("complexity") == "simple":
+            await self.send_message(f"Epic 1: {epic['name']}")
+            self.next_state.current_epic["sub_epics"] = [
+                {
+                    "id": 1,
+                    "description": epic["name"],
+                }
+            ]
+            await self.send_message("Creating tasks for this epic ...")
+            self.next_state.tasks = self.next_state.tasks + [
+                {
+                    "id": uuid4().hex,
+                    "description": task.description,
+                    "instructions": None,
+                    "pre_breakdown_testing_instructions": None,
+                    "status": TaskStatus.TODO,
+                    "sub_epic_id": 1,
+                }
+                for task in response.plan
+            ]
+            await self.ui.send_epics_and_tasks(
+                self.next_state.current_epic["sub_epics"],
+                self.next_state.tasks,
+            )
+        else:
+            self.next_state.current_epic["sub_epics"] = self.next_state.current_epic["sub_epics"] + [
+                {
+                    "id": sub_epic_number,
+                    "description": sub_epic.description,
+                }
+                for sub_epic_number, sub_epic in enumerate(response.plan, start=1)
+            ]
+            for sub_epic_number, sub_epic in enumerate(response.plan, start=1):
+                await self.send_message(f"Epic {sub_epic_number}: {sub_epic.description}")
+                convo = convo.template(
+                    "epic_breakdown", epic_number=sub_epic_number, epic_description=sub_epic.description
+                ).require_schema(EpicPlan)
+                await self.send_message("Creating tasks for this epic ...")
+                epic_plan: EpicPlan = await llm(convo, parser=JSONParser(EpicPlan))
+                self.next_state.tasks = self.next_state.tasks + [
+                    {
+                        "id": uuid4().hex,
+                        "description": task.description,
+                        "instructions": None,
+                        "pre_breakdown_testing_instructions": task.testing_instructions,
+                        "status": TaskStatus.TODO,
+                        "sub_epic_id": sub_epic_number,
+                    }
+                    for task in epic_plan.plan
+                ]
+                convo.remove_last_x_messages(2)
+
+            await self.ui.send_epics_and_tasks(
+                self.next_state.current_epic["sub_epics"],
+                self.next_state.tasks,
+            )
+
         await telemetry.trace_code_event(
             "development-plan",
             {
@@ -176,55 +250,6 @@ class TechLead(BaseAgent):
                 "num_epics": len(self.current_state.epics),
             },
         )
-        return AgentResponse.done(self)
-
-    async def update_epic(self) -> AgentResponse:
-        """
-        Update the development plan for the current epic.
-        """
-        epic = self.current_state.current_epic
-        self.next_state.set_current_task_status(TaskStatus.EPIC_UPDATED)
-
-        if len(self.next_state.unfinished_tasks) == 1 or not self.current_state.iterations:
-            # Current task is still "unfinished" at this point, so if it's last task, there's nothing to update
-            return AgentResponse.done(self)
-
-        finished_tasks = [task for task in self.next_state.tasks if task["status"] == TaskStatus.DONE]
-        finished_tasks.append(self.next_state.current_task)
-
-        log.debug(f"Updating development plan for {epic['name']}")
-        await self.send_message("Updating development plan ...")
-
-        llm = self.get_llm()
-        convo = (
-            AgentConvo(self)
-            .template(
-                "update_plan",
-                finished_tasks=finished_tasks,
-                task_type=self.current_state.current_epic.get("source", "app"),
-                modified_files=[f for f in self.current_state.files if f.path in self.current_state.modified_files],
-            )
-            .require_schema(UpdatedDevelopmentPlan)
-        )
-
-        response: UpdatedDevelopmentPlan = await llm(
-            convo,
-            parser=JSONParser(UpdatedDevelopmentPlan),
-            temperature=0,
-        )
-        log.debug(f"Reworded last task as: {response.updated_current_epic.description}")
-        finished_tasks[-1]["description"] = response.updated_current_epic.description
-
-        self.next_state.tasks = finished_tasks + [
-            {
-                "id": uuid4().hex,
-                "description": task.description,
-                "instructions": None,
-                "status": TaskStatus.TODO,
-            }
-            for task in response.plan
-        ]
-        log.debug(f"Updated development plan for {epic['name']}, {len(response.plan)} tasks remaining")
         return AgentResponse.done(self)
 
     def plan_example_project(self):
@@ -238,6 +263,12 @@ class TechLead(BaseAgent):
                 "description": example["description"],
                 "completed": False,
                 "complexity": example["complexity"],
+                "sub_epics": [
+                    {
+                        "id": 1,
+                        "description": "Single Epic Example",
+                    }
+                ],
             }
         ]
         self.next_state.tasks = example["plan"]

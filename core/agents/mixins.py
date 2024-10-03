@@ -1,21 +1,40 @@
-from typing import Optional
+from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
 
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse
-from core.config import GET_RELEVANT_FILES_AGENT_NAME
+from core.config import GET_RELEVANT_FILES_AGENT_NAME, TROUBLESHOOTER_BUG_REPORT
 from core.llm.parser import JSONParser
 from core.log import get_logger
 
 log = get_logger(__name__)
 
 
+class ReadFilesAction(BaseModel):
+    read_files: Optional[List[str]] = Field(
+        description="List of files you want to read. All listed files must be in the project."
+    )
+
+
+class AddFilesAction(BaseModel):
+    add_files: Optional[List[str]] = Field(
+        description="List of files you want to add to the list of relevant files. All listed files must be in the project. You must read files before adding them."
+    )
+
+
+class RemoveFilesAction(BaseModel):
+    remove_files: Optional[List[str]] = Field(
+        description="List of files you want to remove from the list of relevant files. All listed files must be in the relevant files list."
+    )
+
+
+class DoneBooleanAction(BaseModel):
+    done: Optional[bool] = Field(description="Boolean flag to indicate that you are done creating breakdown.")
+
+
 class RelevantFiles(BaseModel):
-    read_files: list[str] = Field(description="List of files you want to read.")
-    add_files: list[str] = Field(description="List of files you want to add to the list of relevant files.")
-    remove_files: list[str] = Field(description="List of files you want to remove from the list of relevant files.")
-    done: bool = Field(description="Boolean flag to indicate that you are done selecting relevant files.")
+    action: Union[ReadFilesAction, AddFilesAction, RemoveFilesAction, DoneBooleanAction]
 
 
 class IterationPromptMixin:
@@ -42,7 +61,7 @@ class IterationPromptMixin:
         :param bug_hunting_cycles: Data about logs that need to be added to the code (optional).
         :return: The generated solution to the problem.
         """
-        llm = self.get_llm()
+        llm = self.get_llm(TROUBLESHOOTER_BUG_REPORT, stream_output=True)
         convo = AgentConvo(self).template(
             "iteration",
             user_feedback=user_feedback,
@@ -63,8 +82,6 @@ class RelevantFilesMixin:
         self, user_feedback: Optional[str] = None, solution_description: Optional[str] = None
     ) -> AgentResponse:
         log.debug("Getting relevant files for the current task")
-        await self.send_message("Figuring out which project files are relevant for the next task ...")
-
         done = False
         relevant_files = set()
         llm = self.get_llm(GET_RELEVANT_FILES_AGENT_NAME)
@@ -81,25 +98,26 @@ class RelevantFilesMixin:
 
         while not done and len(convo.messages) < 13:
             llm_response: RelevantFiles = await llm(convo, parser=JSONParser(RelevantFiles), temperature=0)
+            action = llm_response.action
 
             # Check if there are files to add to the list
-            if llm_response.add_files:
+            if getattr(action, "add_files", None):
                 # Add only the files from add_files that are not already in relevant_files
-                relevant_files.update(file for file in llm_response.add_files if file not in relevant_files)
+                relevant_files.update(file for file in action.add_files if file not in relevant_files)
 
             # Check if there are files to remove from the list
-            if llm_response.remove_files:
+            if getattr(action, "remove_files", None):
                 # Remove files from relevant_files that are in remove_files
-                relevant_files.difference_update(llm_response.remove_files)
+                relevant_files.difference_update(action.remove_files)
 
-            read_files = [file for file in self.current_state.files if file.path in llm_response.read_files]
+            read_files = [file for file in self.current_state.files if file.path in getattr(action, "read_files", [])]
 
             convo.remove_last_x_messages(1)
             convo.assistant(llm_response.original_response)
             convo.template("filter_files_loop", read_files=read_files, relevant_files=relevant_files).require_schema(
                 RelevantFiles
             )
-            done = llm_response.done
+            done = getattr(action, "done", False)
 
         existing_files = {file.path for file in self.current_state.files}
         relevant_files = [path for path in relevant_files if path in existing_files]

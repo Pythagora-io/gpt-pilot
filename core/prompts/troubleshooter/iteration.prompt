@@ -21,6 +21,14 @@ A part of the app is already finished.
 
 {% include "partials/user_feedback.prompt" %}
 
+{% if state.current_task.test_instructions is defined %}
+User was testing the current implementation of the app when they requested some changes to the app. These are the testing instructions:
+```
+{{ state.current_task.test_instructions }}
+```
+{% endif %}
+
+
 {% if next_solution_to_try is not none %}
 Focus on solving this issue in the following way:
 ```
@@ -28,12 +36,10 @@ Focus on solving this issue in the following way:
 ```
 {% endif %}
 {% include "partials/doc_snippets.prompt" %}
-Now, you have to debug this issue and comply with the additional user feedback.
+Now, tell me how can we implement the changes that the user requested. Think step by step and explain each change you want to make and write code snippets that you want to change.
 
 **IMPORTANT**
 Think about all information provided. Your job is to look at big picture by analysing all files to find where the issue is.
-Don't reply with any code, your thoughts or breakdown of the issue. Respond only with description of solution, explaining what should be steps in solving the issue.
-Create as little steps as possible to fix the issue. Each step should describe, using sentences and not code, what changes are needed in specific file or describe command that needs to be executed to continue working on the issue.
 When there are multiple things that have to be done in one file write everything as one step and don't split it in multiple steps.
 You can count that the environment is set up previously and packages listed in files are installed so tell me only commands needed for installation of new dependencies, if there are any.
 

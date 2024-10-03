@@ -1,6 +1,11 @@
+import asyncio
 import os.path
+import traceback
+from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
+
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from core.config import FileSystemType, get_config
 from core.db.models import Branch, ExecLog, File, FileContent, LLMRequest, Project, ProjectState, UserInput
@@ -43,6 +48,18 @@ class StateManager:
         self.current_state = None
         self.next_state = None
         self.current_session = None
+        self.blockDb = False
+
+    @asynccontextmanager
+    async def db_blocker(self):
+        while self.blockDb:
+            await asyncio.sleep(0.1)  # Wait if blocked
+
+        try:
+            self.blockDb = True  # Set the block
+            yield
+        finally:
+            self.blockDb = False  # Unset the block
 
     async def list_projects(self) -> list[Project]:
         """
@@ -179,6 +196,10 @@ class StateManager:
         )
 
         if self.current_state.current_epic and self.current_state.current_task and self.ui:
+            await self.ui.send_epics_and_tasks(
+                self.current_state.current_epic.get("sub_epics"),
+                self.current_state.tasks,
+            )
             source = self.current_state.current_epic.get("source", "app")
             await self.ui.send_task_progress(
                 self.current_state.tasks.index(self.current_state.current_task) + 1,
@@ -192,6 +213,10 @@ class StateManager:
 
         return self.current_state
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
+    async def commit_with_retry(self):
+        await self.current_session.commit()
+
     async def commit(self) -> ProjectState:
         """
         Commit the new project state to the database.
@@ -201,35 +226,43 @@ class StateManager:
 
         :return: The committed state.
         """
-        if self.next_state is None:
-            raise ValueError("No state to commit.")
-        if self.current_session is None:
-            raise ValueError("No database session open.")
+        try:
+            if self.next_state is None:
+                raise ValueError("No state to commit.")
+            if self.current_session is None:
+                raise ValueError("No database session open.")
 
-        await self.current_session.commit()
+            log.debug("Committing session")
+            await self.commit_with_retry()
+            log.debug("Session committed successfully")
 
-        # Having a shorter-lived sessions is considered a good practice in SQLAlchemy,
-        # so we close and recreate the session for each state. This uses db
-        # connection from a connection pool, so it is fast. Note that SQLite uses
-        # no connection pool by default because it's all in-process so it's fast anyway.
-        self.current_session.expunge_all()
-        await self.session_manager.close()
-        self.current_session = await self.session_manager.start()
+            # Having a shorter-lived sessions is considered a good practice in SQLAlchemy,
+            # so we close and recreate the session for each state. This uses db
+            # connection from a connection pool, so it is fast. Note that SQLite uses
+            # no connection pool by default because it's all in-process so it's fast anyway.
+            self.current_session.expunge_all()
+            await self.session_manager.close()
+            self.current_session = await self.session_manager.start()
 
-        self.current_state = self.next_state
-        self.current_session.add(self.next_state)
-        self.next_state = await self.current_state.create_next_state()
+            self.current_state = self.next_state
+            self.current_session.add(self.next_state)
+            self.next_state = await self.current_state.create_next_state()
 
-        # After the next_state becomes the current_state, we need to load
-        # the FileContent model, which was previously loaded by the load_project(),
-        # but is not populated by the `create_next_state()`
-        for f in self.current_state.files:
-            await f.awaitable_attrs.content
+            # After the next_state becomes the current_state, we need to load
+            # the FileContent model, which was previously loaded by the load_project(),
+            # but is not populated by the `create_next_state()`
+            for f in self.current_state.files:
+                await f.awaitable_attrs.content
 
-        telemetry.inc("num_steps")
+            telemetry.inc("num_steps")
 
-        # FIXME: write a test to verify files (and file content) are preloaded
-        return self.current_state
+            # FIXME: write a test to verify files (and file content) are preloaded
+            return self.current_state
+
+        except Exception as e:
+            log.error(f"Error during commit: {str(e)}")
+            log.error(traceback.format_exc())
+            raise
 
     async def rollback(self):
         """
@@ -253,12 +286,18 @@ class StateManager:
 
         :param request_log: The request log to log.
         """
-        telemetry.record_llm_request(
-            request_log.prompt_tokens + request_log.completion_tokens,
-            request_log.duration,
-            request_log.status != LLMRequestStatus.SUCCESS,
-        )
-        LLMRequest.from_request_log(self.current_state, agent, request_log)
+        async with self.db_blocker():
+            try:
+                telemetry.record_llm_request(
+                    request_log.prompt_tokens + request_log.completion_tokens,
+                    request_log.duration,
+                    request_log.status != LLMRequestStatus.SUCCESS,
+                )
+                LLMRequest.from_request_log(self.current_state, agent, request_log)
+
+            except Exception as e:
+                if self.ui:
+                    await self.ui.send_message(f"An error occurred: {e}")
 
     async def log_user_input(self, question: str, response: UserInputData):
         """
@@ -350,7 +389,8 @@ class StateManager:
         self.file_system.save(path, content)
 
         hash = self.file_system.hash_string(content)
-        file_content = await FileContent.store(self.current_session, hash, content)
+        async with self.db_blocker():
+            file_content = await FileContent.store(self.current_session, hash, content)
 
         file = self.next_state.save_file(path, file_content)
         if self.ui and not from_template:
@@ -493,6 +533,50 @@ class StateManager:
         for db_file in self.current_state.files:
             if db_file.path not in files_in_workspace:
                 modified_files.append(db_file.path)
+
+        return modified_files
+
+    async def get_modified_files_with_content(self) -> list[dict]:
+        """
+        Return a list of new or modified files from the file system,
+        including their paths, old content, and new content.
+
+        :return: List of dictionaries containing paths, old content,
+                and new content for new or modified files.
+        """
+
+        modified_files = []
+        files_in_workspace = self.file_system.list()
+
+        for path in files_in_workspace:
+            content = self.file_system.read(path)
+            saved_file = self.current_state.get_file_by_path(path)
+
+            # If there's a saved file, serialize its content; otherwise, set it to None
+            saved_file_content = saved_file.content.content if saved_file else None
+
+            if saved_file_content == content:
+                continue
+
+            modified_files.append(
+                {
+                    "path": path,
+                    "file_old": saved_file_content,  # Serialized content
+                    "file_new": content,
+                }
+            )
+
+        # Handle files removed from disk
+        await self.current_state.awaitable_attrs.files
+        for db_file in self.current_state.files:
+            if db_file.path not in files_in_workspace:
+                modified_files.append(
+                    {
+                        "path": db_file.path,
+                        "file_old": db_file.content.content,  # Serialized content
+                        "file_new": "",  # Empty string as the file is removed
+                    }
+                )
 
         return modified_files
 

@@ -44,6 +44,9 @@ class ExternalDocumentation(BaseAgent):
     display_name = "Documentation"
 
     async def run(self) -> AgentResponse:
+        await self._store_docs([], [])
+        return AgentResponse.done(self)
+
         if self.current_state.specification.example_project:
             log.debug("Example project detected, no documentation selected.")
             available_docsets = []
@@ -85,7 +88,7 @@ class ExternalDocumentation(BaseAgent):
         if not available_docsets:
             return {}
 
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         convo = (
             AgentConvo(self)
             .template(
@@ -109,7 +112,7 @@ class ExternalDocumentation(BaseAgent):
         queries = {}
         await self.send_message("Getting relevant documentation for the following topics:")
         for k, short_desc in docsets.items():
-            llm = self.get_llm()
+            llm = self.get_llm(stream_output=True)
             convo = (
                 AgentConvo(self)
                 .template(

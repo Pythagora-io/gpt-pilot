@@ -28,17 +28,18 @@ class BaseAgent:
         step: Optional[Any] = None,
         prev_response: Optional["AgentResponse"] = None,
         process_manager: Optional["ProcessManager"] = None,
+        data: Optional[Any] = None,
     ):
         """
         Create a new agent.
         """
         self.ui_source = AgentSource(self.display_name, self.agent_type)
         self.ui = ui
-        self.stream_output = True
         self.state_manager = state_manager
         self.process_manager = process_manager
         self.prev_response = prev_response
         self.step = step
+        self.data = data
 
     @property
     def current_state(self) -> ProjectState:
@@ -55,11 +56,11 @@ class BaseAgent:
         Send a message to the user.
 
         Convenience method, uses `UIBase.send_message()` to send the message,
-        setting the correct source.
+        setting the correct source and project state ID.
 
         :param message: Message to send.
         """
-        await self.ui.send_message(message + "\n", source=self.ui_source)
+        await self.ui.send_message(message + "\n", source=self.ui_source, project_state_id=str(self.current_state.id))
 
     async def ask_question(
         self,
@@ -76,7 +77,7 @@ class BaseAgent:
         Ask a question to the user and return the response.
 
         Convenience method, uses `UIBase.ask_question()` to
-        ask the question, setting the correct source and
+        ask the question, setting the correct source and project state ID, and
         logging the question/response.
 
         :param question: Question to ask.
@@ -97,6 +98,7 @@ class BaseAgent:
             hint=hint,
             initial_text=initial_text,
             source=self.ui_source,
+            project_state_id=str(self.current_state.id),
         )
         await self.state_manager.log_user_input(question, response)
         return response
@@ -106,16 +108,14 @@ class BaseAgent:
         Handle streamed response from the LLM.
 
         Serves as a callback to `AgentBase.llm()` so it can stream the responses to the UI.
-        This can be turned on/off on a pe-request basis by setting `BaseAgent.stream_output`
-        to True or False.
 
         :param content: Response content.
         """
-        if self.stream_output:
-            await self.ui.send_stream_chunk(content, source=self.ui_source)
+
+        await self.ui.send_stream_chunk(content, source=self.ui_source, project_state_id=str(self.current_state.id))
 
         if content is None:
-            await self.ui.send_message("", source=self.ui_source)
+            await self.ui.send_message("", source=self.ui_source, project_state_id=str(self.current_state.id))
 
     async def error_handler(self, error: LLMError, message: Optional[str] = None) -> bool:
         """
@@ -150,7 +150,7 @@ class BaseAgent:
 
         return False
 
-    def get_llm(self, name=None) -> Callable:
+    def get_llm(self, name=None, stream_output=False) -> Callable:
         """
         Get a new instance of the agent-specific LLM client.
 
@@ -170,7 +170,8 @@ class BaseAgent:
 
         llm_config = config.llm_for_agent(name)
         client_class = BaseLLMClient.for_provider(llm_config.provider)
-        llm_client = client_class(llm_config, stream_handler=self.stream_handler, error_handler=self.error_handler)
+        stream_handler = self.stream_handler if stream_output else None
+        llm_client = client_class(llm_config, stream_handler=stream_handler, error_handler=self.error_handler)
 
         async def client(convo, **kwargs) -> Any:
             """

@@ -1,9 +1,18 @@
-const isAuthenticated = (req, res, next) => {
+const User = require('../../models/User');
+const isAuthenticated = async (req, res, next) => {
   if (req.session && req.session.userId) {
-    return next(); // User is authenticated, proceed to the next middleware/route handler
-  } else {
-    return res.status(401).send('You are not authenticated'); // User is not authenticated
+    try {
+      const user = await User.findById(req.session.userId);
+      if (user) {
+        req.user = user;
+        return next();
+      }
+    } catch (error) {
+      console.error('Error in authentication middleware:', error);
+      res.status(500).send('Error during authentication process');
+    }
   }
+  return res.status(401).send('You are not authenticated');
 };
 
 module.exports = {

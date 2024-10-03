@@ -168,7 +168,7 @@ class Architect(BaseAgent):
 
         await self.send_message("Picking technologies to use ...")
 
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         convo = (
             AgentConvo(self)
             .template(
@@ -247,11 +247,12 @@ class Architect(BaseAgent):
                     remedy = "If you would like to use it locally, please install it before proceeding."
                 await self.send_message(f"❌ {dep['name']} is not available. {remedy}")
                 await self.ask_question(
-                    f"Once you have installed {dep['name']}, please press Continue.",
-                    buttons={"continue": "Continue"},
+                    "",
+                    buttons={"continue": f"I've installed {dep['name']}"},
                     buttons_only=True,
                     default="continue",
                 )
+
             else:
                 await self.send_message(f"✅ {dep['name']} is available.")
 
@@ -271,7 +272,7 @@ class Architect(BaseAgent):
             # If template has no options, no need to ask LLM for anything
             return NoOptions()
 
-        llm = self.get_llm()
+        llm = self.get_llm(stream_output=True)
         convo = (
             AgentConvo(self)
             .template(

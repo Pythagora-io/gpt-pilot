@@ -24,20 +24,11 @@ class ResponseType(str, Enum):
     EXIT = "exit"
     """Pythagora should exit."""
 
-    CODE_REVIEW = "code-review"
-    """Agent is requesting a review of the created code."""
-
-    CODE_REVIEW_FEEDBACK = "code-review-feedback"
-    """Agent is providing feedback on the code review."""
-
     DESCRIBE_FILES = "describe-files"
     """Analysis of the files in the project is requested."""
 
     INPUT_REQUIRED = "input-required"
     """User needs to modify a line in the generated code."""
-
-    TASK_REVIEW_FEEDBACK = "task-review-feedback"
-    """Agent is providing feedback on the entire task."""
 
     IMPORT_PROJECT = "import-project"
     """User wants to import an existing project."""
@@ -83,62 +74,12 @@ class AgentResponse:
         return AgentResponse(type=ResponseType.EXIT, agent=agent)
 
     @staticmethod
-    def code_review(
-        agent: "BaseAgent",
-        path: str,
-        instructions: str,
-        old_content: str,
-        new_content: str,
-        attempt: int,
-    ) -> "AgentResponse":
-        return AgentResponse(
-            type=ResponseType.CODE_REVIEW,
-            agent=agent,
-            data={
-                "path": path,
-                "instructions": instructions,
-                "old_content": old_content,
-                "new_content": new_content,
-                "attempt": attempt,
-            },
-        )
-
-    @staticmethod
-    def code_review_feedback(
-        agent: "BaseAgent",
-        new_content: str,
-        approved_content: str,
-        feedback: str,
-        attempt: int,
-    ) -> "AgentResponse":
-        return AgentResponse(
-            type=ResponseType.CODE_REVIEW_FEEDBACK,
-            agent=agent,
-            data={
-                "new_content": new_content,
-                "approved_content": approved_content,
-                "feedback": feedback,
-                "attempt": attempt,
-            },
-        )
-
-    @staticmethod
     def describe_files(agent: "BaseAgent") -> "AgentResponse":
         return AgentResponse(type=ResponseType.DESCRIBE_FILES, agent=agent)
 
     @staticmethod
     def input_required(agent: "BaseAgent", files: list[dict[str, int]]) -> "AgentResponse":
         return AgentResponse(type=ResponseType.INPUT_REQUIRED, agent=agent, data={"files": files})
-
-    @staticmethod
-    def task_review_feedback(agent: "BaseAgent", feedback: str) -> "AgentResponse":
-        return AgentResponse(
-            type=ResponseType.TASK_REVIEW_FEEDBACK,
-            agent=agent,
-            data={
-                "feedback": feedback,
-            },
-        )
 
     @staticmethod
     def import_project(agent: "BaseAgent") -> "AgentResponse":

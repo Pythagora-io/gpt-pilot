@@ -41,8 +41,6 @@ class SpecWriter(BaseAgent):
             "Describe your app in as much detail as possible",
             allow_empty=False,
             buttons={
-                # FIXME: must be lowercase becase VSCode doesn't recognize it otherwise. Needs a fix in the extension
-                "continue": "continue",
                 "example": "Start an example project",
                 "import": "Import an existing project",
             },
@@ -55,11 +53,6 @@ class SpecWriter(BaseAgent):
 
         if response.button == "example":
             await self.prepare_example_project(DEFAULT_EXAMPLE_PROJECT)
-            return AgentResponse.done(self)
-
-        elif response.button == "continue":
-            # FIXME: Workaround for the fact that VSCode "continue" button does
-            # nothing but repeat the question. We reproduce this bug for bug here.
             return AgentResponse.done(self)
 
         user_description = response.text.strip()
@@ -98,11 +91,11 @@ class SpecWriter(BaseAgent):
         await self.send_message(
             f"Making the following changes to project specification:\n\n{feature_description}\n\nUpdated project specification:"
         )
-        llm = self.get_llm(SPEC_WRITER_AGENT_NAME)
+        llm = self.get_llm(SPEC_WRITER_AGENT_NAME, stream_output=True)
         convo = AgentConvo(self).template("add_new_feature", feature_description=feature_description)
         llm_response: str = await llm(convo, temperature=0, parser=StringParser())
         updated_spec = llm_response.strip()
-        await self.ui.generate_diff(self.current_state.specification.description, updated_spec)
+        await self.ui.generate_diff("project_specification", self.current_state.specification.description, updated_spec)
         user_response = await self.ask_question(
             "Do you accept these changes to the project specification?",
             buttons={"yes": "Yes", "no": "No"},
@@ -157,7 +150,7 @@ class SpecWriter(BaseAgent):
         )
         await self.send_message(msg)
 
-        llm = self.get_llm(SPEC_WRITER_AGENT_NAME)
+        llm = self.get_llm(SPEC_WRITER_AGENT_NAME, stream_output=True)
         convo = AgentConvo(self).template("ask_questions").user(spec)
         n_questions = 0
         n_answers = 0
@@ -165,25 +158,26 @@ class SpecWriter(BaseAgent):
         while True:
             response: str = await llm(convo)
             if len(response) > 500:
-                # The response is too long for it to be a question, assume it's the spec
+                # The response is too long for it to be a question, assume it's the updated spec
                 confirm = await self.ask_question(
                     (
-                        "Can we proceed with this project description? If so, just press ENTER. "
+                        "Can we proceed with this project description? If so, just press Continue. "
                         "Otherwise, please tell me what's missing or what you'd like to add."
                     ),
                     allow_empty=True,
-                    buttons={"continue": "continue"},
+                    buttons={"continue": "Continue"},
                 )
                 if confirm.cancelled or confirm.button == "continue" or confirm.text == "":
+                    updated_spec = response.strip()
                     await telemetry.trace_code_event(
                         "spec-writer-questions",
                         {
                             "num_questions": n_questions,
                             "num_answers": n_answers,
-                            "new_spec": spec,
+                            "new_spec": updated_spec,
                         },
                     )
-                    return spec
+                    return updated_spec
                 convo.user(confirm.text)
 
             else:
@@ -200,7 +194,7 @@ class SpecWriter(BaseAgent):
                         "Please output the spec now, without additional comments or questions."
                     )
                     response: str = await llm(convo)
-                    return response
+                    return response.strip()
 
                 n_answers += 1
                 convo.user(user_response.text)
@@ -212,4 +206,6 @@ class SpecWriter(BaseAgent):
         additional_info = llm_response.strip()
         if additional_info and len(additional_info) > 6:
             spec += "\n\nAdditional info/examples:\n\n" + additional_info
+            await self.send_message(f"\n\nAdditional info/examples:\n\n {additional_info}")
+
         return spec

@@ -1,0 +1,7 @@
+Tell me the most important logs that are relevant for this issue. For each log, tell me the the following:
+ 1. line in the code (eg. `print(...)`, `console.log(...)`, etc.) that generated the log
+ 2. what file is the log in (eg. `index.js`, `routes/users.js`, etc. - make sure to put the entire path like listed above)
+ 2. the current output of that log (make sure not to put the entire log output but maximum 5-10 lines of the output)
+ 3. the expected output of that log (also make sure to put maximum of 5-10 lines of the output)
+ 4. should the log be different from the current output or are the current and expected output the same
+ 5. a brief explanation of why the output is incorrect and what should be different here (use maximum 2-3 sentences)

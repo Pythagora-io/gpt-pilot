@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gpt-pilot"
-version = "0.2.13"
+version = "1.0.0"
 description = "Build complete apps using AI agents"
 authors = ["Senko Rasic <senko@pythagora.ai>"]
 license = "FSL-1.1-MIT"
@@ -39,6 +39,7 @@ alembic = "^1.13.1"
 python-dotenv = "^1.0.1"
 prompt-toolkit = "^3.0.45"
 jsonref = "^1.1.0"
+tenacity = "9.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.1.1"
