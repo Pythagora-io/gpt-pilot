@@ -395,6 +395,8 @@ class IPCClientUI(UIBase):
         )
 
     async def open_editor(self, file: str, line: Optional[int] = None):
+        if not line:
+            pass
         await self._send(
             MessageType.OPEN_FILE,
             content={
