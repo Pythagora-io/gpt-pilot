@@ -12,7 +12,7 @@ from core.log import get_logger
 from core.telemetry import telemetry
 from core.templates.example_project import EXAMPLE_PROJECTS
 from core.templates.registry import PROJECT_TEMPLATES
-from core.ui.base import ProjectStage, success_source
+from core.ui.base import ProjectStage, UISource, success_source
 
 log = get_logger(__name__)
 
@@ -206,12 +206,8 @@ class TechLead(BaseAgent):
                 }
                 for task in response.plan
             ]
-            await self.ui.send_epics_and_tasks(
-                self.next_state.current_epic["sub_epics"],
-                self.next_state.tasks,
-            )
         else:
-            self.next_state.current_epic["sub_epics"] = self.next_state.current_epic["sub_epics"] + [
+            self.next_state.current_epic["sub_epics"] = [
                 {
                     "id": sub_epic_number,
                     "description": sub_epic.description,
@@ -238,11 +234,32 @@ class TechLead(BaseAgent):
                 ]
                 convo.remove_last_x_messages(2)
 
-            await self.ui.send_epics_and_tasks(
-                self.next_state.current_epic["sub_epics"],
-                self.next_state.tasks,
-            )
+        await self.ui.send_message(
+            "Here is the full plan:",
+            source=UISource("Pythagora", "pythagora"),
+            project_state_id=str(self.current_state.id),
+        )
 
+        for sub_epic in self.next_state.current_epic["sub_epics"]:
+            await self.send_message(f"Epic {sub_epic['id']}: {sub_epic['description']}")
+            for task in self.next_state.tasks:
+                if task["sub_epic_id"] == sub_epic["id"]:
+                    await self.send_message(f"    - {task['description']}")
+
+        accept_plan = await self.ask_question(
+            "Do you accept the suggested plan?",
+            buttons={"yes": "Yes, the plan looks good", "regenerate": "Regenerate the plan"},
+            default="yes",
+            buttons_only=True,
+        )
+
+        if accept_plan.button == "regenerate":
+            return await self.plan_epic(epic)
+
+        await self.ui.send_epics_and_tasks(
+            self.next_state.current_epic["sub_epics"],
+            self.next_state.tasks,
+        )
         await telemetry.trace_code_event(
             "development-plan",
             {

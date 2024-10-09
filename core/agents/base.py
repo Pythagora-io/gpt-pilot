@@ -69,9 +69,10 @@ class BaseAgent:
         buttons: Optional[dict[str, str]] = None,
         default: Optional[str] = None,
         buttons_only: bool = False,
-        initial_text: Optional[str] = None,
         allow_empty: bool = False,
+        full_screen: Optional[bool] = False,
         hint: Optional[str] = None,
+        initial_text: Optional[str] = None,
     ) -> UserInput:
         """
         Ask a question to the user and return the response.
@@ -85,6 +86,7 @@ class BaseAgent:
         :param default: Default button to select.
         :param buttons_only: Only display buttons, no text input.
         :param allow_empty: Allow empty input.
+        :param full_screen: Show question full screen in extension.
         :param hint: Text to display in a popup as a hint to the question.
         :param initial_text: Initial text input.
         :return: User response.
@@ -95,6 +97,7 @@ class BaseAgent:
             default=default,
             buttons_only=buttons_only,
             allow_empty=allow_empty,
+            full_screen=full_screen,
             hint=hint,
             initial_text=initial_text,
             source=self.ui_source,

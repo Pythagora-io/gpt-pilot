@@ -53,6 +53,7 @@ async def test_ask_question():
         initial_text=None,
         source=agent.ui_source,
         project_state_id=str(agent.current_state.id),
+        full_screen=False,
     )
 
     state_manager.log_user_input.assert_awaited_once()

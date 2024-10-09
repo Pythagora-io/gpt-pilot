@@ -254,6 +254,7 @@ class IPCClientUI(UIBase):
         default: Optional[str] = None,
         buttons_only: bool = False,
         allow_empty: bool = False,
+        full_screen: Optional[bool] = False,
         hint: Optional[str] = None,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
@@ -278,11 +279,19 @@ class IPCClientUI(UIBase):
             buttons_str = "/".join(buttons.values())
             if buttons_only:
                 await self._send(
-                    MessageType.BUTTONS_ONLY, content=buttons_str, category=category, project_state_id=project_state_id
+                    MessageType.BUTTONS_ONLY,
+                    content=buttons_str,
+                    category=category,
+                    project_state_id=project_state_id,
+                    full_screen=full_screen,
                 )
             else:
                 await self._send(
-                    MessageType.BUTTONS, content=buttons_str, category=category, project_state_id=project_state_id
+                    MessageType.BUTTONS,
+                    content=buttons_str,
+                    category=category,
+                    project_state_id=project_state_id,
+                    full_screen=full_screen,
                 )
         if initial_text:
             # FIXME: add this to base and console and document it after merging with hint PR
