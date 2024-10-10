@@ -86,8 +86,8 @@ class Telemetry:
             "updated_prompt": None,
             # App complexity
             "is_complex_app": None,
-            # Optional template used for the project
-            "template": None,
+            # Optional templates used for the project
+            "templates": None,
             # Optional, example project selected by the user
             "example_project": None,
             # Optional user contact email
@@ -319,7 +319,7 @@ class Telemetry:
             "median_time": sorted(self.slow_requests)[n_slow // 2] if n_slow > 0 else None,
         }
 
-    async def send(self, event: str = "pilot-telemetry"):
+    async def send(self, event: str = "pythagora-core-telemetry"):
         """
         Send telemetry data to the phone-home endpoint.
 
