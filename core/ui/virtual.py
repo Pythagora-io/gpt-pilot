@@ -65,6 +65,7 @@ class VirtualUI(UIBase):
         default: Optional[str] = None,
         buttons_only: bool = False,
         allow_empty: bool = False,
+        full_screen: Optional[bool] = False,
         hint: Optional[str] = None,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,

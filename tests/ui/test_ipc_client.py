@@ -101,12 +101,14 @@ async def test_send_message():
             "content": "Hello from the other side ♫",
             "category": "agent:product-owner",
             "project_state_id": "123",
+            "full_screen": False,
         },
         {
             "type": "exit",
             "content": None,
             "category": None,
             "project_state_id": None,
+            "full_screen": False,
         },
     ]
 
@@ -133,18 +135,21 @@ async def test_stream():
             "content": "Hello",
             "category": "agent:product-owner",
             "project_state_id": "123",
+            "full_screen": False,
         },
         {
             "type": "stream",
             "content": "world",
             "category": "agent:product-owner",
             "project_state_id": "123",
+            "full_screen": False,
         },
         {
             "type": "exit",
             "content": None,
             "category": None,
             "project_state_id": None,
+            "full_screen": False,
         },
     ]
 

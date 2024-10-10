@@ -142,6 +142,40 @@ async def start_new_project(sm: StateManager, ui: UIBase) -> bool:
     :param ui: User interface.
     :return: True if the project was created successfully, False otherwise.
     """
+
+    stack = await ui.ask_question(
+        "What do you want to use to build your app?",
+        allow_empty=False,
+        buttons={"node": "Node.js", "other": "Other (coming soon)"},
+        buttons_only=True,
+        source=pythagora_source,
+        full_screen=True,
+    )
+
+    if stack.button == "other":
+        language = await ui.ask_question(
+            "What language you want to use?",
+            allow_empty=False,
+            source=pythagora_source,
+            full_screen=True,
+        )
+        await telemetry.trace_code_event(
+            "stack-choice-other",
+            {"language": language.text},
+        )
+        await ui.send_message("Thank you for submitting your request to support other languages.")
+        return False
+    elif stack.button == "node":
+        await telemetry.trace_code_event(
+            "stack-choice",
+            {"language": "node"},
+        )
+    elif stack.button == "python":
+        await telemetry.trace_code_event(
+            "stack-choice",
+            {"language": "python"},
+        )
+
     while True:
         try:
             user_input = await ui.ask_question(

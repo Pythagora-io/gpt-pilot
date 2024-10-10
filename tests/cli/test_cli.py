@@ -314,7 +314,7 @@ async def test_main(mock_Orchestrator, mock_llm_check, args, run_orchestrator, r
     assert success is retval
 
     if run_orchestrator:
-        ui.ask_question.assert_called_once()
+        assert ui.ask_question.call_count == 2
         mock_Orchestrator.assert_called_once()
         mock_orca.run.assert_awaited_once_with()
 

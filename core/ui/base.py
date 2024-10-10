@@ -163,6 +163,7 @@ class UIBase:
         default: Optional[str] = None,
         buttons_only: bool = False,
         allow_empty: bool = False,
+        full_screen: Optional[bool] = False,
         hint: Optional[str] = None,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
@@ -178,11 +179,15 @@ class UIBase:
         with the selected button or text. If the user cancels
         the input, the `cancelled` attribute should be set to True.
 
+        :param project_state_id: Current project state id.
+        :param initial_text: Placeholder for answer in extension.
+        :param hint: Hint for question.
         :param question: Question to ask.
         :param buttons: Buttons to display (if any).
         :param default: Default value (if user provides no input).
         :param buttons_only: Whether to only show buttons (disallow custom text).
         :param allow_empty: Whether to allow empty input.
+        :param full_screen: Ask question in full screen (IPC).
         :param source: Source of the question (if any).
         :return: User input.
         """
