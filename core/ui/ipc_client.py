@@ -66,6 +66,7 @@ class Message(BaseModel):
 
     type: MessageType
     category: Optional[str] = None
+    full_screen: Optional[bool] = False
     project_state_id: Optional[str] = None
     content: Union[str, dict, None] = None
 
