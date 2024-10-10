@@ -186,6 +186,7 @@ class Architect(BaseAgent):
         spec.templates = {t.name: t.options_dict for t in templates.values()}
         spec.system_dependencies = [d.model_dump() for d in arch.system_dependencies]
         spec.package_dependencies = [d.model_dump() for d in arch.package_dependencies]
+        telemetry.set("architecture", arch)
 
     async def check_compatibility(self, arch: Architecture) -> bool:
         warn_system_deps = [dep.name for dep in arch.system_dependencies if dep.name.lower() in WARN_SYSTEM_DEPS]

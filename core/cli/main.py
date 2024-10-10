@@ -1,4 +1,6 @@
 import asyncio
+import atexit
+import signal
 import sys
 from argparse import Namespace
 from asyncio import run
@@ -15,6 +17,21 @@ from core.telemetry import telemetry
 from core.ui.base import UIBase, UIClosedError, UserInput, pythagora_source
 
 log = get_logger(__name__)
+
+
+telemetry_sent = False
+
+
+async def cleanup(ui: UIBase):
+    global telemetry_sent
+    if not telemetry_sent:
+        await telemetry.send()
+        telemetry_sent = True
+    await ui.stop()
+
+
+def sync_cleanup(ui: UIBase):
+    asyncio.run(cleanup(ui))
 
 
 async def run_project(sm: StateManager, ui: UIBase) -> bool:
@@ -194,6 +211,7 @@ async def async_main(
     :param args: Command-line arguments.
     :return: True if the application ran successfully, False otherwise.
     """
+    global telemetry_sent
 
     if args.list:
         await list_projects(db)
@@ -223,9 +241,23 @@ async def async_main(
         return False
 
     telemetry.start()
-    success = await run_pythagora_session(sm, ui, args)
-    await telemetry.send()
-    await ui.stop()
+
+    # Set up signal handlers
+    def signal_handler(sig, frame):
+        if not telemetry_sent:
+            sync_cleanup(ui)
+        sys.exit(0)
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        signal.signal(sig, signal_handler)
+
+    # Register the cleanup function
+    atexit.register(sync_cleanup, ui)
+
+    try:
+        success = await run_pythagora_session(sm, ui, args)
+    finally:
+        await cleanup(ui)
 
     return success
 
