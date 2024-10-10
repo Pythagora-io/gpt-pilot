@@ -147,7 +147,7 @@ async def test_send_enabled_and_successful(mock_settings, mock_getenv, mock_http
 
     expected = {
         "pathId": "test-id",
-        "event": "pilot-telemetry",
+        "event": "pythagora-core-telemetry",
         "data": telemetry.data,
     }
     mock_httpx_post.assert_awaited_once_with("test-endpoint", json=expected)
@@ -167,7 +167,7 @@ async def test_send_enabled_but_post_fails(mock_settings, mock_getenv, mock_http
 
     expected = {
         "pathId": "test-id",
-        "event": "pilot-telemetry",
+        "event": "pythagora-core-telemetry",
         "data": telemetry.data,
     }
     mock_httpx_post.assert_awaited_once_with(telemetry.endpoint, json=expected)

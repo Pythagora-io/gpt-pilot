@@ -9,7 +9,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 
 from core.config import FileSystemType, get_config
 from core.db.models import Branch, ExecLog, File, FileContent, LLMRequest, Project, ProjectState, UserInput
-from core.db.models.specification import Specification
+from core.db.models.specification import Complexity, Specification
 from core.db.session import SessionManager
 from core.disk.ignore import IgnoreMatcher
 from core.disk.vfs import LocalDiskVFS, MemoryVFS, VirtualFileSystem
@@ -136,7 +136,7 @@ class StateManager:
 
         The returned ProjectState will have branch and branch.project
         relationships preloaded. All other relationships must be
-        excplicitly loaded using ProjectState.awaitable_attrs or
+        explicitly loaded using ProjectState.awaitable_attrs or
         AsyncSession.refresh.
 
         :param project_id: Project ID (keyword-only, optional).
@@ -210,6 +210,17 @@ class StateManager:
                 self.current_state.get_source_index(source),
                 self.current_state.tasks,
             )
+
+        telemetry.set(
+            "architecture",
+            {
+                "system_dependencies": self.current_state.specification.system_dependencies,
+                "package_dependencies": self.current_state.specification.package_dependencies,
+            },
+        )
+        telemetry.set("example_project", self.current_state.specification.example_project)
+        telemetry.set("is_complex_app", self.current_state.specification.complexity != Complexity.SIMPLE)
+        telemetry.set("templates", self.current_state.specification.templates)
 
         return self.current_state
 
