@@ -234,17 +234,16 @@ class TechLead(BaseAgent):
                 ]
                 convo.remove_last_x_messages(2)
 
+        await self.ui.send_epics_and_tasks(
+            self.next_state.current_epic["sub_epics"],
+            self.next_state.tasks,
+        )
+
         await self.ui.send_message(
-            "Here is the full plan:",
+            "Open your Progress tab and check out the full plan.",
             source=UISource("Pythagora", "pythagora"),
             project_state_id=str(self.current_state.id),
         )
-
-        for sub_epic in self.next_state.current_epic["sub_epics"]:
-            await self.send_message(f"Epic {sub_epic['id']}: {sub_epic['description']}")
-            for task in self.next_state.tasks:
-                if task["sub_epic_id"] == sub_epic["id"]:
-                    await self.send_message(f"    - {task['description']}")
 
         accept_plan = await self.ask_question(
             "Do you accept the suggested plan?",
@@ -257,10 +256,6 @@ class TechLead(BaseAgent):
             self.next_state.tasks = []
             return await self.plan_epic(epic)
 
-        await self.ui.send_epics_and_tasks(
-            self.next_state.current_epic["sub_epics"],
-            self.next_state.tasks,
-        )
         await telemetry.trace_code_event(
             "development-plan",
             {

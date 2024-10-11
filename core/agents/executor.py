@@ -87,6 +87,7 @@ class Executor(BaseAgent):
             buttons={"yes": "Yes", "no": "No"},
             default="yes",
             buttons_only=False,
+            initial_text=cmd,
         )
         if confirm.button == "no":
             log.info(f"Skipping command execution of `{cmd}` (requested by user)")
