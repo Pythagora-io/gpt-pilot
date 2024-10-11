@@ -254,6 +254,7 @@ class TechLead(BaseAgent):
         )
 
         if accept_plan.button == "regenerate":
+            self.next_state.tasks = []
             return await self.plan_epic(epic)
 
         await self.ui.send_epics_and_tasks(
