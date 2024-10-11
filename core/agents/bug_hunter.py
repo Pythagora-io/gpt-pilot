@@ -1,9 +1,11 @@
+import json
 from enum import Enum
 
 from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
+from core.agents.mixins import TestSteps
 from core.agents.response import AgentResponse
 from core.config import CHECK_LOGS_AGENT_NAME, magic_words
 from core.db.models.project_state import IterationStatus
@@ -63,17 +65,24 @@ class BugHunter(BaseAgent):
             return await self.start_pair_programming()
 
     async def get_bug_reproduction_instructions(self):
-        llm = self.get_llm(stream_output=True)
-        convo = AgentConvo(self).template(
-            "get_bug_reproduction_instructions",
-            current_task=self.current_state.current_task,
-            user_feedback=self.current_state.current_iteration["user_feedback"],
-            user_feedback_qa=self.current_state.current_iteration["user_feedback_qa"],
-            docs=self.current_state.docs,
-            next_solution_to_try=None,
+        await self.send_message("Finding a way to reproduce the bug ...")
+        llm = self.get_llm()
+        convo = (
+            AgentConvo(self)
+            .template(
+                "get_bug_reproduction_instructions",
+                current_task=self.current_state.current_task,
+                user_feedback=self.current_state.current_iteration["user_feedback"],
+                user_feedback_qa=self.current_state.current_iteration["user_feedback_qa"],
+                docs=self.current_state.docs,
+                next_solution_to_try=None,
+            )
+            .require_schema(TestSteps)
         )
-        bug_reproduction_instructions = await llm(convo, temperature=0)
-        self.next_state.current_iteration["bug_reproduction_description"] = bug_reproduction_instructions
+        bug_reproduction_instructions: TestSteps = await llm(convo, parser=JSONParser(TestSteps), temperature=0)
+        self.next_state.current_iteration["bug_reproduction_description"] = json.dumps(
+            [test.dict() for test in bug_reproduction_instructions.steps]
+        )
 
     async def check_logs(self, logs_message: str = None):
         llm = self.get_llm(CHECK_LOGS_AGENT_NAME, stream_output=True)

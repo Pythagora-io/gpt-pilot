@@ -1,5 +1,6 @@
 import pytest
 
+from core.agents.mixins import TestSteps
 from core.agents.troubleshooter import RouteFilePaths, Troubleshooter
 from core.db.models import File, FileContent
 
@@ -8,7 +9,17 @@ from core.db.models import File, FileContent
 async def test_route_files_are_included_in_the_prompt(agentcontext):
     sm, _, ui, mock_get_llm = agentcontext
 
-    sm.current_state.tasks = [{"description": "Some task", "status": "todo", "instructions": "Testing here!"}]
+    sm.current_state.tasks = [
+        {
+            "description": "Some task",
+            "status": "todo",
+            "instructions": {
+                "steps": [
+                    {"title": "1", "action": "test", "result": "Result 1"},
+                ]
+            },
+        }
+    ]
     files = [
         File(path="dir/file1.js", content=FileContent(content="File 1 content")),
         File(path="dir/file2.js", content=FileContent(content="File 2 content")),
@@ -21,7 +32,9 @@ async def test_route_files_are_included_in_the_prompt(agentcontext):
     ts.get_llm = mock_get_llm(
         side_effect=[
             RouteFilePaths(files=["dir/file1.js"]),  # First LLM call, to select files with routes
-            "",  # Second LLM call, to generate the actual instructions
+            TestSteps(
+                steps=[{"title": "1", "action": "test", "result": "Result 1"}]
+            ),  # Second LLM call, to generate the actual instructions
         ]
     )
     await ts.get_user_instructions()

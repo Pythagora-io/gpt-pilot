@@ -1,3 +1,4 @@
+import json
 from typing import Optional
 from uuid import uuid4
 
@@ -5,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
-from core.agents.mixins import IterationPromptMixin, RelevantFilesMixin
+from core.agents.mixins import IterationPromptMixin, RelevantFilesMixin, TestSteps
 from core.agents.response import AgentResponse
 from core.config import TROUBLESHOOTER_GET_RUN_COMMAND
 from core.db.models.file import File
@@ -181,13 +182,15 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         route_files = await self._get_route_files()
 
         llm = self.get_llm()
-        convo = self._get_task_convo().template(
-            "define_user_review_goal", task=self.current_state.current_task, route_files=route_files
+        convo = (
+            self._get_task_convo()
+            .template("define_user_review_goal", task=self.current_state.current_task, route_files=route_files)
+            .require_schema(TestSteps)
         )
-        user_instructions: str = await llm(convo)
+        user_instructions: TestSteps = await llm(convo, parser=JSONParser(TestSteps))
 
-        user_instructions = user_instructions.strip()
-        if user_instructions.lower() == "done":
+        user_instructions = json.dumps([test.dict() for test in user_instructions.steps])
+        if len(user_instructions) == 0:
             log.debug(f"Nothing to do for user testing for task {self.current_state.current_task['description']}")
             return None
 

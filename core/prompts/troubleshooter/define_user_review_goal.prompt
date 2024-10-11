@@ -32,14 +32,30 @@ Remember, these rules are very important and you must follow them!
 
 Here is an example output with a few user steps:
 ---example---
-Step 1: Open your web browser and visit http://localhost:3000/
-Expected result: Web page opens and you see a "Hello World" message with a contact form
-
-Step 2: Click on the "Submit" button in the web form
-Expected result: Form is submitted, page is reloaded and "Thank you" message is shown
-
-Step 3: Check your email inbox for the magic link. Click on the magic link to log in.
-Expected result: You should be redirected back to the home page. The login status should now display "Logged in as [your email]" and the "Logout" button should be visible.
+{
+    "steps": [
+        {
+            "title": "Submit the form",
+            "action": "Open your web browser and visit 'http://localhost:3000/form'. Click on the 'Submit' button in the web form",
+            "result": "Form is submitted, the page is reloaded, and 'Thank you' message is shown",
+        },
+        {
+            "title": "Check email",
+            "action": "Check your email inbox for the magic link. Click on the magic link to log in.",
+            "result": "You should be redirected back to the home page. The login status should now display 'Logged in as [your email]' and the 'Logout' button should be visible.",
+        },
+        {
+            "title": "Log out",
+            "action": "Click on the 'Logout' button",
+            "result": "You should be redirected back to the home page. You should not be able to access the form and the 'Login' button should be visible.",
+        }
+    ]
+}
 ---end_of_example---
 
-If nothing needs to be tested for this task, instead of outputting the steps, just output a single word: DONE
+If nothing needs to be tested for this task, instead of outputting the steps, just output an empty list like this:
+---example_when_test_not_needed---
+{
+    "steps": []
+}
+---end_of_example_when_test_not_needed---
