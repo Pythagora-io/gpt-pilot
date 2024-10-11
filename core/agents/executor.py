@@ -176,4 +176,4 @@ class Executor(BaseAgent):
         information we give it.
         """
         self.step = None
-        self.next_state.complete_step()
+        self.next_state.complete_step("command")

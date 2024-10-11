@@ -208,7 +208,7 @@ class CodeMonkey(BaseAgent):
         await self.ui.generate_diff(file_path, old_content, new_content, n_new_lines, n_del_lines)
 
         await self.state_manager.save_file(file_path, new_content)
-        self.next_state.complete_step()
+        self.next_state.complete_step("save_file")
 
         input_required = self.state_manager.get_input_required(new_content)
         if input_required:

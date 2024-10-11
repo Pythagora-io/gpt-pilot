@@ -8,7 +8,7 @@ class LegacyHandler(BaseAgent):
 
     async def run(self) -> AgentResponse:
         if self.data["type"] == "review_task":
-            self.next_state.complete_step()
+            self.next_state.complete_step("review_task")
             return AgentResponse.done(self)
 
         raise ValueError(f"Unknown reason for calling Legacy Handler with data: {self.data}")

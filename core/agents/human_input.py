@@ -21,7 +21,7 @@ class HumanInput(BaseAgent):
             default="continue",
             buttons_only=True,
         )
-        self.next_state.complete_step()
+        self.next_state.complete_step("human_intervention")
         return AgentResponse.done(self)
 
     async def input_required(self, files: list[dict]) -> AgentResponse:

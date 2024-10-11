@@ -257,14 +257,14 @@ class ProjectState(Base):
 
         return new_state
 
-    def complete_step(self):
+    def complete_step(self, step_type: str):
         if not self.unfinished_steps:
             raise ValueError("There are no unfinished steps to complete")
         if "next_state" in self.__dict__:
             raise ValueError("Current state is read-only (already has a next state).")
 
         log.debug(f"Completing step {self.unfinished_steps[0]['type']}")
-        self.unfinished_steps[0]["completed"] = True
+        self.get_steps_of_type(step_type)[0]["completed"] = True
         flag_modified(self, "steps")
 
     def complete_task(self):
