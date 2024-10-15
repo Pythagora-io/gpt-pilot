@@ -226,7 +226,11 @@ class StateManager:
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
     async def commit_with_retry(self):
-        await self.current_session.commit()
+        try:
+            await self.current_session.commit()
+        except Exception as e:
+            log.error(f"Commit failed: {str(e)}")
+            raise
 
     async def commit(self) -> ProjectState:
         """

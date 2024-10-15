@@ -37,6 +37,16 @@ class RelevantFiles(BaseModel):
     action: Union[ReadFilesAction, AddFilesAction, RemoveFilesAction, DoneBooleanAction]
 
 
+class Test(BaseModel):
+    title: str = Field(description="Very short title of the test.")
+    action: str = Field(description="More detailed description of what actions have to be taken to test the app.")
+    result: str = Field(description="Expected result that verifies successful test.")
+
+
+class TestSteps(BaseModel):
+    steps: List[Test]
+
+
 class IterationPromptMixin:
     """
     Provides a method to find a solution to a problem based on user feedback.

@@ -437,7 +437,7 @@ class IPCClientUI(UIBase):
         await self._send(
             MessageType.TEST_INSTRUCTIONS,
             content={
-                "test_instructions": test_instructions,
+                "test_instructions": json.loads(test_instructions),
             },
         )
 
