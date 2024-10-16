@@ -12,7 +12,7 @@ from core.log import get_logger
 from core.telemetry import telemetry
 from core.templates.example_project import EXAMPLE_PROJECTS
 from core.templates.registry import PROJECT_TEMPLATES
-from core.ui.base import ProjectStage, UISource, success_source
+from core.ui.base import ProjectStage, pythagora_source, success_source
 
 log = get_logger(__name__)
 
@@ -240,8 +240,8 @@ class TechLead(BaseAgent):
         )
 
         await self.ui.send_message(
-            "Open your Progress tab and check out the full plan.",
-            source=UISource("Pythagora", "pythagora"),
+            "Here is the full plan:",
+            source=pythagora_source,
             project_state_id=str(self.current_state.id),
         )
 

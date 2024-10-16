@@ -14,6 +14,7 @@ from core.db.models.project_state import IterationStatus, TaskStatus
 from core.llm.parser import JSONParser, OptionalCodeBlockParser
 from core.log import get_logger
 from core.telemetry import telemetry
+from core.ui.base import pythagora_source
 
 log = get_logger(__name__)
 
@@ -73,8 +74,9 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
             self.next_state.flag_tasks_as_modified()
             return AgentResponse.done(self)
         else:
-            await self.send_message("Start the app and test it by following these steps:\n\n" + user_instructions)
+            await self.ui.send_message("Start the app and test it by following these steps:", source=pythagora_source)
 
+        await self.send_message("")
         await self.ui.stop_app()
         await self.ui.send_test_instructions(user_instructions)
 
