@@ -240,7 +240,7 @@ class TechLead(BaseAgent):
         )
 
         await self.ui.send_message(
-            "Here is the full plan:",
+            "Open your Progress tab and check out the full development plan",
             source=pythagora_source,
             project_state_id=str(self.current_state.id),
         )
