@@ -69,17 +69,16 @@ class CodeBlockParser(MultiCodeBlockParser):
         return blocks[0]
 
 
-class OptionalCodeBlockParser:
+class OptionalCodeBlockParser(MultiCodeBlockParser):
     def __call__(self, text: str) -> str:
-        text = text.strip()
-        if text.startswith("```") and text.endswith("\n```"):
-            # Remove the first and last line. Note the first line may include syntax
-            # highlighting, so we can't just remove the first 3 characters.
-            text = "\n".join(text.splitlines()[1:-1]).strip()
-        elif "\n" not in text and text.startswith("`") and text.endswith("`"):
-            # Single-line code blocks are wrapped in single backticks
-            text = text[1:-1]
-        return text
+        blocks = super().__call__(text)
+        # FIXME: if there are more than 1 code block, this means the output actually contains ```,
+        # so re-parse this with that in mind
+        if len(blocks) > 1:
+            raise ValueError(f"Expected a single code block, got {len(blocks)}")
+        if len(blocks) == 0:
+            return text.strip()
+        return blocks[0]
 
 
 class JSONParser:
