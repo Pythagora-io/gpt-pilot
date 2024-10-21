@@ -38,7 +38,7 @@ class AnthropicClient(BaseLLMClient):
         Adapt the conversation messages to the format expected by the Anthropic Claude model.
 
         Claude only recognizes "user" and "assistant" roles, and requires them to be switched
-        for each message (ie. no consecutive messages from the same role).
+        for each message (i.e. no consecutive messages from the same role).
 
         :param convo: Conversation to adapt.
         :return: Adapted conversation messages.

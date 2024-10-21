@@ -435,6 +435,7 @@ class IPCClientUI(UIBase):
 
     async def send_test_instructions(self, test_instructions: str):
         try:
+            log.debug("Sending test instructions")
             parsed_instructions = json.loads(test_instructions)
         except Exception:
             # this is for backwards compatibility with the old format

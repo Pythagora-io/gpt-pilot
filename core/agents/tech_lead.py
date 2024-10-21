@@ -141,7 +141,7 @@ class TechLead(BaseAgent):
         )
 
         if response.button == "end" or response.cancelled or not response.text:
-            await self.ui.send_message("Thanks for using Pythagora!")
+            await self.ui.send_message("Thank you for using Pythagora!", source=pythagora_source)
             return AgentResponse.exit(self)
 
         self.next_state.epics = self.current_state.epics + [
