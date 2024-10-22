@@ -194,10 +194,10 @@ class BugHunter(BaseAgent):
 
                 # TODO select only the logs that are new (with PYTHAGORA_DEBUGGING_LOG)
                 self.next_state.current_iteration["bug_hunting_cycles"][-1]["backend_logs"] = "\n".join(
-                    backend_logs.text.splitlines()[-500:]
+                    (backend_logs.text or "").splitlines()[-500:]
                 )
                 self.next_state.current_iteration["bug_hunting_cycles"][-1]["frontend_logs"] = "\n".join(
-                    frontend_logs.text.splitlines()[-500:]
+                    (frontend_logs.text or "").splitlines()[-500:]
                 )
                 self.next_state.current_iteration["bug_hunting_cycles"][-1]["user_feedback"] = user_feedback.text
                 self.next_state.current_iteration["status"] = IterationStatus.HUNTING_FOR_BUG
