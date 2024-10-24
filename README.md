@@ -99,7 +99,7 @@ After you have Python and (optionally) PostgreSQL installed, follow these steps:
 5. `pip install -r requirements.txt` (install the dependencies)
 6. `cp example-config.json config.json` (create `config.json` file)
 7. Set your key and other settings in `config.json` file:
-   - LLM Provider (`openai`, `anthropic` or `groq`) key and endpoints (leave `null` for default) (note that Azure and OpenRouter are suppored via the `openai` setting)
+   - LLM Provider (`openai`, `aiml`, `anthropic` or `groq`) key and endpoints (leave `null` for default) (note that Azure and OpenRouter are suppored via the `openai` setting)
    - Your API key (if `null`, will be read from the environment variables)
    - database settings: sqlite is used by default, PostgreSQL should also work
    - optionally update `fs.ignore_paths` and add files or folders which shouldn't be tracked by GPT Pilot in workspace, useful to ignore folders created by compilers
