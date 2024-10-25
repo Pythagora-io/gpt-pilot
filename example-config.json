@@ -27,6 +27,8 @@
         "azure_deployment": "your-azure-deployment-id",
         "api_version": "2024-02-01"
       }
+    },
+    // Example config for 1min.ai (https://gleaming-wren-2af.notion.site/1min-AI-API-Docs-111af080bd8f8046a4e6e1053c95e047#111af080bd8f8027be32e1bbb5957921)
     "1min-ai": {
       "base_url": "https://api.1min.ai/api/features?isStreaming=true",
       "api_key": "your-api-key",
