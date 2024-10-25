@@ -333,6 +333,7 @@ class BaseLLMClient:
         from .anthropic_client import AnthropicClient
         from .azure_client import AzureClient
         from .groq_client import GroqClient
+        from .onemin_ai_client import OneMinAIClient
         from .openai_client import OpenAIClient
 
         if provider == LLMProvider.OPENAI:
@@ -343,6 +344,8 @@ class BaseLLMClient:
             return GroqClient
         elif provider == LLMProvider.AZURE:
             return AzureClient
+        elif provider == LLMProvider.ONEMINAI:
+            return OneMinAIClient
         else:
             raise ValueError(f"Unsupported LLM provider: {provider.value}")
 
