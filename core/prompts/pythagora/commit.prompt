@@ -1,0 +1,7 @@
+You are working on an app called "{{ state.branch.project.name }}" and you need to generate commit message for next "git commit" command.
+
+Here are the changes that were made from last commit:
+{{ git_diff }}
+
+Respond ONLY with the commit message that you would use for the next "git commit" command, nothing else. Do not use quotes, backticks or anything else, just plain text.
+Commit message should be short and descriptive of the changes made since last commit.

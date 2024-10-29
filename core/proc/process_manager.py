@@ -225,6 +225,7 @@ class ProcessManager:
         cwd: str = ".",
         env: Optional[dict[str, str]] = None,
         timeout: float = MAX_COMMAND_TIMEOUT,
+        show_output: Optional[bool] = True,
     ) -> tuple[Optional[int], str, str]:
         """
         Run command and wait for it to finish.
@@ -236,6 +237,7 @@ class ProcessManager:
         :param cwd: Working directory.
         :param env: Environment variables.
         :param timeout: Timeout in seconds.
+        :param show_output: Show output in the ui.
         :return: Tuple of (status code, stdout, stderr).
         """
         timeout = min(timeout, MAX_COMMAND_TIMEOUT)
@@ -245,7 +247,7 @@ class ProcessManager:
         t0 = time.time()
         while process.is_running and (time.time() - t0) < timeout:
             out, err = await process.read_output(BUSY_WAIT_INTERVAL)
-            if self.output_handler and (out or err):
+            if self.output_handler and (out or err) and show_output:
                 await self.output_handler(out, err)
 
         if process.is_running:
@@ -256,7 +258,7 @@ class ProcessManager:
             await process.wait()
 
         out, err = await process.read_output()
-        if self.output_handler and (out or err):
+        if self.output_handler and (out or err) and show_output:
             await self.output_handler(out, err)
 
         if terminated:
