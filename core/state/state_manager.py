@@ -49,6 +49,8 @@ class StateManager:
         self.next_state = None
         self.current_session = None
         self.blockDb = False
+        self.git_available = False
+        self.git_used = False
 
     @asynccontextmanager
     async def db_blocker(self):

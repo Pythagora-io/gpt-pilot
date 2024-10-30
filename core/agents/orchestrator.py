@@ -9,6 +9,7 @@ from core.agents.developer import Developer
 from core.agents.error_handler import ErrorHandler
 from core.agents.executor import Executor
 from core.agents.external_docs import ExternalDocumentation
+from core.agents.git import GitMixin
 from core.agents.human_input import HumanInput
 from core.agents.importer import Importer
 from core.agents.legacy_handler import LegacyHandler
@@ -27,7 +28,7 @@ from core.ui.base import ProjectStage
 log = get_logger(__name__)
 
 
-class Orchestrator(BaseAgent):
+class Orchestrator(BaseAgent, GitMixin):
     """
     Main agent that controls the flow of the process.
 
@@ -52,6 +53,8 @@ class Orchestrator(BaseAgent):
         self.executor = Executor(self.state_manager, self.ui)
         self.process_manager = self.executor.process_manager
         # self.chat = Chat() TODO
+        if await self.check_git_installed():
+            await self.init_git_if_needed()
 
         await self.init_ui()
         await self.offline_changes_check()
@@ -244,7 +247,7 @@ class Orchestrator(BaseAgent):
                 return TechnicalWriter(self.state_manager, self.ui)
             elif current_task_status in [TaskStatus.DOCUMENTED, TaskStatus.SKIPPED]:
                 # Task is fully done or skipped, call TaskCompleter to mark it as completed
-                return TaskCompleter(self.state_manager, self.ui)
+                return TaskCompleter(self.state_manager, self.ui, process_manager=self.process_manager)
 
         if not state.steps and not state.iterations:
             # Ask the Developer to break down current task into actionable steps
