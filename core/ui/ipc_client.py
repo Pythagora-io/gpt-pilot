@@ -260,6 +260,7 @@ class IPCClientUI(UIBase):
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
         project_state_id: Optional[str] = None,
+        extra_info: Optional[str] = None,
     ) -> UserInput:
         if not self.writer:
             raise UIClosedError()
@@ -267,14 +268,28 @@ class IPCClientUI(UIBase):
         category = source.type_name if source else None
 
         if hint:
-            await self._send(MessageType.HINT, content=hint, category=category, project_state_id=project_state_id)
+            await self._send(
+                MessageType.HINT,
+                content=hint,
+                category=category,
+                project_state_id=project_state_id,
+                extra_info=extra_info,
+            )
         else:
             await self._send(
-                MessageType.VERBOSE, content=question, category=category, project_state_id=project_state_id
+                MessageType.VERBOSE,
+                content=question,
+                category=category,
+                project_state_id=project_state_id,
+                extra_info=extra_info,
             )
 
         await self._send(
-            MessageType.USER_INPUT_REQUEST, content=question, category=category, project_state_id=project_state_id
+            MessageType.USER_INPUT_REQUEST,
+            content=question,
+            category=category,
+            project_state_id=project_state_id,
+            extra_info=extra_info,
         )
         if buttons:
             buttons_str = "/".join(buttons.values())
@@ -285,6 +300,7 @@ class IPCClientUI(UIBase):
                     category=category,
                     project_state_id=project_state_id,
                     full_screen=full_screen,
+                    extra_info=extra_info,
                 )
             else:
                 await self._send(
@@ -293,11 +309,16 @@ class IPCClientUI(UIBase):
                     category=category,
                     project_state_id=project_state_id,
                     full_screen=full_screen,
+                    extra_info=extra_info,
                 )
         if initial_text:
             # FIXME: add this to base and console and document it after merging with hint PR
             await self._send(
-                MessageType.INPUT_PREFILL, content=initial_text, category=category, project_state_id=project_state_id
+                MessageType.INPUT_PREFILL,
+                content=initial_text,
+                category=category,
+                project_state_id=project_state_id,
+                extra_info=extra_info,
             )
 
         response = await self._receive()

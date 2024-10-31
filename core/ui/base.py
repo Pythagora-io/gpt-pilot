@@ -168,6 +168,7 @@ class UIBase:
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
         project_state_id: Optional[str] = None,
+        extra_info: Optional[str] = None,
     ) -> UserInput:
         """
         Ask the user a question.
@@ -189,6 +190,7 @@ class UIBase:
         :param allow_empty: Whether to allow empty input.
         :param full_screen: Ask question in full screen (IPC).
         :param source: Source of the question (if any).
+        :param extra_info: Extra information to indicate special functionality in extension.
         :return: User input.
         """
         raise NotImplementedError()

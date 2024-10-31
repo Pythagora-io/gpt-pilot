@@ -70,6 +70,7 @@ class VirtualUI(UIBase):
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
         project_state_id: Optional[str] = None,
+        extra_info: Optional[str] = None,
     ) -> UserInput:
         if source:
             print(f"[{source}] {question}")

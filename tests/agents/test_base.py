@@ -54,6 +54,7 @@ async def test_ask_question():
         source=agent.ui_source,
         project_state_id=str(agent.current_state.id),
         full_screen=False,
+        extra_info=None,
     )
 
     state_manager.log_user_input.assert_awaited_once()

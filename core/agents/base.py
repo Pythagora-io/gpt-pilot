@@ -73,6 +73,7 @@ class BaseAgent:
         full_screen: Optional[bool] = False,
         hint: Optional[str] = None,
         initial_text: Optional[str] = None,
+        extra_info: Optional[str] = None,
     ) -> UserInput:
         """
         Ask a question to the user and return the response.
@@ -89,6 +90,7 @@ class BaseAgent:
         :param full_screen: Show question full screen in extension.
         :param hint: Text to display in a popup as a hint to the question.
         :param initial_text: Initial text input.
+        :param extra_info: Extra information to indicate special functionality in extension.
         :return: User response.
         """
         response = await self.ui.ask_question(
@@ -102,6 +104,7 @@ class BaseAgent:
             initial_text=initial_text,
             source=self.ui_source,
             project_state_id=str(self.current_state.id),
+            extra_info=extra_info,
         )
         await self.state_manager.log_user_input(question, response)
         return response
