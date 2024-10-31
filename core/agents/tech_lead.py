@@ -250,7 +250,7 @@ class TechLead(BaseAgent):
             buttons={"yes": "Yes, the plan looks good", "regenerate": "Regenerate the plan"},
             default="yes",
             buttons_only=True,
-            extra_info="edit_planning",
+            extra_info="edit_plan",
         )
 
         if accept_plan.button == "regenerate":
