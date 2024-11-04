@@ -55,8 +55,13 @@ class GitMixin:
             if status_code != 0:
                 raise RuntimeError(f"Failed to initialize git repository: {stderr}")
 
-            # Create initial commit if there are files
-            if self.current_state.files:
+            # First check if there are any changes to commit
+            status_code, stdout, stderr = await self.process_manager.run_command(
+                "git status --porcelain",
+                cwd=workspace_path,
+            )
+
+            if status_code == 0 and stdout.strip():  # If there are changes (stdout is not empty)
                 # Stage all files
                 status_code, _, stderr = await self.process_manager.run_command(
                     "git add .",
