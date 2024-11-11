@@ -124,7 +124,7 @@ class BugHunter(BaseAgent):
             "Start the app and test it by following these instructions:\n\n", source=pythagora_source
         )
         await self.send_message("")
-        await self.ui.send_test_instructions(test_instructions)
+        await self.ui.send_test_instructions(test_instructions, project_state_id=str(self.current_state.id))
 
         if self.current_state.run_command:
             await self.ui.send_run_command(self.current_state.run_command)

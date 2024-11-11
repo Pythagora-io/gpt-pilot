@@ -152,7 +152,7 @@ class VirtualUI(UIBase):
     async def send_project_stats(self, stats: dict):
         pass
 
-    async def send_test_instructions(self, test_instructions: str):
+    async def send_test_instructions(self, test_instructions: str, project_state_id: Optional[str] = None):
         pass
 
     async def send_file_status(self, file_path: str, file_status: str):

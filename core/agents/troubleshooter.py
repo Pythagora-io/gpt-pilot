@@ -78,7 +78,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
 
         await self.send_message("")
         await self.ui.stop_app()
-        await self.ui.send_test_instructions(user_instructions)
+        await self.ui.send_test_instructions(user_instructions, project_state_id=str(self.current_state.id))
 
         # Developer sets iteration as "completed" when it generates the step breakdown, so we can't
         # use "current_iteration" here

@@ -454,7 +454,7 @@ class IPCClientUI(UIBase):
             content=stats,
         )
 
-    async def send_test_instructions(self, test_instructions: str):
+    async def send_test_instructions(self, test_instructions: str, project_state_id: Optional[str] = None):
         try:
             log.debug("Sending test instructions")
             parsed_instructions = json.loads(test_instructions)
@@ -467,6 +467,7 @@ class IPCClientUI(UIBase):
             content={
                 "test_instructions": parsed_instructions,
             },
+            project_state_id=project_state_id,
         )
 
     async def send_file_status(self, file_path: str, file_status: str):

@@ -323,11 +323,12 @@ class UIBase:
         """
         raise NotImplementedError()
 
-    async def send_test_instructions(self, test_instructions: str):
+    async def send_test_instructions(self, test_instructions: str, project_state_id: Optional[str] = None):
         """
         Send test instructions.
 
         :param test_instructions: Test instructions.
+        :param project_state_id: Project state ID.
         """
         raise NotImplementedError()
 
