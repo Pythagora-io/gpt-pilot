@@ -101,7 +101,7 @@ class ProviderConfig(_StrictModel):
         ge=0.0,
     )
     read_timeout: float = Field(
-        default=20.0,
+        default=60.0,
         description="Timeout (in seconds) for receiving a new chunk of data from the response stream",
         ge=0.0,
     )
@@ -156,7 +156,7 @@ class LLMConfig(_StrictModel):
         ge=0.0,
     )
     read_timeout: float = Field(
-        default=20.0,
+        default=60.0,
         description="Timeout (in seconds) for receiving a new chunk of data from the response stream",
         ge=0.0,
     )

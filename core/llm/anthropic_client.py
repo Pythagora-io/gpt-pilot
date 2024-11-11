@@ -74,6 +74,9 @@ class AnthropicClient(BaseLLMClient):
             "temperature": self.config.temperature if temperature is None else temperature,
         }
 
+        if "trybricks" in self.config.base_url:
+            completion_kwargs["extra_headers"] = {"x-request-timeout": f"{int(float(self.config.read_timeout))}s"}
+
         if "bedrock/anthropic" in self.config.base_url:
             completion_kwargs["extra_headers"] = {"anthropic-version": "bedrock-2023-05-31"}
 
