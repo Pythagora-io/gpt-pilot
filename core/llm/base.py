@@ -263,7 +263,7 @@ class BaseLLMClient:
                         [
                             "We sent too large request to the LLM, resulting in an error. ",
                             "This is usually caused by including framework files in an LLM request. ",
-                            "Here's how you can get GPT Pilot to ignore those extra files: ",
+                            "Here's how you can get Pythagora to ignore those extra files: ",
                             "https://bit.ly/faq-token-limit-error",
                         ]
                     )

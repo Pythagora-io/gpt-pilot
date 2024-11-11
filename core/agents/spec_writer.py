@@ -145,7 +145,7 @@ class SpecWriter(BaseAgent):
     async def analyze_spec(self, spec: str) -> str:
         msg = (
             "Your project description seems a bit short. "
-            "The better you can describe the project, the better GPT Pilot will understand what you'd like to build.\n\n"
+            "The better you can describe the project, the better Pythagora will understand what you'd like to build.\n\n"
             f"Here are some tips on how to better describe the project: {INITIAL_PROJECT_HOWTO_URL}\n\n"
             "Let's start by refining your project idea:"
         )
