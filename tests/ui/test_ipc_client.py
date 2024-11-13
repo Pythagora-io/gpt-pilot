@@ -92,7 +92,7 @@ async def test_send_message():
 
         connected = await ui.start()
         assert connected is True
-        await ui.send_message("Hello from the other side ♫", source=src, project_state_id="123")
+        await ui.send_message("Hello from the other side ♫", source=src, project_state_id="123", extra_info="test")
         await ui.stop()
 
     assert messages == [
@@ -102,6 +102,7 @@ async def test_send_message():
             "category": "agent:product-owner",
             "project_state_id": "123",
             "full_screen": False,
+            "extra_info": "test",
         },
         {
             "type": "exit",
@@ -109,6 +110,7 @@ async def test_send_message():
             "category": None,
             "project_state_id": None,
             "full_screen": False,
+            "extra_info": None,
         },
     ]
 
@@ -136,6 +138,7 @@ async def test_stream():
             "category": "agent:product-owner",
             "project_state_id": "123",
             "full_screen": False,
+            "extra_info": None,
         },
         {
             "type": "stream",
@@ -143,6 +146,7 @@ async def test_stream():
             "category": "agent:product-owner",
             "project_state_id": "123",
             "full_screen": False,
+            "extra_info": None,
         },
         {
             "type": "exit",
@@ -150,6 +154,7 @@ async def test_stream():
             "category": None,
             "project_state_id": None,
             "full_screen": False,
+            "extra_info": None,
         },
     ]
 

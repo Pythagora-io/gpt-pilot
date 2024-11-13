@@ -68,6 +68,7 @@ class Message(BaseModel):
     category: Optional[str] = None
     full_screen: Optional[bool] = False
     project_state_id: Optional[str] = None
+    extra_info: Optional[str] = None
     content: Union[str, dict, None] = None
 
     def to_bytes(self) -> bytes:
@@ -201,7 +202,12 @@ class IPCClientUI(UIBase):
         )
 
     async def send_message(
-        self, message: str, *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+        self,
+        message: str,
+        *,
+        source: Optional[UISource] = None,
+        project_state_id: Optional[str] = None,
+        extra_info: Optional[str] = None,
     ):
         if not self.writer:
             return
@@ -212,6 +218,7 @@ class IPCClientUI(UIBase):
             content=message,
             category=source.type_name if source else None,
             project_state_id=project_state_id,
+            extra_info=extra_info,
         )
 
     async def send_key_expired(self, message: Optional[str] = None):
