@@ -1,6 +1,7 @@
 import os
 
 from core.agents.convo import AgentConvo
+from core.config.magic_words import GITIGNORE_CONTENT
 from core.ui.base import pythagora_source
 
 
@@ -54,6 +55,13 @@ class GitMixin:
             status_code, _, stderr = await self.process_manager.run_command("git init", cwd=workspace_path)
             if status_code != 0:
                 raise RuntimeError(f"Failed to initialize git repository: {stderr}")
+
+            gitignore_path = os.path.join(workspace_path, ".gitignore")
+            try:
+                with open(gitignore_path, "w") as f:
+                    f.write(GITIGNORE_CONTENT)
+            except Exception as e:
+                raise RuntimeError(f"Failed to create .gitignore file: {str(e)}")
 
             # First check if there are any changes to commit
             status_code, stdout, stderr = await self.process_manager.run_command(

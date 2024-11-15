@@ -53,11 +53,12 @@ class Orchestrator(BaseAgent, GitMixin):
         self.executor = Executor(self.state_manager, self.ui)
         self.process_manager = self.executor.process_manager
         # self.chat = Chat() TODO
-        if await self.check_git_installed():
-            await self.init_git_if_needed()
 
         await self.init_ui()
         await self.offline_changes_check()
+
+        if await self.check_git_installed():
+            await self.init_git_if_needed()
 
         # TODO: consider refactoring this into two loop; the outer with one iteration per comitted step,
         # and the inner which runs the agents for the current step until they're done. This would simplify
