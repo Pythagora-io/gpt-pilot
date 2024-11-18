@@ -9,6 +9,7 @@ from core.agents.developer import Developer
 from core.agents.error_handler import ErrorHandler
 from core.agents.executor import Executor
 from core.agents.external_docs import ExternalDocumentation
+from core.agents.frontend import Frontend
 from core.agents.git import GitMixin
 from core.agents.human_input import HumanInput
 from core.agents.importer import Importer
@@ -220,9 +221,9 @@ class Orchestrator(BaseAgent, GitMixin):
                 return SpecWriter(self.state_manager, self.ui, prev_response=prev_response)
 
         if not state.specification.description:
-            if state.files:
-                # The project has been imported, but not analyzed yet
-                return Importer(self.state_manager, self.ui)
+            if not state.epics or state.unfinished_epics:
+                # Build frontend
+                return Frontend(self.state_manager, self.ui)
             else:
                 # New project: ask the Spec Writer to refine and save the project specification
                 return SpecWriter(self.state_manager, self.ui, process_manager=self.process_manager)

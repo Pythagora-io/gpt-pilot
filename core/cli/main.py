@@ -182,6 +182,7 @@ async def start_new_project(sm: StateManager, ui: UIBase) -> bool:
                 "What is the project name?",
                 allow_empty=False,
                 source=pythagora_source,
+                full_screen=True,
             )
         except (KeyboardInterrupt, UIClosedError):
             user_input = UserInput(cancelled=True)

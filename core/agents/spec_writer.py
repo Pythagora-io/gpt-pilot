@@ -40,10 +40,6 @@ class SpecWriter(BaseAgent):
         response = await self.ask_question(
             "Describe your app in as much detail as possible",
             allow_empty=False,
-            buttons={
-                "example": "Start an example project",
-                "import": "Import an existing project",
-            },
         )
         if response.cancelled:
             return AgentResponse.error(self, "No project description")
