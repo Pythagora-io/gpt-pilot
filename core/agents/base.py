@@ -51,7 +51,7 @@ class BaseAgent:
         """Next state of the project (write-only)."""
         return self.state_manager.next_state
 
-    async def send_message(self, message: str):
+    async def send_message(self, message: str, extra_info: Optional[str] = None):
         """
         Send a message to the user.
 
@@ -59,8 +59,11 @@ class BaseAgent:
         setting the correct source and project state ID.
 
         :param message: Message to send.
+        :param extra_info: Extra information to indicate special functionality in extension
         """
-        await self.ui.send_message(message + "\n", source=self.ui_source, project_state_id=str(self.current_state.id))
+        await self.ui.send_message(
+            message + "\n", source=self.ui_source, project_state_id=str(self.current_state.id), extra_info=extra_info
+        )
 
     async def ask_question(
         self,

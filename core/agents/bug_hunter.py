@@ -129,6 +129,15 @@ class BugHunter(BaseAgent):
         if self.current_state.run_command:
             await self.ui.send_run_command(self.current_state.run_command)
 
+        await self.ask_question(
+            "Please test the app again.",
+            buttons={"done": "I am done testing"},
+            buttons_only=True,
+            default="continue",
+            extra_info="restart_app",
+            hint="Instructions for testing:\n\n" + self.current_state.current_iteration["bug_reproduction_description"],
+        )
+
         if awaiting_user_test:
             buttons = {"yes": "Yes, the issue is fixed", "no": "No", "start_pair_programming": "Start Pair Programming"}
             user_feedback = await self.ask_question(
@@ -150,7 +159,6 @@ class BugHunter(BaseAgent):
                 awaiting_bug_reproduction = True
 
         if awaiting_bug_reproduction:
-            # TODO how can we get FE and BE logs automatically?
             buttons = {
                 "copy_backend_logs": "Copy Backend Logs",
                 "continue": "Continue without logs",
@@ -185,7 +193,11 @@ class BugHunter(BaseAgent):
                     + self.current_state.current_iteration["bug_reproduction_description"],
                 )
 
-                buttons = {"continue": "Continue without feedback"}
+                buttons = {
+                    "continue": "Continue without feedback",
+                    "done": "Bug is fixed",
+                    "start_pair_programming": "Start Pair Programming",
+                }
                 user_feedback = await self.ask_question(
                     "Please add any additional feedback that could help Pythagora solve this bug",
                     buttons=buttons,
@@ -194,15 +206,21 @@ class BugHunter(BaseAgent):
                     + self.current_state.current_iteration["bug_reproduction_description"],
                 )
 
-                # TODO select only the logs that are new (with PYTHAGORA_DEBUGGING_LOG)
-                self.next_state.current_iteration["bug_hunting_cycles"][-1]["backend_logs"] = "\n".join(
-                    (backend_logs.text or "").splitlines()[-500:]
-                )
-                self.next_state.current_iteration["bug_hunting_cycles"][-1]["frontend_logs"] = "\n".join(
-                    (frontend_logs.text or "").splitlines()[-500:]
-                )
-                self.next_state.current_iteration["bug_hunting_cycles"][-1]["user_feedback"] = user_feedback.text
-                self.next_state.current_iteration["status"] = IterationStatus.HUNTING_FOR_BUG
+                if user_feedback.button == "done":
+                    self.next_state.complete_iteration()
+                elif user_feedback.button == "start_pair_programming":
+                    self.next_state.current_iteration["status"] = IterationStatus.START_PAIR_PROGRAMMING
+                    self.next_state.flag_iterations_as_modified()
+                else:
+                    # TODO select only the logs that are new (with PYTHAGORA_DEBUGGING_LOG)
+                    self.next_state.current_iteration["bug_hunting_cycles"][-1]["backend_logs"] = "\n".join(
+                        (backend_logs.text or "").splitlines()[-500:]
+                    )
+                    self.next_state.current_iteration["bug_hunting_cycles"][-1]["frontend_logs"] = "\n".join(
+                        (frontend_logs.text or "").splitlines()[-500:]
+                    )
+                    self.next_state.current_iteration["bug_hunting_cycles"][-1]["user_feedback"] = user_feedback.text
+                    self.next_state.current_iteration["status"] = IterationStatus.HUNTING_FOR_BUG
 
         return AgentResponse.done(self)
 
