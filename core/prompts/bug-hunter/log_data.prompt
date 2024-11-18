@@ -1,13 +1,14 @@
-{% if backend_logs is not none %}Here are the logs we added to the backend:
+{% if backend_logs and backend_logs|trim %}
+Here are the logs we added to the backend:
 ```
 {{ backend_logs }}
 ```
-{% endif %}{% if frontend_logs is not none %}
+{% endif %}{% if frontend_logs and frontend_logs|trim %}
 Here are the logs we added to the frontend:
 ```
 {{ frontend_logs }}
 ```
-{% endif %}{% if user_feedback is not none %}
+{% endif %}{% if user_feedback and user_feedback|trim %}
 Finally, here is a hint from a human who tested the app:
 ```
 {{ user_feedback }}
@@ -16,4 +17,9 @@ When you're thinking about what to do next, take into the account human's feedba
 {% endif %}{% if fix_attempted %}
 The problem wasn't solved with the last changes. You have 2 options - to tell me exactly where is the problem happening or to add more logs to better determine where is the problem. If you think we should add more logs around the code to better understand the problem, tell me code snippets in which we should add the logs. If you think you know where the issue is, don't add any new logs but explain what log print tell point you to the problem, what the problem is, what is the solution to this problem and how the solution will fix the problem. What is your answer? Make sure not to repeat mistakes from before that didn't work.
 {% endif %}
-{% if backend_logs is none and frontend_logs is none and user_feedback is none and fix_attempted == false %}Human didn't supply any data{% endif %}
+{% if not (backend_logs and backend_logs|trim) and
+    not (frontend_logs and frontend_logs|trim) and
+    not (user_feedback and user_feedback|trim) and
+    not fix_attempted %}
+Human didn't supply any data
+{% endif %}
