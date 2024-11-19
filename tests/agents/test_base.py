@@ -53,6 +53,7 @@ async def test_ask_question():
         default=None,
         allow_empty=False,
         hint=None,
+        verbose=True,
         initial_text=None,
         source=agent.ui_source,
         project_state_id=str(agent.current_state.id),

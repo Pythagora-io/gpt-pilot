@@ -72,6 +72,7 @@ class VirtualUI(UIBase):
         allow_empty: bool = False,
         full_screen: Optional[bool] = False,
         hint: Optional[str] = None,
+        verbose: bool = True,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
         project_state_id: Optional[str] = None,

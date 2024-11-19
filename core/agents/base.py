@@ -77,6 +77,7 @@ class BaseAgent:
         allow_empty: bool = False,
         full_screen: Optional[bool] = False,
         hint: Optional[str] = None,
+        verbose: bool = True,
         initial_text: Optional[str] = None,
         extra_info: Optional[str] = None,
     ) -> UserInput:
@@ -106,6 +107,7 @@ class BaseAgent:
             allow_empty=allow_empty,
             full_screen=full_screen,
             hint=hint,
+            verbose=verbose,
             initial_text=initial_text,
             source=self.ui_source,
             project_state_id=str(self.current_state.id),
