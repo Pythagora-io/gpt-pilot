@@ -48,7 +48,7 @@ class TechLead(BaseAgent):
 
         await self.ui.send_project_stage(ProjectStage.CODING)
 
-        if self.current_state.specification.templates and not self.current_state.files:
+        if self.current_state.specification.templates and len(self.current_state.files) < 2:
             await self.apply_project_templates()
             self.next_state.action = "Apply project templates"
             await self.ui.send_epics_and_tasks(
