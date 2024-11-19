@@ -29,6 +29,7 @@ class BaseAgent:
         prev_response: Optional["AgentResponse"] = None,
         process_manager: Optional["ProcessManager"] = None,
         data: Optional[Any] = None,
+        args: Optional[Any] = None,
     ):
         """
         Create a new agent.
@@ -40,6 +41,7 @@ class BaseAgent:
         self.prev_response = prev_response
         self.step = step
         self.data = data
+        self.args = args
 
     @property
     def current_state(self) -> ProjectState:
