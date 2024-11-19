@@ -142,7 +142,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
                 user_feedback_qa=None,
                 next_solution_to_try=None,
                 docs=self.current_state.docs,
-                test_instructions=json.loads(current_task["test_instructions"]) or [],
+                test_instructions=json.loads(current_task.get("test_instructions") or "[]"),
             )
             .assistant(description)
             .template("parse_task")

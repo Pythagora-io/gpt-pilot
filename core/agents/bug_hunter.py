@@ -350,7 +350,7 @@ class BugHunter(BaseAgent):
             docs=self.current_state.docs,
             magic_words=magic_words,
             next_solution_to_try=None,
-            test_instructions=json.loads(self.current_state.current_task["test_instructions"]) or [],
+            test_instructions=json.loads(self.current_state.current_task.get("test_instructions") or "[]"),
         )
 
         hunting_cycles = self.current_state.current_iteration.get("bug_hunting_cycles", [])[
