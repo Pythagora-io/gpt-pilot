@@ -122,7 +122,9 @@ class RelevantFilesMixin:
                 # Remove files from relevant_files that are in remove_files
                 relevant_files.difference_update(action.remove_files)
 
-            read_files = [file for file in self.current_state.files if file.path in getattr(action, "read_files", [])]
+            read_files = [
+                file for file in self.current_state.files if file.path in (getattr(action, "read_files", []) or [])
+            ]
 
             convo.remove_last_x_messages(1)
             convo.assistant(llm_response.original_response)
