@@ -111,6 +111,9 @@ class RelevantFilesMixin:
         while not done and len(convo.messages) < 13:
             llm_response: RelevantFiles = await llm(convo, parser=JSONParser(RelevantFiles), temperature=0)
             action = llm_response.action
+            if action is None:
+                convo.remove_last_x_messages(2)
+                continue
 
             # Check if there are files to add to the list
             if getattr(action, "add_files", None):
