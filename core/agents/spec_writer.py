@@ -155,6 +155,7 @@ class SpecWriter(BaseAgent):
                 user_response = await self.ask_question(
                     response,
                     buttons={"skip": "Skip this question", "skip_all": "No more questions"},
+                    verbose=False,
                 )
                 if user_response.cancelled or user_response.button == "skip_all":
                     convo.user(

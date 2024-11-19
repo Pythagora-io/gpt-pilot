@@ -264,6 +264,7 @@ class IPCClientUI(UIBase):
         allow_empty: bool = False,
         full_screen: Optional[bool] = False,
         hint: Optional[str] = None,
+        verbose: bool = True,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
         project_state_id: Optional[str] = None,
@@ -282,7 +283,7 @@ class IPCClientUI(UIBase):
                 project_state_id=project_state_id,
                 extra_info=extra_info,
             )
-        else:
+        elif verbose:
             await self._send(
                 MessageType.VERBOSE,
                 content=question,
