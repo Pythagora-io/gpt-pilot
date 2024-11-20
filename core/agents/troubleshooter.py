@@ -191,10 +191,14 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         )
         user_instructions: TestSteps = await llm(convo, parser=JSONParser(TestSteps))
 
-        user_instructions = json.dumps([test.dict() for test in user_instructions.steps])
-        if len(user_instructions) == 0:
+        if len(user_instructions.steps) == 0:
+            await self.ui.send_message(
+                "No testing required for this task, moving on to the next one.", source=pythagora_source
+            )
             log.debug(f"Nothing to do for user testing for task {self.current_state.current_task['description']}")
             return None
+
+        user_instructions = json.dumps([test.dict() for test in user_instructions.steps])
 
         return user_instructions
 
