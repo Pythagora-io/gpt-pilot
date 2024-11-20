@@ -160,9 +160,8 @@ class BugHunter(BaseAgent):
 
         if awaiting_bug_reproduction:
             buttons = {
-                "copy_backend_logs": "Copy Backend Logs",
-                "continue": "Continue without logs",
                 "done": "Bug is fixed",
+                "continue": "Continue without logs",
                 "start_pair_programming": "Start Pair Programming",
             }
             backend_logs = await self.ask_question(
@@ -176,51 +175,64 @@ class BugHunter(BaseAgent):
 
             if backend_logs.button == "done":
                 self.next_state.complete_iteration()
+                return AgentResponse.done(self)
             elif backend_logs.button == "start_pair_programming":
                 self.next_state.current_iteration["status"] = IterationStatus.START_PAIR_PROGRAMMING
                 self.next_state.flag_iterations_as_modified()
-            else:
-                buttons = {
-                    "copy_frontend_logs": "Copy Frontend Logs",
-                    "continue": "Continue without logs",
-                }
-                frontend_logs = await self.ask_question(
-                    "Please share the relevant Frontend logs",
-                    buttons=buttons,
-                    default="continue",
-                    extra_info="frontend_logs",
-                    hint="Instructions for testing:\n\n"
-                    + self.current_state.current_iteration["bug_reproduction_description"],
-                )
+                return AgentResponse.done(self)
 
-                buttons = {
-                    "continue": "Continue without feedback",
-                    "done": "Bug is fixed",
-                    "start_pair_programming": "Start Pair Programming",
-                }
-                user_feedback = await self.ask_question(
-                    "Please add any additional feedback that could help Pythagora solve this bug",
-                    buttons=buttons,
-                    default="continue",
-                    hint="Instructions for testing:\n\n"
-                    + self.current_state.current_iteration["bug_reproduction_description"],
-                )
+            buttons = {
+                "done": "Bug is fixed",
+                "continue": "Continue without logs",
+                "start_pair_programming": "Start Pair Programming",
+            }
+            frontend_logs = await self.ask_question(
+                "Please share the relevant Frontend logs",
+                buttons=buttons,
+                default="continue",
+                extra_info="frontend_logs",
+                hint="Instructions for testing:\n\n"
+                + self.current_state.current_iteration["bug_reproduction_description"],
+            )
 
-                if user_feedback.button == "done":
-                    self.next_state.complete_iteration()
-                elif user_feedback.button == "start_pair_programming":
-                    self.next_state.current_iteration["status"] = IterationStatus.START_PAIR_PROGRAMMING
-                    self.next_state.flag_iterations_as_modified()
-                else:
-                    # TODO select only the logs that are new (with PYTHAGORA_DEBUGGING_LOG)
-                    self.next_state.current_iteration["bug_hunting_cycles"][-1]["backend_logs"] = "\n".join(
-                        (backend_logs.text or "").splitlines()[-500:]
-                    )
-                    self.next_state.current_iteration["bug_hunting_cycles"][-1]["frontend_logs"] = "\n".join(
-                        (frontend_logs.text or "").splitlines()[-500:]
-                    )
-                    self.next_state.current_iteration["bug_hunting_cycles"][-1]["user_feedback"] = user_feedback.text
-                    self.next_state.current_iteration["status"] = IterationStatus.HUNTING_FOR_BUG
+            if frontend_logs.button == "done":
+                self.next_state.complete_iteration()
+                return AgentResponse.done(self)
+            elif frontend_logs.button == "start_pair_programming":
+                self.next_state.current_iteration["status"] = IterationStatus.START_PAIR_PROGRAMMING
+                self.next_state.flag_iterations_as_modified()
+                return AgentResponse.done(self)
+
+            buttons = {
+                "done": "Bug is fixed",
+                "continue": "Continue without feedback",
+                "start_pair_programming": "Start Pair Programming",
+            }
+            user_feedback = await self.ask_question(
+                "Please add any additional feedback that could help Pythagora solve this bug",
+                buttons=buttons,
+                default="continue",
+                hint="Instructions for testing:\n\n"
+                + self.current_state.current_iteration["bug_reproduction_description"],
+            )
+
+            if user_feedback.button == "done":
+                self.next_state.complete_iteration()
+                return AgentResponse.done(self)
+            elif user_feedback.button == "start_pair_programming":
+                self.next_state.current_iteration["status"] = IterationStatus.START_PAIR_PROGRAMMING
+                self.next_state.flag_iterations_as_modified()
+                return AgentResponse.done(self)
+
+            # TODO select only the logs that are new (with PYTHAGORA_DEBUGGING_LOG)
+            self.next_state.current_iteration["bug_hunting_cycles"][-1]["backend_logs"] = "\n".join(
+                (backend_logs.text or "").splitlines()[-500:]
+            )
+            self.next_state.current_iteration["bug_hunting_cycles"][-1]["frontend_logs"] = "\n".join(
+                (frontend_logs.text or "").splitlines()[-500:]
+            )
+            self.next_state.current_iteration["bug_hunting_cycles"][-1]["user_feedback"] = user_feedback.text
+            self.next_state.current_iteration["status"] = IterationStatus.HUNTING_FOR_BUG
 
         return AgentResponse.done(self)
 
