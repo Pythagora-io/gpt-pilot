@@ -34,7 +34,7 @@ def sync_cleanup(ui: UIBase):
     asyncio.run(cleanup(ui))
 
 
-async def run_project(sm: StateManager, ui: UIBase) -> bool:
+async def run_project(sm: StateManager, ui: UIBase, args) -> bool:
     """
     Work on the project.
 
@@ -43,13 +43,14 @@ async def run_project(sm: StateManager, ui: UIBase) -> bool:
 
     :param sm: State manager.
     :param ui: User interface.
+    :param args: Command-line arguments.
     :return: True if the orchestrator exited successfully, False otherwise.
     """
 
     telemetry.set("app_id", str(sm.project.id))
     telemetry.set("initial_prompt", sm.current_state.specification.description)
 
-    orca = Orchestrator(sm, ui)
+    orca = Orchestrator(sm, ui, args=args)
     success = False
     try:
         success = await orca.run()
@@ -230,7 +231,7 @@ async def run_pythagora_session(sm: StateManager, ui: UIBase, args: Namespace):
         if not success:
             return False
 
-    return await run_project(sm, ui)
+    return await run_project(sm, ui, args)
 
 
 async def async_main(

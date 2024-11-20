@@ -58,7 +58,7 @@ class Orchestrator(BaseAgent, GitMixin):
         await self.init_ui()
         await self.offline_changes_check()
 
-        if await self.check_git_installed():
+        if self.args.use_git and await self.check_git_installed():
             await self.init_git_if_needed()
 
         # TODO: consider refactoring this into two loop; the outer with one iteration per comitted step,

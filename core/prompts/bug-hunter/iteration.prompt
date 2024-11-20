@@ -20,10 +20,14 @@ A part of the app is already finished.
 
 {% include "partials/user_feedback.prompt" %}
 
-{% if current_task.test_instructions is defined %}
+{% if test_instructions %}
 Here are the test instructions the user was following when the issue occurred:
 ```
-{{ current_task.test_instructions }}
+{% for step in test_instructions %}
+Step #{{ loop.index }}
+Action: {{ step.action }}
+Expected result: {{ step.result }}
+{% endfor %}
 ```
 {% endif %}
 

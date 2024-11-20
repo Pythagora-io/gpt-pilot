@@ -1,3 +1,4 @@
+import json
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -10,7 +11,6 @@ from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
 from core.telemetry import telemetry
-from core.templates.example_project import EXAMPLE_PROJECTS
 from core.templates.registry import PROJECT_TEMPLATES
 from core.ui.base import ProjectStage, pythagora_source, success_source
 
@@ -48,7 +48,7 @@ class TechLead(BaseAgent):
 
         await self.ui.send_project_stage(ProjectStage.CODING)
 
-        if self.current_state.specification.templates and not self.current_state.files:
+        if self.current_state.specification.templates and len(self.current_state.files) < 2:
             await self.apply_project_templates()
             self.next_state.action = "Apply project templates"
             await self.ui.send_epics_and_tasks(
@@ -239,23 +239,20 @@ class TechLead(BaseAgent):
             self.next_state.tasks,
         )
 
-        await self.ui.send_message(
-            "Open your Progress tab and check out the full development plan",
-            source=pythagora_source,
-            project_state_id=str(self.current_state.id),
-        )
-
-        accept_plan = await self.ask_question(
-            "Do you accept the suggested plan?",
-            buttons={"yes": "Yes, the plan looks good", "regenerate": "Regenerate the plan"},
-            default="yes",
+        response = await self.ask_question(
+            "Open and edit your development plan in the Progress tab",
+            buttons={"done_editing": "I'm done editing, the plan looks good"},
+            default="done_editing",
             buttons_only=True,
             extra_info="edit_plan",
         )
 
-        if accept_plan.button == "regenerate":
-            self.next_state.tasks = []
-            return await self.plan_epic(epic)
+        self.update_epics_and_tasks(response.text)
+
+        await self.ui.send_epics_and_tasks(
+            self.next_state.current_epic["sub_epics"],
+            self.next_state.tasks,
+        )
 
         await telemetry.trace_code_event(
             "development-plan",
@@ -266,23 +263,27 @@ class TechLead(BaseAgent):
         )
         return AgentResponse.done(self)
 
-    def plan_example_project(self):
-        example_name = self.current_state.specification.example_project
-        log.debug(f"Planning example project: {example_name}")
+    def update_epics_and_tasks(self, edited_plan_string):
+        edited_plan = json.loads(edited_plan_string)
+        self.next_state.current_epic["sub_epics"] = []
+        self.next_state.tasks = []
 
-        example = EXAMPLE_PROJECTS[example_name]
-        self.next_state.epics = [
-            {
-                "name": "Initial Project",
-                "description": example["description"],
-                "completed": False,
-                "complexity": example["complexity"],
-                "sub_epics": [
+        # Iterate through each epic and its tasks
+        for sub_epic_number, sub_epic in enumerate(edited_plan, start=1):
+            self.next_state.current_epic["sub_epics"] = self.next_state.current_epic["sub_epics"] + [
+                {
+                    "id": sub_epic_number,
+                    "description": sub_epic["description"],
+                }
+            ]
+            for task in sub_epic["tasks"]:
+                self.next_state.tasks = self.next_state.tasks + [
                     {
-                        "id": 1,
-                        "description": "Single Epic Example",
+                        "id": uuid4().hex,
+                        "description": task["description"],
+                        "instructions": None,
+                        "pre_breakdown_testing_instructions": None,
+                        "status": TaskStatus.TODO,
+                        "sub_epic_id": sub_epic_number,
                     }
-                ],
-            }
-        ]
-        self.next_state.tasks = example["plan"]
+                ]

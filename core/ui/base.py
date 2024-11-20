@@ -109,13 +109,20 @@ class UIBase:
         raise NotImplementedError()
 
     async def send_message(
-        self, message: str, *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+        self,
+        message: str,
+        *,
+        source: Optional[UISource] = None,
+        project_state_id: Optional[str] = None,
+        extra_info: Optional[str] = None,
     ):
         """
         Send a complete message to the UI.
 
         :param message: Message content.
         :param source: Source of the message (if any).
+        :param project_state_id: Current project state id.
+        :param extra_info: Extra information to indicate special functionality in extension.
         """
         raise NotImplementedError()
 
@@ -165,6 +172,7 @@ class UIBase:
         allow_empty: bool = False,
         full_screen: Optional[bool] = False,
         hint: Optional[str] = None,
+        verbose: bool = True,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
         project_state_id: Optional[str] = None,

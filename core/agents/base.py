@@ -29,6 +29,7 @@ class BaseAgent:
         prev_response: Optional["AgentResponse"] = None,
         process_manager: Optional["ProcessManager"] = None,
         data: Optional[Any] = None,
+        args: Optional[Any] = None,
     ):
         """
         Create a new agent.
@@ -40,6 +41,7 @@ class BaseAgent:
         self.prev_response = prev_response
         self.step = step
         self.data = data
+        self.args = args
 
     @property
     def current_state(self) -> ProjectState:
@@ -51,7 +53,7 @@ class BaseAgent:
         """Next state of the project (write-only)."""
         return self.state_manager.next_state
 
-    async def send_message(self, message: str):
+    async def send_message(self, message: str, extra_info: Optional[str] = None):
         """
         Send a message to the user.
 
@@ -59,8 +61,11 @@ class BaseAgent:
         setting the correct source and project state ID.
 
         :param message: Message to send.
+        :param extra_info: Extra information to indicate special functionality in extension
         """
-        await self.ui.send_message(message + "\n", source=self.ui_source, project_state_id=str(self.current_state.id))
+        await self.ui.send_message(
+            message + "\n", source=self.ui_source, project_state_id=str(self.current_state.id), extra_info=extra_info
+        )
 
     async def ask_question(
         self,
@@ -72,6 +77,7 @@ class BaseAgent:
         allow_empty: bool = False,
         full_screen: Optional[bool] = False,
         hint: Optional[str] = None,
+        verbose: bool = True,
         initial_text: Optional[str] = None,
         extra_info: Optional[str] = None,
     ) -> UserInput:
@@ -101,6 +107,7 @@ class BaseAgent:
             allow_empty=allow_empty,
             full_screen=full_screen,
             hint=hint,
+            verbose=verbose,
             initial_text=initial_text,
             source=self.ui_source,
             project_state_id=str(self.current_state.id),

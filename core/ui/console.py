@@ -30,7 +30,12 @@ class PlainConsoleUI(UIBase):
             print(chunk, end="", flush=True)
 
     async def send_message(
-        self, message: str, *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+        self,
+        message: str,
+        *,
+        source: Optional[UISource] = None,
+        project_state_id: Optional[str] = None,
+        extra_info: Optional[str] = None,
     ):
         if source:
             print(f"[{source}] {message}")
@@ -67,6 +72,7 @@ class PlainConsoleUI(UIBase):
         allow_empty: bool = False,
         full_screen: Optional[bool] = False,
         hint: Optional[str] = None,
+        verbose: bool = True,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
         project_state_id: Optional[str] = None,

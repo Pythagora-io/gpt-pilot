@@ -1,3 +1,4 @@
+import json
 from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
@@ -78,6 +79,7 @@ class IterationPromptMixin:
             user_feedback_qa=user_feedback_qa,
             next_solution_to_try=next_solution_to_try,
             bug_hunting_cycles=bug_hunting_cycles,
+            test_instructions=json.loads(self.current_state.current_task.get("test_instructions") or "[]"),
         )
         llm_solution: str = await llm(convo)
         return llm_solution
@@ -109,6 +111,9 @@ class RelevantFilesMixin:
         while not done and len(convo.messages) < 13:
             llm_response: RelevantFiles = await llm(convo, parser=JSONParser(RelevantFiles), temperature=0)
             action = llm_response.action
+            if action is None:
+                convo.remove_last_x_messages(2)
+                continue
 
             # Check if there are files to add to the list
             if getattr(action, "add_files", None):
@@ -120,7 +125,9 @@ class RelevantFilesMixin:
                 # Remove files from relevant_files that are in remove_files
                 relevant_files.difference_update(action.remove_files)
 
-            read_files = [file for file in self.current_state.files if file.path in getattr(action, "read_files", [])]
+            read_files = [
+                file for file in self.current_state.files if file.path in (getattr(action, "read_files", []) or [])
+            ]
 
             convo.remove_last_x_messages(1)
             convo.assistant(llm_response.original_response)
