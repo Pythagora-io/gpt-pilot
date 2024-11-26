@@ -327,6 +327,16 @@ class ProjectState(Base):
         """
         flag_modified(self, "tasks")
 
+    def flag_epics_as_modified(self):
+        """
+        Flag the epic field as having been modified
+
+        Used by Agents that perform modifications within the mutable epics field,
+        to tell the database that it was modified and should get saved (as SQLalchemy
+        can't detect changes in mutable fields by itself).
+        """
+        flag_modified(self, "epics")
+
     def set_current_task_status(self, status: str):
         """
         Set the status of the current task.

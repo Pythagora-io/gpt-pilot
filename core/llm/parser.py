@@ -1,9 +1,60 @@
 import json
 import re
 from enum import Enum
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 from pydantic import BaseModel, ValidationError, create_model
+
+
+class CodeBlock(BaseModel):
+    description: str
+    content: str
+
+
+class ParsedBlocks(BaseModel):
+    original_response: str
+    blocks: List[CodeBlock]
+
+
+class DescriptiveCodeBlockParser:
+    """
+    Parse Markdown code blocks with their descriptions from a string.
+    Returns both the original response and structured data about each block.
+
+    Each block entry contains:
+    - description: The text line immediately preceding the code block
+    - content: The actual content of the code block
+
+    Example usage:
+    >>> parser = DescriptiveCodeBlockParser()
+    >>> text = '''file: next.config.js
+    ... ```js
+    ... module.exports = {
+    ...   reactStrictMode: true,
+    ... };
+    ... ```'''
+    >>> result = parser(text)
+    >>> assert result.blocks[0].description == "file: next.config.js"
+    """
+
+    def __init__(self):
+        self.pattern = re.compile(r"^(.*?)\n```([a-z0-9]+\n)?(.*?)^```\s*", re.DOTALL | re.MULTILINE)
+
+    def __call__(self, text: str) -> ParsedBlocks:
+        # Store original response
+        original_response = text.strip()
+
+        # Find all blocks with their preceding text
+        blocks = []
+        for match in self.pattern.finditer(text):
+            description = match.group(1).strip()
+            content = match.group(3).strip()
+
+            # Only add block if we have both description and content
+            if description and content:
+                blocks.append(CodeBlock(description=description, content=content))
+
+        return ParsedBlocks(original_response=original_response, blocks=blocks)
 
 
 class MultiCodeBlockParser:

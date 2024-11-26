@@ -485,6 +485,7 @@ def adapt_for_bedrock(config: Config) -> Config:
         return config
 
     replacement_map = {
+        "claude-3-5-sonnet-20241022": "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
         "claude-3-5-sonnet-20240620": "us.anthropic.claude-3-5-sonnet-20240620-v1:0",
         "claude-3-sonnet-20240229": "us.anthropic.claude-3-sonnet-20240229-v1:0",
         "claude-3-haiku-20240307": "us.anthropic.claude-3-haiku-20240307-v1:0",

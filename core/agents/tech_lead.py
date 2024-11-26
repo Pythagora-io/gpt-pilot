@@ -39,11 +39,8 @@ class TechLead(BaseAgent):
     display_name = "Tech Lead"
 
     async def run(self) -> AgentResponse:
-        if len(self.current_state.epics) == 0:
-            if self.current_state.specification.example_project:
-                self.plan_example_project()
-            else:
-                self.create_initial_project_epic()
+        if len(self.current_state.epics) == 1:
+            self.create_initial_project_epic()
             return AgentResponse.done(self)
 
         await self.ui.send_project_stage(ProjectStage.CODING)
