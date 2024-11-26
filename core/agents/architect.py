@@ -141,18 +141,19 @@ class Architect(BaseAgent):
 
         templates = {}
         if tpl.template:
-            answer = await self.ask_question(
-                f"Do you want to use the '{tpl.template.name}' template?",
-                buttons={"yes": "Yes", "no": "No"},
-                default="yes",
-                buttons_only=True,
-                hint="Project templates are here to speed up start of your app development and save tokens and time.\n"
-                "Choose 'Yes' to use suggested template for your app.\n"
-                "If you choose 'No', project will be created from scratch.",
-            )
-
-            if answer.button == "no":
-                return tpl.architecture, templates
+            # answer = {"button": "yes"}
+            # answer = await self.ask_question(
+            #     f"Do you want to use the '{tpl.template.name}' template?",
+            #     buttons={"yes": "Yes", "no": "No"},
+            #     default="yes",
+            #     buttons_only=True,
+            #     hint="Project templates are here to speed up start of your app development and save tokens and time.\n"
+            #     "Choose 'Yes' to use suggested template for your app.\n"
+            #     "If you choose 'No', project will be created from scratch.",
+            # )
+            #
+            # if answer.button == "no":
+            #     return tpl.architecture, templates
 
             template_class = PROJECT_TEMPLATES.get(tpl.template)
             if template_class:
