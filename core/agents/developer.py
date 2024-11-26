@@ -291,7 +291,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
 
         description = self.current_state.current_task["description"]
         task_index = self.current_state.tasks.index(self.current_state.current_task) + 1
-        await self.send_message(f"Starting the task #{task_index} with description:\n\n" + description)
+        await self.send_message(f"Starting task #{task_index} with the description:\n\n" + description)
         user_response = await self.ask_question(
             "Do you want to execute the above task?",
             buttons=buttons,
