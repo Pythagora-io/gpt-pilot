@@ -136,6 +136,9 @@ class Architect(BaseAgent):
             .require_schema(TemplateSelection)
         )
         tpl: TemplateSelection = await llm(convo, parser=JSONParser(TemplateSelection))
+
+        tpl.template = ProjectTemplateEnum.NODE_EXPRESS_MONGOOSE
+
         templates = {}
         if tpl.template:
             answer = await self.ask_question(
