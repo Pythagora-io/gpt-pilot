@@ -290,7 +290,8 @@ class Developer(RelevantFilesMixin, BaseAgent):
             buttons["skip"] = "Skip Task"
 
         description = self.current_state.current_task["description"]
-        await self.send_message("Starting new task with description:\n\n" + description)
+        task_index = self.current_state.tasks.index(self.current_state.current_task) + 1
+        await self.send_message(f"Starting the task #{task_index} with description:\n\n" + description)
         user_response = await self.ask_question(
             "Do you want to execute the above task?",
             buttons=buttons,
