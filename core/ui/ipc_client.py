@@ -289,7 +289,8 @@ class IPCClientUI(UIBase):
                 content=question,
                 category=category,
                 project_state_id=project_state_id,
-                extra_info=extra_info,
+                # DO NOT SEND extra_info HERE! It is enough to send it with user_input_request
+                # extra_info=extra_info,
             )
 
         await self._send(

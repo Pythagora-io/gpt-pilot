@@ -365,6 +365,8 @@ class StateManager:
         telemetry.inc("num_tasks")
         if not self.next_state.unfinished_tasks:
             if len(self.current_state.epics) == 1:
+                telemetry.set("end_result", "success:frontend")
+            elif len(self.current_state.epics) == 2:
                 telemetry.set("end_result", "success:initial-project")
             else:
                 telemetry.set("end_result", "success:feature")

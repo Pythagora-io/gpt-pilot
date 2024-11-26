@@ -81,10 +81,6 @@ class AnthropicClient(BaseLLMClient):
             completion_kwargs["extra_headers"] = {"anthropic-version": "bedrock-2023-05-31"}
 
         if "sonnet" in self.config.model:
-            if "extra_headers" in completion_kwargs:
-                completion_kwargs["extra_headers"]["anthropic-beta"] = "max-tokens-3-5-sonnet-2024-07-15"
-            else:
-                completion_kwargs["extra_headers"] = {"anthropic-beta": "max-tokens-3-5-sonnet-2024-07-15"}
             completion_kwargs["max_tokens"] = MAX_TOKENS_SONNET
 
         if json_mode:

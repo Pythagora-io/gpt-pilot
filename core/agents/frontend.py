@@ -91,8 +91,10 @@ class Frontend(BaseAgent):
             "Are you finished making UI changes?",
             buttons={
                 "yes": "Yes, let's build the app!",
+                "copy_frontend_logs": "Copy Frontend Logs",
             },
             default="continue",
+            extra_info="restart_app",
         )
 
         if answer.button == "yes":
@@ -147,13 +149,13 @@ class Frontend(BaseAgent):
             description = block.description.lower().strip()
             content = block.content.strip()
 
-            if description.startswith("file:"):
+            if "file:" in description:
                 # Extract file path from description
                 file_path = description.replace("file:", "").strip()
                 await self.send_message(f"Implementing file `{file_path}`...")
                 await self.state_manager.save_file(file_path, content)
 
-            elif description.startswith("command"):
+            elif description.endswith("command"):
                 # Split multiple commands and execute them sequentially
                 commands = content.strip().split("\n")
                 for command in commands:
@@ -161,6 +163,8 @@ class Frontend(BaseAgent):
                     if command:  # Skip empty lines
                         await self.send_message(f"Running command: `{command}`...")
                         await self.process_manager.run_command(command)
+            else:
+                log.info(f"Unknown block description: {description}")
 
         return AgentResponse.done(self)
 
