@@ -31,6 +31,7 @@ class MessageType(str, Enum):
     PROGRESS = "progress"
     DEBUGGING_LOGS = "debugging_logs"
     RUN_COMMAND = "run_command"
+    APP_LINK = "appLink"
     OPEN_FILE = "openFile"
     PROJECT_FOLDER_NAME = "project_folder_name"
     PROJECT_STATS = "projectStats"
@@ -432,6 +433,12 @@ class IPCClientUI(UIBase):
         await self._send(
             MessageType.RUN_COMMAND,
             content=run_command,
+        )
+
+    async def send_app_link(self, app_link: str):
+        await self._send(
+            MessageType.APP_LINK,
+            content=app_link,
         )
 
     async def open_editor(self, file: str, line: Optional[int] = None):

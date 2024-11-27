@@ -28,6 +28,8 @@ Follow these important rules when compiling a list of actions the user will take
 8. Think about if there is something that user needs to do manually to make the next testing step work
 9. The human has the option to press the "Start App" button so don't instruct them to start the app in any way.
 
+{% include "partials/app_details.prompt" %}
+
 Remember, these rules are very important and you must follow them!
 
 Here is an example output with a few user steps:
@@ -36,7 +38,7 @@ Here is an example output with a few user steps:
     "steps": [
         {
             "title": "Submit the form",
-            "action": "Open your web browser and visit 'http://localhost:3000/form'. Click on the 'Submit' button in the web form",
+            "action": "Open your web browser and visit 'http://localhost:5173/form'. Click on the 'Submit' button in the web form",
             "result": "Form is submitted, the page is reloaded, and 'Thank you' message is shown",
         },
         {

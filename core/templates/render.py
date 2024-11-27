@@ -102,6 +102,9 @@ class Renderer:
 
         for path, subdirs, files in walk(full_root):
             for file in files:
+                # Skip .DS_Store files
+                if file == ".DS_Store":
+                    continue
                 file_path = join(path, file)  # actual full path of the template file
                 tpl_location = relpath(file_path, self.template_dir)  # template relative to template_dir
                 output_location = Path(file_path).relative_to(full_root).as_posix()  # template relative to tree root

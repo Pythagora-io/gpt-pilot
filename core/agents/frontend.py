@@ -18,14 +18,13 @@ class Frontend(BaseAgent):
     display_name = "Frontend"
 
     async def run(self) -> AgentResponse:
-        self.current_state.run_command = "npm run start"
-        await self.ui.send_run_command(self.current_state.run_command)
-
         if not self.current_state.epics:
             finished = await self.init_frontend()
         elif not self.current_state.epics[0]["messages"]:
+            await self.set_app_details()
             finished = await self.start_frontend()
         else:
+            await self.set_app_details()
             finished = await self.iterate_frontend()
 
         return await self.end_frontend_iteration(finished)
@@ -150,8 +149,8 @@ class Frontend(BaseAgent):
             content = block.content.strip()
 
             if "file:" in description:
-                # Extract file path from description
-                file_path = description.replace("file:", "").strip()
+                # Extract file path from description - get everything after "file:"
+                file_path = description[description.index("file:") + 5 :].strip()
                 await self.send_message(f"Implementing file `{file_path}`...")
                 await self.state_manager.save_file(file_path, content)
 
@@ -160,7 +159,10 @@ class Frontend(BaseAgent):
                 commands = content.strip().split("\n")
                 for command in commands:
                     command = command.strip()
-                    if command:  # Skip empty lines
+                    if command:
+                        # Add "cd client" prefix if not already present
+                        if not command.startswith("cd client"):
+                            command = f"cd client && {command}"
                         await self.send_message(f"Running command: `{command}`...")
                         await self.process_manager.run_command(command)
             else:
@@ -190,3 +192,16 @@ class Frontend(BaseAgent):
         self.next_state.relevant_files = template.relevant_files
         self.next_state.modified_files = {}
         return summary
+
+    async def set_app_details(self):
+        """
+        Sets the app details.
+        """
+        command = "npm run start"
+        app_link = "http://localhost:5173"
+
+        self.next_state.run_command = command
+        # todo store app link and send whenever we are sending run_command
+        # self.next_state.app_link = app_link
+        await self.ui.send_run_command(command)
+        await self.ui.send_app_link(app_link)

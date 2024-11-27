@@ -153,6 +153,9 @@ class PlainConsoleUI(UIBase):
     async def send_run_command(self, run_command: str):
         pass
 
+    async def send_app_link(self, app_link: str):
+        pass
+
     async def open_editor(self, file: str, line: Optional[int] = None):
         pass
 

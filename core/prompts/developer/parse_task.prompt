@@ -17,6 +17,8 @@ Each step can be either:
 
 **IMPORTANT**: Remember, NEVER output human intervention steps to do manual tests or coding tasks, even if the previous message asks for it! The testing will be done *after* these steps and you MUST NOT include testing in these steps.
 
+{% include "partials/app_details.prompt" %}
+
 Examples:
 ------------------------example_1---------------------------
 ```
@@ -25,16 +27,25 @@ Examples:
     {
       "type": "save_file",
       "save_file": {
-        "path": "server.js"
+        "path": "server/server.js"
       },
     },
     {
       "type": "command",
       "command": {
-        "command": "mv index.js public/index.js"",
-        "timeout": 5,
+        "command": "cd server && npm install puppeteer",
+        "timeout": 30,
         "success_message": "",
-        "command_id": "move_index_file"
+        "command_id": "install_puppeteer"
+      }
+    },
+    {
+      "type": "command",
+      "command": {
+        "command": "cd client && npm install lucide-react",
+        "timeout": 30,
+        "success_message": "",
+        "command_id": "install_lucide_react"
       }
     }
   ]

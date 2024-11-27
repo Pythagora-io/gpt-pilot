@@ -294,6 +294,14 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def send_app_link(self, app_link: str):
+        """
+        Send a run command to the UI.
+
+        :param app_link: App link.
+        """
+        raise NotImplementedError()
+
     async def open_editor(self, file: str, line: Optional[int] = None):
         """
         Open an editor at the specified file and line.
