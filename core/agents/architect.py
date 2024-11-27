@@ -159,7 +159,6 @@ class Architect(BaseAgent):
         #             self.state_manager,
         #             self.process_manager,
         #         )
-        await self.send_message(f"Selecting {tpl.architecture}")
 
         return tpl.architecture, templates
 

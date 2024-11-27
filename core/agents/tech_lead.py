@@ -263,25 +263,35 @@ class TechLead(BaseAgent):
 
     def update_epics_and_tasks(self, edited_plan_string):
         edited_plan = json.loads(edited_plan_string)
-        self.next_state.current_epic["sub_epics"] = []
-        self.next_state.tasks = []
+        updated_tasks = []
 
-        # Iterate through each epic and its tasks
+        existing_tasks_map = {task["description"]: task for task in self.next_state.tasks}
+
+        self.next_state.current_epic["sub_epics"] = []
         for sub_epic_number, sub_epic in enumerate(edited_plan, start=1):
-            self.next_state.current_epic["sub_epics"] = self.next_state.current_epic["sub_epics"] + [
+            self.next_state.current_epic["sub_epics"].append(
                 {
                     "id": sub_epic_number,
                     "description": sub_epic["description"],
                 }
-            ]
+            )
+
             for task in sub_epic["tasks"]:
-                self.next_state.tasks = self.next_state.tasks + [
-                    {
-                        "id": uuid4().hex,
-                        "description": task["description"],
-                        "instructions": None,
-                        "pre_breakdown_testing_instructions": None,
-                        "status": TaskStatus.TODO,
-                        "sub_epic_id": sub_epic_number,
-                    }
-                ]
+                original_task = existing_tasks_map.get(task["description"])
+                if original_task and task == original_task:
+                    updated_task = original_task.copy()
+                    updated_task["sub_epic_id"] = sub_epic_number
+                    updated_tasks.append(updated_task)
+                else:
+                    updated_tasks.append(
+                        {
+                            "id": uuid4().hex,
+                            "description": task["description"],
+                            "instructions": None,
+                            "pre_breakdown_testing_instructions": None,
+                            "status": TaskStatus.TODO,
+                            "sub_epic_id": sub_epic_number,
+                        }
+                    )
+
+        self.next_state.tasks = updated_tasks

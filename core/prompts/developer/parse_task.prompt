@@ -47,6 +47,10 @@ Examples:
         "success_message": "",
         "command_id": "install_lucide_react"
       }
+    },
+    {
+     "type": "human_intervention",
+     "human_intervention_description": "1. Open the AWS Management Console (https://aws.amazon.com/console/). 2. Navigate to the S3 service and create a new bucket. 3. Configure the bucket with public read access by adjusting the permissions. 4. Upload your static website files to the bucket. 5. Enable static website hosting in the bucket settings and note the website endpoint URL. 6. Add the endpoint URL to your application’s configuration file as: WEBSITE_URL=your_website_endpoint"
     }
   ]
 }
