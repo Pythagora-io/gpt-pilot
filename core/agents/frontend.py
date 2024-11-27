@@ -36,7 +36,7 @@ class Frontend(BaseAgent):
         :return: AgentResponse.done(self)
         """
         description = await self.ask_question(
-            "Give short description of the app UI.",
+            "Please describe the app you want to build.",
             allow_empty=False,
             full_screen=True,
         )
@@ -89,7 +89,7 @@ class Frontend(BaseAgent):
         answer = await self.ask_question(
             "Are you finished making UI changes?",
             buttons={
-                "yes": "Yes, let's build the app!",
+                "yes": "Yes, let's build the app functionality!",
                 "copy_frontend_logs": "Copy Frontend Logs",
             },
             default="continue",
