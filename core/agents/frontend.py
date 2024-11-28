@@ -67,7 +67,7 @@ class Frontend(BaseAgent):
         await self.send_message("Building frontend...")
         description = self.current_state.epics[0]["description"]
 
-        llm = self.get_llm(FRONTEND_AGENT_NAME)
+        llm = self.get_llm(FRONTEND_AGENT_NAME, stream_output=True)
         convo = AgentConvo(self).template(
             "build_frontend",
             description=description,
@@ -91,6 +91,7 @@ class Frontend(BaseAgent):
             buttons={
                 "yes": "Yes, let's build the app functionality!",
                 "copy_frontend_logs": "Copy Frontend Logs",
+                "copy_backend_logs": "Copy Backend Logs",
             },
             default="continue",
             extra_info="restart_app",
@@ -101,7 +102,7 @@ class Frontend(BaseAgent):
 
         await self.send_message("Thinking how to implement this...")
 
-        llm = self.get_llm(FRONTEND_AGENT_NAME)
+        llm = self.get_llm(FRONTEND_AGENT_NAME, stream_output=True)
         convo = AgentConvo(self).template(
             "build_frontend",
             description=self.current_state.epics[0]["description"],
