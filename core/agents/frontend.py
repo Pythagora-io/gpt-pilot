@@ -87,18 +87,28 @@ class Frontend(BaseAgent):
         """
 
         answer = await self.ask_question(
-            "Are you finished making UI changes?",
+            "Test the app and let us know if there are any issues or additional changes you want to make in the UI.",
             buttons={
-                "yes": "Yes, let's build the app functionality!",
+                "yes": "I'm done building the UI",
                 "copy_frontend_logs": "Copy Frontend Logs",
                 "copy_backend_logs": "Copy Backend Logs",
             },
-            default="continue",
+            default="yes",
             extra_info="restart_app",
         )
 
         if answer.button == "yes":
-            return True
+            answer = await self.ask_question(
+                "Are you sure you're done building the UI and want to start building the backend functionality now?",
+                buttons={
+                    "yes": "Yes, let's build the backend.",
+                    "no": "No, continue working on the UI.",
+                },
+                default="yes",
+            )
+
+            if answer.button == "yes":
+                return True
 
         await self.send_message("Thinking how to implement this...")
 
