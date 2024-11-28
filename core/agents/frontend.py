@@ -104,11 +104,14 @@ class Frontend(BaseAgent):
                     "yes": "Yes, let's build the backend.",
                     "no": "No, continue working on the UI.",
                 },
+                buttons_only=True,
                 default="yes",
             )
 
             if answer.button == "yes":
                 return True
+            else:
+                return False
 
         await self.send_message("Thinking how to implement this...")
 
