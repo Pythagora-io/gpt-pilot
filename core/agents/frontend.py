@@ -101,8 +101,8 @@ class Frontend(BaseAgent):
             answer = await self.ask_question(
                 "Are you sure you're done building the UI and want to start building the backend functionality now?",
                 buttons={
-                    "yes": "Yes, let's build the backend.",
-                    "no": "No, continue working on the UI.",
+                    "yes": "Yes, let's build the backend",
+                    "no": "No, continue working on the UI",
                 },
                 buttons_only=True,
                 default="yes",
@@ -113,7 +113,7 @@ class Frontend(BaseAgent):
             else:
                 return False
 
-        await self.send_message("Thinking how to implement this...")
+        await self.send_message("Implementing changes you suggested...")
 
         llm = self.get_llm(FRONTEND_AGENT_NAME, stream_output=True)
         convo = AgentConvo(self).template(
