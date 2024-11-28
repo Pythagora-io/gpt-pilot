@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const express = require("express");
 const session = require("express-session");
 const MongoStore = require('connect-mongo');
-const authRoutes = require("./routes/authRoutes");
+const authRoutes = require("./routes/auth-routes");
 
 if (!process.env.DATABASE_URL || !process.env.SESSION_SECRET) {
   console.error("Error: DATABASE_URL or SESSION_SECRET variables in .env missing.");

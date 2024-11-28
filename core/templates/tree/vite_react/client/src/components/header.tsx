@@ -1,5 +1,6 @@
 {% raw %}
 import { NavigationMenu } from "@/components/ui/navigation-menu"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export function Header() {
   return (
@@ -10,6 +11,9 @@ export function Header() {
             <a href="#" className="transition-colors hover:text-foreground/80">Home</a>
           </nav>
         </NavigationMenu>
+        <div className="flex items-center ml-auto space-x-2">
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   )

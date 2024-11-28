@@ -28,8 +28,6 @@ Follow these important rules when compiling a list of actions the user will take
 8. Think about if there is something that user needs to do manually to make the next testing step work
 9. The human has the option to press the "Start App" button so don't instruct them to start the app in any way.
 
-{% include "partials/app_details.prompt" %}
-
 Remember, these rules are very important and you must follow them!
 
 Here is an example output with a few user steps:

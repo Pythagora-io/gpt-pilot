@@ -26,7 +26,6 @@ Now, based on the project details provided{% if task_type  == 'feature' %} and n
 
 IMPORTANT!
 Frontend is already built and you don't need to create epics for it. You only need to create epics for backend implementation and connect it to existing frontend. Keep in mind that some backend functionality is already implemented.
-{% include "partials/app_details.prompt" %}
 
 Strictly follow these rules:
 
