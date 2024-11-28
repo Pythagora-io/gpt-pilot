@@ -18,6 +18,9 @@ IMPORTANT: Text needs to be readable and in positive typography space - this is 
 
 You must create all code for all pages of this website. If this is a some sort of a dashboard, put the navigation in the sidebar.
 
+**IMPORTANT**
+Make sure to implement all functionality (button clicks, form submissions, etc.) and use mock data for all interactions to make the app look and feel real.
+
 {% if user_feedback %}
 User who was using the app "{{ state.branch.project.name }}" sent you this feedback:
 ```

@@ -7,7 +7,7 @@ const MongoStore = require('connect-mongo');
 const authRoutes = require("./routes/authRoutes");
 
 if (!process.env.DATABASE_URL || !process.env.SESSION_SECRET) {
-  console.error("Error: config environment variables not set. Please create/edit .env configuration file.");
+  console.error("Error: DATABASE_URL or SESSION_SECRET variables in .env missing.");
   process.exit(-1);
 }
 
