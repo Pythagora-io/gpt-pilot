@@ -4,7 +4,9 @@ const mongoose = require("mongoose");
 const express = require("express");
 const session = require("express-session");
 const MongoStore = require('connect-mongo');
-const authRoutes = require("./routes/auth-routes");
+const basicRoutes = require("./routes/index");
+const authRoutes = require("./routes/auth");
+const cors = require("cors");
 
 if (!process.env.DATABASE_URL || !process.env.SESSION_SECRET) {
   console.error("Error: DATABASE_URL or SESSION_SECRET variables in .env missing.");
@@ -17,6 +19,7 @@ const port = process.env.PORT || 3000;
 // Middleware to parse request bodies
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(cors());
 
 // Setting the templating engine to EJS
 app.set("view engine", "ejs");
@@ -68,13 +71,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// Basic Routes
+app.use(basicRoutes);
 // Authentication Routes
 app.use(authRoutes);
-
-// Root path response
-app.get("/", (req, res) => {
-  res.status(200).send("Hello, world!");
-});
 
 // If no routes handled the request, it's a 404
 app.use((req, res, next) => {

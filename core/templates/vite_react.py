@@ -12,6 +12,7 @@ class ViteReactProjectTemplate(BaseProjectTemplate):
         "client/index.html": "Main HTML entry point with root div for React mounting and main.tsx script.",
         "client/package.json": "Client configuration with dependencies, scripts, and metadata.",
         "client/postcss.config.js": "PostCSS configuration with tailwindcss and autoprefixer plugins.",
+        "client/src/api/api.ts": "API utility function for fetching data from the server.",
         "client/src/app.css": "Main application styles including root layout and animations.",
         "client/src/app.tsx": "Main React component with layout structure and welcome message.",
         "client/src/components/footer.tsx": "Footer component with privacy and terms links.",
@@ -80,7 +81,8 @@ class ViteReactProjectTemplate(BaseProjectTemplate):
         "server/.env": "This file is a configuration file in the form of a .env file. It contains environment variables used by the application, such as the port to listen on, the MongoDB database URL, and the session secret string.",
         "server/server.js": "This `server.js` file sets up an Express server with MongoDB database connection, session management using connect-mongo, templating engine EJS, static file serving, authentication routes, error handling, and request logging. [References: dotenv, mongoose, express, express-session, connect-mongo, ./routes/authRoutes]",
         "server/package.json": "Server configuration with dependencies, scripts, and metadata. [References: server.js]",
-        "server/routes/auth-routes.js": "This file defines routes for user authentication including registration, login, and logout. It interacts with a User model to handle user data and uses bcrypt for password hashing and comparison. [References: models/User.js]",
+        "server/routes/auth.js": "This file defines routes for user authentication including registration, login, and logout. It interacts with a User model to handle user data and uses bcrypt for password hashing and comparison. [References: models/User.js]",
+        "server/routes/index.js": "This file defines routes for the home page.",
         "server/routes/middleware/auth-middleware.js": "This file defines a middleware function called isAuthenticated, which checks if a user is authenticated based on the presence of a userId in the session object. If authenticated, it allows the request to proceed to the next middleware or route handler; otherwise, it returns a 401 status response indicating the user is not authenticated.",
         "server/models/User.js": "This file defines a Mongoose model for a user with fields for username and password. It includes a pre-save hook to hash the user's password before saving it to the database using bcrypt. [References: mongoose, bcrypt]",
         "server/services/llm.js": "The file `llm.js` implements functionality for interacting with two large language model (LLM) providers: OpenAI and Anthropic. It uses the `axios` library for HTTP requests and the `dotenv` library to manage environment variables for API keys. The file defines functions to send requests to both providers, handling retries in case of errors. The `sendLLMRequest` function serves as a unified interface to send messages to either provider based on the specified provider name. The file exports sendLLMRequest() function for use in other parts of the application.",
@@ -91,11 +93,14 @@ class ViteReactProjectTemplate(BaseProjectTemplate):
     options_class = NoOptions
     options_description = ""
     relevant_files = [
+        "server/server.js",
+        "server/routes/index.js",
         "client/components.json",
         "client/eslint.config.js",
         "client/index.html",
         "client/package.json",
         "client/postcss.config.js",
+        "client/src/api/api.ts",
         "client/src/app.css",
         "client/src/app.tsx",
         "client/src/components/footer.tsx",
