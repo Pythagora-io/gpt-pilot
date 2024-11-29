@@ -1,6 +1,6 @@
 Here are the complete contents of files relevant to this task:
 ---START_OF_FRONTEND_API_FILES---
-{% for file in state.files %}{% if (get_fe_files is defined and get_fe_files and 'client/' in file.path) or 'client/src/api/' in file.path %}
+{% for file in state.relevant_file_objects %}{% if (get_fe_files is defined and get_fe_files and 'client/' in file.path) or 'client/src/api/' in file.path %}
 **`{{ file.path }}`** ({{file.content.content.splitlines()|length}} lines of code):
 ```
 {{ file.content.content }}```
@@ -8,7 +8,7 @@ Here are the complete contents of files relevant to this task:
 {% endif %}{% endfor %}
 ---END_OF_FRONTEND_API_FILES---
 ---START_OF_BACKEND_FILES---
-{% for file in state.files %}{% if 'server/' in file.path %}
+{% for file in state.relevant_file_objects %}{% if 'server/' in file.path %}
 **`{{ file.path }}`** ({{file.content.content.splitlines()|length}} lines of code):
 ```
 {{ file.content.content }}```
