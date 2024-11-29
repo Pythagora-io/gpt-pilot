@@ -172,6 +172,7 @@ class TechLead(BaseAgent):
                 task_type=self.current_state.current_epic.get("source", "app"),
                 # FIXME: we're injecting summaries to initial description
                 existing_summary=None,
+                get_fe_files=True,
             )
             .require_schema(DevelopmentPlan)
         )
