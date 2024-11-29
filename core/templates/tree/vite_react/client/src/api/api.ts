@@ -1,11 +1,10 @@
-import axios, { AxiosResponse } from "axios";
+import axios from 'axios';
 
-export const fetchData = async (url: string): Promise<any> => {
-  try {
-    const response: AxiosResponse = await axios.get(url);
-    return response.data;
-  } catch (error: unknown) {
-    console.error("Error fetching data:", error);
-    throw error;
-  }
-};
+const api = axios.create({
+  baseURL: 'http://localhost:3000/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+export default api;

@@ -1,4 +1,5 @@
-Create a very modern styled app with the following description:
+{% if user_feedback %}You're currently working on a frontend of an app that has the following description:
+{% else %}Create a very modern styled app with the following description:{% endif %}
 ```
 {{ description }}
 ```
@@ -26,4 +27,7 @@ User who was using the app "{{ state.branch.project.name }}" sent you this feedb
 ```
 {{ user_feedback }}
 ```
+Now, start by writing all code that's needed to fix the problem that the user reported. Think about how routes are set up, how are variables called, and other important things, and mention files by name and where should all new functionality be called from. Then, tell me all the code that needs to be written to fix this issue.
+{% else %}
+Now, start by writing all code that's needed to get the frontend built for this app. Think about how routes are set up, how are variables called, and other important things, and mention files by name and where should all new functionality be called from. Then, tell me all the code that needs to be written to implement the frontend for this app and have it fully working and all commands that need to be run.
 {% endif %}

@@ -66,16 +66,30 @@ class Frontend(BaseAgent):
         """
         await self.send_message("Building frontend...")
         description = self.current_state.epics[0]["description"]
+        response_blocks = None
 
         llm = self.get_llm(FRONTEND_AGENT_NAME, stream_output=True)
         convo = AgentConvo(self).template(
             "build_frontend",
             description=description,
             user_feedback=None,
+            get_fe_files=True,
         )
         response = await llm(convo, parser=DescriptiveCodeBlockParser())
+        response_blocks = response.blocks
 
-        await self.process_response(response, user_input=description)
+        for i in range(3):
+            convo = convo.user(
+                "Ok, now think carefully about your previous response. If the response ends by mentioning something about continuing with the implementation, continue but don't implement any files that have already been implemented. If your last response doesn't end by mentioning continuing, respond only with `DONE` and with nothing else."
+            )
+            response_done = await llm(convo, parser=DescriptiveCodeBlockParser())
+            convo = convo.assistant(response_done.original_response)
+            if "done" in response_done.original_response[-20:].lower().strip():
+                break
+            else:
+                response_blocks += response_done.blocks
+
+        await self.process_response(response_blocks, user_input=description)
 
         return False
 
@@ -120,10 +134,11 @@ class Frontend(BaseAgent):
             "build_frontend",
             description=self.current_state.epics[0]["description"],
             user_feedback=answer.text,
+            get_fe_files=True,
         )
         response = await llm(convo, parser=DescriptiveCodeBlockParser())
 
-        await self.process_response(response, user_input=answer.text)
+        await self.process_response(response.blocks, user_input=answer.text)
 
         return False
 
@@ -147,18 +162,18 @@ class Frontend(BaseAgent):
 
         return AgentResponse.done(self)
 
-    async def process_response(self, response: AgentResponse, user_input: str) -> AgentResponse:
+    async def process_response(self, response_blocks: list, user_input: str) -> AgentResponse:
         """
-        Processes the response from the LLM.
+        Processes the response blocks from the LLM.
 
-        :param response: The response from the LLM.
+        :param response: The response blocks from the LLM.
         :param user_input: The user input.
         :return: AgentResponse.done(self)
         """
         self.next_state.epics[-1]["messages"].append(user_input)
         self.next_state.flag_epics_as_modified()
 
-        for block in response.blocks:
+        for block in response_blocks:
             description = block.description.lower().strip()
             content = block.content.strip()
 
