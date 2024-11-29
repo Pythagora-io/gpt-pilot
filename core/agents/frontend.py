@@ -79,6 +79,7 @@ class Frontend(BaseAgent):
         response_blocks = response.blocks
 
         for i in range(3):
+            convo.assistant(response.original_response)
             convo = convo.user(
                 "Ok, now think carefully about your previous response. If the response ends by mentioning something about continuing with the implementation, continue but don't implement any files that have already been implemented. If your last response doesn't end by mentioning continuing, respond only with `DONE` and with nothing else."
             )
