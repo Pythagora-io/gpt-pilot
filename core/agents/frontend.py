@@ -134,6 +134,7 @@ class Frontend(BaseAgent):
             "build_frontend",
             description=self.current_state.epics[0]["description"],
             user_feedback=answer.text,
+            get_fe_files=True,
         )
         response = await llm(convo, parser=DescriptiveCodeBlockParser())
 
