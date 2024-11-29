@@ -64,7 +64,7 @@ class Frontend(BaseAgent):
         """
         Starts the frontend of the app.
         """
-        await self.send_message("Building frontend...")
+        await self.send_message("Building the frontend...")
         description = self.current_state.epics[0]["description"]
 
         llm = self.get_llm(FRONTEND_AGENT_NAME, stream_output=True)
@@ -72,6 +72,7 @@ class Frontend(BaseAgent):
             "build_frontend",
             description=description,
             user_feedback=None,
+            ignore_shadcn_files=False,
         )
         response = await llm(convo, parser=DescriptiveCodeBlockParser())
         response_blocks = response.blocks
@@ -127,13 +128,14 @@ class Frontend(BaseAgent):
             else:
                 return False
 
-        await self.send_message("Implementing changes you suggested...")
+        await self.send_message("Implementing the changes you suggested...")
 
         llm = self.get_llm(FRONTEND_AGENT_NAME, stream_output=True)
         convo = AgentConvo(self).template(
             "build_frontend",
             description=self.current_state.epics[0]["description"],
             user_feedback=answer.text,
+            ignore_shadcn_files=False,
         )
         response = await llm(convo, parser=DescriptiveCodeBlockParser())
 
