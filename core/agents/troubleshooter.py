@@ -185,7 +185,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
 
         llm = self.get_llm()
         convo = (
-            self._get_task_convo(True)
+            self._get_task_convo()
             .template("define_user_review_goal", task=self.current_state.current_task, route_files=route_files)
             .require_schema(TestSteps)
         )
