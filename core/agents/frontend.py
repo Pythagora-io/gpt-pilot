@@ -75,15 +75,16 @@ class Frontend(BaseAgent):
         )
         response = await llm(convo, parser=DescriptiveCodeBlockParser())
         response_blocks = response.blocks
-        convo = convo.assistant(response.original_response)
+        convo.assistant(response.original_response)
 
         for i in range(3):
-            convo = convo.user(
+            convo.user(
                 "Ok, now think carefully about your previous response. If the response ends by mentioning something about continuing with the implementation, continue but don't implement any files that have already been implemented. If your last response doesn't end by mentioning continuing, respond only with `DONE` and with nothing else."
             )
             response_done = await llm(convo, parser=DescriptiveCodeBlockParser())
-            convo = convo.assistant(response_done.original_response)
+            convo.assistant(response_done.original_response)
             if "done" in response_done.original_response[-20:].lower().strip():
+                response_blocks += response_done.blocks
                 break
             else:
                 response_blocks += response_done.blocks
