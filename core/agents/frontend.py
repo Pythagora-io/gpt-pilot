@@ -220,7 +220,7 @@ class Frontend(BaseAgent):
 
         self.next_state.relevant_files = template.relevant_files
         self.next_state.modified_files = {}
-        return summary
+        self.next_state.specification.template_summary = summary
 
     async def set_app_details(self):
         """

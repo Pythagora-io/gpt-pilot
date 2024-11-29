@@ -1,8 +1,11 @@
 {% if user_feedback %}You're currently working on a frontend of an app that has the following description:
 {% else %}Create a very modern styled app with the following description:{% endif %}
+
 ```
 {{ description }}
 ```
+
+{{ state.specification.template_summary }}
 
 {% include "partials/files_list.prompt" %}
 
