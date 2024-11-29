@@ -146,7 +146,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         self.next_state.set_current_task_status(TaskStatus.REVIEWED)
         return AgentResponse.done(self)
 
-    def _get_task_convo(self, get_fe_files=False) -> AgentConvo:
+    def _get_task_convo(self) -> AgentConvo:
         # FIXME: Current prompts reuse conversation from the developer so we have to resort to this
         task = self.current_state.current_task
         current_task_index = self.current_state.tasks.index(task)
@@ -158,7 +158,6 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
                 task=task,
                 iteration=None,
                 current_task_index=current_task_index,
-                get_fe_files=get_fe_files,
             )
             .assistant(self.current_state.current_task["instructions"])
         )
