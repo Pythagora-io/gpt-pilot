@@ -66,7 +66,6 @@ class Frontend(BaseAgent):
         """
         await self.send_message("Building frontend...")
         description = self.current_state.epics[0]["description"]
-        response_blocks = None
 
         llm = self.get_llm(FRONTEND_AGENT_NAME, stream_output=True)
         convo = AgentConvo(self).template(
