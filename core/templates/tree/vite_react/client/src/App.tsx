@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { TriangleRight } from "lucide-react";
-import { fetchData } from "./api/api";
-// import { Header } from "./components/header"
-// import { Footer } from "./components/footer"
+import { fetchData } from "./api/Api";
+// import { Header } from "./components/Header"
+// import { Footer } from "./components/Footer"
 
 function App() {
   const [data, setData] = useState(null);

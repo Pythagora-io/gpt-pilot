@@ -1,6 +1,6 @@
 {% raw %}
 import { NavigationMenu } from "@/components/ui/navigation-menu"
-import { ThemeToggle } from "@/components/theme-toggle"
+import { ThemeToggle } from "@/components/themeToggle"
 
 export function Header() {
   return (

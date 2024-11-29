@@ -174,7 +174,7 @@ class Frontend(BaseAgent):
         self.next_state.flag_epics_as_modified()
 
         for block in response_blocks:
-            description = block.description.lower().strip()
+            description = block.description.strip()
             content = block.content.strip()
 
             if "file:" in description:

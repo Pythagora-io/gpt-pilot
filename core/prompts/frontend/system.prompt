@@ -33,6 +33,8 @@ IMPORTANT: The order of the actions is very important. For example, if you decid
 
 IMPORTANT: Make sure to implement all functionality (button clicks, form submissions, etc.) and use MOCK DATA for all interactions to make the app look and feel real. MOCK DATA should be used for all interactions.
 
+IMPORTANT: Put full path of file you are editing! Mostly you will work with files inside "client/" folder so don't forget to put it in file path, for example DO `client/src/App.tsx` instead of `src/App.tsx`.
+
 {% include "partials/file_naming.prompt" %}
 
 Here are the examples:
@@ -49,7 +51,7 @@ command
 npm init -y
 npm install <package-name>
 ```
-file: components/MyComponent.tsx
+file: App.tsx
 ```tsx
 import React from 'react';
 
@@ -69,20 +71,20 @@ command
 npm install shadcn/ui
 node scripts/createInitialLeaderboard.js
 ```
-file: components/Snake.tsx
+file: client/components/Snake.tsx
 ```tsx
 import React from 'react';
 ...
 ```
-file: components/Food.tsx
+file: client/components/Food.tsx
 ```tsx
 ...
 ```
-file: components/Score.tsx
+file: client/components/Score.tsx
 ```tsx
 ...
 ```
-file: components/GameOver.tsx
+file: client/components/GameOver.tsx
 ```tsx
 ...
 ```
