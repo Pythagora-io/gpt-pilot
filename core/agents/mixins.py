@@ -104,7 +104,6 @@ class RelevantFilesMixin:
                 user_feedback=user_feedback,
                 solution_description=solution_description,
                 relevant_files=relevant_files,
-                get_fe_files=True,
             )
             .require_schema(RelevantFiles)
         )
