@@ -34,3 +34,6 @@ Now, start by writing all code that's needed to fix the problem that the user re
 {% else %}
 Now, start by writing all code that's needed to get the frontend built for this app. Think about how routes are set up, how are variables called, and other important things, and mention files by name and where should all new functionality be called from. Then, tell me all the code that needs to be written to implement the frontend for this app and have it fully working and all commands that need to be run.
 {% endif %}
+
+IMPORTANT: When suggesting/making changes in the file you must provide full content of the file! Do not use placeholders, or comments, or truncation in any way, but instead provide the full content of the file even the parts that are unchanged!
+When you want to run a command you must put `command:` before the command and then the command itself like shown in the examples in system prompt.

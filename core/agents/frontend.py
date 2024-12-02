@@ -78,7 +78,7 @@ class Frontend(BaseAgent):
         response_blocks = response.blocks
         convo.assistant(response.original_response)
 
-        for i in range(3):
+        for i in range(5):
             convo.user(
                 "Ok, now think carefully about your previous response. If the response ends by mentioning something about continuing with the implementation, continue but don't implement any files that have already been implemented. If your last response doesn't end by mentioning continuing, respond only with `DONE` and with nothing else."
             )
@@ -178,13 +178,18 @@ class Frontend(BaseAgent):
             description = block.description.strip()
             content = block.content.strip()
 
-            if "file:" in description:
-                # Extract file path from description - get everything after "file:"
-                file_path = description[description.index("file:") + 5 :].strip()
+            # Split description into lines and check the last line for file path
+            description_lines = description.split("\n")
+            last_line = description_lines[-1].strip()
+
+            if "file:" in last_line:
+                # Extract file path from the last line - get everything after "file:"
+                file_path = last_line[last_line.index("file:") + 5 :].strip()
+                file_path = file_path.strip("\"'`")
                 await self.send_message(f"Implementing file `{file_path}`...")
                 await self.state_manager.save_file(file_path, content)
 
-            elif description.endswith("command"):
+            elif "command:" in last_line:
                 # Split multiple commands and execute them sequentially
                 commands = content.strip().split("\n")
                 for command in commands:
