@@ -21,7 +21,6 @@ class Frontend(BaseAgent):
         if not self.current_state.epics:
             finished = await self.init_frontend()
         elif not self.current_state.epics[0]["messages"]:
-            await self.set_app_details()
             finished = await self.start_frontend()
         else:
             await self.set_app_details()

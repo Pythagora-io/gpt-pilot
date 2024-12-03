@@ -119,7 +119,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
             log.debug(f"Breaking down the iteration {description}")
 
         if self.current_state.files and self.current_state.relevant_files is None:
-            return await self.get_relevant_files(user_feedback, description)
+            await self.get_relevant_files(user_feedback, description)
 
         await self.send_message("Breaking down the task into steps ...")
         await self.ui.send_task_progress(
@@ -212,8 +212,6 @@ class Developer(RelevantFilesMixin, BaseAgent):
             docs=self.current_state.docs,
         )
         response: str = await llm(convo)
-
-        await self.get_relevant_files(None, response)
 
         self.next_state.tasks[current_task_index] = {
             **current_task,
