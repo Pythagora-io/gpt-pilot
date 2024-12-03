@@ -27,6 +27,7 @@
     "express-session": "^1.18.0",
     "moment": "^2.30.1",
     "mongoose": "^8.1.1",
-    "openai": "^4.63.0"
+    "openai": "^4.63.0",
+    "pino": "^9.5.0"
   }
 }

@@ -1,24 +1,77 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+const { randomUUID } = require('crypto');
+const isEmail = require('validator/lib/isEmail.js');
 
-const userSchema = new mongoose.Schema({
-  username: { type: String, unique: true, required: true },
-  password: { type: String, required: true }
+const { generatePasswordHash, validatePassword, isPasswordHash } = require('../utils/password.js');
+
+const schema = new mongoose.Schema({
+  email: {
+    type: String,
+    required: true,
+    index: true,
+    unique: true,
+    lowercase: true,
+    validate: { validator: isEmail, message: 'Invalid email' },
+  },
+  password: {
+    type: String,
+    required: true,
+    validate: { validator: isPasswordHash, message: 'Invalid password hash' },
+  },
+  token: {
+    type: String,
+    unique: true,
+    index: true,
+    default: () => randomUUID(),
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+    immutable: true,
+  },
+  lastLoginAt: {
+    type: Date,
+    default: Date.now,
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
+}, {
+  versionKey: false,
 });
 
-userSchema.pre('save', function(next) {
-  const user = this;
-  if (!user.isModified('password')) return next();
-  bcrypt.hash(user.password, 10, (err, hash) => {
-    if (err) {
-      console.error('Error hashing password:', err);
-      return next(err);
-    }
-    user.password = hash;
-    next();
-  });
+schema.set('toJSON', {
+  /* eslint-disable */
+  transform: (doc, ret, options) => {
+    delete ret._id;
+    delete ret.password;
+    return ret;
+  },
+  /* eslint-enable */
 });
 
-const User = mongoose.model('User', userSchema);
+schema.statics.authenticateWithPassword = async function authenticateWithPassword(email, password) {
+  const user = await this.findOne({ email }).exec();
+  if (!user) return null;
+
+  const passwordValid = await validatePassword(password, user.password);
+  if (!passwordValid) return null;
+
+  user.lastLoginAt = Date.now();
+  const updatedUser = await user.save();
+
+  return updatedUser;
+};
+
+schema.methods.regenerateToken = async function regenerateToken() {
+  this.token = randomUUID();
+  if (!this.isNew) {
+    await this.save();
+  }
+  return this;
+};
+
+const User = mongoose.model('User', schema);
 
 module.exports = User;
