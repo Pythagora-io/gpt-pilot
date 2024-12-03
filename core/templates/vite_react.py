@@ -60,7 +60,7 @@ class ViteReactProjectTemplate(BaseProjectTemplate):
         "client/src/components/ui/table.tsx": "Shadcn Table component. Exports Table, TableBody, TableCell, TableFooter, TableHeader, TableHead, TableRow, TableCaption.",
         "client/src/components/ui/tabs.tsx": "Shadcn Tabs component. Exports Tabs, TabsList, TabsTrigger, TabsContent.",
         "client/src/components/ui/textarea.tsx": "Shadcn Textarea component. Exports Textarea.",
-        "client/src/components/ui/theme-provider.tsx": "Theme provider component for switching between light and dark modes. Exports ThemeToggle.",
+        "client/src/components/ui/theme-toggle.tsx": "Theme toggle component for switching between light and dark modes. Exports ThemeToggle.",
         "client/src/components/ui/toast.tsx": "Shadcn Toast component. Exports type ToastProps, type ToastActionElement, ToastProvider, ToastViewport, Toast, ToastTitle, ToastDescription, ToastClose, ToastAction.",
         "client/src/components/ui/toaster.tsx": "Shadcn Toaster component. Exports Toaster.",
         "client/src/components/ui/toggle-group.tsx": "Shadcn Toggle Group component. Exports ToggleGroup, ToggleGroupItem.",
