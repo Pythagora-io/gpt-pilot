@@ -247,6 +247,8 @@ class TechLead(BaseAgent):
             extra_info="edit_plan",
         )
 
+        self.update_epics_and_tasks(response.text)
+
         await self.ui.send_epics_and_tasks(
             self.next_state.current_epic["sub_epics"],
             self.next_state.tasks,
