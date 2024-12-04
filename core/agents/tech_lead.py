@@ -86,6 +86,8 @@ class TechLead(BaseAgent):
                 "sub_epics": [],
             }
         ]
+        self.next_state.relevant_files = None
+        self.next_state.modified_files = {}
 
     async def apply_project_templates(self):
         state = self.current_state
