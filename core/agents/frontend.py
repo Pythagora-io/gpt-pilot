@@ -22,6 +22,8 @@ class Frontend(BaseAgent):
             finished = await self.init_frontend()
         elif not self.current_state.epics[0]["messages"]:
             finished = await self.start_frontend()
+        elif not self.next_state.epics[-1]["fe_iteration_done"]:
+            finished = await self.continue_frontend()
         else:
             await self.set_app_details()
             finished = await self.iterate_frontend()
@@ -77,19 +79,39 @@ class Frontend(BaseAgent):
         response_blocks = response.blocks
         convo.assistant(response.original_response)
 
-        for i in range(5):
-            convo.user(
-                "Ok, now think carefully about your previous response. If the response ends by mentioning something about continuing with the implementation, continue but don't implement any files that have already been implemented. If your last response doesn't end by mentioning continuing, respond only with `DONE` and with nothing else."
-            )
-            response_done = await llm(convo, parser=DescriptiveCodeBlockParser())
-            convo.assistant(response_done.original_response)
-            if "done" in response_done.original_response[-20:].lower().strip():
-                response_blocks += response_done.blocks
-                break
-            else:
-                response_blocks += response_done.blocks
+        await self.process_response(response_blocks)
 
-        await self.process_response(response_blocks, user_input=description)
+        self.next_state.epics[-1]["messages"] = convo.messages
+        self.next_state.epics[-1]["fe_iteration_done"] = (
+            "done" in response.original_response[-20:].lower().strip() or len(convo.messages) > 11
+        )
+        self.next_state.flag_epics_as_modified()
+
+        return False
+
+    async def continue_frontend(self):
+        """
+        Continues building the frontend of the app after the initial user input.
+        """
+        await self.send_message("Continuing to build UI...")
+
+        llm = self.get_llm(FRONTEND_AGENT_NAME, stream_output=True)
+        convo = AgentConvo(self)
+        convo.messages = self.current_state.epics[0]["messages"]
+        convo.user(
+            "Ok, now think carefully about your previous response. If the response ends by mentioning something about continuing with the implementation, continue but don't implement any files that have already been implemented. If your last response doesn't end by mentioning continuing, respond only with `DONE` and with nothing else."
+        )
+        response = await llm(convo, parser=DescriptiveCodeBlockParser())
+        response_blocks = response.blocks
+        convo.assistant(response.original_response)
+
+        await self.process_response(response_blocks)
+
+        self.next_state.epics[-1]["messages"] = convo.messages
+        self.next_state.epics[-1]["fe_iteration_done"] = (
+            "done" in response.original_response[-20:].lower().strip() or len(convo.messages) > 11
+        )
+        self.next_state.flag_epics_as_modified()
 
         return False
 
@@ -136,7 +158,7 @@ class Frontend(BaseAgent):
         )
         response = await llm(convo, parser=DescriptiveCodeBlockParser())
 
-        await self.process_response(response.blocks, user_input=answer.text)
+        await self.process_response(response.blocks)
 
         return False
 
@@ -160,17 +182,13 @@ class Frontend(BaseAgent):
 
         return AgentResponse.done(self)
 
-    async def process_response(self, response_blocks: list, user_input: str) -> AgentResponse:
+    async def process_response(self, response_blocks: list) -> AgentResponse:
         """
         Processes the response blocks from the LLM.
 
-        :param response: The response blocks from the LLM.
-        :param user_input: The user input.
+        :param response_blocks: The response blocks from the LLM.
         :return: AgentResponse.done(self)
         """
-        self.next_state.epics[-1]["messages"].append(user_input)
-        self.next_state.flag_epics_as_modified()
-
         for block in response_blocks:
             description = block.description.strip()
             content = block.content.strip()
