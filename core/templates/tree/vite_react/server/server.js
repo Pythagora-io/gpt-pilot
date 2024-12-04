@@ -74,7 +74,7 @@ app.use((req, res, next) => {
 // Basic Routes
 app.use(basicRoutes);
 // Authentication Routes
-app.use(authRoutes);
+app.use('/api/auth', authRoutes);
 
 // If no routes handled the request, it's a 404
 app.use((req, res, next) => {
