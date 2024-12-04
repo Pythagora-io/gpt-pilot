@@ -161,7 +161,7 @@ class BugHunter(BaseAgent):
         if awaiting_bug_reproduction:
             buttons = {
                 "done": "Bug is fixed",
-                "continue": "Continue without feedback",
+                "continue": "Continue without feedback",  # DO NOT CHANGE THIS TEXT without changing it in the extension (it is hardcoded)
                 "start_pair_programming": "Start Pair Programming",
             }
             user_feedback = await self.ask_question(

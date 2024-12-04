@@ -22,7 +22,7 @@ class Frontend(BaseAgent):
             finished = await self.init_frontend()
         elif not self.current_state.epics[0]["messages"]:
             finished = await self.start_frontend()
-        elif not self.next_state.epics[-1]["fe_iteration_done"]:
+        elif not self.next_state.epics[-1].get("fe_iteration_done"):
             finished = await self.continue_frontend()
         else:
             await self.set_app_details()
