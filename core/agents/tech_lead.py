@@ -86,6 +86,8 @@ class TechLead(BaseAgent):
                 "sub_epics": [],
             }
         ]
+        self.next_state.relevant_files = None
+        self.next_state.modified_files = {}
 
     async def apply_project_templates(self):
         state = self.current_state
@@ -244,8 +246,6 @@ class TechLead(BaseAgent):
             buttons_only=True,
             extra_info="edit_plan",
         )
-
-        self.update_epics_and_tasks(response.text)
 
         await self.ui.send_epics_and_tasks(
             self.next_state.current_epic["sub_epics"],
