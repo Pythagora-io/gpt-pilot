@@ -24,8 +24,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.get('/login', (req, res) => res.status(405).json({ error: 'Login with POST instead' }));
-
 router.post('/register', async (req, res, next) => {
   if (req.user) {
     return res.json({ user: req.user });
@@ -39,24 +37,14 @@ router.post('/register', async (req, res, next) => {
   }
 });
 
-router.get('/register', (req, res) => res.status(405).json({ error: 'Register with POST instead' }));
-
-router.all('/logout', async (req, res) => {
-  if (req.user) {
-    await UserService.regenerateToken(req.user);
-  }
-  return res.status(204).send();
-});
-
-router.post('/password', requireUser, async (req, res) => {
-  const { password } = req.body;
-
-  if (!password) {
-    return res.status(400).json({ error: 'Password is required' });
-  }
-
-  await UserService.setPassword(req.user, password);
-  res.status(204).send();
+router.post('/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      console.error('Error during session destruction:', err);
+      return res.status(500).json({ success: false, message: 'Error logging out' });
+    }
+    res.json({ success: true, message: 'Logged out successfully' });
+  });
 });
 
 router.get('/me', requireUser, async (req, res) => {

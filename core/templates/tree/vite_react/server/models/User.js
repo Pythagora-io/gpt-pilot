@@ -1,8 +1,6 @@
 const mongoose = require('mongoose');
-const { randomUUID } = require('crypto');
-const isEmail = require('validator/lib/isEmail.js');
 
-const { generatePasswordHash, validatePassword, isPasswordHash } = require('../utils/password.js');
+const { validatePassword, isPasswordHash } = require('../utils/password.js');
 
 const schema = new mongoose.Schema({
   email: {
@@ -11,18 +9,11 @@ const schema = new mongoose.Schema({
     index: true,
     unique: true,
     lowercase: true,
-    validate: { validator: isEmail, message: 'Invalid email' },
   },
   password: {
     type: String,
     required: true,
     validate: { validator: isPasswordHash, message: 'Invalid password hash' },
-  },
-  token: {
-    type: String,
-    unique: true,
-    index: true,
-    default: () => randomUUID(),
   },
   createdAt: {
     type: Date,
@@ -64,13 +55,17 @@ schema.statics.authenticateWithPassword = async function authenticateWithPasswor
   return updatedUser;
 };
 
-schema.methods.regenerateToken = async function regenerateToken() {
-  this.token = randomUUID();
-  if (!this.isNew) {
-    await this.save();
+schema.pre('save', async function(next) {
+  if (this.isModified('password')) {
+    try {
+      this.password = await bcrypt.hash(this.password, 10);
+    } catch (error) {
+      console.error('Error hashing password:', error);
+      next(error);
+    }
   }
-  return this;
-};
+  next();
+});
 
 const User = mongoose.model('User', schema);
 
