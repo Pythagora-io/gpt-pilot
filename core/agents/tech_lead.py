@@ -39,33 +39,31 @@ class TechLead(BaseAgent):
     display_name = "Tech Lead"
 
     async def run(self) -> AgentResponse:
-        if len(self.current_state.epics) == 0:
-            if self.current_state.specification.example_project:
-                self.plan_example_project()
-            else:
-                self.create_initial_project_epic()
+        # Building frontend is the first epic
+        if len(self.current_state.epics) == 1:
+            self.create_initial_project_epic()
             return AgentResponse.done(self)
 
         await self.ui.send_project_stage(ProjectStage.CODING)
 
-        if self.current_state.specification.templates and len(self.current_state.files) < 2:
-            await self.apply_project_templates()
-            self.next_state.action = "Apply project templates"
-            await self.ui.send_epics_and_tasks(
-                self.next_state.current_epic["sub_epics"],
-                self.next_state.tasks,
-            )
-
-            inputs = []
-            for file in self.next_state.files:
-                input_required = self.state_manager.get_input_required(file.content.content)
-                if input_required:
-                    inputs += [{"file": file.path, "line": line} for line in input_required]
-
-            if inputs:
-                return AgentResponse.input_required(self, inputs)
-            else:
-                return AgentResponse.done(self)
+        # if self.current_state.specification.templates and len(self.current_state.files) < 2:
+        #     await self.apply_project_templates()
+        #     self.next_state.action = "Apply project templates"
+        #     await self.ui.send_epics_and_tasks(
+        #         self.next_state.current_epic["sub_epics"],
+        #         self.next_state.tasks,
+        #     )
+        #
+        #     inputs = []
+        #     for file in self.next_state.files:
+        #         input_required = self.state_manager.get_input_required(file.content.content)
+        #         if input_required:
+        #             inputs += [{"file": file.path, "line": line} for line in input_required]
+        #
+        #     if inputs:
+        #         return AgentResponse.input_required(self, inputs)
+        #     else:
+        #         return AgentResponse.done(self)
 
         if self.current_state.current_epic:
             self.next_state.action = "Create a development plan"
@@ -75,7 +73,7 @@ class TechLead(BaseAgent):
 
     def create_initial_project_epic(self):
         log.debug("Creating initial project Epic")
-        self.next_state.epics = [
+        self.next_state.epics = self.current_state.epics + [
             {
                 "id": uuid4().hex,
                 "name": "Initial Project",
@@ -88,6 +86,8 @@ class TechLead(BaseAgent):
                 "sub_epics": [],
             }
         ]
+        self.next_state.relevant_files = None
+        self.next_state.modified_files = {}
 
     async def apply_project_templates(self):
         state = self.current_state

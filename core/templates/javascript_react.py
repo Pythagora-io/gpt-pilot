@@ -13,9 +13,9 @@ class JavascriptReactProjectTemplate(BaseProjectTemplate):
         ".gitignore": "Specifies patterns to exclude files and directories from being tracked by Git version control system. It is used to prevent certain files from being committed to the repository.",
         "package.json": "Standard Nodejs package metadata file, specifies dependencies and start scripts. It also specifies that the project is a module.",
         "public/.gitkeep": "Empty file",
-        "src/App.css": "Contains styling rules for the root element of the application, setting a maximum width, centering it on the page, adding padding, and aligning text to the center.",
+        "src/app.css": "Contains styling rules for the root element of the application, setting a maximum width, centering it on the page, adding padding, and aligning text to the center.",
         "src/index.css": "Defines styling rules for the root element, body, and h1 elements of a web page.",
-        "src/App.jsx": "Defines a functional component that serves as the root component in the project. The component is exported as the default export. References: src/App.css",
+        "src/App.jsx": "Defines a functional component that serves as the root component in the project. The component is exported as the default export. References: src/app.css",
         "src/main.jsx": "Main entry point for a React application. It imports necessary modules, renders the main component 'App' inside a 'React.StrictMode' component, and mounts it to the root element in the HTML document. References: App.jsx, index.css",
         "src/assets/.gitkeep": "Empty file",
     }

@@ -1,4 +1,9 @@
-These files are currently implemented in the project:
-{% for file in state.files %}
+These files are currently implemented on the frontend that contain all API requests to the backend with structure that you need to follow:
+{% set ignore_shadcn_true = ignore_shadcn_files is not defined or (ignore_shadcn_files is defined and ignore_shadcn_files == True) %}
+{% for file in state.files %}{% if 'client/' in file.path and (not ignore_shadcn_true or 'client/src/components/ui' not in file.path ) %}
 * `{{ file.path }}{% if file.meta.get("description") %}: {{file.meta.description}}{% endif %}`
-{% endfor %}
+{% endif %}{% endfor %}
+These files are currently implemented in the project on the backend:
+{% for file in state.files %}{% if 'server/' in file.path %}
+* `{{ file.path }}{% if file.meta.get("description") %}: {{file.meta.description}}{% endif %}`
+{% endif %}{% endfor %}

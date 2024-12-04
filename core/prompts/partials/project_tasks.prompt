@@ -23,4 +23,7 @@ Every epic must have a clear, high level, and short 1-2 sentence 'description'. 
 This rule applies to order of epics.
 Epics will be executed in same order that you output them. You must order them in a logical way so that epics that depend on other functionalities are implemented in later stage.
 
+## Rule #6
+Create epics for things that are not yet implemented. Do not reimplement what's already done. If something is already implemented, do not create epic for it. Continue from the implementation already there.
+
 ---end_of_rules_for_creating_epics---

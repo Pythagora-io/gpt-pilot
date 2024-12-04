@@ -168,7 +168,7 @@ class BugHunter(BaseAgent):
                 "Please share the relevant Backend logs",
                 buttons=buttons,
                 default="continue",
-                extra_info="backend_logs",
+                extra_info="collect_logs/auto_send_logs",
                 hint="Instructions for testing:\n\n"
                 + self.current_state.current_iteration["bug_reproduction_description"],
             )
@@ -190,7 +190,7 @@ class BugHunter(BaseAgent):
                 "Please share the relevant Frontend logs",
                 buttons=buttons,
                 default="continue",
-                extra_info="frontend_logs",
+                extra_info="collect_logs/auto_send_logs",
                 hint="Instructions for testing:\n\n"
                 + self.current_state.current_iteration["bug_reproduction_description"],
             )

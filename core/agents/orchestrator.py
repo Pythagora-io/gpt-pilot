@@ -9,6 +9,7 @@ from core.agents.developer import Developer
 from core.agents.error_handler import ErrorHandler
 from core.agents.executor import Executor
 from core.agents.external_docs import ExternalDocumentation
+from core.agents.frontend import Frontend
 from core.agents.git import GitMixin
 from core.agents.human_input import HumanInput
 from core.agents.importer import Importer
@@ -219,21 +220,16 @@ class Orchestrator(BaseAgent, GitMixin):
             if prev_response.type == ResponseType.UPDATE_SPECIFICATION:
                 return SpecWriter(self.state_manager, self.ui, prev_response=prev_response)
 
-        if not state.specification.description:
-            if state.files:
-                # The project has been imported, but not analyzed yet
-                return Importer(self.state_manager, self.ui)
-            else:
-                # New project: ask the Spec Writer to refine and save the project specification
-                return SpecWriter(self.state_manager, self.ui, process_manager=self.process_manager)
+        if not state.epics or not state.epics[0].get("completed"):
+            # Build frontend
+            return Frontend(self.state_manager, self.ui, process_manager=self.process_manager)
+        elif not state.specification.description:
+            # New project: ask the Spec Writer to refine and save the project specification
+            return SpecWriter(self.state_manager, self.ui, process_manager=self.process_manager)
         elif not state.specification.architecture:
             # Ask the Architect to design the project architecture and determine dependencies
             return Architect(self.state_manager, self.ui, process_manager=self.process_manager)
-        elif (
-            not state.epics
-            or not self.current_state.unfinished_tasks
-            or (state.specification.templates and not state.files)
-        ):
+        elif not self.current_state.unfinished_tasks or (state.specification.templates and not state.files):
             # Ask the Tech Lead to break down the initial project or feature into tasks and apply project templates
             return TechLead(self.state_manager, self.ui, process_manager=self.process_manager)
 

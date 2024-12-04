@@ -33,15 +33,15 @@ class SpecWriter(BaseAgent):
             return await self.initialize_spec()
 
     async def initialize_spec(self) -> AgentResponse:
-        response = await self.ask_question(
-            "Describe your app in as much detail as possible",
-            allow_empty=False,
-            buttons={},
-        )
-        if response.cancelled:
-            return AgentResponse.error(self, "No project description")
-
-        user_description = response.text.strip()
+        # response = await self.ask_question(
+        #     "Describe your app in as much detail as possible",
+        #     allow_empty=False,
+        # )
+        # if response.cancelled:
+        #     return AgentResponse.error(self, "No project description")
+        #
+        # user_description = response.text.strip()
+        user_description = self.current_state.epics[0]["description"]
 
         complexity = await self.check_prompt_complexity(user_description)
         await telemetry.trace_code_event(
@@ -53,9 +53,9 @@ class SpecWriter(BaseAgent):
         )
 
         reviewed_spec = user_description
-        if len(user_description) < ANALYZE_THRESHOLD and complexity != Complexity.SIMPLE:
-            initial_spec = await self.analyze_spec(user_description)
-            reviewed_spec = await self.review_spec(desc=user_description, spec=initial_spec)
+        # if len(user_description) < ANALYZE_THRESHOLD and complexity != Complexity.SIMPLE:
+        #     initial_spec = await self.analyze_spec(user_description)
+        #     reviewed_spec = await self.review_spec(desc=user_description, spec=initial_spec)
 
         self.next_state.specification = self.current_state.specification.clone()
         self.next_state.specification.original_description = user_description

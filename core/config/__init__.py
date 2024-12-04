@@ -45,6 +45,7 @@ TROUBLESHOOTER_GET_RUN_COMMAND = "Troubleshooter.get_run_command"
 TECH_LEAD_PLANNING = "TechLead.plan_epic"
 SPEC_WRITER_AGENT_NAME = "SpecWriter"
 GET_RELEVANT_FILES_AGENT_NAME = "get_relevant_files"
+FRONTEND_AGENT_NAME = "Frontend"
 
 # Endpoint for the external documentation
 EXTERNAL_DOCUMENTATION_API = "http://docs-pythagora-io-439719575.us-east-1.elb.amazonaws.com"
@@ -343,6 +344,16 @@ class Config(_StrictModel):
                 model="gpt-4o-mini-2024-07-18",
                 temperature=0.0,
             ),
+            FRONTEND_AGENT_NAME: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20241022",
+                temperature=0.0,
+            ),
+            GET_RELEVANT_FILES_AGENT_NAME: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20241022",
+                temperature=0.0,
+            ),
             PARSE_TASK_AGENT_NAME: AgentLLMConfig(
                 provider=LLMProvider.OPENAI,
                 model="gpt-4-0125-preview",
@@ -479,6 +490,7 @@ def adapt_for_bedrock(config: Config) -> Config:
         return config
 
     replacement_map = {
+        "claude-3-5-sonnet-20241022": "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
         "claude-3-5-sonnet-20240620": "us.anthropic.claude-3-5-sonnet-20240620-v1:0",
         "claude-3-sonnet-20240229": "us.anthropic.claude-3-sonnet-20240229-v1:0",
         "claude-3-haiku-20240307": "us.anthropic.claude-3-haiku-20240307-v1:0",

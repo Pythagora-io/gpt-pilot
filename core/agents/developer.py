@@ -119,7 +119,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
             log.debug(f"Breaking down the iteration {description}")
 
         if self.current_state.files and self.current_state.relevant_files is None:
-            return await self.get_relevant_files(user_feedback, description)
+            await self.get_relevant_files(user_feedback, description)
 
         await self.send_message("Breaking down the task into steps ...")
         await self.ui.send_task_progress(
@@ -196,8 +196,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
 
         log.debug(f"Current state files: {len(self.current_state.files)}, relevant {self.current_state.relevant_files}")
         # Check which files are relevant to the current task
-        if self.current_state.files and self.current_state.relevant_files is None:
-            return await self.get_relevant_files()
+        await self.get_relevant_files()
 
         current_task_index = self.current_state.tasks.index(current_task)
 
@@ -212,8 +211,6 @@ class Developer(RelevantFilesMixin, BaseAgent):
             docs=self.current_state.docs,
         )
         response: str = await llm(convo)
-
-        await self.get_relevant_files(None, response)
 
         self.next_state.tasks[current_task_index] = {
             **current_task,
@@ -292,6 +289,8 @@ class Developer(RelevantFilesMixin, BaseAgent):
         description = self.current_state.current_task["description"]
         task_index = self.current_state.tasks.index(self.current_state.current_task) + 1
         await self.send_message(f"Starting task #{task_index} with the description:\n\n" + description)
+        if self.current_state.run_command:
+            await self.ui.send_run_command(self.current_state.run_command)
         user_response = await self.ask_question(
             "Do you want to execute the above task?",
             buttons=buttons,

@@ -138,6 +138,7 @@ class RelevantFilesMixin:
 
         existing_files = {file.path for file in self.current_state.files}
         relevant_files = [path for path in relevant_files if path in existing_files]
+        self.current_state.relevant_files = relevant_files
         self.next_state.relevant_files = relevant_files
 
         return AgentResponse.done(self)

@@ -14,6 +14,7 @@ async def test_create_initial_epic(agentcontext):
     sm, _, ui, _ = agentcontext
 
     sm.current_state.specification.complexity = Complexity.SIMPLE
+    sm.current_state.epics = [{"name": "Frontend", "completed": True}]
 
     tl = TechLead(sm, ui)
     response = await tl.run()
@@ -22,8 +23,8 @@ async def test_create_initial_epic(agentcontext):
     await sm.commit()
 
     assert sm.current_state.epics != []
-    assert sm.current_state.epics[0]["name"] == "Initial Project"
-    assert sm.current_state.epics[0]["completed"] is False
+    assert sm.current_state.epics[1]["name"] == "Initial Project"
+    assert sm.current_state.epics[1]["completed"] is False
 
 
 @pytest.mark.skip(reason="Temporary")
@@ -50,7 +51,10 @@ async def test_ask_for_feature(agentcontext):
     """
     sm, _, ui, _ = agentcontext
 
-    sm.current_state.epics = [{"name": "Initial Project", "completed": True}]
+    sm.current_state.epics = [
+        {"name": "Frontend", "completed": True},
+        {"name": "Initial Project", "completed": True},
+    ]
     ui.ask_question.return_value = UserInput(text="make it pop")
 
     tl = TechLead(sm, ui)
@@ -59,9 +63,9 @@ async def test_ask_for_feature(agentcontext):
 
     await sm.commit()
 
-    assert len(sm.current_state.epics) == 2
-    assert sm.current_state.epics[1]["description"] == "make it pop"
-    assert sm.current_state.epics[1]["completed"] is False
+    assert len(sm.current_state.epics) == 3
+    assert sm.current_state.epics[2]["description"] == "make it pop"
+    assert sm.current_state.epics[2]["completed"] is False
 
 
 @pytest.mark.skip(reason="Temporary")

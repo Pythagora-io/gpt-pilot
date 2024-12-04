@@ -20,8 +20,6 @@ DO NOT specify commands to create any folders or files, they will be created aut
 {% include "partials/file_size_limit.prompt" %}
 {% include "partials/breakdown_code_instructions.prompt" %}
 
-Never use the port 5000 to run the app, it's reserved.
-
 --IMPLEMENTATION INSTRUCTIONS--
 We've broken the development of this {% if state.epics|length > 1 %}feature{% else %}app{% endif %} down to these tasks:
 ```
