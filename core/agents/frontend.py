@@ -101,14 +101,12 @@ class Frontend(BaseAgent):
         """
 
         answer = await self.ask_question(
-            "Test the app and let us know if there are any issues or additional changes you want to make in the UI.",
+            "Test the UI of the app and let us know if there are any issues or additional changes you want to make.",
             buttons={
                 "yes": "I'm done building the UI",
-                "copy_frontend_logs": "Copy Frontend Logs",
-                "copy_backend_logs": "Copy Backend Logs",
             },
             default="yes",
-            extra_info="restart_app",
+            extra_info="restart_app/collect_logs",
         )
 
         if answer.button == "yes":
