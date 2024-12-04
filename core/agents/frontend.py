@@ -65,10 +65,10 @@ class Frontend(BaseAgent):
         """
         Starts the frontend of the app.
         """
-        await self.send_message("Building the frontend...")
+        await self.send_message("Building the frontend... This may take a couple of minutes")
         description = self.current_state.epics[0]["description"]
 
-        llm = self.get_llm(FRONTEND_AGENT_NAME, stream_output=True)
+        llm = self.get_llm(FRONTEND_AGENT_NAME)
         convo = AgentConvo(self).template(
             "build_frontend",
             description=description,
@@ -93,9 +93,9 @@ class Frontend(BaseAgent):
         """
         Continues building the frontend of the app after the initial user input.
         """
-        await self.send_message("Continuing to build UI...")
+        await self.send_message("Continuing to build UI... This may take a couple of minutes")
 
-        llm = self.get_llm(FRONTEND_AGENT_NAME, stream_output=True)
+        llm = self.get_llm(FRONTEND_AGENT_NAME)
         convo = AgentConvo(self)
         convo.messages = self.current_state.epics[0]["messages"]
         convo.user(
@@ -149,7 +149,7 @@ class Frontend(BaseAgent):
 
         await self.send_message("Implementing the changes you suggested...")
 
-        llm = self.get_llm(FRONTEND_AGENT_NAME, stream_output=True)
+        llm = self.get_llm(FRONTEND_AGENT_NAME)
         convo = AgentConvo(self).template(
             "build_frontend",
             description=self.current_state.epics[0]["description"],
