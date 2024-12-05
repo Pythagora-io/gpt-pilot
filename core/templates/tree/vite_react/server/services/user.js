@@ -64,6 +64,28 @@ class UserService {
     }
   }
 
+  static async authenticateWithToken(token) {
+    try {
+      return User.findOne({ token }).exec();
+    } catch (err) {
+      throw `Database error while authenticating user ${email} with token: ${err}`;
+    }
+  }
+
+  static async regenerateToken(user) {
+    user.token = randomUUID(); // eslint-disable-line
+
+    try {
+      if (!user.isNew) {
+        await user.save();
+      }
+
+      return user;
+    } catch (err) {
+      throw `Database error while generating user token: ${err}`;
+    }
+  }
+
   static async createUser({ email, password, name = '' }) {
     if (!email) throw 'Email is required';
     if (!password) throw 'Password is required';

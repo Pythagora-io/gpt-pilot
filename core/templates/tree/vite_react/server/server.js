@@ -6,6 +6,7 @@ const session = require("express-session");
 const MongoStore = require('connect-mongo');
 const basicRoutes = require("./routes/index");
 const authRoutes = require("./routes/auth");
+const { authenticateWithToken } = require('./routes/middleware/auth');
 const cors = require("cors");
 
 if (!process.env.DATABASE_URL || !process.env.SESSION_SECRET) {
@@ -15,17 +16,18 @@ if (!process.env.DATABASE_URL || !process.env.SESSION_SECRET) {
 
 const app = express();
 const port = process.env.PORT || 3000;
+// Pretty-print JSON responses
+app.enable('json spaces');
+// We want to be consistent with URL paths, so we enable strict routing
+app.enable('strict routing');
 
-// Middleware to parse request bodies
-app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// Setting the templating engine to EJS
-app.set("view engine", "ejs");
-
-// Serve static files
-app.use(express.static("public"));
+// Authentication routes
+app.use(authenticateWithToken);
+app.use(authRoutes);
 
 // Database connection
 mongoose

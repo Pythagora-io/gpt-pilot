@@ -1,17 +1,17 @@
 {% raw %}
-import { NavigationMenu } from "@/components/ui/navigation-menu"
-import { ThemeToggle } from "@/components/ui/theme-toggle"
+import { Bell } from "lucide-react"
+import { Button } from "./ui/button"
+import { ThemeToggle } from "./ui/theme-toggle"
 
 export function Header() {
   return (
-    <header className="fixed top-0 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 border-b">
-      <div className="flex h-14 items-center">
-        <NavigationMenu className="mx-6">
-          <nav className="flex items-center space-x-6 text-sm font-medium">
-            <a href="#" className="transition-colors hover:text-foreground/80">Home</a>
-          </nav>
-        </NavigationMenu>
-        <div className="flex items-center ml-auto space-x-2">
+    <header className="fixed top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">
+      <div className="flex h-16 items-center justify-between px-6">
+        <div className="text-xl font-bold">Home</div>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon">
+            <Bell className="h-5 w-5" />
+          </Button>
           <ThemeToggle />
         </div>
       </div>

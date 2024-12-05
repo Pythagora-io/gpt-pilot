@@ -47,6 +47,13 @@ router.post('/logout', (req, res) => {
   });
 });
 
+router.all('/api/auth/logout', async (req, res) => {
+  if (req.user) {
+    await UserService.regenerateToken(req.user);
+  }
+  return res.status(204).send();
+});
+
 router.get('/me', requireUser, async (req, res) => {
   return res.status(200).json(req.user);
 });

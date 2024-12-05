@@ -3,12 +3,11 @@ import api from './api';
 // Login
 // POST /auth/login
 // Request: { email: string, password: string }
-// Response: { success: boolean, message: string, token: string }
+// Response: { success: boolean, message: string }
 export const login = async (email: string, password: string) => {
   try {
     const response = await api.post('/auth/login', { email, password });
-    localStorage.setItem('authToken', response.data.token);
-    return response.data;
+    return response;
   } catch (error) {
     console.error('Login error:', error);
     throw error;

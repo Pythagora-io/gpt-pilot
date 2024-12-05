@@ -1,98 +1,102 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { Mail, Lock } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { register as registerApi } from "@/api/auth"; // Import the register function from auth API
+import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { useNavigate } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card"
+import { useToast } from "@/hooks/useToast"
+import { UserPlus } from "lucide-react"
+import { register as registerUser } from "@/api/auth"
 
-interface FormData {
-  email: string;
-  password: string;
+type RegisterForm = {
+  email: string
+  password: string
 }
 
-export default function Register() {
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
+export function Register() {
+  const [loading, setLoading] = useState(false)
+  const { toast } = useToast()
+  const navigate = useNavigate()
+  const { register, handleSubmit } = useForm<RegisterForm>()
 
-  const onSubmit = async (data: FormData) => {
-    setLoading(true);
+  const onSubmit = async (data: RegisterForm) => {
     try {
-      const response = await registerApi(data); // Use the imported register function
-      toast.success(response.data.message);
-      navigate("/login");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Registration failed");
+      setLoading(true)
+      await registerUser(data);
+      toast({
+        title: "Success",
+        description: "Account created successfully",
+      })
+      navigate("/login")
+    } catch (error) {
+      console.log("Register error:", error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.response?.data?.error,
+      })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="max-w-md mx-auto mt-20">
-      <Card className="backdrop-blur-lg bg-card/50">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
+      <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Register</CardTitle>
-          <CardDescription>
-            Create a new account to get started
-          </CardDescription>
+          <CardTitle>Create an account</CardTitle>
+          <CardDescription>Enter your details to get started</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="pl-10"
-                  {...register("email", { required: "Email is required" })}
-                />
-              </div>
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                {...register("email", { required: true })}
+              />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  className="pl-10"
-                  {...register("password", { required: "Password is required" })}
-                />
-              </div>
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
+              <Input
+                id="password"
+                type="password"
+                placeholder="Choose a password"
+                {...register("password", { required: true })}
+              />
             </div>
-
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Registering..." : "Register"}
+              {loading ? (
+                "Loading..."
+              ) : (
+                <>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Create Account
+                </>
+              )}
             </Button>
-
-            <p className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Button
-                variant="link"
-                className="p-0 h-auto font-normal"
-                onClick={() => navigate("/login")}
-              >
-                Login
-              </Button>
-            </p>
           </form>
         </CardContent>
+        <CardFooter className="flex justify-center">
+          <Button
+            variant="link"
+            className="text-sm text-muted-foreground"
+            onClick={() => navigate("/login")}
+          >
+            Already have an account? Sign in
+          </Button>
+        </CardFooter>
       </Card>
     </div>
-  );
+  )
 }

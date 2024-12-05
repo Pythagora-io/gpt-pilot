@@ -1,101 +1,92 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { Mail, Lock } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { login } from "@/api/auth";
+import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { useNavigate } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { useToast } from "@/hooks/useToast"
+import { LogIn } from "lucide-react"
+import { login } from "@/api/auth"
 
-interface FormData {
-  email: string;
-  password: string;
+type LoginForm = {
+  email: string
+  password: string
 }
 
-const Login = () => {
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
+export function Login() {
+  const [loading, setLoading] = useState(false)
+  const { toast } = useToast()
+  const navigate = useNavigate()
+  const { register, handleSubmit } = useForm<LoginForm>()
 
-  const onSubmit = async (data: FormData) => {
-    setLoading(true);
+  const onSubmit = async (data: LoginForm) => {
     try {
-      await login(data.email, data.password);
-      toast.success("Login successful");
-      // navigate("/home"); navigate to home page after login (replace this with the actual path)
+      setLoading(true)
+      let response = await login(data.email, data.password);
+      localStorage.setItem('token', response.data.token); // Save token to local storage
+      toast({
+        title: "Success",
+        description: "Logged in successfully",
+      })
+      navigate("/")
     } catch (error) {
-      console.error('Login failed:', error);
-      toast.error("Invalid credentials");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.response?.data?.error,
+      })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="max-w-md mx-auto mt-20">
-      <Card className="backdrop-blur-lg bg-card/50">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
+      <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Login</CardTitle>
-          <CardDescription>
-            Enter your credentials to access your account
-          </CardDescription>
+          <CardTitle>Welcome back</CardTitle>
+          <CardDescription>Enter your credentials to continue</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="pl-10"
-                  {...register("email", { required: "Email is required" })}
-                />
-              </div>
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                {...register("email", { required: true })}
+              />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  className="pl-10"
-                  {...register("password", { required: "Password is required" })}
-                />
-              </div>
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                {...register("password", { required: true })}
+              />
             </div>
-
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
+              {loading ? (
+                "Loading..."
+              ) : (
+                <>
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Sign In
+                </>
+              )}
             </Button>
-
-            <p className="text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <Button
-                variant="link"
-                className="p-0 h-auto font-normal"
-                onClick={() => navigate("/register")}
-              >
-                Register
-              </Button>
-            </p>
           </form>
         </CardContent>
       </Card>
     </div>
-  );
-};
-
-export default Login;
+  )
+}
