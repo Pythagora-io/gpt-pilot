@@ -1,98 +1,94 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import { AlertDestructive } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { useNavigate } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@/components/ui/card"
+import { useToast } from "@/hooks/useToast"
+import { LogIn } from "lucide-react"
+import { useAuth } from "@/contexts/AuthContext"
 
-export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
+type LoginForm = {
+  email: string
+  password: string
+}
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setLoading('');
+export function Login() {
+  const [loading, setLoading] = useState(false)
+  const { toast } = useToast()
+  const navigate = useNavigate()
+  const { login } = useAuth()
+  const { register, handleSubmit } = useForm<LoginForm>()
+
+  const onSubmit = async (data: LoginForm) => {
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
-      localStorage.setItem('token', response.data.token); // Save token to local storage
-      navigate('/'); // Redirect to Home
-    } catch (error) {
-      console.error('Login error:', error);
-      setError(error.response?.data?.error || 'An unexpected error occurred');
+      setLoading(true)
+      await login(data.email, data.password)
+      toast({
+        title: "Success",
+        description: "Logged in successfully",
+      })
+      navigate("/")
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "An error occurred",
+      })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    <div id="loginPage" className="w-full h-screen flex items-center justify-center px-4">
-      <Card className="mx-auto max-w-sm">
-        {error && <AlertDestructive title="Login Error" description={error} />}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
+      <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>
-            Enter your email below to login to your account
-          </CardDescription>
+          <CardTitle>Welcome back</CardTitle>
+          <CardDescription>Enter your credentials to continue</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="grid gap-4">
-            <div className="grid gap-2">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                placeholder="Enter your email"
+                autoComplete="email"
+                {...register("email", { required: true })}
               />
             </div>
-            <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
-                {false && <a href="#" className="ml-auto inline-block text-sm underline">
-                  Forgot your password?
-                </a>}
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                placeholder="Enter your password"
+                autoComplete="current-password"
+                {...register("password", { required: true })}
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                  Loading...
-                </>
+                "Loading..."
               ) : (
-                'Login'
+                <>
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Sign In
+                </>
               )}
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{" "}
-            <a href="/register/" className="underline">
-              Sign up
-            </a>
-          </div>
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

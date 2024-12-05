@@ -13,13 +13,14 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return true; // this is just a placeholder - remove when the backend is being implemented
     return !!localStorage.getItem("token");
   });
 
   const login = async (email: string, password: string) => {
     try {
+      return await setTimeout(() => {setIsAuthenticated(true)}, 1000); // this is just a placeholder - remove when the backend is being implemented
       const response = await apiLogin(email, password);
-      console.log(response);
       if (response.data?.token) {
         localStorage.setItem("token", response.data.token);
         setIsAuthenticated(true);
@@ -35,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (email: string, password: string) => {
     try {
+      return await setTimeout(() => {setIsAuthenticated(true)}, 1000); // this is just a placeholder - remove when the backend is being implemented
       const response = await apiRegister(email, password);
       if (response.data?.token) {
         localStorage.setItem("token", response.data.token);
