@@ -255,7 +255,12 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         }
 
         user_response = await self.ask_question(
-            test_message, buttons=buttons, default="continue", buttons_only=True, hint=hint
+            test_message,
+            buttons=buttons,
+            default="continue",
+            buttons_only=True,
+            hint=hint,
+            extra_info="restart_app",
         )
         if user_response.button == "continue" or user_response.cancelled:
             should_iterate = False
@@ -269,7 +274,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         elif user_response.button == "bug":
             user_description = await self.ask_question(
                 "Please describe the issue you found (one at a time) and share any relevant server logs",
-                buttons={"copy_server_logs": "Copy Server Logs"},
+                extra_info="collect_logs",
             )
             bug_report = user_description.text
 
