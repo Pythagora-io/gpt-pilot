@@ -123,7 +123,7 @@ class Frontend(BaseAgent):
         """
 
         answer = await self.ask_question(
-            "Test the UI of the app and let us know if there are any issues or additional changes you want to make.",
+            "Do you want to change anything or report a bug? Keep in mind that currently ONLY frontend is implemented.",
             buttons={
                 "yes": "I'm done building the UI",
             },
