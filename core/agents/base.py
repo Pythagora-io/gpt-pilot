@@ -80,6 +80,7 @@ class BaseAgent:
         verbose: bool = True,
         initial_text: Optional[str] = None,
         extra_info: Optional[str] = None,
+        placeholder: Optional[str] = None,
     ) -> UserInput:
         """
         Ask a question to the user and return the response.
@@ -95,8 +96,10 @@ class BaseAgent:
         :param allow_empty: Allow empty input.
         :param full_screen: Show question full screen in extension.
         :param hint: Text to display in a popup as a hint to the question.
+        :param verbose: Whether to log the question and response.
         :param initial_text: Initial text input.
         :param extra_info: Extra information to indicate special functionality in extension.
+        :param placeholder: Placeholder text for the input field.
         :return: User response.
         """
         response = await self.ui.ask_question(
@@ -112,6 +115,7 @@ class BaseAgent:
             source=self.ui_source,
             project_state_id=str(self.current_state.id),
             extra_info=extra_info,
+            placeholder=placeholder,
         )
         await self.state_manager.log_user_input(question, response)
         return response

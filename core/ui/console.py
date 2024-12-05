@@ -77,6 +77,7 @@ class PlainConsoleUI(UIBase):
         source: Optional[UISource] = None,
         project_state_id: Optional[str] = None,
         extra_info: Optional[str] = None,
+        placeholder: Optional[str] = None,
     ) -> UserInput:
         if source:
             print(f"[{source}] {question}")

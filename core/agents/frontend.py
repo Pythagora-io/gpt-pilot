@@ -129,6 +129,7 @@ class Frontend(BaseAgent):
             },
             default="yes",
             extra_info="restart_app/collect_logs",
+            placeholder='For example, "I don\'t see anything when I open http://localhost:5173/" or "Nothing happens when I click on the NEW PROJECT button"',
         )
 
         if answer.button == "yes":

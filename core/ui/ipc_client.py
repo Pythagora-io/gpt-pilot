@@ -71,6 +71,7 @@ class Message(BaseModel):
     project_state_id: Optional[str] = None
     extra_info: Optional[str] = None
     content: Union[str, dict, None] = None
+    placeholder: Optional[str] = None
 
     def to_bytes(self) -> bytes:
         """
@@ -270,6 +271,7 @@ class IPCClientUI(UIBase):
         source: Optional[UISource] = None,
         project_state_id: Optional[str] = None,
         extra_info: Optional[str] = None,
+        placeholder: Optional[str] = None,
     ) -> UserInput:
         if not self.writer:
             raise UIClosedError()
@@ -300,6 +302,7 @@ class IPCClientUI(UIBase):
             category=category,
             project_state_id=project_state_id,
             extra_info=extra_info,
+            placeholder=placeholder,
         )
         if buttons:
             buttons_str = "/".join(buttons.values())
