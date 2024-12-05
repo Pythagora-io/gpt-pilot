@@ -19,23 +19,13 @@ axios.interceptors.request.use(config => {
 })
 function App() {
   return (
-
     <AuthProvider>
         <ThemeProvider defaultTheme="light" storageKey="ui-theme">
           <Router>
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Layout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route path="/" element={<Layout />}></Route>
-              </Route>
+              <Route path="/" element={<ProtectedRoute> <Layout /> </ProtectedRoute>} />
             </Routes>
           </Router>
           <Toaster />
