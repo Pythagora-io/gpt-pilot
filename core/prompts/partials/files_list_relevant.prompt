@@ -4,8 +4,8 @@ Here are the complete contents of files relevant to this task:
 {% for file in state.relevant_file_objects %}{% if 'client/' in file.path and (not ignore_shadcn_true or 'client/src/components/ui' not in file.path ) %}
 **`{{ file.path }}`** ({{file.content.content.splitlines()|length}} lines of code):
 ```
-{{ file.content.content }}```
-
+{{ file.content.content }}
+```
 {% endif %}{% endfor %}
 ---END_OF_FRONTEND_API_FILES---
 ---START_OF_BACKEND_FILES---

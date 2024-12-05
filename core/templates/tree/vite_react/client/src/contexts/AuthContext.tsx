@@ -17,23 +17,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const login = async (email: string, password: string) => {
-    const response = await apiLogin(email, password);
-    console.log('....', response);
-    if (response.success) {
-      localStorage.setItem("token", response.token);
-      setIsAuthenticated(true);
-    } else {
-      throw new Error(response.message);
+    try {
+      const response = await apiLogin(email, password);
+      console.log(response);
+      if (response.data?.token) {
+        localStorage.setItem("token", response.data.token);
+        setIsAuthenticated(true);
+      } else {
+        throw new Error(response.data.error || "Login failed");
+      }
+    } catch (error) {
+      localStorage.removeItem("token");
+      setIsAuthenticated(false);
+      throw error;
     }
   };
 
   const register = async (email: string, password: string) => {
-    const response = await apiRegister(email, password);
-    if (response.success) {
-      localStorage.setItem("token", response.token);
-      setIsAuthenticated(true);
-    } else {
-      throw new Error(response.message);
+    try {
+      const response = await apiRegister(email, password);
+      if (response.data?.token) {
+        localStorage.setItem("token", response.data.token);
+        setIsAuthenticated(true);
+      } else {
+        throw new Error(response.data.error || "Registration failed");
+      }
+    } catch (error) {
+      localStorage.removeItem("token");
+      setIsAuthenticated(false);
+      throw error;
     }
   };
 
