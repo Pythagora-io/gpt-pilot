@@ -109,7 +109,7 @@ class Frontend(BaseAgent):
 
         self.next_state.epics[-1]["messages"] = convo.messages
         self.next_state.epics[-1]["fe_iteration_done"] = (
-            "done" in response.original_response[-20:].lower().strip() or len(convo.messages) > 11
+            "done" in response.original_response[-20:].lower().strip() or len(convo.messages) > 15
         )
         self.next_state.flag_epics_as_modified()
 
