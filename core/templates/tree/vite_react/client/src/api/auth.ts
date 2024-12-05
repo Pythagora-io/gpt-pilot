@@ -6,6 +6,7 @@ import api from './api';
 // Response: { success: boolean, message: string }
 export const login = async (email: string, password: string) => {
   try {
+    return { success: true, data: { token: '123' } }; // this is just a placeholder - remove when the backend is being implemented
     const response = await api.post('/auth/login', { email, password });
     return response;
   } catch (error) {
@@ -19,6 +20,7 @@ export const login = async (email: string, password: string) => {
 // Request: { email: string, password: string }
 // Response: { success: boolean, message: string }
 export const register = (data: { email: string; password: string }) => {
+    return { success: true, data: { token: '123' } }; // this is just a placeholder - remove when the backend is being implemented
     return api.post('/auth/register', data);
 };
 
