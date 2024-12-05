@@ -103,6 +103,7 @@ async def test_send_message():
             "project_state_id": "123",
             "full_screen": False,
             "extra_info": "test",
+            "placeholder": None,
         },
         {
             "type": "exit",
@@ -111,6 +112,7 @@ async def test_send_message():
             "project_state_id": None,
             "full_screen": False,
             "extra_info": None,
+            "placeholder": None,
         },
     ]
 
@@ -139,6 +141,7 @@ async def test_stream():
             "project_state_id": "123",
             "full_screen": False,
             "extra_info": None,
+            "placeholder": None,
         },
         {
             "type": "stream",
@@ -147,6 +150,7 @@ async def test_stream():
             "project_state_id": "123",
             "full_screen": False,
             "extra_info": None,
+            "placeholder": None,
         },
         {
             "type": "exit",
@@ -155,6 +159,7 @@ async def test_stream():
             "project_state_id": None,
             "full_screen": False,
             "extra_info": None,
+            "placeholder": None,
         },
     ]
 
