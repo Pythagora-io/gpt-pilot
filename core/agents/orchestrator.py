@@ -220,7 +220,7 @@ class Orchestrator(BaseAgent, GitMixin):
             if prev_response.type == ResponseType.UPDATE_SPECIFICATION:
                 return SpecWriter(self.state_manager, self.ui, prev_response=prev_response)
 
-        if not state.epics or state.current_epic.get("source") == "frontend":
+        if not state.epics or (state.current_epic and state.current_epic.get("source") == "frontend"):
             # Build frontend
             return Frontend(self.state_manager, self.ui, process_manager=self.process_manager)
         elif not state.specification.description:
