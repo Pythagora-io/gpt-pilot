@@ -240,45 +240,56 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
 
         is_loop = False
         should_iterate = True
-
-        test_message = "Please check if the app is working"
-        if user_instructions:
-            hint = " Here is a description of what should be working:\n\n" + user_instructions
-
-        if run_command:
-            await self.ui.send_run_command(run_command)
-
-        buttons = {
-            "continue": "Everything works",
-            "change": "I want to make a change",
-            "bug": "There is an issue",
-        }
-
         extra_info = "restart_app" if not self.current_state.iterations else None
 
-        user_response = await self.ask_question(
-            test_message,
-            buttons=buttons,
-            default="continue",
-            buttons_only=True,
-            hint=hint,
-            extra_info=extra_info,
-        )
-        if user_response.button == "continue" or user_response.cancelled:
-            should_iterate = False
+        while True:
+            test_message = "Please check if the app is working"
+            if user_instructions:
+                hint = " Here is a description of what should be working:\n\n" + user_instructions
 
-        elif user_response.button == "change":
-            user_description = await self.ask_question(
-                "Please describe the change you want to make to the project specification (one at a time)"
-            )
-            change_description = user_description.text
+            if run_command:
+                await self.ui.send_run_command(run_command)
 
-        elif user_response.button == "bug":
-            user_description = await self.ask_question(
-                "Please describe the issue you found (one at a time) and share any relevant server logs",
-                extra_info="collect_logs",
+            buttons = {
+                "continue": "Everything works",
+                "change": "I want to make a change",
+                "bug": "There is an issue",
+            }
+
+            user_response = await self.ask_question(
+                test_message,
+                buttons=buttons,
+                default="continue",
+                buttons_only=True,
+                hint=hint,
+                extra_info=extra_info,
             )
-            bug_report = user_description.text
+            extra_info = None
+
+            if user_response.button == "continue" or user_response.cancelled:
+                should_iterate = False
+                break
+
+            elif user_response.button == "change":
+                user_description = await self.ask_question(
+                    "Please describe the change you want to make to the project specification (one at a time)",
+                    buttons={"back": "Back"},
+                )
+                if user_description.button == "back":
+                    continue
+                change_description = user_description.text
+                break
+
+            elif user_response.button == "bug":
+                user_description = await self.ask_question(
+                    "Please describe the issue you found (one at a time) and share any relevant server logs",
+                    extra_info="collect_logs",
+                    buttons={"back": "Back"},
+                )
+                if user_description.button == "back":
+                    continue
+                bug_report = user_description.text
+                break
 
         return should_iterate, is_loop, bug_report, change_description
 
