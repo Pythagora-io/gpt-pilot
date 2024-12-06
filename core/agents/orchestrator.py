@@ -220,7 +220,7 @@ class Orchestrator(BaseAgent, GitMixin):
             if prev_response.type == ResponseType.UPDATE_SPECIFICATION:
                 return SpecWriter(self.state_manager, self.ui, prev_response=prev_response)
 
-        if not state.epics or not state.epics[0].get("completed"):
+        if not state.epics or state.current_epic.get("source") == "frontend":
             # Build frontend
             return Frontend(self.state_manager, self.ui, process_manager=self.process_manager)
         elif not state.specification.description:
@@ -341,9 +341,9 @@ class Orchestrator(BaseAgent, GitMixin):
 
         if self.current_state.epics:
             await self.ui.send_project_stage(ProjectStage.CODING)
-            if len(self.current_state.epics) > 2:
+            if len(self.current_state.epics) > 3:
                 # We only want to send previous features, ie. exclude current one and the initial project (first epic)
-                await self.ui.send_features_list([e["description"] for e in self.current_state.epics[1:-1]])
+                await self.ui.send_features_list([e["description"] for e in self.current_state.epics[2:-1]])
 
         elif self.current_state.specification.description:
             await self.ui.send_project_stage(ProjectStage.ARCHITECTURE)

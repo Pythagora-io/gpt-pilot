@@ -74,7 +74,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
             self.next_state.flag_tasks_as_modified()
             return AgentResponse.done(self)
         else:
-            await self.ui.send_message("Start the app and test it by following these steps:", source=pythagora_source)
+            await self.ui.send_message("Test the app by following these steps:", source=pythagora_source)
 
         await self.send_message("")
         await self.ui.stop_app()
@@ -254,13 +254,15 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
             "bug": "There is an issue",
         }
 
+        extra_info = "restart_app" if not self.current_state.iterations else None
+
         user_response = await self.ask_question(
             test_message,
             buttons=buttons,
             default="continue",
             buttons_only=True,
             hint=hint,
-            extra_info="restart_app",
+            extra_info=extra_info,
         )
         if user_response.button == "continue" or user_response.cancelled:
             should_iterate = False
