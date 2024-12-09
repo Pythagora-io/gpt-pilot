@@ -278,6 +278,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
                 if user_description.button == "back":
                     continue
                 change_description = user_description.text
+                await self.get_relevant_files(user_feedback=change_description)
                 break
 
             elif user_response.button == "bug":
@@ -289,6 +290,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
                 if user_description.button == "back":
                     continue
                 bug_report = user_description.text
+                await self.get_relevant_files(user_feedback=bug_report)
                 break
 
         return should_iterate, is_loop, bug_report, change_description
