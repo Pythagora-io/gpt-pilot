@@ -1,9 +1,11 @@
+~~APP_DESCRIPTION~~
 Here is a high level description of "{{ state.branch.project.name }}":
 ```
 {{ state.specification.description }}
 ```
-
+~~END_OF_APP_DESCRIPTION~~
 {% if state.specification.template_summary %}
-
+~~INFORMATION_ABOUT_THE_CODEBASE~~
 {{ state.specification.template_summary }}
+~~END_OF_INFORMATION_ABOUT_THE_CODEBASE~~
 {% endif %}
