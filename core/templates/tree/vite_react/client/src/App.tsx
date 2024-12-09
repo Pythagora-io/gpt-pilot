@@ -6,17 +6,6 @@ import { Login } from "./pages/Login"
 import { Register } from "./pages/Register"
 import { Layout } from "./components/Layout"
 import { ProtectedRoute } from "./components/ProtectedRoute"
-import axios from 'axios'
-
-
-// Add auth token to every API request if we have it
-axios.interceptors.request.use(config => {
-  const token = localStorage.getItem("token");
-  if (token && !config.headers.Authorization) {
-    config.headers.Authorization = `Token ${token}`
-  }
-  return config
-})
 function App() {
   return (
     <AuthProvider>

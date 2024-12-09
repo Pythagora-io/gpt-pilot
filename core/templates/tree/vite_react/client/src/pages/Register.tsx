@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card"
 import { useToast } from "@/hooks/useToast"
 import { UserPlus } from "lucide-react"
-import { register as registerUser } from "@/api/auth"
+import { useAuth } from "@/contexts/AuthContext"
 
 type RegisterForm = {
   email: string
@@ -24,13 +24,14 @@ type RegisterForm = {
 export function Register() {
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
+  const { register: registerUser } = useAuth()
   const navigate = useNavigate()
   const { register, handleSubmit } = useForm<RegisterForm>()
 
   const onSubmit = async (data: RegisterForm) => {
     try {
       setLoading(true)
-      await registerUser(data);
+      await registerUser(data.email, data.password);
       toast({
         title: "Success",
         description: "Account created successfully",
