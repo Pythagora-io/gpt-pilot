@@ -109,7 +109,6 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         else:
             # should be - elif change_description is not None: - but to prevent bugs with the extension
             # this might be caused if we show the input field instead of buttons
-            await self.get_relevant_files(user_feedback)
             iteration_status = IterationStatus.NEW_FEATURE_REQUESTED
 
         self.next_state.iterations = self.current_state.iterations + [
