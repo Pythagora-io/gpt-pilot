@@ -9,8 +9,8 @@ const authRoutes = require("./routes/auth");
 const { authenticateWithToken } = require('./routes/middleware/auth');
 const cors = require("cors");
 
-if (!process.env.DATABASE_URL || !process.env.SESSION_SECRET) {
-  console.error("Error: DATABASE_URL or SESSION_SECRET variables in .env missing.");
+if (!process.env.DATABASE_URL) {
+  console.error("Error: DATABASE_URL variables in .env missing.");
   process.exit(-1);
 }
 
@@ -21,9 +21,9 @@ app.enable('json spaces');
 // We want to be consistent with URL paths, so we enable strict routing
 app.enable('strict routing');
 
+app.use(cors({}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
 
 // Authentication routes
 app.use(authenticateWithToken);
@@ -41,36 +41,9 @@ mongoose
     process.exit(1);
   });
 
-// Session configuration with connect-mongo
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({ mongoUrl: process.env.DATABASE_URL }),
-  }),
-);
-
 app.on("error", (error) => {
   console.error(`Server error: ${error.message}`);
   console.error(error.stack);
-});
-
-// Logging session creation and destruction
-app.use((req, res, next) => {
-  const sess = req.session;
-  // Make session available to all views
-  res.locals.session = sess;
-  if (!sess.views) {
-    sess.views = 1;
-    console.log("Session created at: ", new Date().toISOString());
-  } else {
-    sess.views++;
-    console.log(
-      `Session accessed again at: ${new Date().toISOString()}, Views: ${sess.views}, User ID: ${sess.userId || '(unauthenticated)'}`,
-    );
-  }
-  next();
 });
 
 // Basic Routes

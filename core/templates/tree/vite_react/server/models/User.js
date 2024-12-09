@@ -29,7 +29,7 @@ const schema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
-  token: {
+  refreshToken: {
     type: String,
     unique: true,
     index: true,
@@ -48,27 +48,6 @@ schema.set('toJSON', {
   },
   /* eslint-enable */
 });
-
-schema.methods.regenerateToken = async function regenerateToken() {
-  this.token = randomUUID();
-  if (!this.isNew) {
-    await this.save();
-  }
-  return this;
-};
-
-schema.statics.authenticateWithPassword = async function authenticateWithPassword(email, password) {
-  const user = await this.findOne({ email }).exec();
-  if (!user) return null;
-
-  const passwordValid = await validatePassword(password, user.password);
-  if (!passwordValid) return null;
-
-  user.lastLoginAt = Date.now();
-  const updatedUser = await user.save();
-
-  return updatedUser;
-};
 
 const User = mongoose.model('User', schema);
 

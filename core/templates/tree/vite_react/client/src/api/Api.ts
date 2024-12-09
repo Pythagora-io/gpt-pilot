@@ -1,10 +1,63 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig, AxiosError } from 'axios';
 
+const backendURL = 'http://localhost:3000';
 const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
+  baseURL: backendURL,
   headers: {
     'Content-Type': 'application/json',
   },
+  validateStatus: (status) => {
+    return status >= 200 && status < 300;
+  },
 });
+
+let accessToken: string | null = null;
+
+// Axios request interceptor: Attach access token to headers
+api.interceptors.request.use(
+  (config: AxiosRequestConfig): AxiosRequestConfig => {
+    if (accessToken && config.headers) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+    return config;
+  },
+  (error: AxiosError): Promise<AxiosError> => Promise.reject(error)
+);
+
+// Axios response interceptor: Handle 401 errors
+api.interceptors.response.use(
+  (response) => response, // If the response is successful, return it
+  async (error: AxiosError): Promise<any> => {
+    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
+
+    // If the error is due to an expired access token
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true; // Mark the request as retried
+
+      try {
+        // Attempt to refresh the token
+        const { data } = await axios.post<{ accessToken: string }>(`${backendURL}/auth/refresh`, {
+          refreshToken: localStorage.getItem('refreshToken'),
+        });
+        accessToken = data.accessToken;
+
+        // Retry the original request with the new token
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        }
+        return api(originalRequest);
+      } catch (err) {
+        // If refresh fails, clear tokens and redirect to login
+        localStorage.removeItem('refreshToken');
+        accessToken = null;
+        window.location.href = '/login'; // Redirect to login page
+        return Promise.reject(err);
+      }
+    }
+
+    return Promise.reject(error); // Pass other errors through
+  }
+);
+
 
 export default api;

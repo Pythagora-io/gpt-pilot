@@ -13,22 +13,20 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return true; // this is just a placeholder - remove when the backend is being implemented
-    return !!localStorage.getItem("token");
+    return !!localStorage.getItem("refreshToken");
   });
 
   const login = async (email: string, password: string) => {
     try {
-      return await setTimeout(() => {setIsAuthenticated(true)}, 1000); // this is just a placeholder - remove when the backend is being implemented
       const response = await apiLogin(email, password);
-      if (response.data?.token) {
-        localStorage.setItem("token", response.data.token);
+      if (response.data?.refreshToken) {
+        localStorage.setItem("refreshToken", response.data.refreshToken);
         setIsAuthenticated(true);
       } else {
         throw new Error(response.data.error || "Login failed");
       }
     } catch (error) {
-      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
       setIsAuthenticated(false);
       throw error;
     }
@@ -36,23 +34,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (email: string, password: string) => {
     try {
-      return await setTimeout(() => {setIsAuthenticated(true)}, 1000); // this is just a placeholder - remove when the backend is being implemented
       const response = await apiRegister(email, password);
-      if (response.data?.token) {
-        localStorage.setItem("token", response.data.token);
-        setIsAuthenticated(true);
-      } else {
-        throw new Error(response.data.error || "Registration failed");
-      }
     } catch (error) {
-      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
       setIsAuthenticated(false);
       throw error;
     }
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
     setIsAuthenticated(false);
   };
 
