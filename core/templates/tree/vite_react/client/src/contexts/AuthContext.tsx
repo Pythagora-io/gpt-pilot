@@ -13,22 +13,24 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return !!localStorage.getItem("refreshToken");
+    return !!localStorage.getItem("accessToken");
   });
 
   const login = async (email: string, password: string) => {
     try {
       const response = await apiLogin(email, password);
-      if (response.data?.refreshToken) {
-        localStorage.setItem("refreshToken", response.data.refreshToken);
+      if (response?.refreshToken || response?.accessToken) {
+        localStorage.setItem("refreshToken", response.refreshToken);
+        localStorage.setItem("accessToken", response.accessToken);
         setIsAuthenticated(true);
       } else {
-        throw new Error(response.data.error || "Login failed");
+        throw new Error(error?.response?.data?.message || 'Login failed');
       }
     } catch (error) {
       localStorage.removeItem("refreshToken");
+      localStorage.removeItem("accessToken");
       setIsAuthenticated(false);
-      throw error;
+      throw new Error(error?.message || 'Login failed');
     }
   };
 
@@ -37,13 +39,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await apiRegister(email, password);
     } catch (error) {
       localStorage.removeItem("refreshToken");
+      localStorage.removeItem("accessToken");
       setIsAuthenticated(false);
-      throw error;
+      throw new Error(error?.message || 'Registration failed');
     }
   };
 
   const logout = () => {
     localStorage.removeItem("refreshToken");
+    localStorage.removeItem("accessToken");
     setIsAuthenticated(false);
   };
 
