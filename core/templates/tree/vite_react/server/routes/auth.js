@@ -1,14 +1,13 @@
 const express = require('express');
 const UserService = require('../services/user.js');
 const { requireUser } = require('./middleware/auth.js');
-const logger = require('../utils/log.js');
 const { generateAccessToken, generateRefreshToken } = require('../utils/auth.js');
+const jwt = require('jsonwebtoken');
 
 const router = express.Router();
-const log = logger('routes/auth');
 
 router.post('/login', async (req, res) => {
-  const sendError = msg => res.status(400).json({ error: msg });
+  const sendError = msg => res.status(400).json({ message: msg });
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -38,7 +37,7 @@ router.post('/register', async (req, res, next) => {
     const user = await UserService.createUser(req.body);
     return res.status(200).json(user);
   } catch (error) {
-    log.error(`Error while registering user: ${error}`);
+    console.error(`Error while registering user: ${error}`);
     return res.status(400).json({ error });
   }
 });
@@ -57,20 +56,66 @@ router.post('/logout', async (req, res) => {
 
 router.post('/refresh', async (req, res) => {
   const { refreshToken } = req.body;
-  if (!refreshToken) return res.status(401).json({ message: 'Refresh token is required.' });
+
+  if (!refreshToken) {
+    return res.status(401).json({
+      success: false,
+      message: 'Refresh token is required'
+    });
+  }
 
   try {
+    // Verify the refresh token
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
 
-    const user = await User.findById(decoded.id);
-    if (!user || user.refreshToken !== refreshToken) {
-      return res.status(403).json({ message: 'Invalid refresh token.' });
+    // Find the user
+    const user = await UserService.getById(decoded.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
     }
 
-    const accessToken = generateAccessToken(user);
-    res.status(200).json({ accessToken });
-  } catch (err) {
-    res.status(403).json({ message: 'Refresh token expired or invalid.' });
+    if (user.refreshToken !== refreshToken) {
+      return res.status(403).json({
+        success: false,
+        message: 'Invalid refresh token'
+      });
+    }
+
+    // Generate new tokens
+    const newAccessToken = generateAccessToken(user);
+    const newRefreshToken = generateRefreshToken(user);
+
+    // Update user's refresh token in database
+    user.refreshToken = newRefreshToken;
+    await user.save();
+
+    // Return new tokens
+    return res.status(200).json({
+      success: true,
+      data: {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken
+      }
+    });
+
+  } catch (error) {
+    console.error(`Token refresh error: ${error.message}`);
+
+    if (error.name === 'TokenExpiredError') {
+      return res.status(403).json({
+        success: false,
+        message: 'Refresh token has expired'
+      });
+    }
+
+    return res.status(403).json({
+      success: false,
+      message: 'Invalid refresh token'
+    });
   }
 });
 
