@@ -95,6 +95,18 @@ class GitMixin:
         """
         workspace_path = self.state_manager.get_full_project_root()
 
+        # Check if there are any changes to commit
+        status_code, git_status, stderr = await self.process_manager.run_command(
+            "git status --porcelain",
+            cwd=workspace_path,
+            show_output=False,
+        )
+        if status_code != 0:
+            raise RuntimeError(f"Failed to get git status: {stderr}")
+
+        if not git_status.strip():
+            return
+
         answer = await self.ui.ask_question(
             "Do you want to create new git commit?",
             buttons={"yes": "Yes", "no": "No"},

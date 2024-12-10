@@ -1,17 +1,14 @@
 {% if options.db_type == 'nosql' %}
 const mongoose = require('mongoose');
-const logger = require('../utils/log.js');
-
-const log = logger('models');
 
 const dbInit = async (options = {}) => {
   const mongoUrl = process.env.DATABASE_URL || 'mongodb://localhost/myDb';
 
   try {
     await mongoose.connect(mongoUrl, options);
-    log.debug(`Connected to MongoDB at ${mongoUrl}`);
+    console.log(`Connected to MongoDB at ${mongoUrl}`);
   } catch (err) {
-    log.fatal(`Error connecting to database ${mongoUrl}:`, err);
+    console.error(`Error connecting to database ${mongoUrl}:`, err);
     throw err;
   }
 };

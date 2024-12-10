@@ -40,7 +40,7 @@ export function Login() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.response?.data?.error,
+        description: error?.message,
       })
     } finally {
       setLoading(false)

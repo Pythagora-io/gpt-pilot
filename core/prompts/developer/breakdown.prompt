@@ -32,7 +32,6 @@ Pay close attention to the currently implemented files, and DO NOT tell me to im
 ~~END_OF_DEVELOPMENT_INSTRUCTIONS~~
 
 ~~DEVELOPMENT_PLAN~~
---IMPLEMENTATION INSTRUCTIONS--
 We've broken the development of this {% if state.epics|length > 1 %}feature{% else %}app{% endif %} down to these tasks:
 ```
 {% for task in state.tasks %}
@@ -52,6 +51,5 @@ Here is how this task should be tested:
 ```{% endif %}
 
 {% if current_task_index != 0 %}All previous tasks are finished and you don't have to work on them.{% endif %}
---END OF IMPLEMENTATION INSTRUCTIONS--
 
 Now, start by writing up what needs to be implemented to get this task working. Think about how routes are set up, how are variables called, and other important things, and mention files by name and where should all new functionality be called from. Then, tell me all the code that needs to be written to implement ONLY this task and have it fully working and all commands that need to be run to implement this task.

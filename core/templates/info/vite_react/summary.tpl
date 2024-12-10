@@ -40,7 +40,7 @@ export const getCompanies = () => {
     });
     // Uncomment the below lines to make an actual API call
     // try {
-    //   return await api.get('/api/companies', data);
+    //   return await api.get('/companies', data);
     // } catch (error) {
     //   throw new Error(error?.response?.data?.error || error.message);
     // }
@@ -63,7 +63,7 @@ export const addDomain = (data: { domain: string; driveLink: string }) => {
     });
     // Uncomment the below lines to make an actual API call
     // try {
-    //   return await api.post('/api/domains/add', data);
+    //   return await api.post('/domains/add', data);
     // } catch (error) {
     //   throw new Error(error?.response?.data?.error || error.message);
     // }

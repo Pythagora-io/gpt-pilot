@@ -109,7 +109,6 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         else:
             # should be - elif change_description is not None: - but to prevent bugs with the extension
             # this might be caused if we show the input field instead of buttons
-            await self.get_relevant_files(user_feedback)
             iteration_status = IterationStatus.NEW_FEATURE_REQUESTED
 
         self.next_state.iterations = self.current_state.iterations + [
@@ -278,6 +277,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
                 if user_description.button == "back":
                     continue
                 change_description = user_description.text
+                await self.get_relevant_files(user_feedback=change_description)
                 break
 
             elif user_response.button == "bug":
@@ -289,6 +289,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
                 if user_description.button == "back":
                     continue
                 bug_report = user_description.text
+                await self.get_relevant_files(user_feedback=bug_report)
                 break
 
         return should_iterate, is_loop, bug_report, change_description

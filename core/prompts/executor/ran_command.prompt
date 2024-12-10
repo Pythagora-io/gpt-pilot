@@ -1,22 +1,8 @@
-A coding task has been implemented for the new project we're working on.
+A coding task has been implemented for the new project, "{{ state.branch.project.name }}", we're working on.
 
-{% include "partials/project_details.prompt" %}
-{% include "partials/files_list.prompt" %}
+Your job is to analyze the output of the command that was ran and determine if the command was successfully executed.
 
-We've broken the development of the project down to these tasks:
-```
-{% for task in state.tasks %}
-{{ loop.index }}. {{ task.description }}{% if task.get("status") == "done" %} (completed){% endif %}
-{% endfor %}
-```
-
-The current task is: {{ current_task.description }}
-
-Here are the detailed instructions for the current task:
-```
-{{ current_task.instructions }}
-```
-{# FIXME: the above stands in place of a previous (task breakdown) convo, and is duplicated in define_user_review_goal and debug prompts #}
+The current task we are working on is: {{ current_task.description }}
 
 {% if task_steps and step_index is not none -%}
 The current task has been split into multiple steps, and each step is one of the following:
