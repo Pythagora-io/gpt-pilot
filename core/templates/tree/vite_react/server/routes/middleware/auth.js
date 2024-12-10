@@ -1,4 +1,5 @@
 const UserService = require('../../services/user.js');
+const jwt = require('jsonwebtoken');
 
 const authenticateWithToken = (req, res, next) => {
   const authHeader = req.get('Authorization');

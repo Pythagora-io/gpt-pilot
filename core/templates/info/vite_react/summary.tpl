@@ -38,8 +38,12 @@ export const getCompanies = () => {
             });
         }, 500);
     });
-    // Uncomment the below line to make an actual API call
-    // api.get('/api/companies');
+    // Uncomment the below lines to make an actual API call
+    // try {
+    //   return await api.get('/api/companies', data);
+    // } catch (error) {
+    //   throw new Error(error?.response?.data?.error || error.message);
+    // }
 }
 —END_OF_EXAMPLE_1—
 
@@ -57,7 +61,13 @@ export const addDomain = (data: { domain: string; driveLink: string }) => {
             resolve({success: true, message: 'Domain added successfully'});
         }, 500);
     });
-    // Uncomment the below line to make an actual API call
-    // return api.post('/domains', data);
+    // Uncomment the below lines to make an actual API call
+    // try {
+    //   return await api.post('/api/domains/add', data);
+    // } catch (error) {
+    //   throw new Error(error?.response?.data?.error || error.message);
+    // }
 }
 —END_OF_EXAMPLE_2—
+
+Whenever you add an API request from the frontend, make sure to wrap the request in try/catch block and in the catch block, return `throw new Error(error?.response?.data?.message || error.message);` - in the place where the API request function is being called, show a toast message with an error.

@@ -16,6 +16,9 @@ let accessToken: string | null = null;
 // Axios request interceptor: Attach access token to headers
 api.interceptors.request.use(
   (config: AxiosRequestConfig): AxiosRequestConfig => {
+    if (!accessToken) {
+      accessToken = localStorage.getItem('accessToken');
+    }
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
@@ -31,12 +34,12 @@ api.interceptors.response.use(
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
     // If the error is due to an expired access token
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if ([401, 403].includes(error.response?.status) && !originalRequest._retry) {
       originalRequest._retry = true; // Mark the request as retried
 
       try {
         // Attempt to refresh the token
-        const { data } = await axios.post<{ accessToken: string }>(`${backendURL}/auth/refresh`, {
+        const { data } = await axios.post<{ accessToken: string }>(`${backendURL}/api/auth/refresh`, {
           refreshToken: localStorage.getItem('refreshToken'),
         });
         accessToken = data.accessToken;
@@ -49,6 +52,7 @@ api.interceptors.response.use(
       } catch (err) {
         // If refresh fails, clear tokens and redirect to login
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('accessToken');
         accessToken = null;
         window.location.href = '/login'; // Redirect to login page
         return Promise.reject(err);
