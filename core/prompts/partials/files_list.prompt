@@ -6,6 +6,7 @@
 ~~RELEVANT_FILES_IMPLEMENTATION~~
 {% include "partials/files_list_relevant.prompt" %}
 {% elif state.files %}
+~~RELEVANT_FILES_IMPLEMENTATION~~
 These files are currently implemented in the project:
 ---START_OF_FRONTEND_API_FILES---
 {% for file in state.files %}{% if 'client/' in file.path %}
@@ -23,5 +24,5 @@ These files are currently implemented in the project:
 
 {% endif %}{% endfor %}
 ---END_OF_BACKEND_FILES---
-~~END_OF_RELEVANT_FILES_IMPLEMENTATION~~
 {% endif %}
+~~END_OF_RELEVANT_FILES_IMPLEMENTATION~~
