@@ -6,10 +6,11 @@ This app has 2 parts:
     * Integrated shadcn-ui component library with Tailwind CSS framework
     * Client-side routing using `react-router-dom` with page components defined in `client/src/pages/` and other components in `client/src/components`
     * It is running on port 5173 and this port should be used for user testing when possible
+    * All requests to the backend need to go to an endpoint that starts with `/api/` (e.g. `/api/companies`)
     * Implememented pages:
         * Home - home (index) page (`/`)
         * Login - login page (`/login/`) - on login, stores the auth tokens to `accessToken` and `refreshToken` variables in local storage
-        * Register - register page (`/register/`)
+        * Register - register page (`/register/`) - on register, store **ONLY** the `accessToken` variable in local storage
 
 ** #2 Backend **
     * Express-based server implementing REST API endpoints in `api/`
@@ -36,7 +37,7 @@ The base client/src/api/api.ts is already created so here are 2 examples for how
 import api from './api';
 
 // Companies List
-// GET /companies
+// GET /api/companies
 // Response: { companies: Array<{ domain: string, name: string, lastContact: string }> }
 export const getCompanies = () => {
     // Mocking the response
@@ -53,30 +54,30 @@ export const getCompanies = () => {
     });
     // Uncomment the below lines to make an actual API call
     // try {
-    //   return await api.get('/companies', data);
+    //   return await api.get('/api/companies', data);
     // } catch (error) {
     //   throw new Error(error?.response?.data?.error || error.message);
     // }
 }
 —END_OF_EXAMPLE_1—
 
-—EXAMPLE_2 (file `client/src/api/domains.ts`) —
+—EXAMPLE_2 (file `client/src/api/work.ts`) —
 import api from './api';
 
-// Add Domain
-// POST /domains
-// Request: { domain: string, driveLink: string }
+// Add Work
+// POST /api/work
+// Request: { work: string, driveLink: string }
 // Response: { success: boolean, message: string }
-export const addDomain = (data: { domain: string; driveLink: string }) => {
+export const addWork = (data: { work: string; driveLink: string }) => {
     // Mocking the response
     return new Promise((resolve) => {
         setTimeout(() => {
-            resolve({success: true, message: 'Domain added successfully'});
+            resolve({success: true, message: 'Work added successfully'});
         }, 500);
     });
     // Uncomment the below lines to make an actual API call
     // try {
-    //   return await api.post('/domains/add', data);
+    //   return await api.post('/api/work/add', data);
     // } catch (error) {
     //   throw new Error(error?.response?.data?.error || error.message);
     // }
