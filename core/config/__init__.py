@@ -366,7 +366,7 @@ class Config(_StrictModel):
             ),
             TASK_BREAKDOWN_AGENT_NAME: AgentLLMConfig(
                 provider=LLMProvider.ANTHROPIC,
-                model="claude-3-5-sonnet-20240620",
+                model="claude-3-5-sonnet-20241022",
                 temperature=0.5,
             ),
             TECH_LEAD_PLANNING: AgentLLMConfig(
