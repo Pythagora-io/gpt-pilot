@@ -2,14 +2,27 @@ IMPORTANT:
 This app has 2 parts:
 
 ** #1 Frontend **
- - Has codebase inside "client/" folder
- - It is running on port 5173 and this port should be used for user testing when possible
- - It is a Vite based React app
+    * ReactJS based frontend in `client/` folder using Vite devserver
+    * Integrated shadcn-ui component library with Tailwind CSS framework
+    * Client-side routing using `react-router-dom` with page components defined in `client/src/pages/` and other components in `client/src/components`
+    * It is running on port 5173 and this port should be used for user testing when possible
+    * Implememented pages:
+        * Home - home (index) page (`/`)
+        * Login - login page (`/login/`) - on login, stores the auth tokens to `accessToken` and `refreshToken` variables in local storage
+        * Register - register page (`/register/`)
 
 ** #2 Backend **
- - Has codebase inside "server/" folder
- - It is running on port 3000
- - It is an Express app
+    * Express-based server implementing REST API endpoints in `api/`
+    * Has codebase inside "server/" folder
+    * Backend is running on port 3000
+    * MongoDB database support with Mongoose
+    * Token-based authentication (using bearer access and refresh tokens)
+    * User authentication (email + password):
+        * login/register API endpoints in `/server/routes/auth.js`
+        * authorization middleware in `/server/routes/middleware/auth.js`
+        * user management logic in `/server/routes/services/user.js`
+        * User authentication is implemented and doesn't require any additional work
+
 
 Concurrently is used to run both client and server together with a single command (`npm run start`).
 

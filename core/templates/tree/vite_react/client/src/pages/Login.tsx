@@ -10,6 +10,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card"
 import { useToast } from "@/hooks/useToast"
 import { LogIn } from "lucide-react"
@@ -86,6 +87,15 @@ export function Login() {
             </Button>
           </form>
         </CardContent>
+        <CardFooter className="flex justify-center">
+          <Button
+            variant="link"
+            className="text-sm text-muted-foreground"
+            onClick={() => navigate("/register")}
+          >
+            Don't have an account? Sign up
+          </Button>
+        </CardFooter>
       </Card>
     </div>
   )
