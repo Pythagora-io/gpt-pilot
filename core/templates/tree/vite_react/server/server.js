@@ -6,7 +6,6 @@ const session = require("express-session");
 const MongoStore = require('connect-mongo');
 const basicRoutes = require("./routes/index");
 const authRoutes = require("./routes/auth");
-const { authenticateWithToken } = require('./routes/middleware/auth');
 const cors = require("cors");
 
 if (!process.env.DATABASE_URL) {
@@ -26,7 +25,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Authentication routes
-app.use(authenticateWithToken);
 app.use(authRoutes);
 
 // Database connection
