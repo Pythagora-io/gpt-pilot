@@ -114,6 +114,10 @@ class Renderer:
                     if not output_location:
                         continue
 
+                if file.endswith((".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".woff", ".woff2", ".ttf", ".eot")):
+                    with open(file_path, "rb") as f:
+                        retval[output_location] = f.read()
+                    continue
                 contents = self.render_template(tpl_location, context)
                 retval[output_location] = contents
 
