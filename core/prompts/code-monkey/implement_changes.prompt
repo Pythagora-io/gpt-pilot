@@ -35,7 +35,7 @@ Now, take a look at how `{{ file_name }}` looks like currently:
 {{ file_content }}
 ```
 
-Ok, now, you have to follow the instructions about `{{ file_name }}` from the development instructions carefully. Reply **ONLY** with the full contents of the file `{{ file_name }}` and nothing else.
+Ok, now, you have to follow the instructions about `{{ file_name }}` from the development instructions carefully. Reply **ONLY** with the full contents of the file `{{ file_name }}` and nothing else. Do not make any changes to the file that are not mentioned in the development instructions - you must **STRICTLY** follow the instructions.
 {% else %}
 You need to create a new file `{{ file_name }}`.
 {% endif %}
