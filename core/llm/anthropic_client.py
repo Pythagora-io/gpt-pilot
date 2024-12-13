@@ -19,7 +19,7 @@ MAX_TOKENS = 4096
 MAX_TOKENS_SONNET = 8192
 
 
-class RetryableError(Exception):
+class CustomAssertionError(Exception):
     pass
 
 
@@ -101,7 +101,7 @@ class AnthropicClient(BaseLLMClient):
                     final_message.content  # Access content to verify it exists
                 except AssertionError:
                     log.debug("Anthropic package AssertionError")
-                    raise RetryableError("Anthropic package AssertionError")
+                    raise CustomAssertionError("No final message received.")
 
             response_str = "".join(response)
 
@@ -114,9 +114,9 @@ class AnthropicClient(BaseLLMClient):
         for attempt in range(retry_count + 1):
             try:
                 return await single_attempt()
-            except RetryableError as e:
+            except CustomAssertionError as e:
                 if attempt == retry_count:  # If this was our last attempt
-                    raise RuntimeError(f"Request failed after {retry_count + 1} attempts: {str(e)}")
+                    raise CustomAssertionError(f"Request failed after {retry_count + 1} attempts: {str(e)}")
                 # Add a small delay before retrying
                 await asyncio.sleep(1)
                 continue

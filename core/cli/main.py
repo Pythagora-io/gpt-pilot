@@ -10,6 +10,7 @@ from core.cli.helpers import delete_project, init, list_projects, list_projects_
 from core.config import LLMProvider, get_config
 from core.db.session import SessionManager
 from core.db.v0importer import LegacyDatabaseImporter
+from core.llm.anthropic_client import CustomAssertionError
 from core.llm.base import APIError, BaseLLMClient
 from core.log import get_logger
 from core.state.state_manager import StateManager
@@ -66,6 +67,14 @@ async def run_project(sm: StateManager, ui: UIBase, args) -> bool:
             source=pythagora_source,
         )
         telemetry.set("end_result", "failure:api-error")
+        await sm.rollback()
+    except CustomAssertionError as err:
+        log.warning(f"Anthropic assertion error occurred: {err.message}")
+        await ui.send_message(
+            f"Stopping Pythagora due to an error inside Anthropic SDK. {err.message}",
+            source=pythagora_source,
+        )
+        telemetry.set("end_result", "failure:assertion-error")
         await sm.rollback()
     except Exception as err:
         log.error(f"Uncaught exception: {err}", exc_info=True)
