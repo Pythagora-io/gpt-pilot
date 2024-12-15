@@ -23,9 +23,12 @@ DO NOT specify commands to create any folders or files, they will be created aut
 
 The entire backend API needs to be on /api/... routes!
 
-** IMPORTANT - Mocking data **
+** IMPORTANT - Mocking API requests **
 Frontend side is making requests to the backend by calling functions that are defined in the folder client/api/. During the frontend implementation, API requests are mocked with dummy data that is defined in this folder and the API response data structure is defined in a comment above each API calling function. Whenever you need to implement an API endpoint, you must first find the function on the frontend that should call that API, remove the mocked data and make sure that the API call is properly done and that the response is parsed in a proper way. Whenever you do this, make sure to tell me explicitly which API calling function is being changed and what will be the response from the API.
 Whenever you add an API request from the frontend, make sure to wrap the request in try/catch block and in the catch block, return `throw new Error(error?.response?.data?.error || error.message);` - in the place where the API request function is being called, show a toast message with an error.
+
+** IMPORTANT - mocking utility functions **
+All utility functions that are not related to CRUD operations (eg. 3rd party integrations) **MUST** be mocked because they will be implemented after all epics are finished in the next phase of the project. Whenever you need to implement a utility function, you must mock the response of that function and document the input and output of that function in a comment above the function definition.
 
 ** IMPORTANT - current implementation **
 Pay close attention to the currently implemented files, and DO NOT tell me to implementat something that is already implemented. Similarly, do not change the current implementation if you think it is working correctly. It is not necessary for you to change files - you can leave the files as they are and just tell me that they are correctly implemented.

@@ -19,9 +19,15 @@ Simple apps should have only 1 epic. More complex apps should have more epics. D
 This rule applies to writing epic 'description'.
 Every epic must have a clear, high level, and short 1-2 sentence 'description'. It must be very clear so that even non technical users who are reviewing it and just moved to this project can understand what is goal for the epic.
 
+{# !!! TODO zamijeniti FIRST TASK s obzirom na auth !!! #}
 ## Rule #5
 This rule applies to order of epics.
-Epics will be executed in same order that you output them. You must order them in a logical way so that epics that depend on other functionalities are implemented in later stage.
+Epics will be executed in same order that you output them. You must order them in a logical way so that epics that depend on other functionalities are implemented in later stage. The general order should be as follows:
+- The first epic **MUST** be to remove the mocked data for making a register and login API requests from the frontend (in the client/src/api/auth.js file) - nothing is needed for this on the backend.
+- The second epic **MUST** be to create any necessary scripts (if there are any). For example, a script to create an admin user, a script to seed the database, etc.
+- Finally, implement the database model and CRUD operations (each epic must contain CRUD operations only for one single model - never for multiple) - make sure that **ALL** epics will CRUD operations come before any other epics. Also, pay attention to the API requests inside files in `client/api/` folder because they are currently using mocked data and whenever you implement an API endpoint, you just need to replace the mocked data with the real API request to the backend.
+
+Remember, all utility functions that are not related to CRUD operations (eg. 3rd party integrations) **MUST** be mocked because they will be implemented after all epics are finished in the next phase of the project.
 
 ## Rule #6
 Create epics for things that are not yet implemented. Do not reimplement what's already done. If something is already implemented, do not create epic for it. Continue from the implementation already there.
