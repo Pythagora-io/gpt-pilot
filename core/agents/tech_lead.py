@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
 from core.agents.response import AgentResponse
-from core.config import TECH_LEAD_PLANNING
+from core.config import TECH_LEAD_EPIC_BREAKDOWN, TECH_LEAD_PLANNING
 from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
@@ -184,7 +184,7 @@ class TechLead(BaseAgent):
         formatted_tasks = [f"Epic #{index}: {task.description}" for index, task in enumerate(response.plan, start=1)]
         tasks_string = "\n\n".join(formatted_tasks)
         convo = convo.assistant(tasks_string)
-        llm = self.get_llm(TECH_LEAD_PLANNING)
+        llm = self.get_llm(TECH_LEAD_EPIC_BREAKDOWN)
 
         if epic.get("source") == "feature" or epic.get("complexity") == "simple":
             await self.send_message(f"Epic 1: {epic['name']}")
