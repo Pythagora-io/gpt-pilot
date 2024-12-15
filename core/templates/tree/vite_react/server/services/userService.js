@@ -64,15 +64,7 @@ class UserService {
     }
   }
 
-  static async authenticateWithToken(token) {
-    try {
-      return User.findOne({ token }).exec();
-    } catch (err) {
-      throw new Error(`Database error while authenticating user ${email} with token: ${err}`);
-    }
-  }
-
-  static async createUser({ email, password, name = '' }) {
+  static async create({ email, password, name = '' }) {
     if (!email) throw new Error('Email is required');
     if (!password) throw new Error('Password is required');
 

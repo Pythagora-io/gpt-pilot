@@ -1,5 +1,5 @@
 const express = require('express');
-const UserService = require('../services/user.js');
+const UserService = require('../services/userService.js');
 const { requireUser } = require('./middleware/auth.js');
 const { generateAccessToken, generateRefreshToken } = require('../utils/auth.js');
 const jwt = require('jsonwebtoken');
@@ -34,7 +34,7 @@ router.post('/register', async (req, res, next) => {
     return res.json({ user: req.user });
   }
   try {
-    const user = await UserService.createUser(req.body);
+    const user = await UserService.create(req.body);
     return res.status(200).json(user);
   } catch (error) {
     console.error(`Error while registering user: ${error}`);
