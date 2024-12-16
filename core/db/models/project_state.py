@@ -469,4 +469,4 @@ class ProjectState(Base):
 
         :return: True if the current epic is a feature, False otherwise.
         """
-        return self.epics and self.current_epic.get("source") == "feature"
+        return self.epics and self.current_epic and self.current_epic.get("source") == "feature"

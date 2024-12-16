@@ -13,7 +13,7 @@ IMPORTANT:
 - Do not repeat actions that you have already done. For example if you already added "index.js" to the list of relevant files you must not add it again.
 - You must read the file before adding it to the list of relevant files. Do not add that you didn't read and see the content of the file.
 - Focus only on your current task `{{ state.current_task.description }}` when selecting relevant files.
-- IMPORTANT: You must read and add relevant files from both "client/" and "server/" folders so that implementation can be done correctly! The "client" and "server" must work seamlessly together!
+{% if not state.has_frontend() %}- IMPORTANT: You must read and add relevant files from both "client/" and "server/" folders so that implementation can be done correctly! The "client" and "server" must work seamlessly together!{% endif %}
 - IMPORTANT: Execute only 1 action per request! Once your response is processed you will be able to choose next action.
 - IMPORTANT: It is much better to read and add more files than not adding files that are relevant!
 - You can read and add up to 20 files at once and if you need to see more file contents you can do that in next iterations. Make sure you don't miss any files that are relevant!
