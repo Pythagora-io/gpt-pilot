@@ -19,6 +19,7 @@ log = get_logger(__name__)
 
 class Epic(BaseModel):
     description: str = Field(description=("Description of an epic."))
+    related_api_endpoints: list[str] = Field(description="API endpoints that will be implemented in this epic.")
 
 
 class Task(BaseModel):
@@ -181,9 +182,12 @@ class TechLead(BaseAgent):
         response: DevelopmentPlan = await llm(convo, parser=JSONParser(DevelopmentPlan))
 
         convo.remove_last_x_messages(1)
-        formatted_tasks = [f"Epic #{index}: {task.description}" for index, task in enumerate(response.plan, start=1)]
-        tasks_string = "\n\n".join(formatted_tasks)
-        convo = convo.assistant(tasks_string)
+        formatted_epics = [
+            f"Epic #{index}: {epic.description} ({','.join([f'`{endpoint}`' for endpoint in epic.related_api_endpoints])})"
+            for index, epic in enumerate(response.plan, start=1)
+        ]
+        epics_string = "\n\n".join(formatted_epics)
+        convo = convo.assistant(epics_string)
         llm = self.get_llm(TECH_LEAD_EPIC_BREAKDOWN)
 
         if epic.get("source") == "feature" or epic.get("complexity") == "simple":
@@ -211,13 +215,19 @@ class TechLead(BaseAgent):
                 {
                     "id": sub_epic_number,
                     "description": sub_epic.description,
+                    "related_api_endpoints": sub_epic.related_api_endpoints,
                 }
                 for sub_epic_number, sub_epic in enumerate(response.plan, start=1)
             ]
             for sub_epic_number, sub_epic in enumerate(response.plan, start=1):
-                await self.send_message(f"Epic {sub_epic_number}: {sub_epic.description}")
+                await self.send_message(
+                    f"Epic {sub_epic_number}: {sub_epic.description} ({','.join([f'`{endpoint}`' for endpoint in sub_epic.related_api_endpoints])})"
+                )
                 convo = convo.template(
-                    "epic_breakdown", epic_number=sub_epic_number, epic_description=sub_epic.description
+                    "epic_breakdown",
+                    epic_number=sub_epic_number,
+                    epic_description=sub_epic.description,
+                    related_api_endpoints=sub_epic.related_api_endpoints,
                 ).require_schema(EpicPlan)
                 await self.send_message("Creating tasks for this epic ...")
                 epic_plan: EpicPlan = await llm(convo, parser=JSONParser(EpicPlan))

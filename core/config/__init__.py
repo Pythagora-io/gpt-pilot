@@ -371,8 +371,8 @@ class Config(_StrictModel):
                 temperature=0.5,
             ),
             TECH_LEAD_PLANNING: AgentLLMConfig(
-                provider=LLMProvider.OPENAI,
-                model="gpt-4o-2024-05-13",
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20240620",
                 temperature=0.5,
             ),
             TECH_LEAD_EPIC_BREAKDOWN: AgentLLMConfig(
