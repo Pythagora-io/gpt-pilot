@@ -138,6 +138,7 @@ class TechLead(BaseAgent):
             "Do you have a new feature to add to the project? Just write it here:",
             buttons={"continue": "continue", "end": "No, I'm done"},
             allow_empty=False,
+            extra_info="restart_app",
         )
 
         if response.button == "end" or response.cancelled or not response.text:

@@ -454,3 +454,19 @@ class ProjectState(Base):
         """
         li = self.unfinished_steps
         return [step for step in li if step.get("type") == step_type] if li else []
+
+    def has_frontend(self) -> bool:
+        """
+        Check if there is a frontend epic in the project state.
+
+        :return: True if there is a frontend epic, False otherwise.
+        """
+        return self.epics and any(epic.get("source") == "frontend" for epic in self.epics)
+
+    def is_feature(self) -> bool:
+        """
+        Check if the current epic is a feature.
+
+        :return: True if the current epic is a feature, False otherwise.
+        """
+        return self.epics and self.current_epic.get("source") == "feature"

@@ -99,7 +99,7 @@ class SpecWriter(BaseAgent):
             self.next_state.current_iteration["status"] = IterationStatus.FIND_SOLUTION
             self.next_state.flag_iterations_as_modified()
         else:
-            complexity = await self.check_prompt_complexity(user_response.text)
+            complexity = await self.check_prompt_complexity(feature_description)
             self.next_state.current_epic["complexity"] = complexity
 
         return AgentResponse.done(self)
