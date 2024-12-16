@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🧑‍✈️ GPT PILOT 🧑‍✈️
+
 
 </div>
 
@@ -44,7 +44,7 @@
 
 ---
 
-📫 If you would like to get updates on future releases or just get in touch, join our [Discord server](https://discord.gg/HaqXugmxr9) or you [can add your email here](http://eepurl.com/iD6Mpo). 📬
+
 
 ---
 
