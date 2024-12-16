@@ -99,6 +99,7 @@ class BaseProjectTemplate:
                 "random_secret": uuid4().hex,
                 "options": self.options_dict,
             },
+            self.state_manager.file_system.root,
             self.filter,
         )
 
