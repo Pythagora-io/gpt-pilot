@@ -1,12 +1,14 @@
 Here are the complete contents of files relevant to this task:
+{% if state.has_frontend() %}
 ---START_OF_FRONTEND_API_FILES---
-{% set ignore_shadcn_true = ignore_shadcn_files is not defined or (ignore_shadcn_files is defined and ignore_shadcn_files == True) %}
-{% for file in state.relevant_file_objects %}{% if 'client/' in file.path and (not ignore_shadcn_true or 'client/src/components/ui' not in file.path ) %}
+{% for file in state.relevant_file_objects %}
+{% if 'client/' in file.path  %}
+{% if (state.epics|length > 1 and 'client/src/components/ui' not in file.path ) or state.epics|length == 1  %}
 **`{{ file.path }}`** ({{file.content.content.splitlines()|length}} lines of code):
 ```
 {{ file.content.content }}
 ```
-{% endif %}{% endfor %}
+{% endif %}{% endif %}{% endfor %}
 ---END_OF_FRONTEND_API_FILES---
 ---START_OF_BACKEND_FILES---
 {% for file in state.relevant_file_objects %}{% if 'server/' in file.path %}
@@ -16,3 +18,13 @@ Here are the complete contents of files relevant to this task:
 
 {% endif %}{% endfor %}
 ---END_OF_BACKEND_FILES---
+{% else %}
+---START_OF_FILES---
+{% for file in state.relevant_file_objects %}
+**`{{ file.path }}`** ({{file.content.content.splitlines()|length}} lines of code):
+```
+{{ file.content.content }}
+```
+{% endfor %}
+---END_OF_FILES---
+{% endif %}
