@@ -6,7 +6,7 @@ Here are the endpoints that need to be implemented for this epic:
 {% endif %}
 {% endfor %}
 
-You need to specify tasks so that all these API endpoints get implemented completely. If there are multiple API endpoints related to a single entity (for example, CRUD operations on a database model), you **MUST** put them in the same task but otherwise, you **MUST** create a different task for each API endpoint.
+You need to specify tasks so that all these API endpoints get implemented completely. For each API endpoint that needs to be implemented, make sure to create a separate task so each task has only one API endpoint to implement. Also, you must not create tasks that don't have an endpoint that they are related to - for example, sometimes there is no "update" endpoint for a specific entity so you don't need to create a task for that.
 
 You can think of tasks as a unit of functionality that needs to have a frontend component and a backend component (don't split backend and frontend of the same functionality in separate tasks).
 
@@ -15,6 +15,9 @@ When thinking about the scope of a single task, here are the components that nee
 1. The implementation of the backend API endpoint together with the frontend API request implementation (removing the mocked data and replacing it with the real API request)
 2. The implementation of the database model
 3. The utility function (eg. 3rd party integration) that is needed for this endpoint. Whenever you need to create a utility function that uses a 3rd party integration, you **MUST** mock that function (create the function, return a mocked data, and specify the structure of the input and the output of the function in the comment above the function).
+
+**IMPORTANT: order of tasks**
+The tasks you create **MUST** be in the order that they should be implemented. When CRUD operations need to be implemented, first implement the Create operation, then Read, Update, and Delete.
 
 **IMPORTANT**
 If you are working on the Epic #1 that needs to remove the mocked data for authentication (register and login), you **MUST** create only one (1) task.
