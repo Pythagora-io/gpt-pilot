@@ -12,7 +12,7 @@ IMPORTANT:
 - All files that you want to read or add to the list of relevant files, must exist in the project. Do not ask to read or add file that does not exist! In the first message you have list of all files that currently exist in the project.
 - Do not repeat actions that you have already done. For example if you already added "index.js" to the list of relevant files you must not add it again.
 - You must read the file before adding it to the list of relevant files. Do not add that you didn't read and see the content of the file.
-- Focus only on your current task `{{ state.current_task.description }}` when selecting relevant files.
+{% if state.current_task %}- Focus only on your current task `{{ state.current_task.description }}` when selecting relevant files.{% endif %}
 {% if not state.has_frontend() %}- IMPORTANT: You must read and add relevant files from both "client/" and "server/" folders so that implementation can be done correctly! The "client" and "server" must work seamlessly together!{% endif %}
 - IMPORTANT: Execute only 1 action per request! Once your response is processed you will be able to choose next action.
 - IMPORTANT: It is much better to read and add more files than not adding files that are relevant!

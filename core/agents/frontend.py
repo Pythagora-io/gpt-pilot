@@ -73,7 +73,6 @@ class Frontend(BaseAgent):
             "build_frontend",
             description=description,
             user_feedback=None,
-            ignore_shadcn_files=False,
         )
         response = await llm(convo, parser=DescriptiveCodeBlockParser())
         response_blocks = response.blocks
@@ -155,7 +154,6 @@ class Frontend(BaseAgent):
             "build_frontend",
             description=self.current_state.epics[0]["description"],
             user_feedback=answer.text,
-            ignore_shadcn_files=False,
         )
         response = await llm(convo, parser=DescriptiveCodeBlockParser())
 

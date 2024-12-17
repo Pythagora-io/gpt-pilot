@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
+from core.agents.mixins import RelevantFilesMixin
 from core.agents.response import AgentResponse
 from core.config import TECH_LEAD_PLANNING
 from core.db.models.project_state import TaskStatus
@@ -34,7 +35,7 @@ class EpicPlan(BaseModel):
     plan: list[Task] = Field(description="List of tasks that need to be done to implement the entire epic.")
 
 
-class TechLead(BaseAgent):
+class TechLead(RelevantFilesMixin, BaseAgent):
     agent_type = "tech-lead"
     display_name = "Tech Lead"
 
@@ -145,13 +146,14 @@ class TechLead(BaseAgent):
             await self.ui.send_message("Thank you for using Pythagora!", source=pythagora_source)
             return AgentResponse.exit(self)
 
+        feature_description = response.text
         self.next_state.epics = self.current_state.epics + [
             {
                 "id": uuid4().hex,
                 "name": f"Feature #{len(self.current_state.epics)}",
                 "test_instructions": None,
                 "source": "feature",
-                "description": response.text,
+                "description": feature_description,
                 "summary": None,
                 "completed": False,
                 "complexity": None,  # Determined and defined in SpecWriter
@@ -160,11 +162,14 @@ class TechLead(BaseAgent):
         ]
         # Orchestrator will rerun us to break down the new feature epic
         self.next_state.action = f"Start of feature #{len(self.current_state.epics)}"
-        return AgentResponse.update_specification(self, response.text)
+        return AgentResponse.update_specification(self, feature_description)
 
     async def plan_epic(self, epic) -> AgentResponse:
         log.debug(f"Planning tasks for the epic: {epic['name']}")
         await self.send_message("Creating the development plan ...")
+
+        if epic.get("source") == "feature":
+            await self.get_relevant_files(user_feedback=epic.get("description"))
 
         llm = self.get_llm(TECH_LEAD_PLANNING)
         convo = (
