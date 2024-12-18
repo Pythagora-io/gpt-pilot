@@ -201,5 +201,8 @@ class PlainConsoleUI(UIBase):
     async def start_important_stream(self):
         pass
 
+    async def start_breakdown_stream(self):
+        pass
+
 
 __all__ = ["PlainConsoleUI"]

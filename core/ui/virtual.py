@@ -159,6 +159,9 @@ class VirtualUI(UIBase):
     async def start_important_stream(self):
         pass
 
+    async def start_breakdown_stream(self):
+        pass
+
     async def send_project_stats(self, stats: dict):
         pass
 

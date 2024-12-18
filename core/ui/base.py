@@ -329,6 +329,12 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def start_breakdown_stream(self):
+        """
+        Tell the extension that breakdown stream will start.
+        """
+        raise NotImplementedError()
+
     async def send_project_stats(self, stats: dict):
         """
         Send project statistics to the UI.

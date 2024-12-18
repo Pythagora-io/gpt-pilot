@@ -51,6 +51,7 @@ class MessageType(str, Enum):
     EPICS_AND_TASKS = "epicsAndTasks"
     MODIFIED_FILES = "modifiedFiles"
     IMPORTANT_STREAM = "importantStream"
+    BREAKDOWN_STREAM = "breakdownStream"
     TEST_INSTRUCTIONS = "testInstructions"
     STOP_APP = "stopApp"
 
@@ -464,6 +465,12 @@ class IPCClientUI(UIBase):
     async def start_important_stream(self):
         await self._send(
             MessageType.IMPORTANT_STREAM,
+            content={},
+        )
+
+    async def start_breakdown_stream(self):
+        await self._send(
+            MessageType.BREAKDOWN_STREAM,
             content={},
         )
 
