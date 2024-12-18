@@ -47,6 +47,14 @@ You are currently working on task #{{ current_task_index + 1 }} with the followi
 ```
 {{ task.description }}
 ```
+
+In this task, you need to focus on implementing the following endpoints:
+ {% for endpoint in related_api_endpoints %}
+  {{ "`" ~ endpoint ~ "`" }}{% if not loop.last %}
+{% endif %}
+{% endfor %}
+You must implement the backend API endpoints, remove the mocked that on the frontend side, and replace it with the real API request, implement the database model (if it's not implemented already), and implement the utility function (eg. 3rd party integration) that is needed for this endpoint. Whenever you need to create a utility function that uses a 3rd party integration, you **MUST** mock that function (create the function, return a mocked data, and specify the structure of the input and the output of the function in the comment above the function).
+
 {% if task.get('pre_breakdown_testing_instructions') is not none %}
 Here is how this task should be tested:
 ```
