@@ -176,6 +176,7 @@ class TechLead(BaseAgent):
                 task_type=self.current_state.current_epic.get("source", "app"),
                 # FIXME: we're injecting summaries to initial description
                 existing_summary=None,
+                get_only_api_files=True,
             )
             .require_schema(DevelopmentPlan)
         )
@@ -229,6 +230,7 @@ class TechLead(BaseAgent):
                     epic_number=sub_epic_number,
                     epic_description=sub_epic.description,
                     related_api_endpoints=sub_epic.related_api_endpoints,
+                    get_only_api_files=True,
                 ).require_schema(EpicPlan)
                 await self.send_message("Creating tasks for this epic ...")
                 epic_plan: EpicPlan = await llm(convo, parser=JSONParser(EpicPlan))
