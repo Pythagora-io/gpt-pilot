@@ -24,6 +24,7 @@ class Epic(BaseModel):
 
 class Task(BaseModel):
     description: str = Field(description="Description of a task.")
+    related_api_endpoints: list[str] = Field(description="API endpoints that will be implemented in this task.")
     testing_instructions: str = Field(description="Instructions for testing the task.")
 
 
