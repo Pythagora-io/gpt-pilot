@@ -37,4 +37,4 @@ Now, start by writing all code that's needed to get the frontend built for this 
 {% endif %}
 
 IMPORTANT: When suggesting/making changes in the file you must provide full content of the file! Do not use placeholders, or comments, or truncation in any way, but instead provide the full content of the file even the parts that are unchanged!
-When you want to run a command you must put `command:` before the command and then the command itself like shown in the examples in system prompt. NEVER run `npm run start` or `npm run dev` commands, user will run them after you provide the code.
+When you want to run a command you must put `command:` before the command and then the command itself like shown in the examples in system prompt. NEVER run `npm run start` or `npm run dev` commands, user will run them after you provide the code. The user is using {{ os }}, so the commands must run on that operating system

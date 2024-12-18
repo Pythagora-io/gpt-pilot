@@ -99,15 +99,20 @@ class SpecWriter(BaseAgent):
             self.next_state.current_iteration["status"] = IterationStatus.FIND_SOLUTION
             self.next_state.flag_iterations_as_modified()
         else:
-            complexity = await self.check_prompt_complexity(user_response.text)
+            complexity = await self.check_prompt_complexity(feature_description)
             self.next_state.current_epic["complexity"] = complexity
 
         return AgentResponse.done(self)
 
     async def check_prompt_complexity(self, prompt: str) -> str:
+        is_feature = self.current_state.epics and len(self.current_state.epics) > 2
         await self.send_message("Checking the complexity of the prompt ...")
         llm = self.get_llm(SPEC_WRITER_AGENT_NAME)
-        convo = AgentConvo(self).template("prompt_complexity", prompt=prompt)
+        convo = AgentConvo(self).template(
+            "prompt_complexity",
+            prompt=prompt,
+            is_feature=is_feature,
+        )
         llm_response: str = await llm(convo, temperature=0, parser=StringParser())
         log.info(f"Complexity check response: {llm_response}")
         return llm_response.lower()
