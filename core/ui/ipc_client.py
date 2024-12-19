@@ -496,9 +496,10 @@ class IPCClientUI(UIBase):
             project_state_id=project_state_id,
         )
 
-    async def send_file_status(self, file_path: str, file_status: str):
+    async def send_file_status(self, file_path: str, file_status: str, source: Optional[UISource] = None):
         await self._send(
             MessageType.FILE_STATUS,
+            category=source.type_name if source else None,
             content={
                 "file_path": file_path,
                 "file_status": file_status,

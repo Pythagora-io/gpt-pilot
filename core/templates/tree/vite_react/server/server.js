@@ -5,7 +5,8 @@ const express = require("express");
 const session = require("express-session");
 const MongoStore = require('connect-mongo');
 const basicRoutes = require("./routes/index");
-const authRoutes = require("./routes/auth");
+const authRoutes = require("./routes/authRoutes");
+const { connectDB } = require("./config/database");
 const cors = require("cors");
 
 if (!process.env.DATABASE_URL) {
@@ -28,16 +29,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(authRoutes);
 
 // Database connection
-mongoose
-  .connect(process.env.DATABASE_URL)
-  .then(() => {
-    console.log("Database connected successfully");
-  })
-  .catch((err) => {
-    console.error(`Database connection error: ${err.message}`);
-    console.error(err.stack);
-    process.exit(1);
-  });
+connectDB();
 
 app.on("error", (error) => {
   console.error(`Server error: ${error.message}`);

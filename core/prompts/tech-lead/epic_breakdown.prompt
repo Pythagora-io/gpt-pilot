@@ -1,7 +1,25 @@
-Ok, great. Now, you need to take the epic #{{ epic_number }} ("{{ epic_description }}") and break it down into smaller tasks. Each task is one testable whole that the user can test and commit. Each task will be one commit that has to be testable by a human. Return the list of tasks for the Epic #{{ epic_number }}. For each task, write the the task description and a description of how a human should test if the task is successfully implemented or not. Keep in mind that there can be 1 task or multiple, depending on the complexity of the epic. The epics will be implemented one by one so make sure that the user needs to be able to test each task you write - for example, if something will be implemented in the epics after the epic #{{ epic_number }}, then you cannot write it here because the user won't be able to test it.
+Ok, great. Now, you need to take the epic #{{ epic_number }} ("{{ epic_description }}") and break it down into smaller tasks. Each task is one testable whole that the user can test and commit. Each task will be one commit that has to be testable by a human. Return the list of tasks for the Epic #{{ epic_number }}. For each task, write the task description and a description of how a human should test if the task is successfully implemented or not. Keep in mind that there can be 1 task or multiple, depending on the complexity of the epic. The epics will be implemented one by one so make sure that the user needs to be able to test each task you write - for example, if something will be implemented in the epics after the epic #{{ epic_number }}, then you cannot write it here because the user won't be able to test it.
 
-You can think of tasks as a unit of functionality that needs to have a frontend component and a backend component (don't split backend and frontend of the same functionality in separate tasks). In a single task, you can put the frontend API request implementation, backend routing, database creation and a utility function (eg. 3rd party integration) but do not put multiple functionalities in the same task (eg. creating an object, deleting it, updating it should all be separate tasks but each one should contain the necessary frontend, the route, the database and the utility function in the same task).
+Here are the endpoints that need to be implemented for this epic:
+{% for endpoint in related_api_endpoints %}
+  {{ "`" ~ endpoint ~ "`" }}{% if not loop.last %}
+{% endif %}
+{% endfor %}
+
+You need to specify tasks so that all these API endpoints get implemented completely. For each API endpoint that needs to be implemented, make sure to create a separate task so each task has only one API endpoint to implement. Also, you must not create tasks that don't have an endpoint that they are related to - for example, sometimes there is no "update" endpoint for a specific entity so you don't need to create a task for that.
+
+You can think of tasks as a unit of functionality that needs to have a frontend component and a backend component (don't split backend and frontend of the same functionality in separate tasks).
+
+**IMPORTANT: components of a single task**
+When thinking about the scope of a single task, here are the components that need to be put into the same task:
+1. The implementation of the backend API endpoint together with the frontend API request implementation (removing the mocked data and replacing it with the real API request)
+2. The implementation of the database model
+3. The utility function (eg. 3rd party integration) that is needed for this endpoint. Whenever you need to create a utility function that uses a 3rd party integration, you **MUST** mock that function (create the function, return a mocked data, and specify the structure of the input and the output of the function in the comment above the function).
+
+**IMPORTANT: order of tasks**
+The tasks you create **MUST** be in the order that they should be implemented. When CRUD operations need to be implemented, first implement the Create operation, then Read, Update, and Delete.
 
 {% if state.has_frontend() and not state.is_feature() %}
-Also, frontend is implemented completely but it's using the mocked data so on the frontend we just need to replace the mocked data with the real API request to the backend. {% if epic_number == 1 %}The first epic **MUST** have only one (1) task which is to only remove the mocked data for making a register and login API requests from the frontend (in the client/src/api/auth.js file) - nothing is needed for this on the backend.{% endif %}
+**IMPORTANT**
+If you are working on the Epic #1 that needs to remove the mocked data for authentication (register and login), you **MUST** create only one (1) task.
 {% endif %}

@@ -95,7 +95,7 @@ class Frontend(FileDiffMixin, BaseAgent):
         """
         await self.send_message("Continuing to build UI... This may take a couple of minutes")
 
-        llm = self.get_llm(FRONTEND_AGENT_NAME)
+        llm = self.get_llm(FRONTEND_AGENT_NAME, stream_output=True)
         convo = AgentConvo(self)
         convo.messages = self.current_state.epics[0]["messages"]
         convo.user(
@@ -150,7 +150,7 @@ class Frontend(FileDiffMixin, BaseAgent):
 
         await self.send_message("Implementing the changes you suggested...")
 
-        llm = self.get_llm(FRONTEND_AGENT_NAME)
+        llm = self.get_llm(FRONTEND_AGENT_NAME, stream_output=True)
         convo = AgentConvo(self).template(
             "build_frontend",
             description=self.current_state.epics[0]["description"],
@@ -180,6 +180,17 @@ class Frontend(FileDiffMixin, BaseAgent):
                 },
             )
 
+            inputs = []
+            for file in self.current_state.files:
+                if not file.content:
+                    continue
+                input_required = self.state_manager.get_input_required(file.content.content)
+                if input_required:
+                    inputs += [{"file": file.path, "line": line} for line in input_required]
+
+            if inputs:
+                return AgentResponse.input_required(self, inputs)
+
         return AgentResponse.done(self)
 
     async def process_response(self, response_blocks: list) -> AgentResponse:
@@ -204,7 +215,7 @@ class Frontend(FileDiffMixin, BaseAgent):
                 new_content = content
                 old_content = self.current_state.get_file_content_by_path(file_path)
                 n_new_lines, n_del_lines = self.get_line_changes(old_content, new_content)
-                await self.ui.send_file_status(file_path, "done")
+                await self.ui.send_file_status(file_path, "done", source=self.ui_source)
                 await self.ui.generate_diff(
                     file_path, old_content, new_content, n_new_lines, n_del_lines, source=self.ui_source
                 )
@@ -217,7 +228,7 @@ class Frontend(FileDiffMixin, BaseAgent):
                     command = command.strip()
                     if command:
                         # Add "cd client" prefix if not already present
-                        if not command.startswith("cd client"):
+                        if not command.startswith("cd "):
                             command = f"cd client && {command}"
                         await self.send_message(f"Running command: `{command}`...")
                         await self.process_manager.run_command(command)

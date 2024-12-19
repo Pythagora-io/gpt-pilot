@@ -43,6 +43,7 @@ TASK_BREAKDOWN_AGENT_NAME = "Developer.breakdown_current_task"
 TROUBLESHOOTER_BUG_REPORT = "Troubleshooter.generate_bug_report"
 TROUBLESHOOTER_GET_RUN_COMMAND = "Troubleshooter.get_run_command"
 TECH_LEAD_PLANNING = "TechLead.plan_epic"
+TECH_LEAD_EPIC_BREAKDOWN = "TechLead.epic_breakdown"
 SPEC_WRITER_AGENT_NAME = "SpecWriter"
 GET_RELEVANT_FILES_AGENT_NAME = "get_relevant_files"
 FRONTEND_AGENT_NAME = "Frontend"
@@ -372,6 +373,11 @@ class Config(_StrictModel):
             TECH_LEAD_PLANNING: AgentLLMConfig(
                 provider=LLMProvider.ANTHROPIC,
                 model="claude-3-5-sonnet-20240620",
+                temperature=0.5,
+            ),
+            TECH_LEAD_EPIC_BREAKDOWN: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20241022",
                 temperature=0.5,
             ),
             TROUBLESHOOTER_BUG_REPORT: AgentLLMConfig(
