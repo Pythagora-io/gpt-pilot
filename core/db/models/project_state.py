@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import func
 
-from core.db.models import Base
+from core.db.models import Base, FileContent
 from core.log import get_logger
 
 if TYPE_CHECKING:
@@ -364,6 +364,17 @@ class ProjectState(Base):
                 return file
 
         return None
+
+    def get_file_content_by_path(self, path: str) -> FileContent | str:
+        """
+        Get a file from the current project state, by the file path.
+
+        :param path: The file path.
+        :return: The file object, or None if not found.
+        """
+        file = self.get_file_by_path(path)
+
+        return file.content.content if file else ""
 
     def save_file(self, path: str, content: "FileContent", external: bool = False) -> "File":
         """

@@ -176,7 +176,13 @@ class PlainConsoleUI(UIBase):
         pass
 
     async def generate_diff(
-        self, file_path: str, file_old: str, file_new: str, n_new_lines: int = 0, n_del_lines: int = 0
+        self,
+        file_path: str,
+        file_old: str,
+        file_new: str,
+        n_new_lines: int = 0,
+        n_del_lines: int = 0,
+        source: Optional[UISource] = None,
     ):
         pass
 
@@ -199,6 +205,9 @@ class PlainConsoleUI(UIBase):
         pass
 
     async def start_important_stream(self):
+        pass
+
+    async def start_breakdown_stream(self):
         pass
 
 

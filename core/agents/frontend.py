@@ -2,6 +2,7 @@ from uuid import uuid4
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
+from core.agents.mixins import FileDiffMixin
 from core.agents.response import AgentResponse
 from core.config import FRONTEND_AGENT_NAME
 from core.llm.parser import DescriptiveCodeBlockParser
@@ -13,7 +14,7 @@ from core.templates.registry import PROJECT_TEMPLATES
 log = get_logger(__name__)
 
 
-class Frontend(BaseAgent):
+class Frontend(FileDiffMixin, BaseAgent):
     agent_type = "frontend"
     display_name = "Frontend"
 
@@ -200,8 +201,14 @@ class Frontend(BaseAgent):
                 # Extract file path from the last line - get everything after "file:"
                 file_path = last_line[last_line.index("file:") + 5 :].strip()
                 file_path = file_path.strip("\"'`")
-                await self.send_message(f"Implementing file `{file_path}`...")
-                await self.state_manager.save_file(file_path, content)
+                new_content = content
+                old_content = self.current_state.get_file_content_by_path(file_path)
+                n_new_lines, n_del_lines = self.get_line_changes(old_content, new_content)
+                await self.ui.send_file_status(file_path, "done")
+                await self.ui.generate_diff(
+                    file_path, old_content, new_content, n_new_lines, n_del_lines, source=self.ui_source
+                )
+                await self.state_manager.save_file(file_path, new_content)
 
             elif "command:" in last_line:
                 # Split multiple commands and execute them sequentially

@@ -329,6 +329,12 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def start_breakdown_stream(self):
+        """
+        Tell the extension that breakdown stream will start.
+        """
+        raise NotImplementedError()
+
     async def send_project_stats(self, stats: dict):
         """
         Send project statistics to the UI.
@@ -370,7 +376,13 @@ class UIBase:
         raise NotImplementedError()
 
     async def generate_diff(
-        self, file_path: str, file_old: str, file_new: str, n_new_lines: int = 0, n_del_lines: int = 0
+        self,
+        file_path: str,
+        file_old: str,
+        file_new: str,
+        n_new_lines: int = 0,
+        n_del_lines: int = 0,
+        source: Optional[UISource] = None,
     ):
         """
         Generate a diff between two files.
@@ -380,6 +392,7 @@ class UIBase:
         :param file_new: New file content.
         :param n_new_lines: Number of new lines.
         :param n_del_lines: Number of deleted lines.
+        :param source: Source of the diff.
         """
         raise NotImplementedError()
 

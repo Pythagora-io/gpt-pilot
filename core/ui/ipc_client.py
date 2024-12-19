@@ -51,6 +51,7 @@ class MessageType(str, Enum):
     EPICS_AND_TASKS = "epicsAndTasks"
     MODIFIED_FILES = "modifiedFiles"
     IMPORTANT_STREAM = "importantStream"
+    BREAKDOWN_STREAM = "breakdownStream"
     TEST_INSTRUCTIONS = "testInstructions"
     STOP_APP = "stopApp"
 
@@ -467,6 +468,12 @@ class IPCClientUI(UIBase):
             content={},
         )
 
+    async def start_breakdown_stream(self):
+        await self._send(
+            MessageType.BREAKDOWN_STREAM,
+            content={},
+        )
+
     async def send_project_stats(self, stats: dict):
         await self._send(
             MessageType.PROJECT_STATS,
@@ -508,10 +515,17 @@ class IPCClientUI(UIBase):
         )
 
     async def generate_diff(
-        self, file_path: str, file_old: str, file_new: str, n_new_lines: int = 0, n_del_lines: int = 0
+        self,
+        file_path: str,
+        file_old: str,
+        file_new: str,
+        n_new_lines: int = 0,
+        n_del_lines: int = 0,
+        source: Optional[UISource] = None,
     ):
         await self._send(
             MessageType.GENERATE_DIFF,
+            category=source.type_name if source else None,
             content={
                 "file_path": file_path,
                 "file_old": file_old,

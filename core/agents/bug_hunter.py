@@ -88,6 +88,7 @@ class BugHunter(BaseAgent):
     async def check_logs(self, logs_message: str = None):
         llm = self.get_llm(CHECK_LOGS_AGENT_NAME, stream_output=True)
         convo = self.generate_iteration_convo_so_far()
+        await self.ui.start_breakdown_stream()
         human_readable_instructions = await llm(convo, temperature=0.5)
 
         convo = (

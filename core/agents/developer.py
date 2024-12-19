@@ -202,6 +202,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
 
         await self.send_message("Thinking about how to implement this task ...")
 
+        await self.ui.start_breakdown_stream()
         llm = self.get_llm(TASK_BREAKDOWN_AGENT_NAME, stream_output=True)
         convo = AgentConvo(self).template(
             "breakdown",
