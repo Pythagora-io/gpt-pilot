@@ -15,6 +15,7 @@ Follow these important rules when compiling a list of actions the user will take
 7. Don't ask the user to test things which aren't implemented yet (eg. opening a theoretical web page that doesn't exist yet, or clicking on a button that isn't implemented yet)
 8. Think about if there is something that user needs to do manually to make the next testing step work
 9. The human has the option to press the "Start App" button so don't instruct them to start the app in any way.
+10. If the user needs to run a database command, make sure to specify the entire command that needs to be run
 
 Remember, these rules are very important and you must follow them!
 
