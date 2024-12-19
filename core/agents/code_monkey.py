@@ -83,13 +83,15 @@ class CodeMonkey(FileDiffMixin, BaseAgent):
             attempt = data["attempt"] + 1
             feedback = data["feedback"]
             log.debug(f"Fixing file {file_name} after review feedback: {feedback} ({attempt}. attempt)")
-            await self.ui.send_file_status(file_name, "reworking")
+            await self.ui.send_file_status(file_name, "reworking", source=self.ui_source)
         else:
             log.debug(f"Implementing file {file_name}")
             if data is None:
-                await self.ui.send_file_status(file_name, "updating" if file_content else "creating")
+                await self.ui.send_file_status(
+                    file_name, "updating" if file_content else "creating", source=self.ui_source
+                )
             else:
-                await self.ui.send_file_status(file_name, "reworking")
+                await self.ui.send_file_status(file_name, "reworking", source=self.ui_source)
             self.next_state.action = "Updating files"
             attempt = 1
             feedback = None
@@ -176,7 +178,7 @@ class CodeMonkey(FileDiffMixin, BaseAgent):
     # ------------------------------
 
     async def run_code_review(self, data: Optional[dict]) -> Union[AgentResponse, dict]:
-        await self.ui.send_file_status(data["path"], "reviewing")
+        await self.ui.send_file_status(data["path"], "reviewing", source=self.ui_source)
         if (
             data is not None
             and not data["old_content"]
@@ -203,7 +205,7 @@ class CodeMonkey(FileDiffMixin, BaseAgent):
             return await self.accept_changes(data["path"], data["old_content"], approved_content)
 
     async def accept_changes(self, file_path: str, old_content: str, new_content: str) -> AgentResponse:
-        await self.ui.send_file_status(file_path, "done")
+        await self.ui.send_file_status(file_path, "done", source=self.ui_source)
 
         n_new_lines, n_del_lines = self.get_line_changes(old_content, new_content)
         await self.ui.generate_diff(

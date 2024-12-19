@@ -81,7 +81,9 @@ class SpecWriter(BaseAgent):
         convo = AgentConvo(self).template("add_new_feature", feature_description=feature_description)
         llm_response: str = await llm(convo, temperature=0, parser=StringParser())
         updated_spec = llm_response.strip()
-        await self.ui.generate_diff("project_specification", self.current_state.specification.description, updated_spec)
+        await self.ui.generate_diff(
+            "project_specification", self.current_state.specification.description, updated_spec, source=self.ui_source
+        )
         user_response = await self.ask_question(
             "Do you accept these changes to the project specification?",
             buttons={"yes": "Yes", "no": "No"},

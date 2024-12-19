@@ -357,12 +357,13 @@ class UIBase:
         """
         raise NotImplementedError()
 
-    async def send_file_status(self, file_path: str, file_status: str):
+    async def send_file_status(self, file_path: str, file_status: str, source: Optional[UISource] = None):
         """
         Send file status.
 
         :param file_path: File path.
         :param file_status: File status.
+        :param source: Source of the file status.
         """
         raise NotImplementedError()
 

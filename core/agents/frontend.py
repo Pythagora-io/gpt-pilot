@@ -215,7 +215,7 @@ class Frontend(FileDiffMixin, BaseAgent):
                 new_content = content
                 old_content = self.current_state.get_file_content_by_path(file_path)
                 n_new_lines, n_del_lines = self.get_line_changes(old_content, new_content)
-                await self.ui.send_file_status(file_path, "done")
+                await self.ui.send_file_status(file_path, "done", source=self.ui_source)
                 await self.ui.generate_diff(
                     file_path, old_content, new_content, n_new_lines, n_del_lines, source=self.ui_source
                 )

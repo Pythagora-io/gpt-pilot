@@ -169,7 +169,7 @@ class PlainConsoleUI(UIBase):
     async def send_test_instructions(self, test_instructions: str, project_state_id: Optional[str] = None):
         pass
 
-    async def send_file_status(self, file_path: str, file_status: str):
+    async def send_file_status(self, file_path: str, file_status: str, source: Optional[UISource] = None):
         pass
 
     async def send_bug_hunter_status(self, status: str, num_cycles: int):
