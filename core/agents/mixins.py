@@ -1,4 +1,5 @@
 import json
+from difflib import unified_diff
 from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
@@ -142,3 +143,37 @@ class RelevantFilesMixin:
         self.next_state.relevant_files = relevant_files
 
         return AgentResponse.done(self)
+
+
+class FileDiffMixin:
+    """
+    Provides a method to generate a diff between two files.
+    """
+
+    def get_line_changes(self, old_content: str, new_content: str) -> tuple[int, int]:
+        """
+        Get the number of added and deleted lines between two files.
+
+        This uses Python difflib to produce a unified diff, then counts
+        the number of added and deleted lines.
+
+        :param old_content: old file content
+        :param new_content: new file content
+        :return: a tuple (added_lines, deleted_lines)
+        """
+
+        from_lines = old_content.splitlines(keepends=True)
+        to_lines = new_content.splitlines(keepends=True)
+
+        diff_gen = unified_diff(from_lines, to_lines)
+
+        added_lines = 0
+        deleted_lines = 0
+
+        for line in diff_gen:
+            if line.startswith("+") and not line.startswith("+++"):  # Exclude the file headers
+                added_lines += 1
+            elif line.startswith("-") and not line.startswith("---"):  # Exclude the file headers
+                deleted_lines += 1
+
+        return added_lines, deleted_lines
