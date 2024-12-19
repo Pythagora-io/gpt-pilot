@@ -157,6 +157,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
                 task=task,
                 iteration=None,
                 current_task_index=current_task_index,
+                related_api_endpoints=task.get("related_api_endpoints", []),
             )
             .assistant(self.current_state.current_task["instructions"])
         )

@@ -121,7 +121,6 @@ class Developer(RelevantFilesMixin, BaseAgent):
         if self.current_state.files and self.current_state.relevant_files is None:
             await self.get_relevant_files(user_feedback, description)
 
-        await self.send_message("Breaking down the task into steps ...")
         await self.ui.send_task_progress(
             n_tasks,  # iterations and reviews can be created only one at a time, so we are always on last one
             n_tasks,
@@ -210,6 +209,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
             iteration=None,
             current_task_index=current_task_index,
             docs=self.current_state.docs,
+            related_api_endpoints=current_task.get("related_api_endpoints", []),
         )
         response: str = await llm(convo)
 
@@ -220,7 +220,6 @@ class Developer(RelevantFilesMixin, BaseAgent):
         self.next_state.flag_tasks_as_modified()
 
         llm = self.get_llm(PARSE_TASK_AGENT_NAME)
-        await self.send_message("Breaking down the task into steps ...")
         convo.assistant(response).template("parse_task").require_schema(TaskSteps)
         response: TaskSteps = await llm(convo, parser=JSONParser(TaskSteps), temperature=0)
 

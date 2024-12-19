@@ -20,15 +20,15 @@ Every epic must have a clear, high level, and short 1-2 sentence 'description'. 
 This rule applies to thinking about the API endpoints specified above between START_OF_FRONTEND_API_FILES and END_OF_FRONTEND_API_FILES.
 Each epic must be related to one or more API endpoints that are called from the frontend files. Go through all API endpoints called from the frontend and for each epic, specific which endpoints will be covered in that epic in the `related_api_endpoints` list. If there are multiple endpoints related to a single entity (for example, CRUD operations on a database model), you can put them in the same epic but otherwise, make sure that API endpoints for different entities are in different epics. The epics you create **MUST** cover **ALL** API endpoints mentioned in the frontend files above.
 
-{# !!! TODO zamijeniti FIRST TASK s obzirom na auth !!! #}
 ## Rule #5 (MOST IMPORTANT RULE)
 This rule applies to order of epics.
-Epics will be executed in same order that you output them. You must order them in a logical way so that epics that depend on other functionalities are implemented in later stage. The general order should be as follows:
-- The first epic **MUST** be to remove the mocked data for making a register and login API requests from the frontend (in the client/src/api/auth.js file) - nothing is needed for this on the backend.
-- The second epic **MUST** be to create any necessary scripts (if there are any). For example, a script to create an admin user, a script to seed the database, etc.
-- Finally, all other epics must be about creating database models and CRUD operations (each epic must contain CRUD operations only for one single model - never for multiple). Pay attention to the API requests inside files in `client/api/` folder because they are currently using mocked data and whenever you implement an API endpoint, you just need to replace the mocked data with the real API request to the backend.
+Epics will be executed in same order that you output them. You must order them in a logical way so that epics that depend on other functionalities are implemented in later stage. The general order should be as follows:{% if task_type  == 'app' %}
+- The first epic **MUST** be to remove the mocked data for making a register and login API requests from the frontend (in the client/src/api/auth.js file) - nothing is needed for this on the backend.{% endif %}
+- The {% if task_type  == 'app' %}second{% else %}first{% endif %} epic **MUST** be to create any necessary scripts (if there are any). For example, a script to create an admin user, a script to seed the database, etc.
+- {% if task_type  == 'app' %}Finally{% else %}Then{% endif %}, all other epics must be about creating database models and CRUD operations (each epic must contain CRUD operations only for one single model - never for multiple). Pay attention to the API requests inside files in `client/api/` folder because they are currently using mocked data and whenever you implement an API endpoint, you just need to replace the mocked data with the real API request to the backend.{% if task_type  == 'app' %}
 
-Remember, all utility functions that are not related to CRUD operations (eg. 3rd party integrations) **MUST** be mocked because they will be implemented after all epics are finished in the next phase of the project.
+Remember, all utility functions that are not related to CRUD operations (eg. 3rd party integrations) **MUST** be mocked because they will be implemented after all epics are finished in the next phase of the project.{% else %}
+- Finally, implement all missing utility functions (eg. 3rd party integrations) that are needed for the app to work.{% endif %}
 
 ## Rule #6
 Create epics for things that are not yet implemented. Do not reimplement what's already done. If something is already implemented, do not create epic for it. Continue from the implementation already there.
