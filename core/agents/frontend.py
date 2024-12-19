@@ -95,7 +95,7 @@ class Frontend(FileDiffMixin, BaseAgent):
         """
         await self.send_message("Continuing to build UI... This may take a couple of minutes")
 
-        llm = self.get_llm(FRONTEND_AGENT_NAME, stream_output=True)
+        llm = self.get_llm(FRONTEND_AGENT_NAME)
         convo = AgentConvo(self)
         convo.messages = self.current_state.epics[0]["messages"]
         convo.user(
