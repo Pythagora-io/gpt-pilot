@@ -1,15 +1,3 @@
-{% if route_files %}
-Here is a list of files the contain route definitions, and their contents. If any of the steps in testing instructions use URLs, use the routes defined in these files.
-
----START_OF_FILES---
-{% for file in route_files %}
-File **`{{ file.path }}`** ({{file.content.content.splitlines()|length}} lines of code):
-```
-{{ file.content.content }}```
-
-{% endfor %}
----END_OF_FILES---
-{% endif %}
 How can a human user test if this task was completed successfully?
 
 Please list actions, step by step, in order, that the user should take to verify the task. After each action, describe what the expected response is.
