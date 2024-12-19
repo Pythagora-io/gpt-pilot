@@ -210,6 +210,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
             iteration=None,
             current_task_index=current_task_index,
             docs=self.current_state.docs,
+            related_api_endpoints=current_task.get("related_api_endpoints", []),
         )
         response: str = await llm(convo)
 

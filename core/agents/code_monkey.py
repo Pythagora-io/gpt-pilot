@@ -234,6 +234,7 @@ class CodeMonkey(FileDiffMixin, BaseAgent):
             task=task,
             iteration=None,
             current_task_index=current_task_index,
+            related_api_endpoints=task.get("related_api_endpoints", []),
         )
         # TODO: We currently show last iteration to the code monkey; we might need to show the task
         # breakdown and all the iterations instead? To think about when refactoring prompts
