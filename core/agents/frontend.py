@@ -180,6 +180,17 @@ class Frontend(FileDiffMixin, BaseAgent):
                 },
             )
 
+            inputs = []
+            for file in self.current_state.files:
+                if not file.content:
+                    continue
+                input_required = self.state_manager.get_input_required(file.content.content)
+                if input_required:
+                    inputs += [{"file": file.path, "line": line} for line in input_required]
+
+            if inputs:
+                return AgentResponse.input_required(self, inputs)
+
         return AgentResponse.done(self)
 
     async def process_response(self, response_blocks: list) -> AgentResponse:
@@ -217,7 +228,7 @@ class Frontend(FileDiffMixin, BaseAgent):
                     command = command.strip()
                     if command:
                         # Add "cd client" prefix if not already present
-                        if not command.startswith("cd client"):
+                        if not command.startswith("cd "):
                             command = f"cd client && {command}"
                         await self.send_message(f"Running command: `{command}`...")
                         await self.process_manager.run_command(command)
