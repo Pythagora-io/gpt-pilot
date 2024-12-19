@@ -515,10 +515,17 @@ class IPCClientUI(UIBase):
         )
 
     async def generate_diff(
-        self, file_path: str, file_old: str, file_new: str, n_new_lines: int = 0, n_del_lines: int = 0
+        self,
+        file_path: str,
+        file_old: str,
+        file_new: str,
+        n_new_lines: int = 0,
+        n_del_lines: int = 0,
+        source: Optional[UISource] = None,
     ):
         await self._send(
             MessageType.GENERATE_DIFF,
+            category=source.type_name if source else None,
             content={
                 "file_path": file_path,
                 "file_old": file_old,

@@ -412,8 +412,8 @@ class StateManager:
             file_content = await FileContent.store(self.current_session, hash, content)
 
         file = self.next_state.save_file(path, file_content)
-        if self.ui and not from_template:
-            await self.ui.open_editor(self.file_system.get_full_path(path))
+        # if self.ui and not from_template:
+        #     await self.ui.open_editor(self.file_system.get_full_path(path))
         if metadata:
             file.meta = metadata
 

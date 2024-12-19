@@ -206,7 +206,9 @@ class CodeMonkey(FileDiffMixin, BaseAgent):
         await self.ui.send_file_status(file_path, "done")
 
         n_new_lines, n_del_lines = self.get_line_changes(old_content, new_content)
-        await self.ui.generate_diff(file_path, old_content, new_content, n_new_lines, n_del_lines)
+        await self.ui.generate_diff(
+            file_path, old_content, new_content, n_new_lines, n_del_lines, source=self.ui_source
+        )
 
         await self.state_manager.save_file(file_path, new_content)
         self.next_state.complete_step("save_file")

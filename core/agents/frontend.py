@@ -205,7 +205,9 @@ class Frontend(FileDiffMixin, BaseAgent):
                 old_content = self.current_state.get_file_content_by_path(file_path)
                 n_new_lines, n_del_lines = self.get_line_changes(old_content, new_content)
                 await self.ui.send_file_status(file_path, "done")
-                await self.ui.generate_diff(file_path, old_content, new_content, n_new_lines, n_del_lines)
+                await self.ui.generate_diff(
+                    file_path, old_content, new_content, n_new_lines, n_del_lines, source=self.ui_source
+                )
                 await self.state_manager.save_file(file_path, new_content)
 
             elif "command:" in last_line:
