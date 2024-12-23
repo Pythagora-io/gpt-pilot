@@ -1,5 +1,5 @@
 # Use Ubuntu 22.04 as the base image with multi-arch support
-FROM --platform=$TARGETPLATFORM ubuntu:22.04
+FROM ubuntu:22.04
 
 # Set environment to prevent interactive prompts during builds
 ENV DEBIAN_FRONTEND=noninteractive
@@ -148,7 +148,7 @@ WORKDIR /pythagora/gpt-pilot/workspace
 #    > ~/.local/share/code-server/User/settings.json
 
 # Install VS Code extension (platform-agnostic)
-ADD pythagora-vs-code-1.1.2.vsix pythagora-vs-code.vsix
+ADD pythagora-vs-code.vsix pythagora-vs-code.vsix
 RUN ~/.vscode-server/cli/servers/Stable-${commitHash}/server/bin/code-server --install-extension pythagora-vs-code.vsix
 RUN rm pythagora-vs-code.vsix
 
