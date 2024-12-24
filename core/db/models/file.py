@@ -40,4 +40,5 @@ class File(Base):
             content_id=self.content_id,
             path=self.path,
             meta=self.meta,
+            content=self.content,
         )
