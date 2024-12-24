@@ -357,6 +357,14 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def knowledge_base_update(self, knowledge_base: dict):
+        """
+        Send updated knowledge base to the UI.
+
+        :param knowledge_base: Knowledge base.
+        """
+        raise NotImplementedError()
+
     async def send_file_status(self, file_path: str, file_status: str, source: Optional[UISource] = None):
         """
         Send file status.
