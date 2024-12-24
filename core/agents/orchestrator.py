@@ -78,6 +78,16 @@ class Orchestrator(BaseAgent, GitMixin):
                 )
                 responses = await asyncio.gather(*tasks)
                 response = self.handle_parallel_responses(agent[0], responses)
+
+                should_update_knowledge_base = any(
+                    "src/pages/" in single_agent.step.get("save_file", {}).get("path", "")
+                    or "src/api/" in single_agent.step.get("save_file", {}).get("path", "")
+                    for single_agent in agent
+                )
+
+                if should_update_knowledge_base:
+                    await self.state_manager.update_implemented_pages_and_apis()
+
             else:
                 log.debug(f"Running agent {agent.__class__.__name__} (step {self.current_state.step_index})")
                 response = await agent.run()
