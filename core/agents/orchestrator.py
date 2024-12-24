@@ -307,6 +307,8 @@ class Orchestrator(BaseAgent, GitMixin):
             return LegacyHandler(self.state_manager, self.ui, data={"type": "review_task"})
         elif step_type == "create_readme":
             return TechnicalWriter(self.state_manager, self.ui)
+        elif step_type == "utility_function":
+            return Developer(self.state_manager, self.ui)
         else:
             raise ValueError(f"Unknown step type: {step_type}")
 
