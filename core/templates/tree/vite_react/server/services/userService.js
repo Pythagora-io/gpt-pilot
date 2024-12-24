@@ -1,6 +1,6 @@
 const { randomUUID } = require('crypto');
 
-const User = require('../models/user.js');
+const User = require('../models/User.js');
 const { generatePasswordHash, validatePassword } = require('../utils/password.js');
 
 class UserService {
