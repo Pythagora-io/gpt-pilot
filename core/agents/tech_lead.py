@@ -18,14 +18,22 @@ from core.ui.base import ProjectStage, pythagora_source, success_source
 log = get_logger(__name__)
 
 
+class APIEndpoint(BaseModel):
+    description: str = Field(description="Description of an API endpoint.")
+    method: str = Field(description="HTTP method of the API endpoint.")
+    endpoint: str = Field(description="URL of the API endpoint.")
+    request_body: dict = Field(description="Request body of the API endpoint.")
+    response_body: dict = Field(description="Response body of the API endpoint.")
+
+
 class Epic(BaseModel):
-    description: str = Field(description=("Description of an epic."))
-    related_api_endpoints: list[str] = Field(description="API endpoints that will be implemented in this epic.")
+    description: str = Field(description="Description of an epic.")
+    related_api_endpoints: list[APIEndpoint] = Field(description="API endpoints that will be implemented in this epic.")
 
 
 class Task(BaseModel):
     description: str = Field(description="Description of a task.")
-    related_api_endpoints: list[str] = Field(description="API endpoints that will be implemented in this task.")
+    related_api_endpoints: list[APIEndpoint] = Field(description="API endpoints that will be implemented in this task.")
     testing_instructions: str = Field(description="Instructions for testing the task.")
 
 
@@ -191,7 +199,7 @@ class TechLead(RelevantFilesMixin, BaseAgent):
 
         convo.remove_last_x_messages(1)
         formatted_epics = [
-            f"Epic #{index}: {epic.description} ({','.join([f'`{endpoint}`' for endpoint in epic.related_api_endpoints])})"
+            f"Epic #{index}: {epic.description} ({','.join([f'`{api.endpoint}`' for api in epic.related_api_endpoints])})"
             for index, epic in enumerate(response.plan, start=1)
         ]
         epics_string = "\n\n".join(formatted_epics)
@@ -229,7 +237,7 @@ class TechLead(RelevantFilesMixin, BaseAgent):
             ]
             for sub_epic_number, sub_epic in enumerate(response.plan, start=1):
                 await self.send_message(
-                    f"Epic {sub_epic_number}: {sub_epic.description} ({','.join([f'`{endpoint}`' for endpoint in sub_epic.related_api_endpoints])})"
+                    f"Epic {sub_epic_number}: {sub_epic.description} ({','.join([f'`{api.endpoint}`' for api in sub_epic.related_api_endpoints])})"
                 )
                 convo = convo.template(
                     "epic_breakdown",
