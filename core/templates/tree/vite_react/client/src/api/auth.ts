@@ -1,6 +1,6 @@
 import api from './api';
 
-// Login
+// Description: Login
 // POST /api/auth/login
 // Request: { email: string, password: string }
 // Response: { accessToken: string, refreshToken: string }
@@ -15,7 +15,7 @@ export const login = async (email: string, password: string) => {
   }
 };
 
-// Register
+// Description: Register
 // POST /api/auth/register
 // Request: { email: string, password: string }
 // Response: { email: string }
