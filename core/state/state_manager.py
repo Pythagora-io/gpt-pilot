@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
+from sqlalchemy import inspect, select
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from core.config import FileSystemType, get_config
@@ -619,7 +620,7 @@ class StateManager:
     async def update_implemented_pages_and_apis(self):
         modified = False
         pages = self.get_implemented_pages()
-        apis = self.get_apis()
+        apis = await self.get_apis()
 
         # Get the current state of pages and apis from knowledge_base
         current_pages = self.next_state.knowledge_base.get("pages", None)
@@ -631,7 +632,7 @@ class StateManager:
 
         if modified:
             # TODO - TEMPORARY - remove this
-            self.ui.send_message(
+            await self.ui.send_message(
                 "Updating implemented pages and APIs:\n" + json.dumps(self.next_state.knowledge_base, indent=2)
             )
             self.next_state.knowledge_base["pages"] = pages
@@ -666,7 +667,7 @@ class StateManager:
         self.next_state.flag_knowledge_base_as_modified()
         await self.ui.knowledge_base_update(self.next_state.knowledge_base)
 
-    def get_apis(self) -> list[dict]:
+    async def get_apis(self) -> list[dict]:
         """
         Get the list of APIs.
 
@@ -677,7 +678,10 @@ class StateManager:
         for file in self.next_state.files:
             if "client/src/api" not in file.path:
                 continue
-            content = file.content.content
+            session = inspect(file).async_session
+            result = await session.execute(select(FileContent).where(FileContent.id == file.content_id))
+            file_content = result.scalar_one_or_none()
+            content = file_content.content
             lines = content.splitlines()
             for i, line in enumerate(lines):
                 if "Description:" in line:
@@ -704,7 +708,7 @@ class StateManager:
         Update the list of APIs.
 
         """
-        apis = self.get_apis()
+        apis = await self.get_apis()
         self.next_state.knowledge_base["apis"] = apis
         self.next_state.flag_knowledge_base_as_modified()
         await self.ui.knowledge_base_update(self.next_state.knowledge_base)

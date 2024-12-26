@@ -69,9 +69,9 @@ async def run_project(sm: StateManager, ui: UIBase, args) -> bool:
         telemetry.set("end_result", "failure:api-error")
         await sm.rollback()
     except CustomAssertionError as err:
-        log.warning(f"Anthropic assertion error occurred: {err.message}")
+        log.warning(f"Anthropic assertion error occurred: {str(err)}")
         await ui.send_message(
-            f"Stopping Pythagora due to an error inside Anthropic SDK. {err.message}",
+            f"Stopping Pythagora due to an error inside Anthropic SDK. {str(err)}",
             source=pythagora_source,
         )
         telemetry.set("end_result", "failure:assertion-error")
