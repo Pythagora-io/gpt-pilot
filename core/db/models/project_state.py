@@ -1,6 +1,6 @@
 from copy import deepcopy
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 from uuid import UUID, uuid4
 
 from sqlalchemy import ForeignKey, UniqueConstraint, delete, inspect
@@ -377,7 +377,7 @@ class ProjectState(Base):
 
         return None
 
-    def get_file_content_by_path(self, path: str) -> FileContent | str:
+    def get_file_content_by_path(self, path: str) -> Union[FileContent, str]:
         """
         Get a file from the current project state, by the file path.
 
