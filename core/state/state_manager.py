@@ -686,25 +686,51 @@ class StateManager:
                     endpoint = lines[i + 1].split("Endpoint:")[1]
                     request = lines[i + 2].split("Request:")[1]
                     response = lines[i + 3].split("Response:")[1]
+                    backend = (
+                        next(
+                            (
+                                api
+                                for api in self.current_state.knowledge_base.get("apis", [])
+                                if api["endpoint"] == endpoint.strip()
+                            ),
+                            {},
+                        )
+                        .get("locations", {})
+                        .get("backend", None)
+                    )
                     apis.append(
                         {
                             "description": description.strip(),
                             "endpoint": endpoint.strip(),
                             "request": request.strip(),
                             "response": response.strip(),
-                            "file": file.path,
-                            "line": i - 1,
-                            "status": "mocked",
+                            "locations": {
+                                "frontend": {
+                                    "path": file.path,
+                                    "line": i - 1,
+                                },
+                                "backend": backend,
+                            },
+                            "status": "implemented" if backend is not None else "mocked",
                         }
                     )
         return apis
 
-    async def update_apis(self):
+    async def update_apis(self, files_with_implemented_apis: list[dict] = []):
         """
         Update the list of APIs.
 
         """
         apis = self.get_apis()
+        for file in files_with_implemented_apis:
+            for endpoint in file["related_api_endpoints"]:
+                api = next((api for api in apis if (endpoint in api["endpoint"])), None)
+                if api is not None:
+                    api["status"] = "implemented"
+                    api["locations"]["backend"] = {
+                        "path": file["path"],
+                        "line": file["line"],
+                    }
         self.next_state.knowledge_base["apis"] = apis
         self.next_state.flag_knowledge_base_as_modified()
         await self.ui.knowledge_base_update(self.next_state.knowledge_base)

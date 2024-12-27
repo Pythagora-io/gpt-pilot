@@ -39,6 +39,7 @@ class SaveFileOptions(BaseModel):
 class SaveFileStep(BaseModel):
     type: Literal[StepType.SAVE_FILE] = StepType.SAVE_FILE
     save_file: SaveFileOptions
+    related_api_endpoints: list[str] = Field(description="API endpoints that are implemented in this file", default=[])
 
 
 class CommandStep(BaseModel):
@@ -216,6 +217,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
         await self.send_message("Thinking about how to implement this task ...")
 
         await self.ui.start_breakdown_stream()
+        related_api_endpoints = current_task.get("related_api_endpoints", [])
         llm = self.get_llm(TASK_BREAKDOWN_AGENT_NAME, stream_output=True)
         convo = AgentConvo(self).template(
             "breakdown",
@@ -223,7 +225,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
             iteration=None,
             current_task_index=current_task_index,
             docs=self.current_state.docs,
-            related_api_endpoints=current_task.get("related_api_endpoints", []),
+            related_api_endpoints=related_api_endpoints,
         )
         response: str = await llm(convo)
 
