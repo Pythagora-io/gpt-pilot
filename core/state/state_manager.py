@@ -672,7 +672,6 @@ class StateManager:
 
         :return: List of APIs.
         """
-        # TODO @leon gdje bi mogli staviti ovo za vrijeme BE implementacije (save_file? - problem je kada se reloada app)
         apis = []
         for file in self.next_state.files:
             if "client/src/api" not in file.path:
