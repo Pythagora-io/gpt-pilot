@@ -48,3 +48,29 @@ If nothing needs to be tested for this task, instead of outputting the steps, ju
     "steps": []
 }
 ---end_of_example_when_test_not_needed---
+
+When you think about the testing instructions for the human, keep in mind the tasks that have been already implemented, the task that the human needs to test right now, and the tasks that are still not implemented. If something is not implemented yet, the user will not be able to test a functionality related to that. For example, if a task is to implement a feature that enables the user to create a company record and if you see that the feature to retrieve a list of company records is still not implemented, you cannot tell the human to open the page for viewing company records because it's still not implemented. In this example, you should tell the human to look into a database or some other way that they can verify if the company records are created. The current situation is like this:
+Here are the tasks that are implemented:
+```
+{% for task in state.tasks %}
+{% if loop.index - 1 < current_task_index %}
+{{ loop.index }}. {{ task.description }}{% if task.get("status") == "done" %} (completed){% endif %}
+
+{% endif %}{% endfor %}
+```
+
+Here is the task that the human needs to test:
+```
+{{ current_task_index + 1 }}. {{ task.description }}
+```
+
+And here are the tasks that are still NOT implemented:
+```
+{% for task in state.tasks %}
+{% if loop.index - 1 > current_task_index %}
+{{ loop.index }}. {{ task.description }}{% if task.get("status") == "done" %} (completed){% endif %}
+
+{% endif %}{% endfor %}
+```
+
+Knowing these rules, tell me, please list actions, step by step, in order, that the user should take to verify the task.
