@@ -683,7 +683,7 @@ class StateManager:
             content = file_content.content
             lines = content.splitlines()
             for i, line in enumerate(lines):
-                if "Description:" in line:
+                if "// Description:" in line:
                     # TODO: Make this better!!!
                     description = line.split("Description:")[1]
                     endpoint = lines[i + 1].split("Endpoint:")[1]
