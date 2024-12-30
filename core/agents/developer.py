@@ -228,6 +228,24 @@ class Developer(RelevantFilesMixin, BaseAgent):
             related_api_endpoints=related_api_endpoints,
         )
         response: str = await llm(convo)
+        convo.assistant(response)
+
+        while True:
+            chat = await self.ask_question(
+                "Are you happy with the breakdown? Now is a good time to ask questions or suggest changes.",
+                buttons={"yes": "Yes, looks good!"},
+                default="yes",
+                verbose=False,
+            )
+            if chat.button == "yes":
+                break
+
+            if len(convo.messages) > 11:
+                convo.trim(3, 2)
+
+            convo.user(chat.text)
+            response: str = await llm(convo)
+            convo.assistant(response)
 
         self.next_state.tasks[current_task_index] = {
             **current_task,
@@ -236,7 +254,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
         self.next_state.flag_tasks_as_modified()
 
         llm = self.get_llm(PARSE_TASK_AGENT_NAME)
-        convo.assistant(response).template("parse_task").require_schema(TaskSteps)
+        convo.template("parse_task").require_schema(TaskSteps)
         response: TaskSteps = await llm(convo, parser=JSONParser(TaskSteps), temperature=0)
 
         # There might be state leftovers from previous tasks that we need to clean here
