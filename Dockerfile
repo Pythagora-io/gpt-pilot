@@ -8,7 +8,6 @@ ENV TZ=Etc/UTC
 # Use buildx args for multi-arch support
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
-ARG commitHash
 
 # Update package list and install prerequisites
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -43,18 +42,18 @@ RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
 # MongoDB installation with platform-specific approach
 RUN case "$TARGETPLATFORM" in \
     "linux/amd64") \
-        curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-archive-keyring.gpg && \
-        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/mongodb-archive-keyring.gpg] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list && \
-        apt-get update && apt-get install -y mongodb-org \
-        ;; \
+    curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-archive-keyring.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/mongodb-archive-keyring.gpg] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list && \
+    apt-get update && apt-get install -y mongodb-org \
+    ;; \
     "linux/arm64"|"linux/arm64/v8") \
-        curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-archive-keyring.gpg && \
-        echo "deb [arch=arm64 signed-by=/usr/share/keyrings/mongodb-archive-keyring.gpg] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list && \
-        apt-get update && apt-get install -y mongodb-org \
-        ;; \
+    curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-archive-keyring.gpg && \
+    echo "deb [arch=arm64 signed-by=/usr/share/keyrings/mongodb-archive-keyring.gpg] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list && \
+    apt-get update && apt-get install -y mongodb-org \
+    ;; \
     *) \
-        echo "Unsupported platform: $TARGETPLATFORM" && exit 1 \
-        ;; \
+    echo "Unsupported platform: $TARGETPLATFORM" && exit 1 \
+    ;; \
     esac \
     && rm -rf /var/lib/apt/lists/*
 
@@ -85,11 +84,11 @@ ADD config.json .
 ENV VIRTUAL_ENV=/pythagora/gpt-pilot/pythagora-core/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
+ENV PYTHAGORA_DATA_DIR=/pythagora/gpt-pilot/pythagora-core/data/
+RUN mkdir -p data
+
 # Expose MongoDB and application ports
 EXPOSE 27017 8000
-
-ENV MONGO_DB_DATA=/pythagora/gpt-pilot/pythagora-core/.mongodata
-RUN mkdir -p $MONGO_DB_DATA
 
 # Create a group named "devusergroup" with a specific GID (1000, optional)
 RUN groupadd -g 1000 devusergroup
@@ -118,29 +117,31 @@ RUN chown -R $USERNAME:devusergroup /pythagora
 
 USER $USERNAME
 
+# add this before vscode... better caching of layers
+ADD pythagora-vs-code.vsix pythagora-vs-code.vsix
+
 RUN mkdir -p ~/.ssh && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys
 
+ARG commitHash
 # VS Code server installation with platform-specific handling
 RUN case "$TARGETPLATFORM" in \
     "linux/amd64") \
-        mkdir -p ~/.vscode-server/cli/servers/Stable-${commitHash} && \
-        curl -fsSL https://update.code.visualstudio.com/commit:${commitHash}/server-linux-x64/stable -o server-linux-x64.tar.gz && \
-        tar -xz -f server-linux-x64.tar.gz -C ~/.vscode-server/cli/servers/Stable-${commitHash} && \
-        mv ~/.vscode-server/cli/servers/Stable-${commitHash}/vscode-server-linux-x64 ~/.vscode-server/cli/servers/Stable-${commitHash}/server \
-        ;; \
+    mkdir -p ~/.vscode-server/cli/servers/Stable-${commitHash} && \
+    curl -fsSL https://update.code.visualstudio.com/commit:${commitHash}/server-linux-x64/stable -o server-linux-x64.tar.gz && \
+    tar -xz -f server-linux-x64.tar.gz -C ~/.vscode-server/cli/servers/Stable-${commitHash} && \
+    mv ~/.vscode-server/cli/servers/Stable-${commitHash}/vscode-server-linux-x64 ~/.vscode-server/cli/servers/Stable-${commitHash}/server \
+    ;; \
     "linux/arm64"|"linux/arm64/v8") \
-        mkdir -p ~/.vscode-server/cli/servers/Stable-${commitHash} && \
-        curl -fsSL https://update.code.visualstudio.com/commit:${commitHash}/server-linux-arm64/stable -o server-linux-arm64.tar.gz && \
-        tar -xz -f server-linux-arm64.tar.gz -C ~/.vscode-server/cli/servers/Stable-${commitHash} && \
-        mv ~/.vscode-server/cli/servers/Stable-${commitHash}/vscode-server-linux-arm64 ~/.vscode-server/cli/servers/Stable-${commitHash}/server \
-        ;; \
+    mkdir -p ~/.vscode-server/cli/servers/Stable-${commitHash} && \
+    curl -fsSL https://update.code.visualstudio.com/commit:${commitHash}/server-linux-arm64/stable -o server-linux-arm64.tar.gz && \
+    tar -xz -f server-linux-arm64.tar.gz -C ~/.vscode-server/cli/servers/Stable-${commitHash} && \
+    mv ~/.vscode-server/cli/servers/Stable-${commitHash}/vscode-server-linux-arm64 ~/.vscode-server/cli/servers/Stable-${commitHash}/server \
+    ;; \
     *) \
-        echo "Unsupported platform: $TARGETPLATFORM" && exit 1 \
-        ;; \
+    echo "Unsupported platform: $TARGETPLATFORM" && exit 1 \
+    ;; \
     esac
 
-# Create a workspace directory
-WORKDIR /pythagora/gpt-pilot/workspace
 
 # Create default VS Code settings with dark theme
 # RUN mkdir -p ~/.local/share/code-server/User \
@@ -148,9 +149,11 @@ WORKDIR /pythagora/gpt-pilot/workspace
 #    > ~/.local/share/code-server/User/settings.json
 
 # Install VS Code extension (platform-agnostic)
-ADD pythagora-vs-code.vsix pythagora-vs-code.vsix
 RUN ~/.vscode-server/cli/servers/Stable-${commitHash}/server/bin/code-server --install-extension pythagora-vs-code.vsix
 RUN rm pythagora-vs-code.vsix
+
+# Create a workspace directory
+WORKDIR /pythagora/gpt-pilot/workspace
 
 USER root
 
