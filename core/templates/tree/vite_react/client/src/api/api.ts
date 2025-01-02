@@ -1,6 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosError } from 'axios';
 
-const backendURL = 'http://localhost:3000';
+const backendURL = '';
 const api = axios.create({
   baseURL: backendURL,
   headers: {

@@ -109,7 +109,7 @@ class RelevantFilesMixin:
             .require_schema(RelevantFiles)
         )
 
-        while not done and len(convo.messages) < 13:
+        while not done and len(convo.messages) < 23:
             llm_response: RelevantFiles = await llm(convo, parser=JSONParser(RelevantFiles), temperature=0)
             action = llm_response.action
             if action is None:
