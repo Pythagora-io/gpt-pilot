@@ -499,7 +499,6 @@ class IPCClientUI(UIBase):
 
     async def knowledge_base_update(self, knowledge_base: dict):
         log.debug("Sending updated knowledge base")
-        await self.send_message(json.dumps(knowledge_base, indent=2))
 
         await self._send(
             MessageType.KNOWLEDGE_BASE_UPDATE,
