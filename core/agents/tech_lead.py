@@ -18,14 +18,21 @@ from core.ui.base import ProjectStage, pythagora_source, success_source
 log = get_logger(__name__)
 
 
+class APIEndpoint(BaseModel):
+    description: str = Field(description="Description of an API endpoint.")
+    method: str = Field(description="HTTP method of the API endpoint.")
+    endpoint: str = Field(description="URL of the API endpoint.")
+    request_body: dict = Field(description="Request body of the API endpoint.")
+    response_body: dict = Field(description="Response body of the API endpoint.")
+
+
 class Epic(BaseModel):
-    description: str = Field(description=("Description of an epic."))
-    related_api_endpoints: list[str] = Field(description="API endpoints that will be implemented in this epic.")
+    description: str = Field(description="Description of an epic.")
 
 
 class Task(BaseModel):
     description: str = Field(description="Description of a task.")
-    related_api_endpoints: list[str] = Field(description="API endpoints that will be implemented in this task.")
+    related_api_endpoints: list[APIEndpoint] = Field(description="API endpoints that will be implemented in this task.")
     testing_instructions: str = Field(description="Instructions for testing the task.")
 
 
@@ -190,10 +197,7 @@ class TechLead(RelevantFilesMixin, BaseAgent):
         response: DevelopmentPlan = await llm(convo, parser=JSONParser(DevelopmentPlan))
 
         convo.remove_last_x_messages(1)
-        formatted_epics = [
-            f"Epic #{index}: {epic.description} ({','.join([f'`{endpoint}`' for endpoint in epic.related_api_endpoints])})"
-            for index, epic in enumerate(response.plan, start=1)
-        ]
+        formatted_epics = [f"Epic #{index}: {epic.description}" for index, epic in enumerate(response.plan, start=1)]
         epics_string = "\n\n".join(formatted_epics)
         convo = convo.assistant(epics_string)
         llm = self.get_llm(TECH_LEAD_EPIC_BREAKDOWN)
@@ -223,19 +227,15 @@ class TechLead(RelevantFilesMixin, BaseAgent):
                 {
                     "id": sub_epic_number,
                     "description": sub_epic.description,
-                    "related_api_endpoints": sub_epic.related_api_endpoints,
                 }
                 for sub_epic_number, sub_epic in enumerate(response.plan, start=1)
             ]
             for sub_epic_number, sub_epic in enumerate(response.plan, start=1):
-                await self.send_message(
-                    f"Epic {sub_epic_number}: {sub_epic.description} ({','.join([f'`{endpoint}`' for endpoint in sub_epic.related_api_endpoints])})"
-                )
+                await self.send_message(f"Epic {sub_epic_number}: {sub_epic.description}")
                 convo = convo.template(
                     "epic_breakdown",
                     epic_number=sub_epic_number,
                     epic_description=sub_epic.description,
-                    related_api_endpoints=sub_epic.related_api_endpoints,
                     get_only_api_files=True,
                 ).require_schema(EpicPlan)
                 await self.send_message("Creating tasks for this epic ...")
@@ -248,7 +248,7 @@ class TechLead(RelevantFilesMixin, BaseAgent):
                         "pre_breakdown_testing_instructions": task.testing_instructions,
                         "status": TaskStatus.TODO,
                         "sub_epic_id": sub_epic_number,
-                        "related_api_endpoints": sub_epic.related_api_endpoints,
+                        "related_api_endpoints": task.related_api_endpoints,
                     }
                     for task in epic_plan.plan
                 ]

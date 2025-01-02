@@ -1,10 +1,12 @@
 import asyncio
+import json
 import os.path
 import traceback
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
+from sqlalchemy import inspect, select
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from core.config import FileSystemType, get_config
@@ -604,6 +606,137 @@ class StateManager:
         Returns whether the workspace has any files in them or is empty.
         """
         return not bool(self.file_system.list())
+
+    def get_implemented_pages(self) -> list[str]:
+        """
+        Get the list of implemented pages.
+
+        :return: List of implemented pages.
+        """
+        # TODO - use self.current_state plus response from the FE iteration
+        page_files = [file.path for file in self.next_state.files if "client/src/pages" in file.path]
+        return page_files
+
+    async def update_implemented_pages_and_apis(self):
+        modified = False
+        pages = self.get_implemented_pages()
+        apis = await self.get_apis()
+
+        # Get the current state of pages and apis from knowledge_base
+        current_pages = self.next_state.knowledge_base.get("pages", None)
+        current_apis = self.next_state.knowledge_base.get("apis", None)
+
+        # Check if pages or apis have changed
+        if pages != current_pages or apis != current_apis:
+            modified = True
+
+        if modified:
+            # TODO - TEMPORARY - remove this
+            await self.ui.send_message(
+                "Updating implemented pages and APIs:\n" + json.dumps(self.next_state.knowledge_base, indent=2)
+            )
+            self.next_state.knowledge_base["pages"] = pages
+            self.next_state.knowledge_base["apis"] = apis
+            self.next_state.flag_knowledge_base_as_modified()
+            await self.ui.knowledge_base_update(self.next_state.knowledge_base)
+
+    async def update_utility_functions(self, utility_function: dict):
+        """
+        Update the knowledge base with the utility function.
+
+        :param utility_function: Utility function to update.
+        """
+        matched = False
+        for kb_util_func in self.next_state.knowledge_base.get("utility_functions", []):
+            if (
+                utility_function["function_name"] == kb_util_func["function_name"]
+                and utility_function["file"] == kb_util_func["file"]
+            ):
+                kb_util_func["return_value"] = utility_function["return_value"]
+                kb_util_func["input_value"] = utility_function["input_value"]
+                kb_util_func["status"] = utility_function["status"]
+                matched = True
+                self.next_state.flag_knowledge_base_as_modified()
+                break
+
+        if not matched:
+            if "utility_functions" not in self.next_state.knowledge_base:
+                self.next_state.knowledge_base["utility_functions"] = []
+            self.next_state.knowledge_base["utility_functions"].append(utility_function)
+
+        self.next_state.flag_knowledge_base_as_modified()
+        await self.ui.knowledge_base_update(self.next_state.knowledge_base)
+
+    async def get_apis(self) -> list[dict]:
+        """
+        Get the list of APIs.
+
+        :return: List of APIs.
+        """
+        apis = []
+        for file in self.next_state.files:
+            if "client/src/api" not in file.path:
+                continue
+            session = inspect(file).async_session
+            result = await session.execute(select(FileContent).where(FileContent.id == file.content_id))
+            file_content = result.scalar_one_or_none()
+            content = file_content.content
+            lines = content.splitlines()
+            for i, line in enumerate(lines):
+                if "// Description:" in line:
+                    # TODO: Make this better!!!
+                    description = line.split("Description:")[1]
+                    endpoint = lines[i + 1].split("Endpoint:")[1]
+                    request = lines[i + 2].split("Request:")[1]
+                    response = lines[i + 3].split("Response:")[1]
+                    backend = (
+                        next(
+                            (
+                                api
+                                for api in self.current_state.knowledge_base.get("apis", [])
+                                if api["endpoint"] == endpoint.strip()
+                            ),
+                            {},
+                        )
+                        .get("locations", {})
+                        .get("backend", None)
+                    )
+                    apis.append(
+                        {
+                            "description": description.strip(),
+                            "endpoint": endpoint.strip(),
+                            "request": request.strip(),
+                            "response": response.strip(),
+                            "locations": {
+                                "frontend": {
+                                    "path": file.path,
+                                    "line": i - 1,
+                                },
+                                "backend": backend,
+                            },
+                            "status": "implemented" if backend is not None else "mocked",
+                        }
+                    )
+        return apis
+
+    async def update_apis(self, files_with_implemented_apis: list[dict] = []):
+        """
+        Update the list of APIs.
+
+        """
+        apis = await self.get_apis()
+        for file in files_with_implemented_apis:
+            for endpoint in file["related_api_endpoints"]:
+                api = next((api for api in apis if (endpoint in api["endpoint"])), None)
+                if api is not None:
+                    api["status"] = "implemented"
+                    api["locations"]["backend"] = {
+                        "path": file["path"],
+                        "line": file["line"],
+                    }
+        self.next_state.knowledge_base["apis"] = apis
+        self.next_state.flag_knowledge_base_as_modified()
+        await self.ui.knowledge_base_update(self.next_state.knowledge_base)
 
     @staticmethod
     def get_input_required(content: str) -> list[int]:

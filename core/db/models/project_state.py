@@ -67,6 +67,7 @@ class ProjectState(Base):
     tasks: Mapped[list[dict]] = mapped_column(default=list)
     steps: Mapped[list[dict]] = mapped_column(default=list)
     iterations: Mapped[list[dict]] = mapped_column(default=list)
+    knowledge_base: Mapped[dict] = mapped_column(default=dict, server_default="{}")
     relevant_files: Mapped[Optional[list[str]]] = mapped_column(default=None)
     modified_files: Mapped[dict] = mapped_column(default=dict)
     docs: Mapped[Optional[list[dict]]] = mapped_column(default=None)
@@ -238,6 +239,7 @@ class ProjectState(Base):
             tasks=deepcopy(self.tasks),
             steps=deepcopy(self.steps),
             iterations=deepcopy(self.iterations),
+            knowledge_base=deepcopy(self.knowledge_base),
             files=[],
             relevant_files=deepcopy(self.relevant_files),
             modified_files=deepcopy(self.modified_files),
@@ -337,6 +339,16 @@ class ProjectState(Base):
         can't detect changes in mutable fields by itself).
         """
         flag_modified(self, "epics")
+
+    def flag_knowledge_base_as_modified(self):
+        """
+        Flag the knowledge base field as having been modified
+
+        Used by Agents that perform modifications within the mutable knowledge base field,
+        to tell the database that it was modified and should get saved (as SQLalchemy
+        can't detect changes in mutable fields by itself).
+        """
+        flag_modified(self, "knowledge_base")
 
     def set_current_task_status(self, status: str):
         """

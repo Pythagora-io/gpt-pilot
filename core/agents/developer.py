@@ -23,6 +23,7 @@ class StepType(str, Enum):
     COMMAND = "command"
     SAVE_FILE = "save_file"
     HUMAN_INTERVENTION = "human_intervention"
+    UTILITY_FUNCTION = "utility_function"
 
 
 class CommandOptions(BaseModel):
@@ -38,6 +39,7 @@ class SaveFileOptions(BaseModel):
 class SaveFileStep(BaseModel):
     type: Literal[StepType.SAVE_FILE] = StepType.SAVE_FILE
     save_file: SaveFileOptions
+    related_api_endpoints: list[str] = Field(description="API endpoints that are implemented in this file", default=[])
 
 
 class CommandStep(BaseModel):
@@ -50,8 +52,18 @@ class HumanInterventionStep(BaseModel):
     human_intervention_description: str
 
 
+class UtilityFunction(BaseModel):
+    type: Literal[StepType.UTILITY_FUNCTION] = StepType.UTILITY_FUNCTION
+    file: str
+    function_name: str
+    description: str
+    return_value: str
+    input_value: str
+    status: Literal["mocked", "implemented"]
+
+
 Step = Annotated[
-    Union[SaveFileStep, CommandStep, HumanInterventionStep],
+    Union[SaveFileStep, CommandStep, HumanInterventionStep, UtilityFunction],
     Field(discriminator="type"),
 ]
 
@@ -65,6 +77,9 @@ class Developer(RelevantFilesMixin, BaseAgent):
     display_name = "Developer"
 
     async def run(self) -> AgentResponse:
+        if self.current_state.current_step and self.current_state.current_step.get("type") == "utility_function":
+            return await self.update_knowledge_base()
+
         if not self.current_state.unfinished_tasks:
             log.warning("No unfinished tasks found, nothing to do (why am I called? is this a bug?)")
             return AgentResponse.done(self)
@@ -202,6 +217,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
         await self.send_message("Thinking about how to implement this task ...")
 
         await self.ui.start_breakdown_stream()
+        related_api_endpoints = current_task.get("related_api_endpoints", [])
         llm = self.get_llm(TASK_BREAKDOWN_AGENT_NAME, stream_output=True)
         convo = AgentConvo(self).template(
             "breakdown",
@@ -209,9 +225,27 @@ class Developer(RelevantFilesMixin, BaseAgent):
             iteration=None,
             current_task_index=current_task_index,
             docs=self.current_state.docs,
-            related_api_endpoints=current_task.get("related_api_endpoints", []),
+            related_api_endpoints=related_api_endpoints,
         )
         response: str = await llm(convo)
+        convo.assistant(response)
+
+        while True:
+            chat = await self.ask_question(
+                "Are you happy with the breakdown? Now is a good time to ask questions or suggest changes.",
+                buttons={"yes": "Yes, looks good!"},
+                default="yes",
+                verbose=False,
+            )
+            if chat.button == "yes":
+                break
+
+            if len(convo.messages) > 11:
+                convo.trim(3, 2)
+
+            convo.user(chat.text)
+            response: str = await llm(convo)
+            convo.assistant(response)
 
         self.next_state.tasks[current_task_index] = {
             **current_task,
@@ -220,7 +254,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
         self.next_state.flag_tasks_as_modified()
 
         llm = self.get_llm(PARSE_TASK_AGENT_NAME)
-        convo.assistant(response).template("parse_task").require_schema(TaskSteps)
+        convo.template("parse_task").require_schema(TaskSteps)
         response: TaskSteps = await llm(convo, parser=JSONParser(TaskSteps), temperature=0)
 
         # There might be state leftovers from previous tasks that we need to clean here
@@ -330,3 +364,11 @@ class Developer(RelevantFilesMixin, BaseAgent):
         log.info(f"Task description updated to: {user_response.text}")
         # Orchestrator will rerun us with the new task description
         return False
+
+    async def update_knowledge_base(self):
+        """
+        Update the knowledge base with the current task and steps.
+        """
+        await self.state_manager.update_utility_functions(self.current_state.current_step)
+        self.next_state.complete_step("utility_function")
+        return AgentResponse.done(self)

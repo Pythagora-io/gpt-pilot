@@ -91,6 +91,25 @@ class BugHunter(BaseAgent):
         await self.ui.start_breakdown_stream()
         human_readable_instructions = await llm(convo, temperature=0.5)
 
+        convo.assistant(human_readable_instructions)
+
+        while True:
+            chat = await self.ui.ask_question(
+                "Are you happy with the breakdown? Now is a good time to ask questions or suggest changes.",
+                buttons={"yes": "Yes, looks good!"},
+                default="yes",
+                verbose=False,
+            )
+            if chat.button == "yes":
+                break
+
+            if len(convo.messages) > 11:
+                convo.trim(3, 2)
+
+            convo.user(chat.text)
+            human_readable_instructions: str = await llm(convo)
+            convo.assistant(human_readable_instructions)
+
         convo = (
             AgentConvo(self)
             .template(

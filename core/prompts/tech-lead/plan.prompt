@@ -25,7 +25,7 @@ Before we go into the coding part, your job is to split the development process 
 Now, based on the project details provided{% if task_type  == 'feature' %} and new feature description{% endif %}, think epic by epic and create the entire development plan{% if task_type  == 'feature' %} for new feature{% elif task_type  == 'app' %}. {% if state.files %}Continue from the existing code listed above{% else %}Start from the project setup{% endif %} and specify each epic until the moment when the entire app should be fully working{% if state.files %}. IMPORTANT: You should not reimplement what's already done - just continue from the implementation already there.{% endif %}{% endif %}
 
 IMPORTANT!
-Frontend is already built and you don't need to create epics for it. You only need to create epics for backend implementation and connect it to existing frontend. Keep in mind that some backend functionality is already implemented.{% if task_type  == 'app' %} The first epic **MUST** be to remove the mocked data for making a register and login API requests from the frontend (in the client/src/api/auth.js file) - nothing is needed for this on the backend.{% endif %}
+Frontend is already built and you don't need to create epics for it. You only need to create epics for backend implementation and connect it to existing frontend. Keep in mind that some backend functionality is already implemented.{% if task_type  == 'app' %} The first epic **MUST** be to implement the authentication system if it's required.{% endif %}
 
 Strictly follow these rules:
 

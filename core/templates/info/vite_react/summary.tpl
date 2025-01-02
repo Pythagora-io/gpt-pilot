@@ -29,15 +29,16 @@ Concurrently is used to run both client and server together with a single comman
 
 ** IMPORTANT - Mocking data on the frontend **
 All API requests from the frontend to the backend must be defined in files inside the api folder (you must never make requests directly from the components) and the data must be mocked during the frontend implementation. Make sure to always add an API request whenever something needs to be sent or fetched from the backend.
-When you add mock data, make sure to mock the data in files in the `client/src/api` folder and above each mocked API request, add a structure that is expected from the API.
+When you add mock data, make sure to mock the data in files in the `client/src/api` folder and above each mocked API request, add a structure that is expected from the API with fields `Description`, `Endpoint`, `Request`, and `Response`. You **MUST NOT** add mock data anywhere else in the frontend codebase.
 Mocking example:
 
 The base client/src/api/api.ts is already created so here are 2 examples for how to write functions to get data from the backend with the mock data:
 —EXAMPLE_1 (file `client/src/api/companies.ts`) —
 import api from './api';
 
-// Companies List
-// GET /api/companies
+// Description: Get a list of Companies
+// Endpoint: GET /api/companies
+// Request: {}
 // Response: { companies: Array<{ domain: string, name: string, lastContact: string }> }
 export const getCompanies = () => {
     // Mocking the response
@@ -64,8 +65,8 @@ export const getCompanies = () => {
 —EXAMPLE_2 (file `client/src/api/work.ts`) —
 import api from './api';
 
-// Add Work
-// POST /api/work
+// Description: Add a new Work
+// Endpoint: POST /api/work
 // Request: { work: string, driveLink: string }
 // Response: { success: boolean, message: string }
 export const addWork = (data: { work: string; driveLink: string }) => {

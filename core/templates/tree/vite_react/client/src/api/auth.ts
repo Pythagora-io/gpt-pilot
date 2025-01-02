@@ -1,7 +1,7 @@
 import api from './api';
 
-// Login
-// POST /api/auth/login
+// Description: Login user functionality
+// Endpoint: POST /api/auth/login
 // Request: { email: string, password: string }
 // Response: { accessToken: string, refreshToken: string }
 export const login = async (email: string, password: string) => {
@@ -15,8 +15,8 @@ export const login = async (email: string, password: string) => {
   }
 };
 
-// Register
-// POST /api/auth/register
+// Description: Register user functionality
+// Endpoint: POST /api/auth/register
 // Request: { email: string, password: string }
 // Response: { email: string }
 export const register = async (email: string, password: string) => {
@@ -29,8 +29,9 @@ export const register = async (email: string, password: string) => {
   }
 };
 
-// Logout
-// POST /api/auth/logout
+// Description: Logout
+// Endpoint: POST /api/auth/logout
+// Request: {}
 // Response: { success: boolean, message: string }
 export const logout = async () => {
   try {

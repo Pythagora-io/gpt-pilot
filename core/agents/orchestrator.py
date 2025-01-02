@@ -78,6 +78,27 @@ class Orchestrator(BaseAgent, GitMixin):
                 )
                 responses = await asyncio.gather(*tasks)
                 response = self.handle_parallel_responses(agent[0], responses)
+
+                should_update_knowledge_base = any(
+                    "src/pages/" in single_agent.step.get("save_file", {}).get("path", "")
+                    or "src/api/" in single_agent.step.get("save_file", {}).get("path", "")
+                    or len(single_agent.step.get("related_api_endpoints")) > 0
+                    for single_agent in agent
+                )
+
+                if should_update_knowledge_base:
+                    files_with_implemented_apis = [
+                        {
+                            "path": single_agent.step.get("save_file", {}).get("path", None),
+                            "related_api_endpoints": single_agent.step.get("related_api_endpoints"),
+                            "line": 0,  # TODO implement getting the line number here
+                        }
+                        for single_agent in agent
+                        if len(single_agent.step.get("related_api_endpoints")) > 0
+                    ]
+                    await self.state_manager.update_apis(files_with_implemented_apis)
+                    await self.state_manager.update_implemented_pages_and_apis()
+
             else:
                 log.debug(f"Running agent {agent.__class__.__name__} (step {self.current_state.step_index})")
                 response = await agent.run()
@@ -307,6 +328,8 @@ class Orchestrator(BaseAgent, GitMixin):
             return LegacyHandler(self.state_manager, self.ui, data={"type": "review_task"})
         elif step_type == "create_readme":
             return TechnicalWriter(self.state_manager, self.ui)
+        elif step_type == "utility_function":
+            return Developer(self.state_manager, self.ui)
         else:
             raise ValueError(f"Unknown step type: {step_type}")
 

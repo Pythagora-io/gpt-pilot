@@ -53,6 +53,7 @@ class MessageType(str, Enum):
     IMPORTANT_STREAM = "importantStream"
     BREAKDOWN_STREAM = "breakdownStream"
     TEST_INSTRUCTIONS = "testInstructions"
+    KNOWLEDGE_BASE_UPDATE = "updatedKnowledgeBase"
     STOP_APP = "stopApp"
 
 
@@ -494,6 +495,16 @@ class IPCClientUI(UIBase):
                 "test_instructions": parsed_instructions,
             },
             project_state_id=project_state_id,
+        )
+
+    async def knowledge_base_update(self, knowledge_base: dict):
+        log.debug("Sending updated knowledge base")
+
+        await self._send(
+            MessageType.KNOWLEDGE_BASE_UPDATE,
+            content={
+                "knowledge_base": knowledge_base,
+            },
         )
 
     async def send_file_status(self, file_path: str, file_status: str, source: Optional[UISource] = None):

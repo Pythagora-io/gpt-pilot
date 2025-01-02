@@ -182,11 +182,17 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         await self.send_message("Determining how to test the app ...")
 
         route_files = await self._get_route_files()
+        current_task = self.current_state.current_task
 
         llm = self.get_llm()
         convo = (
             self._get_task_convo()
-            .template("define_user_review_goal", task=self.current_state.current_task, route_files=route_files)
+            .template(
+                "define_user_review_goal",
+                task=current_task,
+                route_files=route_files,
+                current_task_index=self.current_state.tasks.index(current_task),
+            )
             .require_schema(TestSteps)
         )
         user_instructions: TestSteps = await llm(convo, parser=JSONParser(TestSteps))

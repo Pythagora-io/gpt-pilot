@@ -122,6 +122,9 @@ class Frontend(FileDiffMixin, BaseAgent):
         :return: True if the frontend is fully built, False otherwise.
         """
 
+        # update the pages in the knowledge base
+        await self.state_manager.update_implemented_pages_and_apis()
+
         answer = await self.ask_question(
             "Do you want to change anything or report a bug? Keep in mind that currently ONLY frontend is implemented.",
             buttons={
