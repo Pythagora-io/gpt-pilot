@@ -29,9 +29,6 @@ Frontend side is making requests to the backend by calling functions that are de
 Whenever you add an API request from the frontend, make sure to wrap the request in try/catch block and in the catch block, return `throw new Error(error?.response?.data?.error || error.message);` - in the place where the API request function is being called, show a toast message with an error.
 {% endif %}
 
-** IMPORTANT - mocking utility functions **
-All utility functions that are not related to CRUD operations (eg. 3rd party integrations) **MUST** be mocked because they will be implemented after all epics are finished in the next phase of the project. Whenever you need to implement a utility function, you must mock the response of that function and document the input and output of that function in a comment above the function definition.
-
 ** IMPORTANT - current implementation **
 Pay close attention to the currently implemented files, and DO NOT tell me to implementat something that is already implemented. Similarly, do not change the current implementation if you think it is working correctly. It is not necessary for you to change files - you can leave the files as they are and just tell me that they are correctly implemented.
 ~~END_OF_DEVELOPMENT_INSTRUCTIONS~~

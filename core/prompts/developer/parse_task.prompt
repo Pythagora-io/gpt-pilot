@@ -15,7 +15,7 @@ Each step can be either:
  - NEVER use `human_intervention` for testing, as testing will be done separately by a dedicated QA after all the steps are done
  - NEVER use `human_intervention` to ask the human to write or review code
  * `utility_function`
- - if there is a utility function mentioned that needs to be mocked, use this type of step and specify the file in which it needs to be mocked, the name of the function, the description of what this function should do, the status of the function, the input parameters for this function, and the format of the return value
+ - if there is a utility function mentioned, use this type of step and specify the file in which it needs to be put in, the name of the function, the description of what this function should do, the status of the function, the input parameters for this function, and the format of the return value
  - if the function is going to be mocked, then put the status `mocked` and if it's going to be implemented in this task, put the status `implemented`
  - for each utility function that needs to be mocked or implemented, you must provide a separate `utility_function` step
 

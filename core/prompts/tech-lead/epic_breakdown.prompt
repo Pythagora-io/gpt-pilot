@@ -8,7 +8,7 @@ You can think of tasks as a unit of functionality that needs to have a frontend 
 When thinking about the scope of a single task, here are the components that need to be put into the same task:
 1. The implementation of the backend API endpoint together with the frontend API request implementation (removing the mocked data and replacing it with the real API request)
 2. The implementation of the database model
-3. The utility function (eg. 3rd party integration) that is needed for this endpoint. Whenever you need to create a utility function that uses a 3rd party integration, you **MUST** mock that function (create the function, return a mocked data, and specify the structure of the input and the output of the function in the comment above the function).
+3. The utility function (eg. 3rd party integration) that is needed for this endpoint.
 
 **IMPORTANT: order of tasks**
 The tasks you create **MUST** be in the order that they should be implemented. When CRUD operations need to be implemented, first implement the Create operation, then Read, Update, and Delete.
