@@ -86,3 +86,6 @@ export const addWork = (data: { work: string; driveLink: string }) => {
 —END_OF_EXAMPLE_2—
 
 Whenever you add an API request from the frontend, make sure to wrap the request in try/catch block and in the catch block, return `throw new Error(error?.response?.data?.message || error.message);` - in the place where the API request function is being called, show a toast message with an error.
+
+**IMPORTANT**
+Mongodb is being used as a database so whenever you need to take an `id` of an object on frontend, make sure to take `_id` instead. For example, if you have a company object, you should take `company._id` instead of `company.id`.
