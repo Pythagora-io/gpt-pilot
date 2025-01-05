@@ -69,7 +69,7 @@ router.post('/refresh', async (req, res) => {
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
 
     // Find the user
-    const user = await UserService.get(decoded.id);
+    const user = await UserService.get(decoded._id);
 
     if (!user) {
       return res.status(404).json({
