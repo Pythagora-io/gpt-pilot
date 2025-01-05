@@ -23,7 +23,7 @@ IMPORTANT: Text needs to be readable and in positive typography space - this is 
 You must create all code for all pages of this website. If this is a some sort of a dashboard, put the navigation in the sidebar.
 
 **IMPORTANT**
-Make sure to implement all functionality (button clicks, form submissions, etc.) and use mock data for all interactions to make the app look and feel real.
+Make sure to implement all functionality (button clicks, form submissions, etc.) and use mock data for all interactions to make the app look and feel real. **ALL MOCK DATA MUST** be in the `api/` folder and it **MUST NOT** ever be hardcoded in the components.
 The body content should not overlap with the header navigation bar or footer navigation bar or the side navigation bar.
 
 {% if user_feedback %}
