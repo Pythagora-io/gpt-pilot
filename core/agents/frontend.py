@@ -44,7 +44,7 @@ class Frontend(FileDiffMixin, BaseAgent):
         )
         description = description.text.strip()
 
-        await self.send_message("Setting up project...")
+        await self.send_message("Setting up the project...")
 
         self.next_state.epics = [
             {

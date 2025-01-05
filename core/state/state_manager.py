@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os.path
 import traceback
 from contextlib import asynccontextmanager
@@ -631,10 +630,6 @@ class StateManager:
             modified = True
 
         if modified:
-            # TODO - TEMPORARY - remove this
-            await self.ui.send_message(
-                "Updating implemented pages and APIs:\n" + json.dumps(self.next_state.knowledge_base, indent=2)
-            )
             self.next_state.knowledge_base["pages"] = pages
             self.next_state.knowledge_base["apis"] = apis
             self.next_state.flag_knowledge_base_as_modified()
