@@ -8,21 +8,21 @@ This app has 2 parts:
     * It is running on port 5173 and this port should be used for user testing when possible
     * All requests to the backend need to go to an endpoint that starts with `/api/` (e.g. `/api/companies`)
     * Implememented pages:
-        * Home - home (index) page (`/`)
+        * Home - home (index) page (`/`){% if options.auth %}
         * Login - login page (`/login/`) - on login, stores the auth tokens to `accessToken` and `refreshToken` variables in local storage
-        * Register - register page (`/register/`) - on register, store **ONLY** the `accessToken` variable in local storage
+        * Register - register page (`/register/`) - on register, store **ONLY** the `accessToken` variable in local storage{% endif %}
 
 ** #2 Backend **
     * Express-based server implementing REST API endpoints in `api/`
     * Has codebase inside "server/" folder
     * Backend is running on port 3000
-    * MongoDB database support with Mongoose
+    * MongoDB database support with Mongoose{% if options.auth %}
     * Token-based authentication (using bearer access and refresh tokens)
     * User authentication (email + password):
         * login/register API endpoints in `/server/routes/auth.js`
         * authorization middleware in `/server/routes/middleware/auth.js`
         * user management logic in `/server/routes/services/user.js`
-        * User authentication is implemented and doesn't require any additional work
+        * User authentication is implemented and doesn't require any additional work{% endif %}
 
 
 Concurrently is used to run both client and server together with a single command (`npm run start`).

@@ -1,3 +1,4 @@
+{% if options.auth %}
 const UserService = require('../../services/userService.js');
 const jwt = require('jsonwebtoken');
 
@@ -17,3 +18,4 @@ const requireUser = (req, res, next) => {
 module.exports = {
   requireUser,
 };
+{% endif %}

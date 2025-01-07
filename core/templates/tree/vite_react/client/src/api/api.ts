@@ -12,7 +12,7 @@ const api = axios.create({
 });
 
 let accessToken: string | null = null;
-
+{% if options.auth %}
 // Axios request interceptor: Attach access token to headers
 api.interceptors.request.use(
   (config: AxiosRequestConfig): AxiosRequestConfig => {
@@ -62,6 +62,6 @@ api.interceptors.response.use(
     return Promise.reject(error); // Pass other errors through
   }
 );
-
+{% endif %}
 
 export default api;

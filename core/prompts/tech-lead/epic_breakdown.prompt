@@ -13,7 +13,7 @@ When thinking about the scope of a single task, here are the components that nee
 **IMPORTANT: order of tasks**
 The tasks you create **MUST** be in the order that they should be implemented. When CRUD operations need to be implemented, first implement the Create operation, then Read, Update, and Delete.
 
-{% if state.has_frontend() and not state.is_feature() %}
+{% if state.has_frontend() and not state.is_feature() and state.user_options.auth %}
 **IMPORTANT**
 If you are working on the Epic #1 that needs to implement the authentication system. The first task **MUST** be to remove the mocked data for authentication (register and login). After that, add any custom authentication requirements like different roles, different user data, etc.
 {% endif %}

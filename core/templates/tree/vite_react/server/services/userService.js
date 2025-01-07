@@ -1,3 +1,4 @@
+{% if options.auth %}
 const { randomUUID } = require('crypto');
 
 const User = require('../models/User.js');
@@ -104,3 +105,4 @@ class UserService {
 }
 
 module.exports = UserService;
+{% endif %}

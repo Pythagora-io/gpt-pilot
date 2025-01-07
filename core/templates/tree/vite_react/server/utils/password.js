@@ -1,3 +1,4 @@
+{% if options.auth %}
 const bcrypt = require('bcrypt');
 
 /**
@@ -42,3 +43,4 @@ module.exports = {
   validatePassword,
   isPasswordHash,
 }
+{% endif %}
