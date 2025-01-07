@@ -681,9 +681,9 @@ class StateManager:
                 if "// Description:" in line:
                     # TODO: Make this better!!!
                     description = line.split("Description:")[1]
-                    endpoint = lines[i + 1].split("Endpoint:")[1]
-                    request = lines[i + 2].split("Request:")[1]
-                    response = lines[i + 3].split("Response:")[1]
+                    endpoint = lines[i + 1].split("Endpoint:")[1] if len(lines[i + 1].split("Endpoint:")) > 1 else ""
+                    request = lines[i + 2].split("Request:")[1] if len(lines[i + 2].split("Request:")) > 1 else ""
+                    response = lines[i + 3].split("Response:")[1] if len(lines[i + 3].split("Response:")) > 1 else ""
                     backend = (
                         next(
                             (
