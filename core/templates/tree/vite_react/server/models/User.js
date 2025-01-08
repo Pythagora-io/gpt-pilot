@@ -1,3 +1,4 @@
+{% if options.auth %}
 const mongoose = require('mongoose');
 
 const { validatePassword, isPasswordHash } = require('../utils/password.js');
@@ -52,3 +53,4 @@ schema.set('toJSON', {
 const User = mongoose.model('User', schema);
 
 module.exports = User;
+{% endif %}

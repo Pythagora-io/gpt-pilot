@@ -1,3 +1,4 @@
+{% if options.auth %}
 const jwt = require('jsonwebtoken');
 
 const generateAccessToken = (user) => {
@@ -12,3 +13,4 @@ module.exports = {
   generateAccessToken,
   generateRefreshToken
 };
+{% endif %}

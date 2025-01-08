@@ -5,7 +5,9 @@ const express = require("express");
 const session = require("express-session");
 const MongoStore = require('connect-mongo');
 const basicRoutes = require("./routes/index");
+{% if options.auth %}
 const authRoutes = require("./routes/authRoutes");
+{% endif %}
 const { connectDB } = require("./config/database");
 const cors = require("cors");
 
@@ -38,8 +40,10 @@ app.on("error", (error) => {
 
 // Basic Routes
 app.use(basicRoutes);
+{% if options.auth %}
 // Authentication Routes
 app.use('/api/auth', authRoutes);
+{% endif %}
 
 // If no routes handled the request, it's a 404
 app.use((req, res, next) => {

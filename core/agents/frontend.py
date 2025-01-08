@@ -8,7 +8,6 @@ from core.config import FRONTEND_AGENT_NAME
 from core.llm.parser import DescriptiveCodeBlockParser
 from core.log import get_logger
 from core.telemetry import telemetry
-from core.templates.base import NoOptions
 from core.templates.registry import PROJECT_TEMPLATES
 
 log = get_logger(__name__)
@@ -44,6 +43,20 @@ class Frontend(FileDiffMixin, BaseAgent):
         )
         description = description.text.strip()
 
+        auth_needed = await self.ask_question(
+            "Do you need authentication in your app (login, register, etc.)?",
+            buttons={
+                "yes": "Yes",
+                "no": "No",
+            },
+            buttons_only=True,
+            default="no",
+        )
+        options = {
+            "auth": auth_needed.button == "yes",
+        }
+        self.state_manager.user_options = options
+
         await self.send_message("Setting up the project...")
 
         self.next_state.epics = [
@@ -58,7 +71,7 @@ class Frontend(FileDiffMixin, BaseAgent):
             }
         ]
 
-        await self.apply_template()
+        await self.apply_template(options)
 
         return False
 
@@ -240,7 +253,7 @@ class Frontend(FileDiffMixin, BaseAgent):
 
         return AgentResponse.done(self)
 
-    async def apply_template(self):
+    async def apply_template(self, options: dict = {}):
         """
         Applies a template to the frontend.
         """
@@ -251,7 +264,7 @@ class Frontend(FileDiffMixin, BaseAgent):
             return
 
         template = template_class(
-            NoOptions(),
+            options,
             self.state_manager,
             self.process_manager,
         )

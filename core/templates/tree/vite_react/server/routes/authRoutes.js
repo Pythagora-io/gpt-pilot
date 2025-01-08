@@ -1,3 +1,4 @@
+{% if options.auth %}
 const express = require('express');
 const UserService = require('../services/userService.js');
 const { requireUser } = require('./middleware/auth.js');
@@ -124,3 +125,4 @@ router.get('/me', requireUser, async (req, res) => {
 });
 
 module.exports = router;
+{% endif %}
