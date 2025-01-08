@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
-from core.agents.mixins import RelevantFilesMixin
+from core.agents.mixins import ChatWithBreakdownMixin, RelevantFilesMixin
 from core.agents.response import AgentResponse
 from core.config import PARSE_TASK_AGENT_NAME, TASK_BREAKDOWN_AGENT_NAME
 from core.db.models.project_state import IterationStatus, TaskStatus
@@ -72,7 +72,7 @@ class TaskSteps(BaseModel):
     steps: list[Step]
 
 
-class Developer(RelevantFilesMixin, BaseAgent):
+class Developer(ChatWithBreakdownMixin, RelevantFilesMixin, BaseAgent):
     agent_type = "developer"
     display_name = "Developer"
 
@@ -230,22 +230,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
         response: str = await llm(convo)
         convo.assistant(response)
 
-        while True:
-            chat = await self.ask_question(
-                "Are you happy with the breakdown? Now is a good time to ask questions or suggest changes.",
-                buttons={"yes": "Yes, looks good!"},
-                default="yes",
-                verbose=False,
-            )
-            if chat.button == "yes":
-                break
-
-            if len(convo.messages) > 11:
-                convo.trim(3, 2)
-
-            convo.user(chat.text)
-            response: str = await llm(convo)
-            convo.assistant(response)
+        response = await self.chat_with_breakdown(convo, response)
 
         self.next_state.tasks[current_task_index] = {
             **current_task,

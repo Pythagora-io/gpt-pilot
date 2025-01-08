@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
-from core.agents.mixins import IterationPromptMixin, RelevantFilesMixin, TestSteps
+from core.agents.mixins import ChatWithBreakdownMixin, IterationPromptMixin, RelevantFilesMixin, TestSteps
 from core.agents.response import AgentResponse
 from core.config import TROUBLESHOOTER_GET_RUN_COMMAND
 from core.db.models.file import File
@@ -31,7 +31,7 @@ class RouteFilePaths(BaseModel):
     files: list[str] = Field(description="List of paths for files that contain routes")
 
 
-class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
+class Troubleshooter(ChatWithBreakdownMixin, IterationPromptMixin, RelevantFilesMixin, BaseAgent):
     agent_type = "troubleshooter"
     display_name = "Troubleshooter"
 

@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
-from core.agents.mixins import TestSteps
+from core.agents.mixins import ChatWithBreakdownMixin, TestSteps
 from core.agents.response import AgentResponse
 from core.config import CHECK_LOGS_AGENT_NAME, magic_words
 from core.db.models.project_state import IterationStatus
@@ -43,7 +43,7 @@ class ImportantLogsForDebugging(BaseModel):
     logs: list[ImportantLog] = Field(description="Important logs that will help the human debug the current bug.")
 
 
-class BugHunter(BaseAgent):
+class BugHunter(ChatWithBreakdownMixin, BaseAgent):
     agent_type = "bug-hunter"
     display_name = "Bug Hunter"
 
@@ -93,22 +93,7 @@ class BugHunter(BaseAgent):
 
         convo.assistant(human_readable_instructions)
 
-        while True:
-            chat = await self.ui.ask_question(
-                "Are you happy with the breakdown? Now is a good time to ask questions or suggest changes.",
-                buttons={"yes": "Yes, looks good!"},
-                default="yes",
-                verbose=False,
-            )
-            if chat.button == "yes":
-                break
-
-            if len(convo.messages) > 11:
-                convo.trim(3, 2)
-
-            convo.user(chat.text)
-            human_readable_instructions: str = await llm(convo)
-            convo.assistant(human_readable_instructions)
+        human_readable_instructions = await self.chat_with_breakdown(convo, human_readable_instructions)
 
         convo = (
             AgentConvo(self)
