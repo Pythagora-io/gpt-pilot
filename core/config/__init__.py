@@ -351,9 +351,9 @@ class Config(_StrictModel):
                 temperature=0.0,
             ),
             GET_RELEVANT_FILES_AGENT_NAME: AgentLLMConfig(
-                provider=LLMProvider.ANTHROPIC,
-                model="claude-3-5-sonnet-20241022",
-                temperature=0.0,
+                provider=LLMProvider.OPENAI,
+                model="gpt-4o-2024-05-13",
+                temperature=0.5,
             ),
             PARSE_TASK_AGENT_NAME: AgentLLMConfig(
                 provider=LLMProvider.ANTHROPIC,

@@ -57,7 +57,7 @@ class Frontend(FileDiffMixin, BaseAgent):
         }
         self.state_manager.user_options = options
 
-        await self.send_message("Setting up project...")
+        await self.send_message("Setting up the project...")
 
         self.next_state.epics = [
             {
