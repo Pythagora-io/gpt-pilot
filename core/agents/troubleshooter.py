@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
-from core.agents.mixins import IterationPromptMixin, RelevantFilesMixin, TestSteps
+from core.agents.mixins import ChatWithBreakdownMixin, IterationPromptMixin, RelevantFilesMixin, TestSteps
 from core.agents.response import AgentResponse
 from core.config import TROUBLESHOOTER_GET_RUN_COMMAND
 from core.db.models.file import File
@@ -14,7 +14,7 @@ from core.db.models.project_state import IterationStatus, TaskStatus
 from core.llm.parser import JSONParser, OptionalCodeBlockParser
 from core.log import get_logger
 from core.telemetry import telemetry
-from core.ui.base import pythagora_source
+from core.ui.base import ProjectStage, pythagora_source
 
 log = get_logger(__name__)
 
@@ -31,7 +31,7 @@ class RouteFilePaths(BaseModel):
     files: list[str] = Field(description="List of paths for files that contain routes")
 
 
-class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
+class Troubleshooter(ChatWithBreakdownMixin, IterationPromptMixin, RelevantFilesMixin, BaseAgent):
     agent_type = "troubleshooter"
     display_name = "Troubleshooter"
 
@@ -74,6 +74,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
             self.next_state.flag_tasks_as_modified()
             return AgentResponse.done(self)
         else:
+            await self.ui.send_project_stage({"stage": ProjectStage.TEST_APP})
             await self.ui.send_message("Test the app by following these steps:", source=pythagora_source)
 
         await self.send_message("")
@@ -277,6 +278,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
                 break
 
             elif user_response.button == "change":
+                await self.ui.send_project_stage({"stage": ProjectStage.DESCRIBE_CHANGE})
                 user_description = await self.ask_question(
                     "Please describe the change you want to make to the project specification (one at a time)",
                     buttons={"back": "Back"},
@@ -288,6 +290,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
                 break
 
             elif user_response.button == "bug":
+                await self.ui.send_project_stage({"stage": ProjectStage.DESCRIBE_ISSUE})
                 user_description = await self.ask_question(
                     "Please describe the issue you found (one at a time) and share any relevant server logs",
                     extra_info="collect_logs",

@@ -55,8 +55,6 @@ class TechLead(RelevantFilesMixin, BaseAgent):
             self.create_initial_project_epic()
             return AgentResponse.done(self)
 
-        await self.ui.send_project_stage(ProjectStage.CODING)
-
         # if self.current_state.specification.templates and len(self.current_state.files) < 2:
         #     await self.apply_project_templates()
         #     self.next_state.action = "Apply project templates"
@@ -260,6 +258,7 @@ class TechLead(RelevantFilesMixin, BaseAgent):
             self.next_state.tasks,
         )
 
+        await self.ui.send_project_stage({"stage": ProjectStage.OPEN_PLAN})
         response = await self.ask_question(
             "Open and edit your development plan in the Progress tab",
             buttons={"done_editing": "I'm done editing, the plan looks good"},

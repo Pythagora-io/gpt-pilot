@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
-from core.agents.mixins import RelevantFilesMixin
+from core.agents.mixins import ChatWithBreakdownMixin, RelevantFilesMixin
 from core.agents.response import AgentResponse
 from core.config import PARSE_TASK_AGENT_NAME, TASK_BREAKDOWN_AGENT_NAME
 from core.db.models.project_state import IterationStatus, TaskStatus
@@ -15,6 +15,7 @@ from core.db.models.specification import Complexity
 from core.llm.parser import JSONParser
 from core.log import get_logger
 from core.telemetry import telemetry
+from core.ui.base import ProjectStage
 
 log = get_logger(__name__)
 
@@ -72,7 +73,7 @@ class TaskSteps(BaseModel):
     steps: list[Step]
 
 
-class Developer(RelevantFilesMixin, BaseAgent):
+class Developer(ChatWithBreakdownMixin, RelevantFilesMixin, BaseAgent):
     agent_type = "developer"
     display_name = "Developer"
 
@@ -230,22 +231,7 @@ class Developer(RelevantFilesMixin, BaseAgent):
         response: str = await llm(convo)
         convo.assistant(response)
 
-        while True:
-            chat = await self.ask_question(
-                "Are you happy with the breakdown? Now is a good time to ask questions or suggest changes.",
-                buttons={"yes": "Yes, looks good!"},
-                default="yes",
-                verbose=False,
-            )
-            if chat.button == "yes":
-                break
-
-            if len(convo.messages) > 11:
-                convo.trim(3, 2)
-
-            convo.user(chat.text)
-            response: str = await llm(convo)
-            convo.assistant(response)
+        response = await self.chat_with_breakdown(convo, response)
 
         self.next_state.tasks[current_task_index] = {
             **current_task,
@@ -322,6 +308,12 @@ class Developer(RelevantFilesMixin, BaseAgent):
 
         description = self.current_state.current_task["description"]
         task_index = self.current_state.tasks.index(self.current_state.current_task) + 1
+        await self.ui.send_project_stage(
+            {
+                "stage": ProjectStage.STARTING_TASK,
+                "task_index": task_index,
+            }
+        )
         await self.send_message(f"Starting task #{task_index} with the description:\n\n" + description)
         if self.current_state.run_command:
             await self.ui.send_run_command(self.current_state.run_command)
