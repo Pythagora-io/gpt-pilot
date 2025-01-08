@@ -1,3 +1,4 @@
+{% if options.auth %}
 {% raw %}
 import { createContext, useContext, useState, ReactNode } from "react";
 import { login as apiLogin, register as apiRegister } from "@/api/auth";
@@ -66,3 +67,4 @@ export function useAuth() {
   return context;
 }
 {% endraw %}
+{% endif %}

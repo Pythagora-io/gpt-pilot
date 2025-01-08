@@ -1,3 +1,4 @@
+{% if options.auth %}
 import api from './api';
 
 // Description: Login user functionality
@@ -40,3 +41,4 @@ export const logout = async () => {
     throw new Error(error?.response?.data?.message || error.message);
   }
 };
+{% endif %}

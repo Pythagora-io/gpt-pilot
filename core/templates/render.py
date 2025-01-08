@@ -129,6 +129,7 @@ class Renderer:
                         continue
 
                 contents = self.render_template(tpl_location, context)
-                retval[output_location] = contents
+                if contents != "":
+                    retval[output_location] = contents
 
         return retval
