@@ -15,7 +15,7 @@ from core.llm.base import APIError, BaseLLMClient
 from core.log import get_logger
 from core.state.state_manager import StateManager
 from core.telemetry import telemetry
-from core.ui.base import UIBase, UIClosedError, UserInput, pythagora_source
+from core.ui.base import ProjectStage, UIBase, UIClosedError, UserInput, pythagora_source
 
 log = get_logger(__name__)
 
@@ -188,6 +188,7 @@ async def start_new_project(sm: StateManager, ui: UIBase) -> bool:
 
     while True:
         try:
+            await ui.send_project_stage({"stage": ProjectStage.PROJECT_NAME})
             user_input = await ui.ask_question(
                 "What is the project name?",
                 allow_empty=False,

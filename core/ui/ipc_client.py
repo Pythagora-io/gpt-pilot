@@ -8,7 +8,7 @@ from pydantic import BaseModel, ValidationError
 
 from core.config import LocalIPCConfig
 from core.log import get_logger
-from core.ui.base import ProjectStage, UIBase, UIClosedError, UISource, UserInput
+from core.ui.base import UIBase, UIClosedError, UISource, UserInput
 
 VSCODE_EXTENSION_HOST = "localhost"
 VSCODE_EXTENSION_PORT = 8125
@@ -356,8 +356,8 @@ class IPCClientUI(UIBase):
         # Empty answer which we don't allow, treat as user cancelled the input
         return UserInput(cancelled=True)
 
-    async def send_project_stage(self, stage: ProjectStage):
-        await self._send(MessageType.INFO, content=json.dumps({"project_stage": stage.value}))
+    async def send_project_stage(self, data: dict):
+        await self._send(MessageType.INFO, content=json.dumps(data))
 
     async def send_epics_and_tasks(
         self,

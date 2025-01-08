@@ -3,7 +3,7 @@ from typing import Optional
 from prompt_toolkit.shortcuts import PromptSession
 
 from core.log import get_logger
-from core.ui.base import ProjectStage, UIBase, UIClosedError, UISource, UserInput
+from core.ui.base import UIBase, UIClosedError, UISource, UserInput
 
 log = get_logger(__name__)
 
@@ -108,7 +108,7 @@ class PlainConsoleUI(UIBase):
                 return UserInput(button=None, text=choice)
             print("Please provide a valid input")
 
-    async def send_project_stage(self, stage: ProjectStage):
+    async def send_project_stage(self, data: dict):
         pass
 
     async def send_epics_and_tasks(

@@ -9,6 +9,7 @@ from core.agents.response import AgentResponse
 from core.config import GET_RELEVANT_FILES_AGENT_NAME, TASK_BREAKDOWN_AGENT_NAME, TROUBLESHOOTER_BUG_REPORT
 from core.llm.parser import JSONParser
 from core.log import get_logger
+from core.ui.base import ProjectStage
 
 log = get_logger(__name__)
 
@@ -65,6 +66,13 @@ class ChatWithBreakdownMixin:
 
         llm = self.get_llm(TASK_BREAKDOWN_AGENT_NAME, stream_output=True)
         while True:
+            await self.ui.send_project_stage(
+                {
+                    "stage": ProjectStage.BREAKDOWN_CHAT,
+                    "agent": self.agent_type,
+                }
+            )
+
             chat = await self.ask_question(
                 "Are you happy with the breakdown? Now is a good time to ask questions or suggest changes.",
                 buttons={"yes": "Yes, looks good!"},
@@ -84,7 +92,7 @@ class ChatWithBreakdownMixin:
         return breakdown
 
 
-class IterationPromptMixin(ChatWithBreakdownMixin):
+class IterationPromptMixin:
     """
     Provides a method to find a solution to a problem based on user feedback.
 

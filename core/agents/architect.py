@@ -16,7 +16,6 @@ from core.templates.registry import (
     PROJECT_TEMPLATES,
     ProjectTemplateEnum,
 )
-from core.ui.base import ProjectStage
 
 ARCHITECTURE_STEP_NAME = "Project architecture"
 WARN_SYSTEM_DEPS = ["docker", "kubernetes", "microservices"]
@@ -97,8 +96,6 @@ class Architect(BaseAgent):
     display_name = "Architect"
 
     async def run(self) -> AgentResponse:
-        await self.ui.send_project_stage(ProjectStage.ARCHITECTURE)
-
         spec = self.current_state.specification.clone()
 
         if spec.example_project:

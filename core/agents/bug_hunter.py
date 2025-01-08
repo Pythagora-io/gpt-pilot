@@ -12,7 +12,7 @@ from core.db.models.project_state import IterationStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
 from core.telemetry import telemetry
-from core.ui.base import pythagora_source
+from core.ui.base import ProjectStage, pythagora_source
 
 log = get_logger(__name__)
 
@@ -169,6 +169,11 @@ class BugHunter(ChatWithBreakdownMixin, BaseAgent):
                 "continue": "Continue without feedback",  # DO NOT CHANGE THIS TEXT without changing it in the extension (it is hardcoded)
                 "start_pair_programming": "Start Pair Programming",
             }
+            await self.ui.send_project_stage(
+                {
+                    "stage": ProjectStage.ADDITIONAL_FEEDBACK,
+                }
+            )
             user_feedback = await self.ask_question(
                 "Please add any additional feedback that could help Pythagora solve this bug",
                 buttons=buttons,

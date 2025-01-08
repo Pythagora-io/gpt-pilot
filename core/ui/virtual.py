@@ -1,7 +1,7 @@
 from typing import Optional
 
 from core.log import get_logger
-from core.ui.base import ProjectStage, UIBase, UISource, UserInput
+from core.ui.base import UIBase, UISource, UserInput
 
 log = get_logger(__name__)
 
@@ -101,7 +101,7 @@ class VirtualUI(UIBase):
         else:
             return UserInput(text="")
 
-    async def send_project_stage(self, stage: ProjectStage):
+    async def send_project_stage(self, data: dict):
         pass
 
     async def send_epics_and_tasks(

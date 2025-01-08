@@ -9,6 +9,7 @@ from core.llm.parser import DescriptiveCodeBlockParser
 from core.log import get_logger
 from core.telemetry import telemetry
 from core.templates.registry import PROJECT_TEMPLATES
+from core.ui.base import ProjectStage
 
 log = get_logger(__name__)
 
@@ -106,6 +107,7 @@ class Frontend(FileDiffMixin, BaseAgent):
         """
         Continues building the frontend of the app after the initial user input.
         """
+        await self.ui.send_project_stage({"stage": ProjectStage.FRONTEND})
         await self.send_message("Continuing to build UI... This may take a couple of minutes")
 
         llm = self.get_llm(FRONTEND_AGENT_NAME)

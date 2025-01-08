@@ -14,7 +14,7 @@ from core.db.models.project_state import IterationStatus, TaskStatus
 from core.llm.parser import JSONParser, OptionalCodeBlockParser
 from core.log import get_logger
 from core.telemetry import telemetry
-from core.ui.base import pythagora_source
+from core.ui.base import ProjectStage, pythagora_source
 
 log = get_logger(__name__)
 
@@ -74,6 +74,7 @@ class Troubleshooter(ChatWithBreakdownMixin, IterationPromptMixin, RelevantFiles
             self.next_state.flag_tasks_as_modified()
             return AgentResponse.done(self)
         else:
+            await self.ui.send_project_stage({"stage": ProjectStage.TEST_APP})
             await self.ui.send_message("Test the app by following these steps:", source=pythagora_source)
 
         await self.send_message("")
@@ -277,6 +278,7 @@ class Troubleshooter(ChatWithBreakdownMixin, IterationPromptMixin, RelevantFiles
                 break
 
             elif user_response.button == "change":
+                await self.ui.send_project_stage({"stage": ProjectStage.DESCRIBE_CHANGE})
                 user_description = await self.ask_question(
                     "Please describe the change you want to make to the project specification (one at a time)",
                     buttons={"back": "Back"},
@@ -288,6 +290,7 @@ class Troubleshooter(ChatWithBreakdownMixin, IterationPromptMixin, RelevantFiles
                 break
 
             elif user_response.button == "bug":
+                await self.ui.send_project_stage({"stage": ProjectStage.DESCRIBE_ISSUE})
                 user_description = await self.ask_question(
                     "Please describe the issue you found (one at a time) and share any relevant server logs",
                     extra_info="collect_logs",

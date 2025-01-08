@@ -24,7 +24,6 @@ from core.agents.troubleshooter import Troubleshooter
 from core.db.models.project_state import IterationStatus, TaskStatus
 from core.log import get_logger
 from core.telemetry import telemetry
-from core.ui.base import ProjectStage
 
 log = get_logger(__name__)
 
@@ -363,15 +362,9 @@ class Orchestrator(BaseAgent, GitMixin):
         await self.ui.loading_finished()
 
         if self.current_state.epics:
-            await self.ui.send_project_stage(ProjectStage.CODING)
             if len(self.current_state.epics) > 3:
                 # We only want to send previous features, ie. exclude current one and the initial project (first epic)
                 await self.ui.send_features_list([e["description"] for e in self.current_state.epics[2:-1]])
-
-        elif self.current_state.specification.description:
-            await self.ui.send_project_stage(ProjectStage.ARCHITECTURE)
-        else:
-            await self.ui.send_project_stage(ProjectStage.DESCRIPTION)
 
         if self.current_state.specification.description:
             await self.ui.send_project_description(self.current_state.specification.description)

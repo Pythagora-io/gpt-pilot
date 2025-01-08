@@ -5,9 +5,15 @@ from pydantic import BaseModel
 
 
 class ProjectStage(str, Enum):
-    DESCRIPTION = "project_description"
-    ARCHITECTURE = "architecture"
-    CODING = "coding"
+    PROJECT_NAME = "project_name"
+    FRONTEND = "frontend"
+    OPEN_PLAN = "open_plan"
+    STARTING_TASK = "starting_task"
+    BREAKDOWN_CHAT = "breakdown_chat"
+    TEST_APP = "test_app"
+    ADDITIONAL_FEEDBACK = "additional_feedback"
+    DESCRIBE_CHANGE = "describe_change"
+    DESCRIBE_ISSUE = "describe_issue"
 
 
 class UIClosedError(Exception):
@@ -206,11 +212,11 @@ class UIBase:
         """
         raise NotImplementedError()
 
-    async def send_project_stage(self, stage: ProjectStage):
+    async def send_project_stage(self, data: dict):
         """
         Send a project stage to the UI.
 
-        :param stage: Project stage.
+        :param data: Project stage data.
         """
         raise NotImplementedError()
 

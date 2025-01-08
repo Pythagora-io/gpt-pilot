@@ -15,6 +15,7 @@ from core.db.models.specification import Complexity
 from core.llm.parser import JSONParser
 from core.log import get_logger
 from core.telemetry import telemetry
+from core.ui.base import ProjectStage
 
 log = get_logger(__name__)
 
@@ -307,6 +308,12 @@ class Developer(ChatWithBreakdownMixin, RelevantFilesMixin, BaseAgent):
 
         description = self.current_state.current_task["description"]
         task_index = self.current_state.tasks.index(self.current_state.current_task) + 1
+        await self.ui.send_project_stage(
+            {
+                "stage": ProjectStage.STARTING_TASK,
+                "task_index": task_index,
+            }
+        )
         await self.send_message(f"Starting task #{task_index} with the description:\n\n" + description)
         if self.current_state.run_command:
             await self.ui.send_run_command(self.current_state.run_command)
