@@ -8,6 +8,7 @@ from core.agents.convo import AgentConvo
 from core.agents.mixins import RelevantFilesMixin
 from core.agents.response import AgentResponse
 from core.config import TECH_LEAD_EPIC_BREAKDOWN, TECH_LEAD_PLANNING
+from core.db.models import Complexity
 from core.db.models.project_state import TaskStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
@@ -202,7 +203,7 @@ class TechLead(RelevantFilesMixin, BaseAgent):
         convo = convo.assistant(epics_string)
         llm = self.get_llm(TECH_LEAD_EPIC_BREAKDOWN)
 
-        if epic.get("source") == "feature" or epic.get("complexity") == "simple":
+        if epic.get("source") == "feature" or epic.get("complexity") == Complexity.SIMPLE:
             await self.send_message(f"Epic 1: {epic['name']}")
             self.next_state.current_epic["sub_epics"] = [
                 {
