@@ -56,7 +56,7 @@ class Frontend(FileDiffMixin, BaseAgent):
         options = {
             "auth": auth_needed.button == "yes",
         }
-        self.state_manager.user_options = options
+        self.next_state.knowledge_base["user_options"] = options
 
         await self.send_message("Setting up the project...")
 
