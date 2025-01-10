@@ -344,7 +344,7 @@ class Orchestrator(BaseAgent, GitMixin):
 
         input_required_files: list[dict[str, int]] = []
         for file in imported_files:
-            for line in self.state_manager.get_input_required(file.content.content):
+            for line in self.state_manager.get_input_required(file.content.content, file.path):
                 input_required_files.append({"file": file.path, "line": line})
 
         if input_required_files:

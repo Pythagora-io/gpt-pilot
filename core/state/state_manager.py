@@ -735,14 +735,19 @@ class StateManager:
         await self.ui.knowledge_base_update(self.next_state.knowledge_base)
 
     @staticmethod
-    def get_input_required(content: str) -> list[int]:
+    def get_input_required(content: str, file_path: str) -> list[int]:
         """
         Get the list of lines containing INPUT_REQUIRED keyword.
 
         :param content: The file content to search.
+        :param file_path: The file path.
         :return: Indices of lines with INPUT_REQUIRED keyword, starting from 1.
         """
         lines = []
+
+        if ".env" not in file_path:
+            return lines
+
         for i, line in enumerate(content.splitlines(), start=1):
             if "INPUT_REQUIRED" in line:
                 lines.append(i)

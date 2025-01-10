@@ -203,7 +203,7 @@ class Frontend(FileDiffMixin, BaseAgent):
             for file in self.current_state.files:
                 if not file.content:
                     continue
-                input_required = self.state_manager.get_input_required(file.content.content)
+                input_required = self.state_manager.get_input_required(file.content.content, file.path)
                 if input_required:
                     inputs += [{"file": file.path, "line": line} for line in input_required]
 
