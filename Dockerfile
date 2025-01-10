@@ -81,7 +81,7 @@ RUN python3 -m venv venv && \
 # Copy application files
 ADD main.py .
 ADD core core
-ADD config.json .
+ADD config-docker.json config.json
 
 # Set the virtual environment to be automatically activated
 ENV VIRTUAL_ENV=/pythagora/gpt-pilot/pythagora-core/venv
