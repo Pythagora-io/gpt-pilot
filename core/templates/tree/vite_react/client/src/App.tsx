@@ -12,10 +12,8 @@ function App() {
         <ThemeProvider defaultTheme="light" storageKey="ui-theme">
           <Router>
             <Routes>
-              {% if options.auth %}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              {% endif %}
               <Route path="/" element={<ProtectedRoute> <Layout /> </ProtectedRoute>} />
             </Routes>
           </Router>
