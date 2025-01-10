@@ -250,6 +250,8 @@ class Troubleshooter(ChatWithBreakdownMixin, IterationPromptMixin, RelevantFiles
         extra_info = "restart_app" if not self.current_state.iterations else None
 
         while True:
+            await self.ui.send_project_stage({"stage": ProjectStage.GET_USER_FEEDBACK})
+
             test_message = "Please check if the app is working"
             if user_instructions:
                 hint = " Here is a description of what should be working:\n\n" + user_instructions

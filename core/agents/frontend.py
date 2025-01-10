@@ -37,6 +37,8 @@ class Frontend(FileDiffMixin, BaseAgent):
 
         :return: AgentResponse.done(self)
         """
+        await self.ui.send_project_stage({"stage": ProjectStage.PROJECT_DESCRIPTION})
+
         description = await self.ask_question(
             "Please describe the app you want to build.",
             allow_empty=False,
@@ -108,7 +110,7 @@ class Frontend(FileDiffMixin, BaseAgent):
         """
         Continues building the frontend of the app after the initial user input.
         """
-        await self.ui.send_project_stage({"stage": ProjectStage.FRONTEND})
+        await self.ui.send_project_stage({"stage": ProjectStage.CONTINUE_FRONTEND})
         await self.send_message("Continuing to build UI... This may take a couple of minutes")
 
         llm = self.get_llm(FRONTEND_AGENT_NAME)
@@ -140,6 +142,8 @@ class Frontend(FileDiffMixin, BaseAgent):
 
         # update the pages in the knowledge base
         await self.state_manager.update_implemented_pages_and_apis()
+
+        await self.ui.send_project_stage({"stage": ProjectStage.ITERATE_FRONTEND})
 
         answer = await self.ask_question(
             "Do you want to change anything or report a bug? Keep in mind that currently ONLY frontend is implemented.",

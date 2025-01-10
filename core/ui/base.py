@@ -6,7 +6,10 @@ from pydantic import BaseModel
 
 class ProjectStage(str, Enum):
     PROJECT_NAME = "project_name"
-    FRONTEND = "frontend"
+    PROJECT_DESCRIPTION = "project_description"
+    CONTINUE_FRONTEND = "continue_frontend"
+    ITERATE_FRONTEND = "iterate_frontend"
+    GET_USER_FEEDBACK = "get_user_feedback"
     OPEN_PLAN = "open_plan"
     STARTING_TASK = "starting_task"
     BREAKDOWN_CHAT = "breakdown_chat"
