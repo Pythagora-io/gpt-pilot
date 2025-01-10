@@ -20,6 +20,9 @@ class NoOptions(BaseModel):
     Options class for templates that do not require any options.
     """
 
+    class Config:
+        extra = "allow"
+
     pass
 
 
