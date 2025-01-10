@@ -159,7 +159,6 @@ RUN mkdir -p /home/$USERNAME/.vscode-server/cli/servers
 
 USER root
 
-RUN chmod +x /var/init_data/initialize-vscs-pythagora.sh
 RUN chmod +x /var/init_data/on-event-extension-install.sh
 RUN chown -R devuser: /var/init_data/
 
