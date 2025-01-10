@@ -18,6 +18,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gnupg \
     tzdata \
     openssh-server \
+    inotify-tools \
+    vim \
+    nano \
     && rm -rf /var/lib/apt/lists/*
 
 # Add deadsnakes PPA for Python 3.12 and install Python
@@ -117,45 +120,48 @@ RUN chown -R $USERNAME:devusergroup /pythagora
 
 USER $USERNAME
 
+RUN npx @puppeteer/browsers install chrome@stable
+
 # add this before vscode... better caching of layers
-ADD pythagora-vs-code.vsix pythagora-vs-code.vsix
+ADD pythagora-vs-code.vsix /var/init_data/pythagora-vs-code.vsix
 
 RUN mkdir -p ~/.ssh && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys
 
-ARG commitHash
-# VS Code server installation with platform-specific handling
-RUN case "$TARGETPLATFORM" in \
-    "linux/amd64") \
-    mkdir -p ~/.vscode-server/cli/servers/Stable-${commitHash} && \
-    curl -fsSL https://update.code.visualstudio.com/commit:${commitHash}/server-linux-x64/stable -o server-linux-x64.tar.gz && \
-    tar -xz -f server-linux-x64.tar.gz -C ~/.vscode-server/cli/servers/Stable-${commitHash} && \
-    mv ~/.vscode-server/cli/servers/Stable-${commitHash}/vscode-server-linux-x64 ~/.vscode-server/cli/servers/Stable-${commitHash}/server \
-    ;; \
-    "linux/arm64"|"linux/arm64/v8") \
-    mkdir -p ~/.vscode-server/cli/servers/Stable-${commitHash} && \
-    curl -fsSL https://update.code.visualstudio.com/commit:${commitHash}/server-linux-arm64/stable -o server-linux-arm64.tar.gz && \
-    tar -xz -f server-linux-arm64.tar.gz -C ~/.vscode-server/cli/servers/Stable-${commitHash} && \
-    mv ~/.vscode-server/cli/servers/Stable-${commitHash}/vscode-server-linux-arm64 ~/.vscode-server/cli/servers/Stable-${commitHash}/server \
-    ;; \
-    *) \
-    echo "Unsupported platform: $TARGETPLATFORM" && exit 1 \
-    ;; \
-    esac
+# ARG commitHash
+# # VS Code server installation with platform-specific handling
+# RUN case "$TARGETPLATFORM" in \
+#     "linux/amd64") \
+#     mkdir -p ~/.vscode-server/cli/servers/Stable-${commitHash} && \
+#     curl -fsSL https://update.code.visualstudio.com/commit:${commitHash}/server-linux-x64/stable -o server-linux-x64.tar.gz && \
+#     tar -xz -f server-linux-x64.tar.gz -C ~/.vscode-server/cli/servers/Stable-${commitHash} && \
+#     mv ~/.vscode-server/cli/servers/Stable-${commitHash}/vscode-server-linux-x64 ~/.vscode-server/cli/servers/Stable-${commitHash}/server \
+#     ;; \
+#     "linux/arm64"|"linux/arm64/v8") \
+#     mkdir -p ~/.vscode-server/cli/servers/Stable-${commitHash} && \
+#     curl -fsSL https://update.code.visualstudio.com/commit:${commitHash}/server-linux-arm64/stable -o server-linux-arm64.tar.gz && \
+#     tar -xz -f server-linux-arm64.tar.gz -C ~/.vscode-server/cli/servers/Stable-${commitHash} && \
+#     mv ~/.vscode-server/cli/servers/Stable-${commitHash}/vscode-server-linux-arm64 ~/.vscode-server/cli/servers/Stable-${commitHash}/server \
+#     ;; \
+#     *) \
+#     echo "Unsupported platform: $TARGETPLATFORM" && exit 1 \
+#     ;; \
+#     esac
 
-
-# Create default VS Code settings with dark theme
-# RUN mkdir -p ~/.local/share/code-server/User \
-#    && echo '{"workbench.colorTheme": "Dark", "workbench.startupEditor": "none"}' \
-#    > ~/.local/share/code-server/User/settings.json
 
 # Install VS Code extension (platform-agnostic)
-RUN ~/.vscode-server/cli/servers/Stable-${commitHash}/server/bin/code-server --install-extension pythagora-vs-code.vsix
-RUN rm pythagora-vs-code.vsix
+# RUN ~/.vscode-server/cli/servers/Stable-${commitHash}/server/bin/code-server --install-extension pythagora-vs-code.vsix
+ADD on-event-extension-install.sh /var/init_data/on-event-extension-install.sh
 
 # Create a workspace directory
-WORKDIR /pythagora/gpt-pilot/workspace
+RUN mkdir -p /pythagora/gpt-pilot/pythagora-core/workspace
+
+RUN mkdir -p /home/$USERNAME/.vscode-server/cli/servers
 
 USER root
+
+RUN chmod +x /var/init_data/initialize-vscs-pythagora.sh
+RUN chmod +x /var/init_data/on-event-extension-install.sh
+RUN chown -R devuser: /var/init_data/
 
 # Set the entrypoint to the main application
 ENTRYPOINT ["/entrypoint.sh"]

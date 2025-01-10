@@ -15,7 +15,13 @@ mongod --dbpath "$MONGO_DB_DATA" --bind_ip_all >> $MONGO_DB_DATA/mongo_logs.txt 
 
 export DB_DIR=$PYTHAGORA_DATA_DIR/database
 
-mkdir -p $DB_DIR
-chown -R devuser: $DB_DIR
+chown -R devuser: $PYTHAGORA_DATA_DIR
+su - devuser -c "mkdir -p $DB_DIR"
+
+set -e
+
+su - devuser -c "cd /var/init_data/ && ./on-event-extension-install.sh &"
+
+echo "Starting ssh server..."
 
 /usr/sbin/sshd -D
