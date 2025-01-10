@@ -83,7 +83,7 @@
     }
   },
   "prompt": {
-    "paths": ["/pythagora/gpt-pilot/pythagora-core/core/prompts"]
+    "paths": ["/pythagora/pythagora-core/core/prompts"]
   },
   "log": {
     "level": "DEBUG",
@@ -99,7 +99,7 @@
   },
   "fs": {
     "type": "local",
-    "workspace_root": "/pythagora/gpt-pilot/pythagora-core/workspace",
+    "workspace_root": "/pythagora/pythagora-core/workspace",
     "ignore_paths": [
       ".git",
       ".gpt-pilot",

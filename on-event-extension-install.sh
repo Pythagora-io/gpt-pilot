@@ -28,8 +28,7 @@ inotifywait -m -e create -e moved_to --format '%f' "$MONITOR_DIR" | while read -
     while [ ! -f "$HOME/.vscode-server/cli/servers/$NEW_ITEM/server/bin/code-server" ]; do
       sleep 1
     done
-    mkdir -p /pythagora/gpt-pilot/pythagora-core/workspace/.vscode && printf '{\n  "gptPilot.isRemoteWs": true,\n  "gptPilot.useRemoteWs": false\n}' >  /pythagora/gpt-pilot/pythagora-core/workspace/.vscode/settings.json
+    mkdir -p /pythagora/pythagora-core/workspace/.vscode && printf '{\n  "gptPilot.isRemoteWs": true,\n  "gptPilot.useRemoteWs": false\n}' >  /pythagora/pythagora-core/workspace/.vscode/settings.json
     $HOME/.vscode-server/cli/servers/$NEW_ITEM/server/bin/code-server --install-extension /var/init_data/pythagora-vs-code.vsix
-    # echo "ok" > /pythagora/gpt-pilot/pythagora-core/workspace/pythagora-installed.txt
   fi
 done

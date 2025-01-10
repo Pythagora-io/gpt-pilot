@@ -67,8 +67,10 @@ RUN mkdir -p /run/sshd \
     && sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config \
     && sed -i 's/#ChallengeResponseAuthentication yes/ChallengeResponseAuthentication no/' /etc/ssh/sshd_config
 
+ENV PYTH_INSTALL_DIR=/pythagora
+
 # Set up work directory
-WORKDIR /pythagora/gpt-pilot/pythagora-core
+WORKDIR ${PYTH_INSTALL_DIR}/pythagora-core
 
 # Add Python requirements
 ADD requirements.txt .
@@ -84,10 +86,10 @@ ADD core core
 ADD config-docker.json config.json
 
 # Set the virtual environment to be automatically activated
-ENV VIRTUAL_ENV=/pythagora/gpt-pilot/pythagora-core/venv
+ENV VIRTUAL_ENV=${PYTH_INSTALL_DIR}/pythagora-core/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-ENV PYTHAGORA_DATA_DIR=/pythagora/gpt-pilot/pythagora-core/data/
+ENV PYTHAGORA_DATA_DIR=${PYTH_INSTALL_DIR}/pythagora-core/data/
 RUN mkdir -p data
 
 # Expose MongoDB and application ports
@@ -153,7 +155,7 @@ RUN mkdir -p ~/.ssh && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authoriz
 ADD on-event-extension-install.sh /var/init_data/on-event-extension-install.sh
 
 # Create a workspace directory
-RUN mkdir -p /pythagora/gpt-pilot/pythagora-core/workspace
+RUN mkdir -p ${PYTH_INSTALL_DIR}/pythagora-core/workspace
 
 RUN mkdir -p /home/$USERNAME/.vscode-server/cli/servers
 
