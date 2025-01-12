@@ -23,7 +23,7 @@
     },
     "BugHunter.check_logs": {
       "provider": "anthropic",
-      "model": "claude-3-5-sonnet-20240620",
+      "model": "claude-3-5-sonnet-20241022",
       "temperature": 0.5
     },
     "CodeMonkey": {
@@ -47,13 +47,13 @@
       "temperature": 0.0
     },
     "get_relevant_files": {
-      "provider": "anthropic",
-      "model": "claude-3-5-sonnet-20241022",
-      "temperature": 0.0
+      "provider": "openai",
+      "model": "gpt-4o-2024-05-13",
+      "temperature": 0.5
     },
     "Developer.parse_task": {
-      "provider": "openai",
-      "model": "gpt-4-0125-preview",
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022",
       "temperature": 0.0
     },
     "SpecWriter": {
@@ -63,12 +63,17 @@
     },
     "Developer.breakdown_current_task": {
       "provider": "anthropic",
-      "model": "claude-3-5-sonnet-20240620",
+      "model": "claude-3-5-sonnet-20241022",
       "temperature": 0.5
     },
     "TechLead.plan_epic": {
       "provider": "anthropic",
       "model": "claude-3-5-sonnet-20240620",
+      "temperature": 0.5
+    },
+    "TechLead.epic_breakdown": {
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022",
       "temperature": 0.5
     },
     "Troubleshooter.generate_bug_report": {
@@ -83,7 +88,9 @@
     }
   },
   "prompt": {
-    "paths": ["/pythagora/pythagora-core/core/prompts"]
+    "paths": [
+      "/pythagora/pythagora-core/core/prompts"
+    ]
   },
   "log": {
     "level": "DEBUG",
@@ -91,7 +98,7 @@
     "output": "pythagora.log"
   },
   "db": {
-    "url": "sqlite+aiosqlite:///data/database/pythagora.db",
+    "url": "sqlite+aiosqlite:///pythagora.db",
     "debug_sql": false
   },
   "ui": {
