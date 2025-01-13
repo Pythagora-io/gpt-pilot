@@ -1,4 +1,5 @@
 import asyncio
+import os
 from typing import List, Optional, Union
 
 from core.agents.architect import Architect
@@ -57,6 +58,8 @@ class Orchestrator(BaseAgent, GitMixin):
         await self.init_ui()
         await self.offline_changes_check()
 
+        await self.install_dependencies()
+
         if self.args.use_git and await self.check_git_installed():
             await self.init_git_if_needed()
 
@@ -112,6 +115,13 @@ class Orchestrator(BaseAgent, GitMixin):
 
         # TODO: rollback changes to "next" so they aren't accidentally committed?
         return True
+
+    async def install_dependencies(self):
+        # Check if node_modules directory exists
+        node_modules_path = os.path.join(self.state_manager.get_full_project_root(), "node_modules")
+        if not os.path.exists(node_modules_path):
+            await self.send_message("Installing project dependencies...")
+            await self.process_manager.run_command("npm install", show_output=False)
 
     def handle_parallel_responses(self, agent: BaseAgent, responses: List[AgentResponse]) -> AgentResponse:
         """
