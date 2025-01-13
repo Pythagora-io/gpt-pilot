@@ -128,7 +128,7 @@ def test_load_config_defaults(tmp_path):
     config = load_config(MagicMock(config=config_file, level=None, database=None, local_ipc_port=None))
 
     assert config.log.level == "DEBUG"
-    assert config.db.url == "sqlite+aiosqlite:///pythagora.db"
+    assert config.db.url == "sqlite+aiosqlite:///data/database/pythagora.db"
     assert config.ui.type == "plain"
 
 

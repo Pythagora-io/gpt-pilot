@@ -98,7 +98,7 @@
     "output": "pythagora.log"
   },
   "db": {
-    "url": "sqlite+aiosqlite:///pythagora.db",
+    "url": "sqlite+aiosqlite:///data/database/pythagora.db",
     "debug_sql": false
   },
   "ui": {
