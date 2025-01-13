@@ -21,3 +21,4 @@ config.json
 poetry.lock
 .DS_Store
 *.log
+pythagora-vs-code.vsix

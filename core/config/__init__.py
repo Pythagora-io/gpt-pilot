@@ -230,7 +230,7 @@ class DBConfig(_StrictModel):
     """
 
     url: str = Field(
-        "sqlite+aiosqlite:///pythagora.db",
+        "sqlite+aiosqlite:///data/database/pythagora.db",
         description="Database connection URL",
     )
     debug_sql: bool = Field(False, description="Log all SQL queries to the console")
