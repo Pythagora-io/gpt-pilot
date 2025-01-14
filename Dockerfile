@@ -93,7 +93,7 @@ ENV PYTHAGORA_DATA_DIR=${PYTH_INSTALL_DIR}/pythagora-core/data/
 RUN mkdir -p data
 
 # Expose MongoDB and application ports
-EXPOSE 27017 8000 5173 3000 4444
+EXPOSE 27017 8000
 
 # Create a group named "devusergroup" with a specific GID (1000, optional)
 RUN groupadd -g 1000 devusergroup

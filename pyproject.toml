@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pythagora-core"
-version = "1.2.2"
+version = "1.2.3"
 description = "Build complete apps using AI agents"
 authors = ["Leon Ostrez <leon@pythagora.ai>"]
 license = "FSL-1.1-MIT"
