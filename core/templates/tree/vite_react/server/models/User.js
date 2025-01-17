@@ -43,7 +43,6 @@ const schema = new mongoose.Schema({
 schema.set('toJSON', {
   /* eslint-disable */
   transform: (doc, ret, options) => {
-    delete ret._id;
     delete ret.password;
     return ret;
   },
