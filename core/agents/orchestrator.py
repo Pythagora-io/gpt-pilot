@@ -117,7 +117,13 @@ class Orchestrator(BaseAgent, GitMixin):
         return True
 
     async def install_dependencies(self):
-        # Check if node_modules directory exists
+        # First check if package.json exists
+        package_json_path = os.path.join(self.state_manager.get_full_project_root(), "package.json")
+        if not os.path.exists(package_json_path):
+            # Skip if no package.json found
+            return
+
+        # Then check if node_modules directory exists
         node_modules_path = os.path.join(self.state_manager.get_full_project_root(), "node_modules")
         if not os.path.exists(node_modules_path):
             await self.send_message("Installing project dependencies...")
