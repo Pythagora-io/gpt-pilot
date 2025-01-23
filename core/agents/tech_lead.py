@@ -247,7 +247,7 @@ class TechLead(RelevantFilesMixin, BaseAgent):
                         "pre_breakdown_testing_instructions": task.testing_instructions,
                         "status": TaskStatus.TODO,
                         "sub_epic_id": sub_epic_number,
-                        "related_api_endpoints": task.related_api_endpoints,
+                        "related_api_endpoints": [rae.model_dump() for rae in (task.related_api_endpoints or [])],
                     }
                     for task in epic_plan.plan
                 ]
