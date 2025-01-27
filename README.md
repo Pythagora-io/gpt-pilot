@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🧑‍✈️ GPT PILOT 🧑‍✈️
+
 
 </div>
 
@@ -16,12 +16,7 @@
 
 ---
 
-<div align="center">
-<a href="https://www.ycombinator.com/" target="_blank"><img src="https://s3.amazonaws.com/assets.pythagora.ai/yc/PNG/Black.png" alt="Pythagora-io%2Fgpt-pilot | Trendshift" style="width: 250px; height: 93px;"/></a>
-</div>
-<br>
-<div align="center">
-<a href="https://trendshift.io/repositories/466" target="_blank"><img src="https://trendshift.io/api/badge/repositories/466" alt="Pythagora-io%2Fgpt-pilot | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+
 </div>
 
 <br>
@@ -44,17 +39,7 @@
 
 ---
 
-<div align="center">
 
-<a href="vscode:extension/PythagoraTechnologies.gpt-pilot-vs-code" target="_blank"><img src="https://github.com/Pythagora-io/gpt-pilot/assets/10895136/5792143e-77c7-47dd-ad96-6902be1501cd" alt="Pythagora-io%2Fgpt-pilot | Trendshift" style="width: 185px; height: 55px;" width="185" height="55"/></a>
-
-</div>
-
-GPT Pilot is the core technology for the [Pythagora VS Code extension](https://bit.ly/3IeZxp6) that aims to provide **the first real AI developer companion**. Not just an autocomplete or a helper for PR messages but rather a real AI developer that can write full features, debug them, talk to you about issues, ask for review, etc.
-
----
-
-📫 If you would like to get updates on future releases or just get in touch, join our [Discord server](https://discord.gg/HaqXugmxr9) or you [can add your email here](http://eepurl.com/iD6Mpo). 📬
 
 ---
 
@@ -97,9 +82,6 @@ If you are interested in our learnings during this project, you can check [our l
 - **Python 3.9+**
 
 # 🚦How to start using gpt-pilot?
-👉 If you are using VS Code as your IDE, the easiest way to start is by downloading [GPT Pilot VS Code extension](https://bit.ly/3IeZxp6). 👈
-
-Otherwise, you can use the CLI tool.
 
 ### If you're new to GPT Pilot:
 
