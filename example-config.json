@@ -27,6 +27,16 @@
         "azure_deployment": "your-azure-deployment-id",
         "api_version": "2024-02-01"
       }
+    },
+    // Example config for 1min.ai (https://gleaming-wren-2af.notion.site/1min-AI-API-Docs-111af080bd8f8046a4e6e1053c95e047#111af080bd8f8027be32e1bbb5957921)
+    "1min-ai": {
+      "base_url": "https://api.1min.ai/api/features?isStreaming=true",
+      "api_key": "your-api-key",
+      "connect_timeout": 60.0,
+      "read_timeout": 20.0,
+      "extra": {
+        "conversation_id": null // Leave empty to start a new conversation
+      }
     }
   },
   // Each agent can use a different model or configuration. The default, as before, is GPT4 Turbo
