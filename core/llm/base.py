@@ -330,6 +330,7 @@ class BaseLLMClient:
         :param provider: Provider to return the client for.
         :return: Client class for the specified provider.
         """
+        from .aiml_client import AIMLClient
         from .anthropic_client import AnthropicClient
         from .azure_client import AzureClient
         from .groq_client import GroqClient
@@ -337,6 +338,8 @@ class BaseLLMClient:
 
         if provider == LLMProvider.OPENAI:
             return OpenAIClient
+        elif provider == LLMProvider.AIML:
+            return AIMLClient
         elif provider == LLMProvider.ANTHROPIC:
             return AnthropicClient
         elif provider == LLMProvider.GROQ:

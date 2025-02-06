@@ -10,6 +10,13 @@
       "connect_timeout": 60.0,
       "read_timeout": 20.0
     },
+    "aiml": {
+      // Example config for AIML (to access 100+ model - see https://docs.aimlapi.com/api-overview/text-models-llm)
+      "base_url": "https://api.aimlapi.com/v1",
+      "api_key": "your-aiml-api-key",
+      "connect_timeout": 60.0,
+      "read_timeout": 20.0
+    },
     // Example config for Anthropic (see https://docs.anthropic.com/docs/api-reference)
     "anthropic": {
       "base_url": "https://api.anthropic.com",
