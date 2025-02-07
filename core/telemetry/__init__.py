@@ -69,9 +69,9 @@ class Telemetry:
         self.data = {
             # System platform
             "platform": sys.platform,
-            # Python version used for GPT Pilot
+            # Python version used
             "python_version": sys.version,
-            # GPT Pilot version
+            # Core version
             "pilot_version": get_version(),
             # Pythagora VSCode Extension version
             "extension_version": None,
@@ -86,8 +86,8 @@ class Telemetry:
             "updated_prompt": None,
             # App complexity
             "is_complex_app": None,
-            # Optional template used for the project
-            "template": None,
+            # Optional templates used for the project
+            "templates": None,
             # Optional, example project selected by the user
             "example_project": None,
             # Optional user contact email
@@ -136,7 +136,7 @@ class Telemetry:
                 "num_tasks": 0,
                 # Number of seconds elapsed during development
                 "elapsed_time": 0,
-                # Total number of lines created by GPT Pilot
+                # Total number of lines created by Pythagora
                 "created_lines": 0,
                 # End result of development:
                 # - success:initial-project
@@ -150,7 +150,7 @@ class Telemetry:
                 "is_continuation": False,
                 # Optional user feedback
                 "user_feedback": None,
-                # If GPT Pilot crashes, record diagnostics
+                # If Core crashes, record diagnostics
                 "crash_diagnostics": None,
                 # Statistics for large requests
                 "large_requests": None,
@@ -319,7 +319,7 @@ class Telemetry:
             "median_time": sorted(self.slow_requests)[n_slow // 2] if n_slow > 0 else None,
         }
 
-    async def send(self, event: str = "pilot-telemetry"):
+    async def send(self, event: str = "pythagora-core-telemetry"):
         """
         Send telemetry data to the phone-home endpoint.
 

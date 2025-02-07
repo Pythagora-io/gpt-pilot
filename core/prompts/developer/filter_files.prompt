@@ -11,10 +11,12 @@ We've broken the development of the project down to these tasks:
 {% endfor %}
 ```
 
+{% if state.current_task %}
 The next task we need to work on, and have to focus on, is this task:
 ```
 {{ state.current_task.description }}
 ```
+{% endif %}
 
 {% if user_feedback %}User who was using the app sent you this feedback:
 ```

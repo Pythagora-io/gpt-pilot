@@ -57,6 +57,7 @@ def test_parse_arguments(mock_ArgumentParser):
         "--email",
         "--extension-version",
         "--no-check",
+        "--use-git",
     }
 
     parser.parse_args.assert_called_once_with()
@@ -127,7 +128,7 @@ def test_load_config_defaults(tmp_path):
     config = load_config(MagicMock(config=config_file, level=None, database=None, local_ipc_port=None))
 
     assert config.log.level == "DEBUG"
-    assert config.db.url == "sqlite+aiosqlite:///pythagora.db"
+    assert config.db.url == "sqlite+aiosqlite:///data/database/pythagora.db"
     assert config.ui.type == "plain"
 
 
@@ -314,7 +315,7 @@ async def test_main(mock_Orchestrator, mock_llm_check, args, run_orchestrator, r
     assert success is retval
 
     if run_orchestrator:
-        ui.ask_question.assert_called_once()
+        assert ui.ask_question.call_count == 2
         mock_Orchestrator.assert_called_once()
         mock_orca.run.assert_awaited_once_with()
 

@@ -50,7 +50,7 @@ Here's an EXAMPLE initial prompt:
 ---start-of-example-output---
 Online forum similar to Hacker News (news.ycombinator.com), with a simple and clean interface, where people can post links or text posts, and other people can upvote, downvote and comment on. Reading is open to anonymous users, but users must register to post, upvote, downvote or comment. Use simple username+password authentication. The forum should be implemented in Node.js with Express framework, using MongoDB and Mongoose ORM.
 
-The UI should use EJS view engine, Bootstrap for styling and plain vanilla JavaScript. Design should be simple and look like Hacker News, with a top bar for navigation, using a blue color scheme instead of the orange color in HN. The footer in each page should just be "Built using GPT Pilot".
+The UI should use EJS view engine, Bootstrap for styling and plain vanilla JavaScript. Design should be simple and look like Hacker News, with a top bar for navigation, using a blue color scheme instead of the orange color in HN. The footer in each page should just be "Built using Pythagora".
 
 Each story has a title (one-line text), a link (optional, URL to an external article being shared on AI News), and text (text to show in the post). Link and text are mutually exclusive - if the submitter tries to use both, show them an error.
 

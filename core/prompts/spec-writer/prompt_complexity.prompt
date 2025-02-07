@@ -1,8 +1,15 @@
+{% if is_feature %}
+Here is the app description that is fully built already:
+```
+{{ state.specification.description }}
+```
+Now I will show you the feature description that needs to be added to the app:
+{% endif %}
 ```
 {{ prompt }}
 ```
 
-The above is a user prompt for application/software tool they are trying to develop. Determine the complexity of the user's request. Do NOT respond with thoughts, reasoning, explanations or anything similar, return ONLY a string representation of the complexity level. Use the following scale:
+{% if not is_feature %}The above is a user prompt for application/software tool they are trying to develop. {% endif %}Determine the complexity of the user's request. Do NOT respond with thoughts, reasoning, explanations or anything similar, return ONLY a string representation of the complexity level. Use the following scale:
 "hard" for high complexity
 "moderate" for moderate complexity
 "simple" for low complexity

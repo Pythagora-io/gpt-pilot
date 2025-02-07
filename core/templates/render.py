@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from os import walk
 from os.path import join, relpath
 from pathlib import Path
@@ -67,12 +68,13 @@ class Renderer:
         tpl_object = self.jinja_env.get_template(template)
         return tpl_object.render(context)
 
-    def render_tree(self, root: str, context: Any, filter: Callable = None) -> dict[str, str]:
+    def render_tree(self, root: str, context: Any, full_root_dir: str, filter: Callable = None) -> dict[str, str]:
         """
         Render a tree folder structure of templates using provided context
 
         :param root: Root of the tree (relative to `template_dir`).
         :param context: Context to render the templates with.
+        :param full_root_dir: Full path to the root of the tree.
         :param filter: If defined, will be called for each file to check if it
         needs to be processed and determine output file path.
         :return: A flat dictionary with path => content structure.
@@ -103,8 +105,23 @@ class Renderer:
         for path, subdirs, files in walk(full_root):
             for file in files:
                 file_path = join(path, file)  # actual full path of the template file
-                tpl_location = relpath(file_path, self.template_dir)  # template relative to template_dir
                 output_location = Path(file_path).relative_to(full_root).as_posix()  # template relative to tree root
+
+                # Skip .DS_Store files
+                if file == ".DS_Store":
+                    continue
+                elif file.endswith(
+                    (".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".woff", ".woff2", ".ttf", ".eot")
+                ):
+                    with open(file_path, "rb") as f:
+                        content = f.read()
+                        final_path = join(full_root_dir, output_location)
+                        os.makedirs(os.path.dirname(final_path), exist_ok=True)
+                        with open(final_path, "wb") as out:
+                            out.write(content)
+                    continue
+
+                tpl_location = relpath(file_path, self.template_dir)  # template relative to template_dir
 
                 if filter:
                     output_location = filter(output_location)
@@ -112,6 +129,7 @@ class Renderer:
                         continue
 
                 contents = self.render_template(tpl_location, context)
-                retval[output_location] = contents
+                if contents != "":
+                    retval[output_location] = contents
 
         return retval

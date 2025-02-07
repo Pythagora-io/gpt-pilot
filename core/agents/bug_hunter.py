@@ -1,15 +1,18 @@
+import json
 from enum import Enum
 
 from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
+from core.agents.mixins import ChatWithBreakdownMixin, TestSteps
 from core.agents.response import AgentResponse
 from core.config import CHECK_LOGS_AGENT_NAME, magic_words
 from core.db.models.project_state import IterationStatus
 from core.llm.parser import JSONParser
 from core.log import get_logger
 from core.telemetry import telemetry
+from core.ui.base import ProjectStage, pythagora_source
 
 log = get_logger(__name__)
 
@@ -40,7 +43,7 @@ class ImportantLogsForDebugging(BaseModel):
     logs: list[ImportantLog] = Field(description="Important logs that will help the human debug the current bug.")
 
 
-class BugHunter(BaseAgent):
+class BugHunter(ChatWithBreakdownMixin, BaseAgent):
     agent_type = "bug-hunter"
     display_name = "Bug Hunter"
 
@@ -63,22 +66,34 @@ class BugHunter(BaseAgent):
             return await self.start_pair_programming()
 
     async def get_bug_reproduction_instructions(self):
-        llm = self.get_llm(stream_output=True)
-        convo = AgentConvo(self).template(
-            "get_bug_reproduction_instructions",
-            current_task=self.current_state.current_task,
-            user_feedback=self.current_state.current_iteration["user_feedback"],
-            user_feedback_qa=self.current_state.current_iteration["user_feedback_qa"],
-            docs=self.current_state.docs,
-            next_solution_to_try=None,
+        await self.send_message("Finding a way to reproduce the bug ...")
+        llm = self.get_llm()
+        convo = (
+            AgentConvo(self)
+            .template(
+                "get_bug_reproduction_instructions",
+                current_task=self.current_state.current_task,
+                user_feedback=self.current_state.current_iteration["user_feedback"],
+                user_feedback_qa=self.current_state.current_iteration["user_feedback_qa"],
+                docs=self.current_state.docs,
+                next_solution_to_try=None,
+            )
+            .require_schema(TestSteps)
         )
-        bug_reproduction_instructions = await llm(convo, temperature=0)
-        self.next_state.current_iteration["bug_reproduction_description"] = bug_reproduction_instructions
+        bug_reproduction_instructions: TestSteps = await llm(convo, parser=JSONParser(TestSteps), temperature=0)
+        self.next_state.current_iteration["bug_reproduction_description"] = json.dumps(
+            [test.dict() for test in bug_reproduction_instructions.steps]
+        )
 
     async def check_logs(self, logs_message: str = None):
         llm = self.get_llm(CHECK_LOGS_AGENT_NAME, stream_output=True)
         convo = self.generate_iteration_convo_so_far()
+        await self.ui.start_breakdown_stream()
         human_readable_instructions = await llm(convo, temperature=0.5)
+
+        convo.assistant(human_readable_instructions)
+
+        human_readable_instructions = await self.chat_with_breakdown(convo, human_readable_instructions)
 
         convo = (
             AgentConvo(self)
@@ -110,11 +125,23 @@ class BugHunter(BaseAgent):
     async def ask_user_to_test(self, awaiting_bug_reproduction: bool = False, awaiting_user_test: bool = False):
         await self.ui.stop_app()
         test_instructions = self.current_state.current_iteration["bug_reproduction_description"]
-        await self.send_message("You can reproduce the bug like this:\n\n" + test_instructions)
-        await self.ui.send_test_instructions(test_instructions)
+        await self.ui.send_message(
+            "Start the app and test it by following these instructions:\n\n", source=pythagora_source
+        )
+        await self.send_message("")
+        await self.ui.send_test_instructions(test_instructions, project_state_id=str(self.current_state.id))
 
         if self.current_state.run_command:
             await self.ui.send_run_command(self.current_state.run_command)
+
+        await self.ask_question(
+            "Please test the app again.",
+            buttons={"done": "I am done testing"},
+            buttons_only=True,
+            default="continue",
+            extra_info="restart_app",
+            hint="Instructions for testing:\n\n" + self.current_state.current_iteration["bug_reproduction_description"],
+        )
 
         if awaiting_user_test:
             buttons = {"yes": "Yes, the issue is fixed", "no": "No", "start_pair_programming": "Start Pair Programming"}
@@ -137,53 +164,38 @@ class BugHunter(BaseAgent):
                 awaiting_bug_reproduction = True
 
         if awaiting_bug_reproduction:
-            # TODO how can we get FE and BE logs automatically?
             buttons = {
-                "copy_backend_logs": "Copy Backend Logs",
-                "continue": "Continue without logs",
                 "done": "Bug is fixed",
+                "continue": "Continue without feedback",  # DO NOT CHANGE THIS TEXT without changing it in the extension (it is hardcoded)
                 "start_pair_programming": "Start Pair Programming",
             }
-            backend_logs = await self.ask_question(
-                "Please share the relevant Backend logs",
+            await self.ui.send_project_stage(
+                {
+                    "stage": ProjectStage.ADDITIONAL_FEEDBACK,
+                }
+            )
+            user_feedback = await self.ask_question(
+                "Please add any additional feedback that could help Pythagora solve this bug",
                 buttons=buttons,
                 default="continue",
+                extra_info="collect_logs",
                 hint="Instructions for testing:\n\n"
                 + self.current_state.current_iteration["bug_reproduction_description"],
             )
 
-            if backend_logs.button == "done":
+            if user_feedback.button == "done":
                 self.next_state.complete_iteration()
-            elif backend_logs.button == "start_pair_programming":
+                return AgentResponse.done(self)
+            elif user_feedback.button == "start_pair_programming":
                 self.next_state.current_iteration["status"] = IterationStatus.START_PAIR_PROGRAMMING
                 self.next_state.flag_iterations_as_modified()
-            else:
-                buttons = {
-                    "copy_frontend_logs": "Copy Frontend Logs",
-                    "continue": "Continue without logs",
-                }
-                frontend_logs = await self.ask_question(
-                    "Please share the relevant Frontend logs",
-                    buttons=buttons,
-                    default="continue",
-                    hint="Instructions for testing:\n\n"
-                    + self.current_state.current_iteration["bug_reproduction_description"],
-                )
+                return AgentResponse.done(self)
 
-                buttons = {"continue": "Continue without feedback"}
-                user_feedback = await self.ask_question(
-                    "Please add any additional feedback that could help Pythagora solve this bug",
-                    buttons=buttons,
-                    default="continue",
-                    hint="Instructions for testing:\n\n"
-                    + self.current_state.current_iteration["bug_reproduction_description"],
-                )
-
-                # TODO select only the logs that are new (with PYTHAGORA_DEBUGGING_LOG)
-                self.next_state.current_iteration["bug_hunting_cycles"][-1]["backend_logs"] = backend_logs.text
-                self.next_state.current_iteration["bug_hunting_cycles"][-1]["frontend_logs"] = frontend_logs.text
-                self.next_state.current_iteration["bug_hunting_cycles"][-1]["user_feedback"] = user_feedback.text
-                self.next_state.current_iteration["status"] = IterationStatus.HUNTING_FOR_BUG
+            # TODO select only the logs that are new (with PYTHAGORA_DEBUGGING_LOG)
+            self.next_state.current_iteration["bug_hunting_cycles"][-1]["backend_logs"] = None
+            self.next_state.current_iteration["bug_hunting_cycles"][-1]["frontend_logs"] = None
+            self.next_state.current_iteration["bug_hunting_cycles"][-1]["user_feedback"] = user_feedback.text
+            self.next_state.current_iteration["status"] = IterationStatus.HUNTING_FOR_BUG
 
         return AgentResponse.done(self)
 
@@ -313,6 +325,7 @@ class BugHunter(BaseAgent):
             docs=self.current_state.docs,
             magic_words=magic_words,
             next_solution_to_try=None,
+            test_instructions=json.loads(self.current_state.current_task.get("test_instructions") or "[]"),
         )
 
         hunting_cycles = self.current_state.current_iteration.get("bug_hunting_cycles", [])[

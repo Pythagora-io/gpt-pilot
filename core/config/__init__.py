@@ -43,8 +43,10 @@ TASK_BREAKDOWN_AGENT_NAME = "Developer.breakdown_current_task"
 TROUBLESHOOTER_BUG_REPORT = "Troubleshooter.generate_bug_report"
 TROUBLESHOOTER_GET_RUN_COMMAND = "Troubleshooter.get_run_command"
 TECH_LEAD_PLANNING = "TechLead.plan_epic"
+TECH_LEAD_EPIC_BREAKDOWN = "TechLead.epic_breakdown"
 SPEC_WRITER_AGENT_NAME = "SpecWriter"
 GET_RELEVANT_FILES_AGENT_NAME = "get_relevant_files"
+FRONTEND_AGENT_NAME = "Frontend"
 
 # Endpoint for the external documentation
 EXTERNAL_DOCUMENTATION_API = "http://docs-pythagora-io-439719575.us-east-1.elb.amazonaws.com"
@@ -101,7 +103,7 @@ class ProviderConfig(_StrictModel):
         ge=0.0,
     )
     read_timeout: float = Field(
-        default=20.0,
+        default=60.0,
         description="Timeout (in seconds) for receiving a new chunk of data from the response stream",
         ge=0.0,
     )
@@ -156,7 +158,7 @@ class LLMConfig(_StrictModel):
         ge=0.0,
     )
     read_timeout: float = Field(
-        default=20.0,
+        default=60.0,
         description="Timeout (in seconds) for receiving a new chunk of data from the response stream",
         ge=0.0,
     )
@@ -228,7 +230,7 @@ class DBConfig(_StrictModel):
     """
 
     url: str = Field(
-        "sqlite+aiosqlite:///pythagora.db",
+        "sqlite+aiosqlite:///data/database/pythagora.db",
         description="Database connection URL",
     )
     debug_sql: bool = Field(False, description="Log all SQL queries to the console")
@@ -325,12 +327,12 @@ class Config(_StrictModel):
             DEFAULT_AGENT_NAME: AgentLLMConfig(),
             CHECK_LOGS_AGENT_NAME: AgentLLMConfig(
                 provider=LLMProvider.ANTHROPIC,
-                model="claude-3-5-sonnet-20240620",
+                model="claude-3-5-sonnet-20241022",
                 temperature=0.5,
             ),
             CODE_MONKEY_AGENT_NAME: AgentLLMConfig(
-                provider=LLMProvider.OPENAI,
-                model="gpt-4-0125-preview",
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20241022",
                 temperature=0.0,
             ),
             CODE_REVIEW_AGENT_NAME: AgentLLMConfig(
@@ -343,9 +345,19 @@ class Config(_StrictModel):
                 model="gpt-4o-mini-2024-07-18",
                 temperature=0.0,
             ),
-            PARSE_TASK_AGENT_NAME: AgentLLMConfig(
+            FRONTEND_AGENT_NAME: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20241022",
+                temperature=0.0,
+            ),
+            GET_RELEVANT_FILES_AGENT_NAME: AgentLLMConfig(
                 provider=LLMProvider.OPENAI,
-                model="gpt-4-0125-preview",
+                model="gpt-4o-2024-05-13",
+                temperature=0.5,
+            ),
+            PARSE_TASK_AGENT_NAME: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20241022",
                 temperature=0.0,
             ),
             SPEC_WRITER_AGENT_NAME: AgentLLMConfig(
@@ -355,12 +367,17 @@ class Config(_StrictModel):
             ),
             TASK_BREAKDOWN_AGENT_NAME: AgentLLMConfig(
                 provider=LLMProvider.ANTHROPIC,
-                model="claude-3-5-sonnet-20240620",
+                model="claude-3-5-sonnet-20241022",
                 temperature=0.5,
             ),
             TECH_LEAD_PLANNING: AgentLLMConfig(
                 provider=LLMProvider.ANTHROPIC,
                 model="claude-3-5-sonnet-20240620",
+                temperature=0.5,
+            ),
+            TECH_LEAD_EPIC_BREAKDOWN: AgentLLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-3-5-sonnet-20241022",
                 temperature=0.5,
             ),
             TROUBLESHOOTER_BUG_REPORT: AgentLLMConfig(
@@ -479,6 +496,7 @@ def adapt_for_bedrock(config: Config) -> Config:
         return config
 
     replacement_map = {
+        "claude-3-5-sonnet-20241022": "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
         "claude-3-5-sonnet-20240620": "us.anthropic.claude-3-5-sonnet-20240620-v1:0",
         "claude-3-sonnet-20240229": "us.anthropic.claude-3-sonnet-20240229-v1:0",
         "claude-3-haiku-20240307": "us.anthropic.claude-3-haiku-20240307-v1:0",

@@ -1,9 +1,30 @@
 Here are the complete contents of files relevant to this task:
----START_OF_FILES---
+{% if state.has_frontend() %}
+---START_OF_FRONTEND_API_FILES---
 {% for file in state.relevant_file_objects %}
-File **`{{ file.path }}`** ({{file.content.content.splitlines()|length}} lines of code):
+{% if 'client/' in file.path  %}
+{% if (state.epics|length > 1 and 'client/src/components/ui' not in file.path ) or state.epics|length == 1  %}
+**`{{ file.path }}`** ({{file.content.content.splitlines()|length}} lines of code):
+```
+{{ file.content.content }}
+```
+{% endif %}{% endif %}{% endfor %}
+---END_OF_FRONTEND_API_FILES---
+---START_OF_BACKEND_FILES---
+{% for file in state.relevant_file_objects %}{% if 'server/' in file.path %}
+**`{{ file.path }}`** ({{file.content.content.splitlines()|length}} lines of code):
 ```
 {{ file.content.content }}```
 
+{% endif %}{% endfor %}
+---END_OF_BACKEND_FILES---
+{% else %}
+---START_OF_FILES---
+{% for file in state.relevant_file_objects %}
+**`{{ file.path }}`** ({{file.content.content.splitlines()|length}} lines of code):
+```
+{{ file.content.content }}
+```
 {% endfor %}
 ---END_OF_FILES---
+{% endif %}

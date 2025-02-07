@@ -1,7 +1,7 @@
 from typing import Optional
 
 from core.log import get_logger
-from core.ui.base import ProjectStage, UIBase, UISource, UserInput
+from core.ui.base import UIBase, UISource, UserInput
 
 log = get_logger(__name__)
 
@@ -31,7 +31,12 @@ class VirtualUI(UIBase):
             print(chunk, end="", flush=True)
 
     async def send_message(
-        self, message: str, *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+        self,
+        message: str,
+        *,
+        source: Optional[UISource] = None,
+        project_state_id: Optional[str] = None,
+        extra_info: Optional[str] = None,
     ):
         if source:
             print(f"[{source}] {message}")
@@ -65,10 +70,14 @@ class VirtualUI(UIBase):
         default: Optional[str] = None,
         buttons_only: bool = False,
         allow_empty: bool = False,
+        full_screen: Optional[bool] = False,
         hint: Optional[str] = None,
+        verbose: bool = True,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
         project_state_id: Optional[str] = None,
+        extra_info: Optional[str] = None,
+        placeholder: Optional[str] = None,
     ) -> UserInput:
         if source:
             print(f"[{source}] {question}")
@@ -92,7 +101,7 @@ class VirtualUI(UIBase):
         else:
             return UserInput(text="")
 
-    async def send_project_stage(self, stage: ProjectStage):
+    async def send_project_stage(self, data: dict):
         pass
 
     async def send_epics_and_tasks(
@@ -138,6 +147,9 @@ class VirtualUI(UIBase):
     async def send_run_command(self, run_command: str):
         pass
 
+    async def send_app_link(self, app_link: str):
+        pass
+
     async def open_editor(self, file: str, line: Optional[int] = None):
         pass
 
@@ -147,20 +159,32 @@ class VirtualUI(UIBase):
     async def start_important_stream(self):
         pass
 
+    async def start_breakdown_stream(self):
+        pass
+
     async def send_project_stats(self, stats: dict):
         pass
 
-    async def send_test_instructions(self, test_instructions: str):
+    async def send_test_instructions(self, test_instructions: str, project_state_id: Optional[str] = None):
         pass
 
-    async def send_file_status(self, file_path: str, file_status: str):
+    async def knowledge_base_update(self, knowledge_base: dict):
+        pass
+
+    async def send_file_status(self, file_path: str, file_status: str, source: Optional[UISource] = None):
         pass
 
     async def send_bug_hunter_status(self, status: str, num_cycles: int):
         pass
 
     async def generate_diff(
-        self, file_path: str, file_old: str, file_new: str, n_new_lines: int = 0, n_del_lines: int = 0
+        self,
+        file_path: str,
+        file_old: str,
+        file_new: str,
+        n_new_lines: int = 0,
+        n_del_lines: int = 0,
+        source: Optional[UISource] = None,
     ):
         pass
 

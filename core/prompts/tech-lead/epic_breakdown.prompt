@@ -1,1 +1,19 @@
-Ok, great. Now, you need to take the epic #{{ epic_number }} "{{ epic_description }}" and break it down into smaller tasks. Each task is one testable whole that the user can test and commit. Each task will be one commit that has to be testable by a human. Return the list of tasks for the Epic #{{ epic_number }}. For each task, write the the task description and a description of how a human should test if the task is successfully implemented or not. Keep in mind that there can be 1 task or multiple, depending on the complexity of the epic. The epics will be implemented one by one so make sure that the user needs to be able to test each task you write - for example, if something will be implemented in the epics after the epic #{{ epic_number }}, then you cannot write it here because the user won't be able to test it.
+Ok, great. Now, you need to take the epic #{{ epic_number }} ("{{ epic_description }}") and break it down into smaller tasks. Each task is one testable whole that the user can test and commit. Each task will be one commit that has to be testable by a human. Return the list of tasks for the Epic #{{ epic_number }}. For each task, write the task description and a description of how a human should test if the task is successfully implemented or not. Keep in mind that there can be 1 task or multiple, depending on the complexity of the epic. The epics will be implemented one by one so make sure that the user needs to be able to test each task you write - for example, if something will be implemented in the epics after the epic #{{ epic_number }}, then you cannot write it here because the user won't be able to test it.
+
+You need to specify tasks so that all these API endpoints get implemented completely. For each API endpoint that needs to be implemented, make sure to create a separate task so each task has only one API endpoint to implement. Also, you must not create tasks that don't have an endpoint that they are related to - for example, sometimes there is no "update" endpoint for a specific entity so you don't need to create a task for that.
+
+You can think of tasks as a unit of functionality that needs to have a frontend component and a backend component (don't split backend and frontend of the same functionality in separate tasks).
+
+**IMPORTANT: components of a single task**
+When thinking about the scope of a single task, here are the components that need to be put into the same task:
+1. The implementation of the backend API endpoint together with the frontend API request implementation (removing the mocked data and replacing it with the real API request)
+2. The implementation of the database model
+3. The utility function (eg. 3rd party integration) that is needed for this endpoint.
+
+**IMPORTANT: order of tasks**
+The tasks you create **MUST** be in the order that they should be implemented. When CRUD operations need to be implemented, first implement the Create operation, then Read, Update, and Delete.
+
+{% if state.has_frontend() and not state.is_feature() and (state.options|default({})).get('auth', True) %}
+**IMPORTANT**
+If you are working on the Epic #1 that needs to implement the authentication system. The first task **MUST** be to remove the mocked data for authentication (register and login). After that, add any custom authentication requirements like different roles, different user data, etc.
+{% endif %}

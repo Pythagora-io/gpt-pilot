@@ -1,15 +1,28 @@
 {% if state.relevant_files %}
+~~FILE_DESCRIPTIONS_IN_THE_CODEBASE~~
 {% include "partials/files_descriptions.prompt" %}
+~~END_OF_FILE_DESCRIPTIONS_IN_THE_CODEBASE~~
 
+~~RELEVANT_FILES_IMPLEMENTATION~~
 {% include "partials/files_list_relevant.prompt" %}
 {% elif state.files %}
+~~RELEVANT_FILES_IMPLEMENTATION~~
 These files are currently implemented in the project:
----START_OF_FILES---
-{% for file in state.files %}
+---START_OF_FRONTEND_API_FILES---
+{% for file in state.files %}{% if ((get_only_api_files is not defined or not get_only_api_files) and 'client/' in file.path) or 'client/src/api/' in file.path %}
 **`{{ file.path }}`** ({{file.content.content.splitlines()|length}} lines of code):
 ```
 {{ file.content.content }}```
 
-{% endfor %}
----END_OF_FILES---
+{% endif %}{% endfor %}
+---END_OF_FRONTEND_API_FILES---
+---START_OF_BACKEND_FILES---
+{% for file in state.files %}{% if 'server/' in file.path %}
+**`{{ file.path }}`** ({{file.content.content.splitlines()|length}} lines of code):
+```
+{{ file.content.content }}```
+
+{% endif %}{% endfor %}
+---END_OF_BACKEND_FILES---
 {% endif %}
+~~END_OF_RELEVANT_FILES_IMPLEMENTATION~~

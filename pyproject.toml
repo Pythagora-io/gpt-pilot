@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "gpt-pilot"
-version = "1.0.0"
+name = "pythagora-core"
+version = "1.2.5"
 description = "Build complete apps using AI agents"
-authors = ["Senko Rasic <senko@pythagora.ai>"]
+authors = ["Leon Ostrez <leon@pythagora.ai>"]
 license = "FSL-1.1-MIT"
 readme = "README.md"
 packages = [{include = "core", from = "."}]
@@ -25,19 +25,19 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-pydantic = "^2.7.1"
-openai = "^1.27.0"
-anthropic = "^0.25.8"
+pydantic = "^2.8.2"
+openai = "^1.40.6"
+anthropic = "^0.39.0"
 groq = "^0.6.0"
-jinja2 = "^3.1.3"
-tiktoken = "^0.6.0"
-sqlalchemy = { version = "^2.0.29", extras = ["asyncio"] }
+jinja2 = "^3.1.4"
+tiktoken = "^0.8.0"
+sqlalchemy = { version = "^2.0.32", extras = ["asyncio"] }
 aiosqlite = "^0.20.0"
 psutil = "^5.9.8"
 httpx = "^0.27.0"
-alembic = "^1.13.1"
+alembic = "^1.13.2"
 python-dotenv = "^1.0.1"
-prompt-toolkit = "^3.0.45"
+prompt-toolkit = "^3.0.48"
 jsonref = "^1.1.0"
 tenacity = "9.0.0"
 

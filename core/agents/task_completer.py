@@ -1,4 +1,5 @@
 from core.agents.base import BaseAgent
+from core.agents.git import GitMixin
 from core.agents.response import AgentResponse
 from core.log import get_logger
 from core.telemetry import telemetry
@@ -6,11 +7,14 @@ from core.telemetry import telemetry
 log = get_logger(__name__)
 
 
-class TaskCompleter(BaseAgent):
+class TaskCompleter(BaseAgent, GitMixin):
     agent_type = "pythagora"
     display_name = "Pythagora"
 
     async def run(self) -> AgentResponse:
+        if self.state_manager.git_available and self.state_manager.git_used:
+            await self.git_commit()
+
         current_task_index1 = self.current_state.tasks.index(self.current_state.current_task) + 1
         self.next_state.action = f"Task #{current_task_index1} complete"
         self.next_state.complete_task()

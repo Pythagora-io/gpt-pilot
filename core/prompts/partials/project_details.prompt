@@ -1,22 +1,11 @@
+~~APP_DESCRIPTION~~
 Here is a high level description of "{{ state.branch.project.name }}":
 ```
 {{ state.specification.description }}
 ```
-
-{% if state.specification.system_dependencies %}
-
-Here are the technologies that should be used for this project:
-{% for tech in state.specification.system_dependencies %}
-* {{ tech.name }} - {{ tech.description }}
-{% endfor %}
-{% endif %}
-{% if state.specification.package_dependencies %}
-
-{% for tech in state.specification.package_dependencies %}
-* {{ tech.name }} - {{ tech.description }}
-{% endfor %}
-{% endif %}
+~~END_OF_APP_DESCRIPTION~~
 {% if state.specification.template_summary %}
-
+~~INFORMATION_ABOUT_THE_CODEBASE~~
 {{ state.specification.template_summary }}
+~~END_OF_INFORMATION_ABOUT_THE_CODEBASE~~
 {% endif %}

@@ -5,11 +5,12 @@ from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
+from sqlalchemy import inspect, select
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from core.config import FileSystemType, get_config
 from core.db.models import Branch, ExecLog, File, FileContent, LLMRequest, Project, ProjectState, UserInput
-from core.db.models.specification import Specification
+from core.db.models.specification import Complexity, Specification
 from core.db.session import SessionManager
 from core.disk.ignore import IgnoreMatcher
 from core.disk.vfs import LocalDiskVFS, MemoryVFS, VirtualFileSystem
@@ -49,6 +50,9 @@ class StateManager:
         self.next_state = None
         self.current_session = None
         self.blockDb = False
+        self.git_available = False
+        self.git_used = False
+        self.options = {}
 
     @asynccontextmanager
     async def db_blocker(self):
@@ -136,7 +140,7 @@ class StateManager:
 
         The returned ProjectState will have branch and branch.project
         relationships preloaded. All other relationships must be
-        excplicitly loaded using ProjectState.awaitable_attrs or
+        explicitly loaded using ProjectState.awaitable_attrs or
         AsyncSession.refresh.
 
         :param project_id: Project ID (keyword-only, optional).
@@ -211,11 +215,26 @@ class StateManager:
                 self.current_state.tasks,
             )
 
+        telemetry.set(
+            "architecture",
+            {
+                "system_dependencies": self.current_state.specification.system_dependencies,
+                "package_dependencies": self.current_state.specification.package_dependencies,
+            },
+        )
+        telemetry.set("example_project", self.current_state.specification.example_project)
+        telemetry.set("is_complex_app", self.current_state.specification.complexity != Complexity.SIMPLE)
+        telemetry.set("templates", self.current_state.specification.templates)
+
         return self.current_state
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
     async def commit_with_retry(self):
-        await self.current_session.commit()
+        try:
+            await self.current_session.commit()
+        except Exception as e:
+            log.error(f"Commit failed: {str(e)}")
+            raise
 
     async def commit(self) -> ProjectState:
         """
@@ -348,6 +367,8 @@ class StateManager:
         telemetry.inc("num_tasks")
         if not self.next_state.unfinished_tasks:
             if len(self.current_state.epics) == 1:
+                telemetry.set("end_result", "success:frontend")
+            elif len(self.current_state.epics) == 2:
                 telemetry.set("end_result", "success:initial-project")
             else:
                 telemetry.set("end_result", "success:feature")
@@ -393,8 +414,8 @@ class StateManager:
             file_content = await FileContent.store(self.current_session, hash, content)
 
         file = self.next_state.save_file(path, file_content)
-        if self.ui and not from_template:
-            await self.ui.open_editor(self.file_system.get_full_path(path))
+        # if self.ui and not from_template:
+        #     await self.ui.open_editor(self.file_system.get_full_path(path))
         if metadata:
             file.meta = metadata
 
@@ -586,15 +607,147 @@ class StateManager:
         """
         return not bool(self.file_system.list())
 
+    def get_implemented_pages(self) -> list[str]:
+        """
+        Get the list of implemented pages.
+
+        :return: List of implemented pages.
+        """
+        # TODO - use self.current_state plus response from the FE iteration
+        page_files = [file.path for file in self.next_state.files if "client/src/pages" in file.path]
+        return page_files
+
+    async def update_implemented_pages_and_apis(self):
+        modified = False
+        pages = self.get_implemented_pages()
+        apis = await self.get_apis()
+
+        # Get the current state of pages and apis from knowledge_base
+        current_pages = self.next_state.knowledge_base.get("pages", None)
+        current_apis = self.next_state.knowledge_base.get("apis", None)
+
+        # Check if pages or apis have changed
+        if pages != current_pages or apis != current_apis:
+            modified = True
+
+        if modified:
+            self.next_state.knowledge_base["pages"] = pages
+            self.next_state.knowledge_base["apis"] = apis
+            self.next_state.flag_knowledge_base_as_modified()
+            await self.ui.knowledge_base_update(self.next_state.knowledge_base)
+
+    async def update_utility_functions(self, utility_function: dict):
+        """
+        Update the knowledge base with the utility function.
+
+        :param utility_function: Utility function to update.
+        """
+        matched = False
+        for kb_util_func in self.next_state.knowledge_base.get("utility_functions", []):
+            if (
+                utility_function["function_name"] == kb_util_func["function_name"]
+                and utility_function["file"] == kb_util_func["file"]
+            ):
+                kb_util_func["return_value"] = utility_function["return_value"]
+                kb_util_func["input_value"] = utility_function["input_value"]
+                kb_util_func["status"] = utility_function["status"]
+                matched = True
+                self.next_state.flag_knowledge_base_as_modified()
+                break
+
+        if not matched:
+            if "utility_functions" not in self.next_state.knowledge_base:
+                self.next_state.knowledge_base["utility_functions"] = []
+            self.next_state.knowledge_base["utility_functions"].append(utility_function)
+
+        self.next_state.flag_knowledge_base_as_modified()
+        await self.ui.knowledge_base_update(self.next_state.knowledge_base)
+
+    async def get_apis(self) -> list[dict]:
+        """
+        Get the list of APIs.
+
+        :return: List of APIs.
+        """
+        apis = []
+        for file in self.next_state.files:
+            if "client/src/api" not in file.path:
+                continue
+            session = inspect(file).async_session
+            result = await session.execute(select(FileContent).where(FileContent.id == file.content_id))
+            file_content = result.scalar_one_or_none()
+            content = file_content.content
+            lines = content.splitlines()
+            for i, line in enumerate(lines):
+                if "// Description:" in line:
+                    # TODO: Make this better!!!
+                    description = line.split("Description:")[1]
+                    endpoint = lines[i + 1].split("Endpoint:")[1] if len(lines[i + 1].split("Endpoint:")) > 1 else ""
+                    request = lines[i + 2].split("Request:")[1] if len(lines[i + 2].split("Request:")) > 1 else ""
+                    response = lines[i + 3].split("Response:")[1] if len(lines[i + 3].split("Response:")) > 1 else ""
+                    backend = (
+                        next(
+                            (
+                                api
+                                for api in self.current_state.knowledge_base.get("apis", [])
+                                if api["endpoint"] == endpoint.strip()
+                            ),
+                            {},
+                        )
+                        .get("locations", {})
+                        .get("backend", None)
+                    )
+                    apis.append(
+                        {
+                            "description": description.strip(),
+                            "endpoint": endpoint.strip(),
+                            "request": request.strip(),
+                            "response": response.strip(),
+                            "locations": {
+                                "frontend": {
+                                    "path": file.path,
+                                    "line": i - 1,
+                                },
+                                "backend": backend,
+                            },
+                            "status": "implemented" if backend is not None else "mocked",
+                        }
+                    )
+        return apis
+
+    async def update_apis(self, files_with_implemented_apis: list[dict] = []):
+        """
+        Update the list of APIs.
+
+        """
+        apis = await self.get_apis()
+        for file in files_with_implemented_apis:
+            for endpoint in file["related_api_endpoints"]:
+                api = next((api for api in apis if (endpoint in api["endpoint"])), None)
+                if api is not None:
+                    api["status"] = "implemented"
+                    api["locations"]["backend"] = {
+                        "path": file["path"],
+                        "line": file["line"],
+                    }
+        self.next_state.knowledge_base["apis"] = apis
+        self.next_state.flag_knowledge_base_as_modified()
+        await self.ui.knowledge_base_update(self.next_state.knowledge_base)
+
     @staticmethod
-    def get_input_required(content: str) -> list[int]:
+    def get_input_required(content: str, file_path: str) -> list[int]:
         """
         Get the list of lines containing INPUT_REQUIRED keyword.
 
         :param content: The file content to search.
+        :param file_path: The file path.
         :return: Indices of lines with INPUT_REQUIRED keyword, starting from 1.
         """
         lines = []
+
+        if ".env" not in file_path:
+            return lines
+
         for i, line in enumerate(content.splitlines(), start=1):
             if "INPUT_REQUIRED" in line:
                 lines.append(i)

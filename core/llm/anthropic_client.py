@@ -1,6 +1,7 @@
+import asyncio
 import datetime
 import zoneinfo
-from typing import Optional
+from typing import Optional, Tuple
 
 from anthropic import AsyncAnthropic, RateLimitError
 from httpx import Timeout
@@ -16,6 +17,10 @@ log = get_logger(__name__)
 # Maximum number of tokens supported by Anthropic Claude 3
 MAX_TOKENS = 4096
 MAX_TOKENS_SONNET = 8192
+
+
+class CustomAssertionError(Exception):
+    pass
 
 
 class AnthropicClient(BaseLLMClient):
@@ -38,7 +43,7 @@ class AnthropicClient(BaseLLMClient):
         Adapt the conversation messages to the format expected by the Anthropic Claude model.
 
         Claude only recognizes "user" and "assistant" roles, and requires them to be switched
-        for each message (ie. no consecutive messages from the same role).
+        for each message (i.e. no consecutive messages from the same role).
 
         :param convo: Conversation to adapt.
         :return: Adapted conversation messages.
@@ -61,50 +66,60 @@ class AnthropicClient(BaseLLMClient):
         return messages
 
     async def _make_request(
-        self,
-        convo: Convo,
-        temperature: Optional[float] = None,
-        json_mode: bool = False,
-    ) -> tuple[str, int, int]:
-        messages = self._adapt_messages(convo)
-        completion_kwargs = {
-            "max_tokens": MAX_TOKENS,
-            "model": self.config.model,
-            "messages": messages,
-            "temperature": self.config.temperature if temperature is None else temperature,
-        }
+        self, convo: Convo, temperature: Optional[float] = None, json_mode: bool = False, retry_count: int = 1
+    ) -> Tuple[str, int, int]:
+        async def single_attempt() -> Tuple[str, int, int]:
+            messages = self._adapt_messages(convo)
+            completion_kwargs = {
+                "max_tokens": MAX_TOKENS,
+                "model": self.config.model,
+                "messages": messages,
+                "temperature": self.config.temperature if temperature is None else temperature,
+            }
 
-        if "bedrock/anthropic" in self.config.base_url:
-            completion_kwargs["extra_headers"] = {"anthropic-version": "bedrock-2023-05-31"}
+            if "trybricks" in self.config.base_url:
+                completion_kwargs["extra_headers"] = {"x-request-timeout": f"{int(float(self.config.read_timeout))}s"}
 
-        if "sonnet" in self.config.model:
-            if "extra_headers" in completion_kwargs:
-                completion_kwargs["extra_headers"]["anthropic-beta"] = "max-tokens-3-5-sonnet-2024-07-15"
-            else:
-                completion_kwargs["extra_headers"] = {"anthropic-beta": "max-tokens-3-5-sonnet-2024-07-15"}
-            completion_kwargs["max_tokens"] = MAX_TOKENS_SONNET
+            if "bedrock/anthropic" in self.config.base_url:
+                completion_kwargs["extra_headers"] = {"anthropic-version": "bedrock-2023-05-31"}
 
-        if json_mode:
-            completion_kwargs["response_format"] = {"type": "json_object"}
+            if "sonnet" in self.config.model:
+                completion_kwargs["max_tokens"] = MAX_TOKENS_SONNET
 
-        response = []
-        async with self.client.messages.stream(**completion_kwargs) as stream:
-            async for content in stream.text_stream:
-                response.append(content)
-                if self.stream_handler:
-                    await self.stream_handler(content)
+            if json_mode:
+                completion_kwargs["response_format"] = {"type": "json_object"}
 
-            # TODO: get tokens from the final message
-            final_message = await stream.get_final_message()
-            final_message.content
+            response = []
+            async with self.client.messages.stream(**completion_kwargs) as stream:
+                async for content in stream.text_stream:
+                    response.append(content)
+                    if self.stream_handler:
+                        await self.stream_handler(content)
 
-        response_str = "".join(response)
+                try:
+                    final_message = await stream.get_final_message()
+                    final_message.content  # Access content to verify it exists
+                except AssertionError:
+                    log.debug("Anthropic package AssertionError")
+                    raise CustomAssertionError("No final message received.")
 
-        # Tell the stream handler we're done
-        if self.stream_handler:
-            await self.stream_handler(None)
+            response_str = "".join(response)
 
-        return response_str, final_message.usage.input_tokens, final_message.usage.output_tokens
+            # Tell the stream handler we're done
+            if self.stream_handler:
+                await self.stream_handler(None)
+
+            return response_str, final_message.usage.input_tokens, final_message.usage.output_tokens
+
+        for attempt in range(retry_count + 1):
+            try:
+                return await single_attempt()
+            except CustomAssertionError as e:
+                if attempt == retry_count:  # If this was our last attempt
+                    raise CustomAssertionError(f"Request failed after {retry_count + 1} attempts: {str(e)}")
+                # Add a small delay before retrying
+                await asyncio.sleep(1)
+                continue
 
     def rate_limit_sleep(self, err: RateLimitError) -> Optional[datetime.timedelta]:
         """

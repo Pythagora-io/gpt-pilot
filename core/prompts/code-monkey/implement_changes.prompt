@@ -1,22 +1,20 @@
+{% if file_content %}
 You are working on a project and your job is to implement new code changes based on given instructions.
 Now you have to implement ALL changes that are related to `{{ file_name }}` described in development instructions listed below.
 Make sure you don't make any mistakes, especially ones that could affect rest of project. Your changes will be reviewed by very detailed reviewer. Because of that, it is extremely important that you are STRICTLY following ALL the following rules while implementing changes:
-
+{% else %}
+You are working on a project and your job is to create a new file `{{ file_name }}` based on given instructions. The file should be thoroughly described in the development instructions listed below. You need to follow the coding rules that will be listed below, read the development instructions and respond with the full contents of the file `{{ file_name }}`.
+{% endif %}
 {% include "partials/coding_rules.prompt" %}
-
-You are currently working on this task:
-```
-{{ state.current_task.description }}
-```
 
 {% include "partials/user_feedback.prompt" %}
 
-Here are development instructions and now you have to focus only on changes in `{{ file_name }}`:
----start_of_development_instructions---
+Here are development instructions that were sent to you by a senior developer that you need to carefully follow. Focus only on the code changes for the file `{{ file_name }}`:
+~~~START_OF_DEVELOPMENT_INSTRUCTIONS~~~
 
 {{ instructions }}
 
----end_of_development_instructions---
+~~~END_OF_DEVELOPMENT_INSTRUCTIONS~~~
 
 {% if rework_feedback is defined %}
 You previously made changes to file `{{ file_name }}` but not all changes were accepted, and the reviewer provided feedback on the changes that you must rework:
@@ -28,12 +26,15 @@ The reviewer accepted some of your changes, and the file now looks like this:
 {{ file_content }}
 ```
 {% elif file_content %}
-Here is how `{{ file_name }}` looks like currently:
+Now, take a look at how `{{ file_name }}` looks like currently:
 ```
 {{ file_content }}
 ```
+
+Ok, now, you have to follow the instructions about `{{ file_name }}` from the development instructions carefully. Reply **ONLY** with the full contents of the file `{{ file_name }}` and nothing else. Do not make any changes to the file that are not mentioned in the development instructions - you must **STRICTLY** follow the instructions.
 {% else %}
-You need to create a new file `{{ file_name }}`.
+You need to create a new file `{{ file_name }}` so respond **ONLY** with the full contents of that file from the development instructions that you read.
 {% endif %}
 
-{% include "partials/files_list.prompt" %}
+** IMPORTANT **
+Remember, you must **NOT** add anything in your response that is not strictly the code from the file. Do not start or end the response with an explanation or a comment - you must respond with only the code from the file because your response will be directly saved to a file and run.

@@ -20,10 +20,14 @@ A part of the app is already finished.
 
 {% include "partials/user_feedback.prompt" %}
 
-{% if current_task.test_instructions is defined %}
+{% if test_instructions %}
 Here are the test instructions the user was following when the issue occurred:
 ```
-{{ current_task.test_instructions }}
+{% for step in test_instructions %}
+Step #{{ loop.index }}
+Action: {{ step.action }}
+Expected result: {{ step.result }}
+{% endfor %}
 ```
 {% endif %}
 
@@ -38,4 +42,4 @@ Based on this information, you need to figure out where is the problem that the 
 If you think we should add more logs around the code to better understand the problem, tell me code snippets in which we should add the logs. If you think you know where the issue is, don't add any new logs but explain what log print tell point you to the problem, what the problem is, what is the solution to this problem and how the solution will fix the problem. What is your answer?
 
 **IMPORTANT**
-You cannot answer with "Ensure that...", "Make sure that...", etc. In these cases, explain how should the reader of your message ensure what you want them to ensure. In most cases, they will need to add some logs to ensure something in which case tell them where to add them.
+If you want code to be written, write **ALL NEW CODE** that needs to be written. If you want to create a new file, write the entire content of that file and if you want to update an existing file, write the new code that needs to be written/updated. You cannot answer with "Ensure that...", "Make sure that...", etc. In these cases, explain how should the reader of your message ensure what you want them to ensure. In most cases, they will need to add some logs to ensure something in which case tell them where to add them.

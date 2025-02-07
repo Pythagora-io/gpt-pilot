@@ -21,13 +21,16 @@ A part of the app is already finished.
 
 {% include "partials/user_feedback.prompt" %}
 
-{% if state.current_task.test_instructions is defined %}
+{% if test_instructions %}
 User was testing the current implementation of the app when they requested some changes to the app. These are the testing instructions:
 ```
-{{ state.current_task.test_instructions }}
+{% for step in test_instructions %}
+Step #{{ loop.index }}
+Action: {{ step.action }}
+Expected result: {{ step.result }}
+{% endfor %}
 ```
 {% endif %}
-
 
 {% if next_solution_to_try is not none %}
 Focus on solving this issue in the following way:

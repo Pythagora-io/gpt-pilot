@@ -4,9 +4,20 @@ when converting this message to steps.
 
 Each step can be either:
 
-* `command` - command to run (must be able to run on a {{ os }} machine, assume current working directory is project root folder)
-* `save_file` - create or update ONE file (only provide file path, not contents)
-* `human_intervention` - if you need the human to do something, use this type of step and explain in details what you want the human to do. NEVER use `human_intervention` for testing, as testing will be done separately by a dedicated QA after all the steps are done. Also you MUST NOT use `human_intervention` to ask the human to write or review code.
+* `command`
+ - command to run
+ - assume current working directory is project root folder, which means you MUST add `cd server && <cmd>` or `cd client && <cmd>` if they have to be executed inside `./server` or `./client` folders
+ - must be able to run on a {{ os }} machine
+* `save_file`
+ - create or update ONE file (only provide file path, not contents)
+* `human_intervention`
+ - if you need the human to do something, use this type of step and explain in details what you want the human to do
+ - NEVER use `human_intervention` for testing, as testing will be done separately by a dedicated QA after all the steps are done
+ - NEVER use `human_intervention` to ask the human to write or review code
+ * `utility_function`
+ - if there is a utility function mentioned, use this type of step and specify the file in which it needs to be put in, the name of the function, the description of what this function should do, the status of the function, the input parameters for this function, and the format of the return value
+ - if the function is going to be mocked, then put the status `mocked` and if it's going to be implemented in this task, put the status `implemented`
+ - for each utility function that needs to be mocked or implemented, you must provide a separate `utility_function` step
 
 **IMPORTANT**: If multiple changes are required for same file, you must provide single `save_file` step for each file.
 
@@ -25,17 +36,30 @@ Examples:
     {
       "type": "save_file",
       "save_file": {
-        "path": "server.js"
+        "path": "server/server.js"
       },
     },
     {
       "type": "command",
       "command": {
-        "command": "mv index.js public/index.js"",
-        "timeout": 5,
+        "command": "cd server && npm install puppeteer",
+        "timeout": 30,
         "success_message": "",
-        "command_id": "move_index_file"
+        "command_id": "install_puppeteer"
       }
+    },
+    {
+      "type": "command",
+      "command": {
+        "command": "cd client && npm install lucide-react",
+        "timeout": 30,
+        "success_message": "",
+        "command_id": "install_lucide_react"
+      }
+    },
+    {
+     "type": "human_intervention",
+     "human_intervention_description": "1. Open the AWS Management Console (https://aws.amazon.com/console/). 2. Navigate to the S3 service and create a new bucket. 3. Configure the bucket with public read access by adjusting the permissions. 4. Upload your static website files to the bucket. 5. Enable static website hosting in the bucket settings and note the website endpoint URL. 6. Add the endpoint URL to your application’s configuration file as: WEBSITE_URL=your_website_endpoint"
     }
   ]
 }

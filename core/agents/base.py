@@ -29,6 +29,7 @@ class BaseAgent:
         prev_response: Optional["AgentResponse"] = None,
         process_manager: Optional["ProcessManager"] = None,
         data: Optional[Any] = None,
+        args: Optional[Any] = None,
     ):
         """
         Create a new agent.
@@ -40,6 +41,7 @@ class BaseAgent:
         self.prev_response = prev_response
         self.step = step
         self.data = data
+        self.args = args
 
     @property
     def current_state(self) -> ProjectState:
@@ -51,7 +53,7 @@ class BaseAgent:
         """Next state of the project (write-only)."""
         return self.state_manager.next_state
 
-    async def send_message(self, message: str):
+    async def send_message(self, message: str, extra_info: Optional[str] = None):
         """
         Send a message to the user.
 
@@ -59,8 +61,11 @@ class BaseAgent:
         setting the correct source and project state ID.
 
         :param message: Message to send.
+        :param extra_info: Extra information to indicate special functionality in extension
         """
-        await self.ui.send_message(message + "\n", source=self.ui_source, project_state_id=str(self.current_state.id))
+        await self.ui.send_message(
+            message + "\n", source=self.ui_source, project_state_id=str(self.current_state.id), extra_info=extra_info
+        )
 
     async def ask_question(
         self,
@@ -69,9 +74,13 @@ class BaseAgent:
         buttons: Optional[dict[str, str]] = None,
         default: Optional[str] = None,
         buttons_only: bool = False,
-        initial_text: Optional[str] = None,
         allow_empty: bool = False,
+        full_screen: Optional[bool] = False,
         hint: Optional[str] = None,
+        verbose: bool = True,
+        initial_text: Optional[str] = None,
+        extra_info: Optional[str] = None,
+        placeholder: Optional[str] = None,
     ) -> UserInput:
         """
         Ask a question to the user and return the response.
@@ -85,8 +94,12 @@ class BaseAgent:
         :param default: Default button to select.
         :param buttons_only: Only display buttons, no text input.
         :param allow_empty: Allow empty input.
+        :param full_screen: Show question full screen in extension.
         :param hint: Text to display in a popup as a hint to the question.
+        :param verbose: Whether to log the question and response.
         :param initial_text: Initial text input.
+        :param extra_info: Extra information to indicate special functionality in extension.
+        :param placeholder: Placeholder text for the input field.
         :return: User response.
         """
         response = await self.ui.ask_question(
@@ -95,10 +108,14 @@ class BaseAgent:
             default=default,
             buttons_only=buttons_only,
             allow_empty=allow_empty,
+            full_screen=full_screen,
             hint=hint,
+            verbose=verbose,
             initial_text=initial_text,
             source=self.ui_source,
             project_state_id=str(self.current_state.id),
+            extra_info=extra_info,
+            placeholder=placeholder,
         )
         await self.state_manager.log_user_input(question, response)
         return response

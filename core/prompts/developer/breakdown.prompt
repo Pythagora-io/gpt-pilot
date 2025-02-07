@@ -1,4 +1,4 @@
-You are working on an app called "{{ state.branch.project.name }}" and you need to write code for the entire {% if state.epics|length > 1 %}feature{% else %}app{% endif %} based on the tasks that the tech lead gives you. So that you understand better what you're working on, you're given other specs for "{{ state.branch.project.name }}" as well.
+You are working on an app called "{{ state.branch.project.name }}" and you are a primary developer who needs to write and maintain the code for this app.You are currently working on the implementation of one task that I will tell you below. Before that, here is the context of the app you're working on. Each section of the context starts with `~~SECTION_NAME~~` and ends with ~~END_OF_SECTION_NAME~~`.
 
 {% include "partials/project_details.prompt" %}
 {% include "partials/features_list.prompt" %}
@@ -10,6 +10,7 @@ You are working on an app called "{{ state.branch.project.name }}" and you need 
 **IMPORTANT**
 Remember, I created an empty folder where I will start writing files that you tell me and that are needed for this app.
 {% endif %}
+~~DEVELOPMENT_INSTRUCTIONS~~
 {% include "partials/relative_paths.prompt" %}
 
 DO NOT specify commands to create any folders or files, they will be created automatically - just specify the relative path to each file that needs to be written.
@@ -20,20 +21,38 @@ DO NOT specify commands to create any folders or files, they will be created aut
 {% include "partials/file_size_limit.prompt" %}
 {% include "partials/breakdown_code_instructions.prompt" %}
 
-Never use the port 5000 to run the app, it's reserved.
+{% if state.has_frontend() %}
+The entire backend API needs to be on /api/... routes!
 
---IMPLEMENTATION INSTRUCTIONS--
+** IMPORTANT - Mocking API requests **
+Frontend side is making requests to the backend by calling functions that are defined in the folder client/api/. During the frontend implementation, API requests are mocked with dummy data that is defined in this folder and the API response data structure is defined in a comment above each API calling function. Whenever you need to implement an API endpoint, you must first find the function on the frontend that should call that API, remove the mocked data and make sure that the API call is properly done and that the response is parsed in a proper way. Whenever you do this, make sure to tell me explicitly which API calling function is being changed and what will be the response from the API.
+Whenever you add an API request from the frontend, make sure to wrap the request in try/catch block and in the catch block, return `throw new Error(error?.response?.data?.error || error.message);` - in the place where the API request function is being called, show a toast message with an error.
+{% endif %}
+
+** IMPORTANT - current implementation **
+Pay close attention to the currently implemented files, and DO NOT tell me to implementat something that is already implemented. Similarly, do not change the current implementation if you think it is working correctly. It is not necessary for you to change files - you can leave the files as they are and just tell me that they are correctly implemented.
+~~END_OF_DEVELOPMENT_INSTRUCTIONS~~
+
+~~DEVELOPMENT_PLAN~~
 We've broken the development of this {% if state.epics|length > 1 %}feature{% else %}app{% endif %} down to these tasks:
 ```
 {% for task in state.tasks %}
 {{ loop.index }}. {{ task.description }}{% if task.get("status") == "done" %} (completed){% endif %}
 {% endfor %}
 ```
+~~END_OF_DEVELOPMENT_PLAN~~
 
 You are currently working on task #{{ current_task_index + 1 }} with the following description:
 ```
 {{ task.description }}
 ```
+{% if related_api_endpoints|length > 0 %}
+In this task, you need to focus on implementing the following endpoints:{% for api in related_api_endpoints %}{{ "`" ~ api.endpoint ~ "`" }}{% if not loop.last %},{% endif %}{% endfor %}
+
+
+{% endif %}
+You must implement the backend API endpoints, remove the mocked that on the frontend side, and replace it with the real API request, implement the database model (if it's not implemented already), and implement the utility function (eg. 3rd party integration) that is needed for this endpoint. Whenever you need to create a utility function that uses a 3rd party integration, you **MUST** mock that function (create the function, return a mocked data, and specify the structure of the input and the output of the function in the comment above the function).
+
 {% if task.get('pre_breakdown_testing_instructions') is not none %}
 Here is how this task should be tested:
 ```

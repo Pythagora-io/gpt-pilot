@@ -1,0 +1,20 @@
+{
+  "name": "{{ project_name }}",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "postinstall": "concurrently -n \"client,server\" \"npm run client-install\" \"npm run server-install\"",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "client": "cd client && npm run dev",
+    "client-install": "cd client && npm install",
+    "server": "cd server && npm run dev",
+    "server-install": "cd server && npm install",
+    "start": "concurrently -n \"client,server\" \"npm run client\" \"npm run server\""
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

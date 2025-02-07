@@ -20,6 +20,9 @@ class NoOptions(BaseModel):
     Options class for templates that do not require any options.
     """
 
+    class Config:
+        extra = "allow"
+
     pass
 
 
@@ -99,6 +102,7 @@ class BaseProjectTemplate:
                 "random_secret": uuid4().hex,
                 "options": self.options_dict,
             },
+            self.state_manager.file_system.root,
             self.filter,
         )
 

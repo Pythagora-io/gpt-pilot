@@ -86,7 +86,9 @@ class Executor(BaseAgent):
             q,
             buttons={"yes": "Yes", "no": "No"},
             default="yes",
-            buttons_only=True,
+            buttons_only=False,
+            initial_text=cmd,
+            extra_info="remove_button_yes",
         )
         if confirm.button == "no":
             log.info(f"Skipping command execution of `{cmd}` (requested by user)")
@@ -94,6 +96,9 @@ class Executor(BaseAgent):
             self.complete()
             self.next_state.action = f'Skip "{cmd_name}"'
             return AgentResponse.done(self)
+
+        if confirm.button != "yes":
+            cmd = confirm.text
 
         started_at = datetime.now(timezone.utc)
 
@@ -172,4 +177,4 @@ class Executor(BaseAgent):
         information we give it.
         """
         self.step = None
-        self.next_state.complete_step()
+        self.next_state.complete_step("command")

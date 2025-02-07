@@ -1,6 +1,6 @@
 from copy import deepcopy
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 from uuid import UUID, uuid4
 
 from sqlalchemy import ForeignKey, UniqueConstraint, delete, inspect
@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import func
 
-from core.db.models import Base
+from core.db.models import Base, FileContent
 from core.log import get_logger
 
 if TYPE_CHECKING:
@@ -67,6 +67,7 @@ class ProjectState(Base):
     tasks: Mapped[list[dict]] = mapped_column(default=list)
     steps: Mapped[list[dict]] = mapped_column(default=list)
     iterations: Mapped[list[dict]] = mapped_column(default=list)
+    knowledge_base: Mapped[dict] = mapped_column(default=dict, server_default="{}")
     relevant_files: Mapped[Optional[list[str]]] = mapped_column(default=None)
     modified_files: Mapped[dict] = mapped_column(default=dict)
     docs: Mapped[Optional[list[dict]]] = mapped_column(default=None)
@@ -238,6 +239,7 @@ class ProjectState(Base):
             tasks=deepcopy(self.tasks),
             steps=deepcopy(self.steps),
             iterations=deepcopy(self.iterations),
+            knowledge_base=deepcopy(self.knowledge_base),
             files=[],
             relevant_files=deepcopy(self.relevant_files),
             modified_files=deepcopy(self.modified_files),
@@ -257,14 +259,14 @@ class ProjectState(Base):
 
         return new_state
 
-    def complete_step(self):
+    def complete_step(self, step_type: str):
         if not self.unfinished_steps:
             raise ValueError("There are no unfinished steps to complete")
         if "next_state" in self.__dict__:
             raise ValueError("Current state is read-only (already has a next state).")
 
         log.debug(f"Completing step {self.unfinished_steps[0]['type']}")
-        self.unfinished_steps[0]["completed"] = True
+        self.get_steps_of_type(step_type)[0]["completed"] = True
         flag_modified(self, "steps")
 
     def complete_task(self):
@@ -305,6 +307,7 @@ class ProjectState(Base):
         log.debug(f"Completing iteration {self.unfinished_iterations[0]}")
         self.unfinished_iterations[0]["status"] = IterationStatus.DONE
         self.relevant_files = None
+        self.modified_files = {}
         self.flag_iterations_as_modified()
 
     def flag_iterations_as_modified(self):
@@ -326,6 +329,26 @@ class ProjectState(Base):
         can't detect changes in mutable fields by itself).
         """
         flag_modified(self, "tasks")
+
+    def flag_epics_as_modified(self):
+        """
+        Flag the epic field as having been modified
+
+        Used by Agents that perform modifications within the mutable epics field,
+        to tell the database that it was modified and should get saved (as SQLalchemy
+        can't detect changes in mutable fields by itself).
+        """
+        flag_modified(self, "epics")
+
+    def flag_knowledge_base_as_modified(self):
+        """
+        Flag the knowledge base field as having been modified
+
+        Used by Agents that perform modifications within the mutable knowledge base field,
+        to tell the database that it was modified and should get saved (as SQLalchemy
+        can't detect changes in mutable fields by itself).
+        """
+        flag_modified(self, "knowledge_base")
 
     def set_current_task_status(self, status: str):
         """
@@ -353,6 +376,17 @@ class ProjectState(Base):
                 return file
 
         return None
+
+    def get_file_content_by_path(self, path: str) -> Union[FileContent, str]:
+        """
+        Get a file from the current project state, by the file path.
+
+        :param path: The file path.
+        :return: The file object, or None if not found.
+        """
+        file = self.get_file_by_path(path)
+
+        return file.content.content if file else ""
 
     def save_file(self, path: str, content: "FileContent", external: bool = False) -> "File":
         """
@@ -443,3 +477,19 @@ class ProjectState(Base):
         """
         li = self.unfinished_steps
         return [step for step in li if step.get("type") == step_type] if li else []
+
+    def has_frontend(self) -> bool:
+        """
+        Check if there is a frontend epic in the project state.
+
+        :return: True if there is a frontend epic, False otherwise.
+        """
+        return self.epics and any(epic.get("source") == "frontend" for epic in self.epics)
+
+    def is_feature(self) -> bool:
+        """
+        Check if the current epic is a feature.
+
+        :return: True if the current epic is a feature, False otherwise.
+        """
+        return self.epics and self.current_epic and self.current_epic.get("source") == "feature"

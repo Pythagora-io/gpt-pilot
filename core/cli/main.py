@@ -1,4 +1,6 @@
 import asyncio
+import atexit
+import signal
 import sys
 from argparse import Namespace
 from asyncio import run
@@ -8,16 +10,32 @@ from core.cli.helpers import delete_project, init, list_projects, list_projects_
 from core.config import LLMProvider, get_config
 from core.db.session import SessionManager
 from core.db.v0importer import LegacyDatabaseImporter
+from core.llm.anthropic_client import CustomAssertionError
 from core.llm.base import APIError, BaseLLMClient
 from core.log import get_logger
 from core.state.state_manager import StateManager
 from core.telemetry import telemetry
-from core.ui.base import UIBase, UIClosedError, UserInput, pythagora_source
+from core.ui.base import ProjectStage, UIBase, UIClosedError, UserInput, pythagora_source
 
 log = get_logger(__name__)
 
 
-async def run_project(sm: StateManager, ui: UIBase) -> bool:
+telemetry_sent = False
+
+
+async def cleanup(ui: UIBase):
+    global telemetry_sent
+    if not telemetry_sent:
+        await telemetry.send()
+        telemetry_sent = True
+    await ui.stop()
+
+
+def sync_cleanup(ui: UIBase):
+    asyncio.run(cleanup(ui))
+
+
+async def run_project(sm: StateManager, ui: UIBase, args) -> bool:
     """
     Work on the project.
 
@@ -26,13 +44,14 @@ async def run_project(sm: StateManager, ui: UIBase) -> bool:
 
     :param sm: State manager.
     :param ui: User interface.
+    :param args: Command-line arguments.
     :return: True if the orchestrator exited successfully, False otherwise.
     """
 
     telemetry.set("app_id", str(sm.project.id))
     telemetry.set("initial_prompt", sm.current_state.specification.description)
 
-    orca = Orchestrator(sm, ui)
+    orca = Orchestrator(sm, ui, args=args)
     success = False
     try:
         success = await orca.run()
@@ -48,6 +67,14 @@ async def run_project(sm: StateManager, ui: UIBase) -> bool:
             source=pythagora_source,
         )
         telemetry.set("end_result", "failure:api-error")
+        await sm.rollback()
+    except CustomAssertionError as err:
+        log.warning(f"Anthropic assertion error occurred: {str(err)}")
+        await ui.send_message(
+            f"Stopping Pythagora due to an error inside Anthropic SDK. {str(err)}",
+            source=pythagora_source,
+        )
+        telemetry.set("end_result", "failure:assertion-error")
         await sm.rollback()
     except Exception as err:
         log.error(f"Uncaught exception: {err}", exc_info=True)
@@ -125,12 +152,48 @@ async def start_new_project(sm: StateManager, ui: UIBase) -> bool:
     :param ui: User interface.
     :return: True if the project was created successfully, False otherwise.
     """
+
+    stack = await ui.ask_question(
+        "What do you want to use to build your app?",
+        allow_empty=False,
+        buttons={"node": "Node.js", "other": "Other (coming soon)"},
+        buttons_only=True,
+        source=pythagora_source,
+        full_screen=True,
+    )
+
+    if stack.button == "other":
+        language = await ui.ask_question(
+            "What language you want to use?",
+            allow_empty=False,
+            source=pythagora_source,
+            full_screen=True,
+        )
+        await telemetry.trace_code_event(
+            "stack-choice-other",
+            {"language": language.text},
+        )
+        await ui.send_message("Thank you for submitting your request to support other languages.")
+        return False
+    elif stack.button == "node":
+        await telemetry.trace_code_event(
+            "stack-choice",
+            {"language": "node"},
+        )
+    elif stack.button == "python":
+        await telemetry.trace_code_event(
+            "stack-choice",
+            {"language": "python"},
+        )
+
     while True:
         try:
+            await ui.send_project_stage({"stage": ProjectStage.PROJECT_NAME})
             user_input = await ui.ask_question(
                 "What is the project name?",
                 allow_empty=False,
                 source=pythagora_source,
+                full_screen=True,
             )
         except (KeyboardInterrupt, UIClosedError):
             user_input = UserInput(cancelled=True)
@@ -178,7 +241,7 @@ async def run_pythagora_session(sm: StateManager, ui: UIBase, args: Namespace):
         if not success:
             return False
 
-    return await run_project(sm, ui)
+    return await run_project(sm, ui, args)
 
 
 async def async_main(
@@ -194,6 +257,7 @@ async def async_main(
     :param args: Command-line arguments.
     :return: True if the application ran successfully, False otherwise.
     """
+    global telemetry_sent
 
     if args.list:
         await list_projects(db)
@@ -223,9 +287,23 @@ async def async_main(
         return False
 
     telemetry.start()
-    success = await run_pythagora_session(sm, ui, args)
-    await telemetry.send()
-    await ui.stop()
+
+    # Set up signal handlers
+    def signal_handler(sig, frame):
+        if not telemetry_sent:
+            sync_cleanup(ui)
+        sys.exit(0)
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        signal.signal(sig, signal_handler)
+
+    # Register the cleanup function
+    atexit.register(sync_cleanup, ui)
+
+    try:
+        success = await run_pythagora_session(sm, ui, args)
+    finally:
+        await cleanup(ui)
 
     return success
 

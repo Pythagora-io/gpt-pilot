@@ -134,7 +134,7 @@ async def test_completing_unfinished_steps(testdb):
 
     assert state.unfinished_steps == state.steps
     assert state.current_step["id"] == "abc"
-    state.complete_step()
+    state.complete_step("create_readme")
     assert state.unfinished_steps == []
     assert state.current_step is None
     await testdb.commit()

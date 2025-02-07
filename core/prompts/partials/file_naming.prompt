@@ -1,1 +1,35 @@
-**IMPORTANT**: When creating and naming new files, ensure the file naming (camelCase, kebab-case, underscore_case, etc) is consistent with the best practices and coding style of the language.
+**IMPORTANT**: When creating and naming new files, ensure the file naming (camelCase, kebab-case, underscore_case, etc) is consistent within the project.
+
+**IMPORTANT**: Folder/file structure
+The project uses controllers, models, and services on the server side. You **MUST** strictly follow this structure when you think about the implementation. The folder structure is as follows:
+```
+server/
+├── config/
+│   ├── database.js       # Database configuration
+│   └── ...               # Other configurations
+│
+├── models/
+│   ├── User.js           # User model/schema definition
+│   └── ...               # Other models
+│
+├── routes/
+│   ├── middleware/
+│   │   ├── auth.js       # Authentication middleware
+│   │   └── ...           # Other middleware
+│   │
+│   ├── index.js          # Main route file
+│   ├── authRoutes.js     # Authentication routes
+│   └── ...               # Other route files
+│
+├── services/
+│   ├── userService.js    # User-related business services
+│   └── ...               # Other services
+│
+├── utils/
+│   ├── password.js       # Password hashing and validation
+│   └── ...               # Other utility functions
+│
+├── .env                  # Environment variables
+├── server.js             # Server entry point
+└── ...                   # Other project files
+```

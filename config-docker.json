@@ -1,0 +1,136 @@
+{
+  "llm": {
+    "openai": {
+      "base_url": null,
+      "api_key": null,
+      "connect_timeout": 60.0,
+      "read_timeout": 60.0,
+      "extra": null
+    },
+    "anthropic": {
+      "base_url": null,
+      "api_key": null,
+      "connect_timeout": 60.0,
+      "read_timeout": 60.0,
+      "extra": null
+    }
+  },
+  "agent": {
+    "default": {
+      "provider": "openai",
+      "model": "gpt-4o-2024-05-13",
+      "temperature": 0.5
+    },
+    "BugHunter.check_logs": {
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022",
+      "temperature": 0.5
+    },
+    "CodeMonkey": {
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022",
+      "temperature": 0.0
+    },
+    "CodeMonkey.code_review": {
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20240620",
+      "temperature": 0.0
+    },
+    "CodeMonkey.describe_files": {
+      "provider": "openai",
+      "model": "gpt-4o-mini-2024-07-18",
+      "temperature": 0.0
+    },
+    "Frontend": {
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022",
+      "temperature": 0.0
+    },
+    "get_relevant_files": {
+      "provider": "openai",
+      "model": "gpt-4o-2024-05-13",
+      "temperature": 0.5
+    },
+    "Developer.parse_task": {
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022",
+      "temperature": 0.0
+    },
+    "SpecWriter": {
+      "provider": "openai",
+      "model": "gpt-4-0125-preview",
+      "temperature": 0.0
+    },
+    "Developer.breakdown_current_task": {
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022",
+      "temperature": 0.5
+    },
+    "TechLead.plan_epic": {
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20240620",
+      "temperature": 0.5
+    },
+    "TechLead.epic_breakdown": {
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022",
+      "temperature": 0.5
+    },
+    "Troubleshooter.generate_bug_report": {
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20240620",
+      "temperature": 0.5
+    },
+    "Troubleshooter.get_run_command": {
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20240620",
+      "temperature": 0.0
+    }
+  },
+  "prompt": {
+    "paths": [
+      "/pythagora/pythagora-core/core/prompts"
+    ]
+  },
+  "log": {
+    "level": "DEBUG",
+    "format": "%(asctime)s %(levelname)s [%(name)s] %(message)s",
+    "output": "pythagora.log"
+  },
+  "db": {
+    "url": "sqlite+aiosqlite:///data/database/pythagora.db",
+    "debug_sql": false
+  },
+  "ui": {
+    "type": "plain"
+  },
+  "fs": {
+    "type": "local",
+    "workspace_root": "/pythagora/pythagora-core/workspace",
+    "ignore_paths": [
+      ".git",
+      ".gpt-pilot",
+      ".idea",
+      ".vscode",
+      ".next",
+      ".DS_Store",
+      "__pycache__",
+      "site-packages",
+      "node_modules",
+      "package-lock.json",
+      "venv",
+      ".venv",
+      "dist",
+      "build",
+      "target",
+      "*.min.js",
+      "*.min.css",
+      "*.svg",
+      "*.csv",
+      "*.log",
+      "go.sum",
+      "migration_lock.toml"
+    ],
+    "ignore_size_threshold": 50000
+  }
+}

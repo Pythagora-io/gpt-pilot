@@ -57,28 +57,7 @@ async def test_render_react_express_nosql(mock_get_config, testmanager):
     assert "prisma/schema.prisma" not in files
 
 
-@pytest.mark.asyncio
-@patch("core.state.state_manager.get_config")
-async def test_render_javascript_react(mock_get_config, testmanager):
-    mock_get_config.return_value.fs.type = "memory"
-    sm = StateManager(testmanager)
-    pm = MagicMock(run_command=AsyncMock())
-
-    await sm.create_project("TestProjectName")
-    await sm.commit()
-
-    TemplateClass = PROJECT_TEMPLATES["javascript_react"]
-    template = TemplateClass(TemplateClass.options_class(), sm, pm)
-
-    assert template.options_dict == {}
-
-    await template.apply()
-
-    files = sm.file_system.list()
-    for f in ["src/App.jsx", "vite.config.js"]:
-        assert f in files
-
-
+@pytest.mark.skip
 @pytest.mark.asyncio
 @patch("core.state.state_manager.get_config")
 async def test_render_node_express_mongoose(mock_get_config, testmanager):

@@ -21,8 +21,13 @@ Finally, here is the description of new feature that needs to be added to the ap
 {% if epic.complexity and epic.complexity == 'simple' %}
 This is very low complexity {{ task_type }} and because of that, you have to create ONLY one task that is sufficient to fully implement it.
 {% else %}
-Before we go into the coding part, your job is to split the development process of creating this app into smaller epics.
-Now, based on the project details provided{% if task_type  == 'feature' %} and new feature description{% endif %}, think epic by epic and create the entire development plan{% if task_type  == 'feature' %} for new feature{% elif task_type  == 'app' %}. {% if state.files %}Continue from the existing code listed above{% else %}Start from the project setup{% endif %} and specify each epic until the moment when the entire app should be fully working{% if state.files %}. You should not reimplement what's already done - just continue from the implementation already there{% endif %}{% endif %} while strictly following these rules:
+Before we go into the coding part, your job is to split the development process of building the backend for this app into epics. Above, you can see a part of the backend that's already built and the files from the frontend that make requests to the backend. The rest of the frontend is built but is not shown above because it is not necessary for you to create a list of epics.
+Now, based on the project details provided{% if task_type  == 'feature' %} and new feature description{% endif %}, think epic by epic and create the entire development plan{% if task_type  == 'feature' %} for new feature{% elif task_type  == 'app' %}. {% if state.files %}Continue from the existing code listed above{% else %}Start from the project setup{% endif %} and specify each epic until the moment when the entire app should be fully working{% if state.files %}. IMPORTANT: You should not reimplement what's already done - just continue from the implementation already there.{% endif %}{% endif %}
+
+IMPORTANT!
+Frontend is already built and you don't need to create epics for it. You only need to create epics for backend implementation and connect it to existing frontend. Keep in mind that some backend functionality is already implemented.{% if task_type == 'app' and (state.options|default({})).get('auth', True) %} The first epic **MUST** be to implement the authentication system.{% endif %}
+
+Strictly follow these rules:
 
 {% include "partials/project_tasks.prompt" %}
 {% endif %}

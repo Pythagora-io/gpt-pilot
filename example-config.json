@@ -49,7 +49,7 @@
   // Database to use. Pythagora uses asyncio so asyncio-compatible database engine should be specified.
   // If "debug_sql" is set to True, all SQL queries will be logged.
   "db": {
-    "url": "sqlite+aiosqlite:///pythagora.db",
+    "url": "sqlite+aiosqlite:///data/database/pythagora.db",
     "debug_sql": false
   },
   "ui": {

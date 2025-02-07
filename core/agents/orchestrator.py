@@ -1,4 +1,5 @@
 import asyncio
+import os
 from typing import List, Optional, Union
 
 from core.agents.architect import Architect
@@ -9,6 +10,8 @@ from core.agents.developer import Developer
 from core.agents.error_handler import ErrorHandler
 from core.agents.executor import Executor
 from core.agents.external_docs import ExternalDocumentation
+from core.agents.frontend import Frontend
+from core.agents.git import GitMixin
 from core.agents.human_input import HumanInput
 from core.agents.importer import Importer
 from core.agents.legacy_handler import LegacyHandler
@@ -22,12 +25,11 @@ from core.agents.troubleshooter import Troubleshooter
 from core.db.models.project_state import IterationStatus, TaskStatus
 from core.log import get_logger
 from core.telemetry import telemetry
-from core.ui.base import ProjectStage
 
 log = get_logger(__name__)
 
 
-class Orchestrator(BaseAgent):
+class Orchestrator(BaseAgent, GitMixin):
     """
     Main agent that controls the flow of the process.
 
@@ -56,6 +58,11 @@ class Orchestrator(BaseAgent):
         await self.init_ui()
         await self.offline_changes_check()
 
+        await self.install_dependencies()
+
+        if self.args.use_git and await self.check_git_installed():
+            await self.init_git_if_needed()
+
         # TODO: consider refactoring this into two loop; the outer with one iteration per comitted step,
         # and the inner which runs the agents for the current step until they're done. This would simplify
         # handle_done() and let us do other per-step processing (eg. describing files) in between agent runs.
@@ -73,6 +80,27 @@ class Orchestrator(BaseAgent):
                 )
                 responses = await asyncio.gather(*tasks)
                 response = self.handle_parallel_responses(agent[0], responses)
+
+                should_update_knowledge_base = any(
+                    "src/pages/" in single_agent.step.get("save_file", {}).get("path", "")
+                    or "src/api/" in single_agent.step.get("save_file", {}).get("path", "")
+                    or len(single_agent.step.get("related_api_endpoints")) > 0
+                    for single_agent in agent
+                )
+
+                if should_update_knowledge_base:
+                    files_with_implemented_apis = [
+                        {
+                            "path": single_agent.step.get("save_file", {}).get("path", None),
+                            "related_api_endpoints": single_agent.step.get("related_api_endpoints"),
+                            "line": 0,  # TODO implement getting the line number here
+                        }
+                        for single_agent in agent
+                        if len(single_agent.step.get("related_api_endpoints")) > 0
+                    ]
+                    await self.state_manager.update_apis(files_with_implemented_apis)
+                    await self.state_manager.update_implemented_pages_and_apis()
+
             else:
                 log.debug(f"Running agent {agent.__class__.__name__} (step {self.current_state.step_index})")
                 response = await agent.run()
@@ -87,6 +115,19 @@ class Orchestrator(BaseAgent):
 
         # TODO: rollback changes to "next" so they aren't accidentally committed?
         return True
+
+    async def install_dependencies(self):
+        # First check if package.json exists
+        package_json_path = os.path.join(self.state_manager.get_full_project_root(), "package.json")
+        if not os.path.exists(package_json_path):
+            # Skip if no package.json found
+            return
+
+        # Then check if node_modules directory exists
+        node_modules_path = os.path.join(self.state_manager.get_full_project_root(), "node_modules")
+        if not os.path.exists(node_modules_path):
+            await self.send_message("Installing project dependencies...")
+            await self.process_manager.run_command("npm install", show_output=False)
 
     def handle_parallel_responses(self, agent: BaseAgent, responses: List[AgentResponse]) -> AgentResponse:
         """
@@ -215,21 +256,16 @@ class Orchestrator(BaseAgent):
             if prev_response.type == ResponseType.UPDATE_SPECIFICATION:
                 return SpecWriter(self.state_manager, self.ui, prev_response=prev_response)
 
-        if not state.specification.description:
-            if state.files:
-                # The project has been imported, but not analyzed yet
-                return Importer(self.state_manager, self.ui)
-            else:
-                # New project: ask the Spec Writer to refine and save the project specification
-                return SpecWriter(self.state_manager, self.ui, process_manager=self.process_manager)
+        if not state.epics or (state.current_epic and state.current_epic.get("source") == "frontend"):
+            # Build frontend
+            return Frontend(self.state_manager, self.ui, process_manager=self.process_manager)
+        elif not state.specification.description:
+            # New project: ask the Spec Writer to refine and save the project specification
+            return SpecWriter(self.state_manager, self.ui, process_manager=self.process_manager)
         elif not state.specification.architecture:
             # Ask the Architect to design the project architecture and determine dependencies
             return Architect(self.state_manager, self.ui, process_manager=self.process_manager)
-        elif (
-            not state.epics
-            or not self.current_state.unfinished_tasks
-            or (state.specification.templates and not state.files)
-        ):
+        elif not self.current_state.unfinished_tasks or (state.specification.templates and not state.files):
             # Ask the Tech Lead to break down the initial project or feature into tasks and apply project templates
             return TechLead(self.state_manager, self.ui, process_manager=self.process_manager)
 
@@ -244,7 +280,7 @@ class Orchestrator(BaseAgent):
                 return TechnicalWriter(self.state_manager, self.ui)
             elif current_task_status in [TaskStatus.DOCUMENTED, TaskStatus.SKIPPED]:
                 # Task is fully done or skipped, call TaskCompleter to mark it as completed
-                return TaskCompleter(self.state_manager, self.ui)
+                return TaskCompleter(self.state_manager, self.ui, process_manager=self.process_manager)
 
         if not state.steps and not state.iterations:
             # Ask the Developer to break down current task into actionable steps
@@ -307,6 +343,8 @@ class Orchestrator(BaseAgent):
             return LegacyHandler(self.state_manager, self.ui, data={"type": "review_task"})
         elif step_type == "create_readme":
             return TechnicalWriter(self.state_manager, self.ui)
+        elif step_type == "utility_function":
+            return Developer(self.state_manager, self.ui)
         else:
             raise ValueError(f"Unknown step type: {step_type}")
 
@@ -322,7 +360,7 @@ class Orchestrator(BaseAgent):
 
         input_required_files: list[dict[str, int]] = []
         for file in imported_files:
-            for line in self.state_manager.get_input_required(file.content.content):
+            for line in self.state_manager.get_input_required(file.content.content, file.path):
                 input_required_files.append({"file": file.path, "line": line})
 
         if input_required_files:
@@ -340,15 +378,9 @@ class Orchestrator(BaseAgent):
         await self.ui.loading_finished()
 
         if self.current_state.epics:
-            await self.ui.send_project_stage(ProjectStage.CODING)
-            if len(self.current_state.epics) > 2:
+            if len(self.current_state.epics) > 3:
                 # We only want to send previous features, ie. exclude current one and the initial project (first epic)
-                await self.ui.send_features_list([e["description"] for e in self.current_state.epics[1:-1]])
-
-        elif self.current_state.specification.description:
-            await self.ui.send_project_stage(ProjectStage.ARCHITECTURE)
-        else:
-            await self.ui.send_project_stage(ProjectStage.DESCRIPTION)
+                await self.ui.send_features_list([e["description"] for e in self.current_state.epics[2:-1]])
 
         if self.current_state.specification.description:
             await self.ui.send_project_description(self.current_state.specification.description)

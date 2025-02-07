@@ -1,3 +1,4 @@
+import json
 from typing import Optional
 from uuid import uuid4
 
@@ -5,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
-from core.agents.mixins import IterationPromptMixin, RelevantFilesMixin
+from core.agents.mixins import ChatWithBreakdownMixin, IterationPromptMixin, RelevantFilesMixin, TestSteps
 from core.agents.response import AgentResponse
 from core.config import TROUBLESHOOTER_GET_RUN_COMMAND
 from core.db.models.file import File
@@ -13,6 +14,7 @@ from core.db.models.project_state import IterationStatus, TaskStatus
 from core.llm.parser import JSONParser, OptionalCodeBlockParser
 from core.log import get_logger
 from core.telemetry import telemetry
+from core.ui.base import ProjectStage, pythagora_source
 
 log = get_logger(__name__)
 
@@ -29,7 +31,7 @@ class RouteFilePaths(BaseModel):
     files: list[str] = Field(description="List of paths for files that contain routes")
 
 
-class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
+class Troubleshooter(ChatWithBreakdownMixin, IterationPromptMixin, RelevantFilesMixin, BaseAgent):
     agent_type = "troubleshooter"
     display_name = "Troubleshooter"
 
@@ -72,10 +74,12 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
             self.next_state.flag_tasks_as_modified()
             return AgentResponse.done(self)
         else:
-            await self.send_message("Here are instructions on how to test the app:\n\n" + user_instructions)
+            await self.ui.send_project_stage({"stage": ProjectStage.TEST_APP})
+            await self.ui.send_message("Test the app by following these steps:", source=pythagora_source)
 
+        await self.send_message("")
         await self.ui.stop_app()
-        await self.ui.send_test_instructions(user_instructions)
+        await self.ui.send_test_instructions(user_instructions, project_state_id=str(self.current_state.id))
 
         # Developer sets iteration as "completed" when it generates the step breakdown, so we can't
         # use "current_iteration" here
@@ -106,7 +110,6 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         else:
             # should be - elif change_description is not None: - but to prevent bugs with the extension
             # this might be caused if we show the input field instead of buttons
-            await self.get_relevant_files(user_feedback)
             iteration_status = IterationStatus.NEW_FEATURE_REQUESTED
 
         self.next_state.iterations = self.current_state.iterations + [
@@ -155,6 +158,7 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
                 task=task,
                 iteration=None,
                 current_task_index=current_task_index,
+                related_api_endpoints=task.get("related_api_endpoints", []),
             )
             .assistant(self.current_state.current_task["instructions"])
         )
@@ -179,17 +183,29 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
         await self.send_message("Determining how to test the app ...")
 
         route_files = await self._get_route_files()
+        current_task = self.current_state.current_task
 
         llm = self.get_llm()
-        convo = self._get_task_convo().template(
-            "define_user_review_goal", task=self.current_state.current_task, route_files=route_files
+        convo = (
+            self._get_task_convo()
+            .template(
+                "define_user_review_goal",
+                task=current_task,
+                route_files=route_files,
+                current_task_index=self.current_state.tasks.index(current_task),
+            )
+            .require_schema(TestSteps)
         )
-        user_instructions: str = await llm(convo)
+        user_instructions: TestSteps = await llm(convo, parser=JSONParser(TestSteps))
 
-        user_instructions = user_instructions.strip()
-        if user_instructions.lower() == "done":
+        if len(user_instructions.steps) == 0:
+            await self.ui.send_message(
+                "No testing required for this task, moving on to the next one.", source=pythagora_source
+            )
             log.debug(f"Nothing to do for user testing for task {self.current_state.current_task['description']}")
             return None
+
+        user_instructions = json.dumps([test.dict() for test in user_instructions.steps])
 
         return user_instructions
 
@@ -231,38 +247,62 @@ class Troubleshooter(IterationPromptMixin, RelevantFilesMixin, BaseAgent):
 
         is_loop = False
         should_iterate = True
+        extra_info = "restart_app" if not self.current_state.iterations else None
 
-        test_message = "Please check if the app is working"
-        if user_instructions:
-            hint = " Here is a description of what should be working:\n\n" + user_instructions
+        while True:
+            await self.ui.send_project_stage({"stage": ProjectStage.GET_USER_FEEDBACK})
 
-        if run_command:
-            await self.ui.send_run_command(run_command)
+            test_message = "Please check if the app is working"
+            if user_instructions:
+                hint = " Here is a description of what should be working:\n\n" + user_instructions
 
-        buttons = {
-            "continue": "Everything works",
-            "change": "I want to make a change",
-            "bug": "There is an issue",
-        }
+            if run_command:
+                await self.ui.send_run_command(run_command)
 
-        user_response = await self.ask_question(
-            test_message, buttons=buttons, default="continue", buttons_only=True, hint=hint
-        )
-        if user_response.button == "continue" or user_response.cancelled:
-            should_iterate = False
+            buttons = {
+                "continue": "Everything works",
+                "change": "I want to make a change",
+                "bug": "There is an issue",
+            }
 
-        elif user_response.button == "change":
-            user_description = await self.ask_question(
-                "Please describe the change you want to make to the project specification (one at a time)"
+            user_response = await self.ask_question(
+                test_message,
+                buttons=buttons,
+                default="continue",
+                buttons_only=True,
+                hint=hint,
+                extra_info=extra_info,
             )
-            change_description = user_description.text
+            extra_info = None
 
-        elif user_response.button == "bug":
-            user_description = await self.ask_question(
-                "Please describe the issue you found (one at a time) and share any relevant server logs",
-                buttons={"copy_server_logs": "Copy Server Logs"},
-            )
-            bug_report = user_description.text
+            if user_response.button == "continue" or user_response.cancelled:
+                should_iterate = False
+                break
+
+            elif user_response.button == "change":
+                await self.ui.send_project_stage({"stage": ProjectStage.DESCRIBE_CHANGE})
+                user_description = await self.ask_question(
+                    "Please describe the change you want to make to the project specification (one at a time)",
+                    buttons={"back": "Back"},
+                )
+                if user_description.button == "back":
+                    continue
+                change_description = user_description.text
+                await self.get_relevant_files(user_feedback=change_description)
+                break
+
+            elif user_response.button == "bug":
+                await self.ui.send_project_stage({"stage": ProjectStage.DESCRIBE_ISSUE})
+                user_description = await self.ask_question(
+                    "Please describe the issue you found (one at a time) and share any relevant server logs",
+                    extra_info="collect_logs",
+                    buttons={"back": "Back"},
+                )
+                if user_description.button == "back":
+                    continue
+                bug_report = user_description.text
+                await self.get_relevant_files(user_feedback=bug_report)
+                break
 
         return should_iterate, is_loop, bug_report, change_description
 

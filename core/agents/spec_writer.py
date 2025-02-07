@@ -7,10 +7,6 @@ from core.db.models.project_state import IterationStatus
 from core.llm.parser import StringParser
 from core.log import get_logger
 from core.telemetry import telemetry
-from core.templates.example_project import (
-    DEFAULT_EXAMPLE_PROJECT,
-    EXAMPLE_PROJECTS,
-)
 
 # If the project description is less than this, perform an analysis using LLM
 ANALYZE_THRESHOLD = 1500
@@ -37,25 +33,15 @@ class SpecWriter(BaseAgent):
             return await self.initialize_spec()
 
     async def initialize_spec(self) -> AgentResponse:
-        response = await self.ask_question(
-            "Describe your app in as much detail as possible",
-            allow_empty=False,
-            buttons={
-                "example": "Start an example project",
-                "import": "Import an existing project",
-            },
-        )
-        if response.cancelled:
-            return AgentResponse.error(self, "No project description")
-
-        if response.button == "import":
-            return AgentResponse.import_project(self)
-
-        if response.button == "example":
-            await self.prepare_example_project(DEFAULT_EXAMPLE_PROJECT)
-            return AgentResponse.done(self)
-
-        user_description = response.text.strip()
+        # response = await self.ask_question(
+        #     "Describe your app in as much detail as possible",
+        #     allow_empty=False,
+        # )
+        # if response.cancelled:
+        #     return AgentResponse.error(self, "No project description")
+        #
+        # user_description = response.text.strip()
+        user_description = self.current_state.epics[0]["description"]
 
         complexity = await self.check_prompt_complexity(user_description)
         await telemetry.trace_code_event(
@@ -67,9 +53,9 @@ class SpecWriter(BaseAgent):
         )
 
         reviewed_spec = user_description
-        if len(user_description) < ANALYZE_THRESHOLD and complexity != Complexity.SIMPLE:
-            initial_spec = await self.analyze_spec(user_description)
-            reviewed_spec = await self.review_spec(desc=user_description, spec=initial_spec)
+        # if len(user_description) < ANALYZE_THRESHOLD and complexity != Complexity.SIMPLE:
+        #     initial_spec = await self.analyze_spec(user_description)
+        #     reviewed_spec = await self.review_spec(desc=user_description, spec=initial_spec)
 
         self.next_state.specification = self.current_state.specification.clone()
         self.next_state.specification.original_description = user_description
@@ -95,7 +81,9 @@ class SpecWriter(BaseAgent):
         convo = AgentConvo(self).template("add_new_feature", feature_description=feature_description)
         llm_response: str = await llm(convo, temperature=0, parser=StringParser())
         updated_spec = llm_response.strip()
-        await self.ui.generate_diff("project_specification", self.current_state.specification.description, updated_spec)
+        await self.ui.generate_diff(
+            "project_specification", self.current_state.specification.description, updated_spec, source=self.ui_source
+        )
         user_response = await self.ask_question(
             "Do you accept these changes to the project specification?",
             buttons={"yes": "Yes", "no": "No"},
@@ -113,38 +101,28 @@ class SpecWriter(BaseAgent):
             self.next_state.current_iteration["status"] = IterationStatus.FIND_SOLUTION
             self.next_state.flag_iterations_as_modified()
         else:
-            complexity = await self.check_prompt_complexity(user_response.text)
+            complexity = await self.check_prompt_complexity(feature_description)
             self.next_state.current_epic["complexity"] = complexity
 
         return AgentResponse.done(self)
 
     async def check_prompt_complexity(self, prompt: str) -> str:
+        is_feature = self.current_state.epics and len(self.current_state.epics) > 2
         await self.send_message("Checking the complexity of the prompt ...")
         llm = self.get_llm(SPEC_WRITER_AGENT_NAME)
-        convo = AgentConvo(self).template("prompt_complexity", prompt=prompt)
+        convo = AgentConvo(self).template(
+            "prompt_complexity",
+            prompt=prompt,
+            is_feature=is_feature,
+        )
         llm_response: str = await llm(convo, temperature=0, parser=StringParser())
+        log.info(f"Complexity check response: {llm_response}")
         return llm_response.lower()
-
-    async def prepare_example_project(self, example_name: str):
-        example_description = EXAMPLE_PROJECTS[example_name]["description"].strip()
-
-        log.debug(f"Starting example project: {example_name}")
-        await self.send_message(f"Starting example project with description:\n\n{example_description}")
-
-        spec = self.current_state.specification.clone()
-        spec.example_project = example_name
-        spec.description = example_description
-        spec.complexity = EXAMPLE_PROJECTS[example_name]["complexity"]
-        self.next_state.specification = spec
-
-        telemetry.set("initial_prompt", spec.description)
-        telemetry.set("example_project", example_name)
-        telemetry.set("is_complex_app", spec.complexity != Complexity.SIMPLE)
 
     async def analyze_spec(self, spec: str) -> str:
         msg = (
             "Your project description seems a bit short. "
-            "The better you can describe the project, the better GPT Pilot will understand what you'd like to build.\n\n"
+            "The better you can describe the project, the better Pythagora will understand what you'd like to build.\n\n"
             f"Here are some tips on how to better describe the project: {INITIAL_PROJECT_HOWTO_URL}\n\n"
             "Let's start by refining your project idea:"
         )
@@ -160,12 +138,9 @@ class SpecWriter(BaseAgent):
             if len(response) > 500:
                 # The response is too long for it to be a question, assume it's the updated spec
                 confirm = await self.ask_question(
-                    (
-                        "Can we proceed with this project description? If so, just press Continue. "
-                        "Otherwise, please tell me what's missing or what you'd like to add."
-                    ),
+                    ("Would you like to change or add anything? Write it out here."),
                     allow_empty=True,
-                    buttons={"continue": "Continue"},
+                    buttons={"continue": "No thanks, the spec looks good"},
                 )
                 if confirm.cancelled or confirm.button == "continue" or confirm.text == "":
                     updated_spec = response.strip()
@@ -186,18 +161,40 @@ class SpecWriter(BaseAgent):
                 n_questions += 1
                 user_response = await self.ask_question(
                     response,
-                    buttons={"skip": "Skip questions"},
+                    buttons={"skip": "Skip this question", "skip_all": "No more questions"},
+                    verbose=False,
                 )
-                if user_response.cancelled or user_response.button == "skip":
+                if user_response.cancelled or user_response.button == "skip_all":
                     convo.user(
                         "This is enough clarification, you have all the information. "
                         "Please output the spec now, without additional comments or questions."
                     )
                     response: str = await llm(convo)
-                    return response.strip()
+                    confirm = await self.ask_question(
+                        ("Would you like to change or add anything? Write it out here."),
+                        allow_empty=True,
+                        buttons={"continue": "No thanks, the spec looks good"},
+                    )
+                    if confirm.cancelled or confirm.button == "continue" or confirm.text == "":
+                        updated_spec = response.strip()
+                        await telemetry.trace_code_event(
+                            "spec-writer-questions",
+                            {
+                                "num_questions": n_questions,
+                                "num_answers": n_answers,
+                                "new_spec": updated_spec,
+                            },
+                        )
+                        return updated_spec
+                    convo.user(confirm.text)
+                    continue
 
                 n_answers += 1
-                convo.user(user_response.text)
+                if user_response.button == "skip":
+                    convo.user("Skip this question.")
+                    continue
+                else:
+                    convo.user(user_response.text)
 
     async def review_spec(self, desc: str, spec: str) -> str:
         convo = AgentConvo(self).template("review_spec", desc=desc, spec=spec)

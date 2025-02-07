@@ -19,7 +19,10 @@ async def test_send_message():
 
     await agent.send_message("Hello, world!")
     ui.send_message.assert_called_once_with(
-        "Hello, world!\n", source=agent.ui_source, project_state_id=str(agent.current_state.id)
+        "Hello, world!\n",
+        source=agent.ui_source,
+        project_state_id=str(agent.current_state.id),
+        extra_info=None,
     )
 
 
@@ -50,9 +53,13 @@ async def test_ask_question():
         default=None,
         allow_empty=False,
         hint=None,
+        verbose=True,
         initial_text=None,
         source=agent.ui_source,
         project_state_id=str(agent.current_state.id),
+        full_screen=False,
+        extra_info=None,
+        placeholder=None,
     )
 
     state_manager.log_user_input.assert_awaited_once()

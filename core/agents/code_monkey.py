@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from core.agents.base import BaseAgent
 from core.agents.convo import AgentConvo
+from core.agents.mixins import FileDiffMixin
 from core.agents.response import AgentResponse, ResponseType
 from core.config import CODE_MONKEY_AGENT_NAME, CODE_REVIEW_AGENT_NAME, DESCRIBE_FILES_AGENT_NAME
 from core.llm.parser import JSONParser, OptionalCodeBlockParser
@@ -54,7 +55,7 @@ class FileDescription(BaseModel):
     )
 
 
-class CodeMonkey(BaseAgent):
+class CodeMonkey(FileDiffMixin, BaseAgent):
     agent_type = "code-monkey"
     display_name = "Code Monkey"
 
@@ -82,13 +83,15 @@ class CodeMonkey(BaseAgent):
             attempt = data["attempt"] + 1
             feedback = data["feedback"]
             log.debug(f"Fixing file {file_name} after review feedback: {feedback} ({attempt}. attempt)")
-            await self.ui.send_file_status(file_name, "reworking")
+            await self.ui.send_file_status(file_name, "reworking", source=self.ui_source)
         else:
             log.debug(f"Implementing file {file_name}")
             if data is None:
-                await self.ui.send_file_status(file_name, "updating" if file_content else "creating")
+                await self.ui.send_file_status(
+                    file_name, "updating" if file_content else "creating", source=self.ui_source
+                )
             else:
-                await self.ui.send_file_status(file_name, "reworking")
+                await self.ui.send_file_status(file_name, "reworking", source=self.ui_source)
             self.next_state.action = "Updating files"
             attempt = 1
             feedback = None
@@ -175,7 +178,7 @@ class CodeMonkey(BaseAgent):
     # ------------------------------
 
     async def run_code_review(self, data: Optional[dict]) -> Union[AgentResponse, dict]:
-        await self.ui.send_file_status(data["path"], "reviewing")
+        await self.ui.send_file_status(data["path"], "reviewing", source=self.ui_source)
         if (
             data is not None
             and not data["old_content"]
@@ -202,15 +205,17 @@ class CodeMonkey(BaseAgent):
             return await self.accept_changes(data["path"], data["old_content"], approved_content)
 
     async def accept_changes(self, file_path: str, old_content: str, new_content: str) -> AgentResponse:
-        await self.ui.send_file_status(file_path, "done")
+        await self.ui.send_file_status(file_path, "done", source=self.ui_source)
 
         n_new_lines, n_del_lines = self.get_line_changes(old_content, new_content)
-        await self.ui.generate_diff(file_path, old_content, new_content, n_new_lines, n_del_lines)
+        await self.ui.generate_diff(
+            file_path, old_content, new_content, n_new_lines, n_del_lines, source=self.ui_source
+        )
 
         await self.state_manager.save_file(file_path, new_content)
-        self.next_state.complete_step()
+        self.next_state.complete_step("save_file")
 
-        input_required = self.state_manager.get_input_required(new_content)
+        input_required = self.state_manager.get_input_required(new_content, file_path)
         if input_required:
             return AgentResponse.input_required(
                 self,
@@ -229,6 +234,7 @@ class CodeMonkey(BaseAgent):
             task=task,
             iteration=None,
             current_task_index=current_task_index,
+            related_api_endpoints=task.get("related_api_endpoints", []),
         )
         # TODO: We currently show last iteration to the code monkey; we might need to show the task
         # breakdown and all the iterations instead? To think about when refactoring prompts
@@ -332,35 +338,6 @@ class CodeMonkey(BaseAgent):
             return new_content, review_log
         else:
             return new_content, None
-
-    @staticmethod
-    def get_line_changes(old_content: str, new_content: str) -> tuple[int, int]:
-        """
-        Get the number of added and deleted lines between two files.
-
-        This uses Python difflib to produce a unified diff, then counts
-        the number of added and deleted lines.
-
-        :param old_content: old file content
-        :param new_content: new file content
-        :return: a tuple (added_lines, deleted_lines)
-        """
-
-        from_lines = old_content.splitlines(keepends=True)
-        to_lines = new_content.splitlines(keepends=True)
-
-        diff_gen = unified_diff(from_lines, to_lines)
-
-        added_lines = 0
-        deleted_lines = 0
-
-        for line in diff_gen:
-            if line.startswith("+") and not line.startswith("+++"):  # Exclude the file headers
-                added_lines += 1
-            elif line.startswith("-") and not line.startswith("---"):  # Exclude the file headers
-                deleted_lines += 1
-
-        return added_lines, deleted_lines
 
     @staticmethod
     def get_diff_hunks(file_name: str, old_content: str, new_content: str) -> list[str]:

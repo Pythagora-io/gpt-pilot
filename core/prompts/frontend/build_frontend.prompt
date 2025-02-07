@@ -1,0 +1,40 @@
+{% if user_feedback %}You're currently working on a frontend of an app that has the following description:
+{% else %}Create a very modern styled app with the following description:{% endif %}
+
+```
+{{ description }}
+```
+
+{{ state.specification.template_summary }}
+
+{% include "partials/files_list.prompt" %}
+
+Use material design and nice icons for the design to be appealing and modern. Use the following libraries to make it very modern and slick:
+    1.    Shadcn: For the core UI components, providing modern, accessible, and customizable elements. You have already access to all components from this library inside ./src/components/ui folder, so do not modify/code them!
+    2.    Use lucide icons (npm install lucide-react)
+    3.    Heroicons: For a set of sleek, customizable icons that integrate well with modern designs.
+    4.    React Hook Form: For efficient form handling with minimal re-rendering, ensuring a smooth user experience in form-heavy applications.
+    5.    Use Tailwind built-in animations to enhance the visual appeal of the app
+
+Choose a flat color palette and make sure that the text is readable and follow design best practices to make the text readable. Also, Implement these design features onto the page - gradient background, frosted glass effects, rounded corner, buttons need to be in the brand colors, and interactive feedback on hover and focus.
+
+IMPORTANT: Text needs to be readable and in positive typography space - this is especially true for modals - they must have a bright background
+
+You must create all code for all pages of this website. If this is a some sort of a dashboard, put the navigation in the sidebar.
+
+**IMPORTANT**
+Make sure to implement all functionality (button clicks, form submissions, etc.) and use mock data for all interactions to make the app look and feel real. **ALL MOCK DATA MUST** be in the `api/` folder and it **MUST NOT** ever be hardcoded in the components.
+The body content should not overlap with the header navigation bar or footer navigation bar or the side navigation bar.
+
+{% if user_feedback %}
+User who was using the app "{{ state.branch.project.name }}" sent you this feedback:
+```
+{{ user_feedback }}
+```
+Now, start by writing all code that's needed to fix the problem that the user reported. Think about how routes are set up, how are variables called, and other important things, and mention files by name and where should all new functionality be called from. Then, tell me all the code that needs to be written to fix this issue.
+{% else %}
+Now, start by writing all code that's needed to get the frontend built for this app. Think about how routes are set up, how are variables called, and other important things, and mention files by name and where should all new functionality be called from. Then, tell me all the code that needs to be written to implement the frontend for this app and have it fully working and all commands that need to be run.
+{% endif %}
+
+IMPORTANT: When suggesting/making changes in the file you must provide full content of the file! Do not use placeholders, or comments, or truncation in any way, but instead provide the full content of the file even the parts that are unchanged!
+When you want to run a command you must put `command:` before the command and then the command itself like shown in the examples in system prompt. NEVER run `npm run start` or `npm run dev` commands, user will run them after you provide the code. The user is using {{ os }}, so the commands must run on that operating system

@@ -5,9 +5,18 @@ from pydantic import BaseModel
 
 
 class ProjectStage(str, Enum):
-    DESCRIPTION = "project_description"
-    ARCHITECTURE = "architecture"
-    CODING = "coding"
+    PROJECT_NAME = "project_name"
+    PROJECT_DESCRIPTION = "project_description"
+    CONTINUE_FRONTEND = "continue_frontend"
+    ITERATE_FRONTEND = "iterate_frontend"
+    GET_USER_FEEDBACK = "get_user_feedback"
+    OPEN_PLAN = "open_plan"
+    STARTING_TASK = "starting_task"
+    BREAKDOWN_CHAT = "breakdown_chat"
+    TEST_APP = "test_app"
+    ADDITIONAL_FEEDBACK = "additional_feedback"
+    DESCRIBE_CHANGE = "describe_change"
+    DESCRIBE_ISSUE = "describe_issue"
 
 
 class UIClosedError(Exception):
@@ -109,13 +118,20 @@ class UIBase:
         raise NotImplementedError()
 
     async def send_message(
-        self, message: str, *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+        self,
+        message: str,
+        *,
+        source: Optional[UISource] = None,
+        project_state_id: Optional[str] = None,
+        extra_info: Optional[str] = None,
     ):
         """
         Send a complete message to the UI.
 
         :param message: Message content.
         :param source: Source of the message (if any).
+        :param project_state_id: Current project state id.
+        :param extra_info: Extra information to indicate special functionality in extension.
         """
         raise NotImplementedError()
 
@@ -163,10 +179,14 @@ class UIBase:
         default: Optional[str] = None,
         buttons_only: bool = False,
         allow_empty: bool = False,
+        full_screen: Optional[bool] = False,
         hint: Optional[str] = None,
+        verbose: bool = True,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
         project_state_id: Optional[str] = None,
+        extra_info: Optional[str] = None,
+        placeholder: Optional[str] = None,
     ) -> UserInput:
         """
         Ask the user a question.
@@ -178,21 +198,28 @@ class UIBase:
         with the selected button or text. If the user cancels
         the input, the `cancelled` attribute should be set to True.
 
+        :param project_state_id: Current project state id.
+        :param initial_text: Placeholder for answer in extension.
+        :param hint: Hint for question.
         :param question: Question to ask.
         :param buttons: Buttons to display (if any).
         :param default: Default value (if user provides no input).
         :param buttons_only: Whether to only show buttons (disallow custom text).
         :param allow_empty: Whether to allow empty input.
+        :param full_screen: Ask question in full screen (IPC).
+        :param verbose: Whether to log the question and response.
         :param source: Source of the question (if any).
+        :param extra_info: Extra information to indicate special functionality in extension.
+        :param placeholder: Placeholder text for the input field.
         :return: User input.
         """
         raise NotImplementedError()
 
-    async def send_project_stage(self, stage: ProjectStage):
+    async def send_project_stage(self, data: dict):
         """
         Send a project stage to the UI.
 
-        :param stage: Project stage.
+        :param data: Project stage data.
         """
         raise NotImplementedError()
 
@@ -279,6 +306,14 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def send_app_link(self, app_link: str):
+        """
+        Send a run command to the UI.
+
+        :param app_link: App link.
+        """
+        raise NotImplementedError()
+
     async def open_editor(self, file: str, line: Optional[int] = None):
         """
         Open an editor at the specified file and line.
@@ -303,6 +338,12 @@ class UIBase:
         """
         raise NotImplementedError()
 
+    async def start_breakdown_stream(self):
+        """
+        Tell the extension that breakdown stream will start.
+        """
+        raise NotImplementedError()
+
     async def send_project_stats(self, stats: dict):
         """
         Send project statistics to the UI.
@@ -316,20 +357,30 @@ class UIBase:
         """
         raise NotImplementedError()
 
-    async def send_test_instructions(self, test_instructions: str):
+    async def send_test_instructions(self, test_instructions: str, project_state_id: Optional[str] = None):
         """
         Send test instructions.
 
         :param test_instructions: Test instructions.
+        :param project_state_id: Project state ID.
         """
         raise NotImplementedError()
 
-    async def send_file_status(self, file_path: str, file_status: str):
+    async def knowledge_base_update(self, knowledge_base: dict):
+        """
+        Send updated knowledge base to the UI.
+
+        :param knowledge_base: Knowledge base.
+        """
+        raise NotImplementedError()
+
+    async def send_file_status(self, file_path: str, file_status: str, source: Optional[UISource] = None):
         """
         Send file status.
 
         :param file_path: File path.
         :param file_status: File status.
+        :param source: Source of the file status.
         """
         raise NotImplementedError()
 
@@ -343,7 +394,13 @@ class UIBase:
         raise NotImplementedError()
 
     async def generate_diff(
-        self, file_path: str, file_old: str, file_new: str, n_new_lines: int = 0, n_del_lines: int = 0
+        self,
+        file_path: str,
+        file_old: str,
+        file_new: str,
+        n_new_lines: int = 0,
+        n_del_lines: int = 0,
+        source: Optional[UISource] = None,
     ):
         """
         Generate a diff between two files.
@@ -353,6 +410,7 @@ class UIBase:
         :param file_new: New file content.
         :param n_new_lines: Number of new lines.
         :param n_del_lines: Number of deleted lines.
+        :param source: Source of the diff.
         """
         raise NotImplementedError()
 

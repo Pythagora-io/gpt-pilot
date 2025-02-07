@@ -1,5 +1,5 @@
 # RULES FOR IMPLEMENTING CODE CHANGES
----start_of_coding_rules---
+~~~START_OF_CODING_RULES~~~
 
 ## Rule 1: Scope of your coding task
 You must implement everything mentioned in the instructions that is related to this file. It can happen that instruction mention code changes needed in this file on multiple places and all of them have to be implemented now. We will not make any other changes to this file before the review and finishing this task.
@@ -36,4 +36,8 @@ Whenever you write code, make sure to log code execution so that when a develope
 ## Rule 6: Error handling
 Whenever you write code, make sure to add error handling for all edge cases you can think of because this app will be used in production so there shouldn't be any crashes. Whenever you log the error, you **MUST** log the entire error message and trace and not only the error message. If the description above mentions the exact code that needs to be added but doesn't contain enough error handlers, you need to add the error handlers inside that code yourself.
 
----end_of_coding_rules---
+{% if state.has_frontend() %}
+## Rule 7: Showing errors on the frontend
+If there is an error in the API request, return the error message by throwing an error in the client/api/<FILE> file that makes the actual API request. In the .tsx file that called the API function, catch the error and show the error message to the user by showing `error.message` inside the toast's `description` value.
+~~~END_OF_CODING_RULES~~~
+{% endif %}

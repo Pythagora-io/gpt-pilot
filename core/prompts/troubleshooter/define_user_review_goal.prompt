@@ -1,15 +1,3 @@
-{% if route_files %}
-Here is a list of files the contain route definitions, and their contents. If any of the steps in testing instructions use URLs, use the routes defined in these files.
-
----START_OF_FILES---
-{% for file in route_files %}
-File **`{{ file.path }}`** ({{file.content.content.splitlines()|length}} lines of code):
-```
-{{ file.content.content }}```
-
-{% endfor %}
----END_OF_FILES---
-{% endif %}
 How can a human user test if this task was completed successfully?
 
 Please list actions, step by step, in order, that the user should take to verify the task. After each action, describe what the expected response is.
@@ -26,22 +14,63 @@ Follow these important rules when compiling a list of actions the user will take
 6. Assume system services, such as the database, are already set up and running. Don't ask user to install or run any software other than the app they're testing.
 7. Don't ask the user to test things which aren't implemented yet (eg. opening a theoretical web page that doesn't exist yet, or clicking on a button that isn't implemented yet)
 8. Think about if there is something that user needs to do manually to make the next testing step work
+9. The human has the option to press the "Start App" button so don't instruct them to start the app in any way.
+10. If the user needs to run a database command, make sure to specify the entire command that needs to be run
 
 Remember, these rules are very important and you must follow them!
 
 Here is an example output with a few user steps:
 ---example---
-### Step 1
-Action: Start the server using `npm start`
-Expected result: You should see the message "Connected to database" or similar
-
-### Step 2
-Action: Open your web browser and visit http://localhost:3000/
-Expected result: Web page opens and you see a "Hello World" message with a contact form
-
-### Step 3
-Action: Click on the "Submit" button in the web form
-Expected result: Form is submitted, page is reloaded and "Thank you" message is shown
+{
+    "steps": [
+        {
+            "title": "Submit the form",
+            "action": "Open your web browser and visit 'http://localhost:5173/form'. Click on the 'Submit' button in the web form",
+            "result": "Form is submitted, the page is reloaded, and 'Thank you' message is shown",
+        },
+        {
+            "title": "Check email",
+            "action": "Check your email inbox for the magic link. Click on the magic link to log in.",
+            "result": "You should be redirected back to the home page. The login status should now display 'Logged in as [your email]' and the 'Logout' button should be visible.",
+        },
+        {
+            "title": "Log out",
+            "action": "Click on the 'Logout' button",
+            "result": "You should be redirected back to the home page. You should not be able to access the form and the 'Login' button should be visible.",
+        }
+    ]
+}
 ---end_of_example---
 
-If nothing needs to be tested for this task, instead of outputting the steps, just output a single word: DONE
+If nothing needs to be tested for this task, instead of outputting the steps, just output an empty list like this:
+---example_when_test_not_needed---
+{
+    "steps": []
+}
+---end_of_example_when_test_not_needed---
+
+When you think about the testing instructions for the human, keep in mind the tasks that have been already implemented, the task that the human needs to test right now, and the tasks that are still not implemented. If something is not implemented yet, the user will not be able to test a functionality related to that. For example, if a task is to implement a feature that enables the user to create a company record and if you see that the feature to retrieve a list of company records is still not implemented, you cannot tell the human to open the page for viewing company records because it's still not implemented. In this example, you should tell the human to look into a database or some other way that they can verify if the company records are created. The current situation is like this:
+Here are the tasks that are implemented:
+```
+{% for task in state.tasks %}
+{% if loop.index - 1 < current_task_index %}
+{{ loop.index }}. {{ task.description }}{% if task.get("status") == "done" %} (completed){% endif %}
+
+{% endif %}{% endfor %}
+```
+
+Here is the task that the human needs to test:
+```
+{{ current_task_index + 1 }}. {{ task.description }}
+```
+
+And here are the tasks that are still NOT implemented:
+```
+{% for task in state.tasks %}
+{% if loop.index - 1 > current_task_index %}
+{{ loop.index }}. {{ task.description }}{% if task.get("status") == "done" %} (completed){% endif %}
+
+{% endif %}{% endfor %}
+```
+
+Knowing these rules, tell me, please list actions, step by step, in order, that the user should take to verify the task.

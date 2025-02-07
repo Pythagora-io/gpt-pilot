@@ -8,7 +8,7 @@ from pydantic import BaseModel, ValidationError
 
 from core.config import LocalIPCConfig
 from core.log import get_logger
-from core.ui.base import ProjectStage, UIBase, UIClosedError, UISource, UserInput
+from core.ui.base import UIBase, UIClosedError, UISource, UserInput
 
 VSCODE_EXTENSION_HOST = "localhost"
 VSCODE_EXTENSION_PORT = 8125
@@ -31,6 +31,7 @@ class MessageType(str, Enum):
     PROGRESS = "progress"
     DEBUGGING_LOGS = "debugging_logs"
     RUN_COMMAND = "run_command"
+    APP_LINK = "appLink"
     OPEN_FILE = "openFile"
     PROJECT_FOLDER_NAME = "project_folder_name"
     PROJECT_STATS = "projectStats"
@@ -50,7 +51,9 @@ class MessageType(str, Enum):
     EPICS_AND_TASKS = "epicsAndTasks"
     MODIFIED_FILES = "modifiedFiles"
     IMPORTANT_STREAM = "importantStream"
+    BREAKDOWN_STREAM = "breakdownStream"
     TEST_INSTRUCTIONS = "testInstructions"
+    KNOWLEDGE_BASE_UPDATE = "updatedKnowledgeBase"
     STOP_APP = "stopApp"
 
 
@@ -66,8 +69,11 @@ class Message(BaseModel):
 
     type: MessageType
     category: Optional[str] = None
+    full_screen: Optional[bool] = False
     project_state_id: Optional[str] = None
+    extra_info: Optional[str] = None
     content: Union[str, dict, None] = None
+    placeholder: Optional[str] = None
 
     def to_bytes(self) -> bytes:
         """
@@ -200,7 +206,12 @@ class IPCClientUI(UIBase):
         )
 
     async def send_message(
-        self, message: str, *, source: Optional[UISource] = None, project_state_id: Optional[str] = None
+        self,
+        message: str,
+        *,
+        source: Optional[UISource] = None,
+        project_state_id: Optional[str] = None,
+        extra_info: Optional[str] = None,
     ):
         if not self.writer:
             return
@@ -211,6 +222,7 @@ class IPCClientUI(UIBase):
             content=message,
             category=source.type_name if source else None,
             project_state_id=project_state_id,
+            extra_info=extra_info,
         )
 
     async def send_key_expired(self, message: Optional[str] = None):
@@ -254,10 +266,14 @@ class IPCClientUI(UIBase):
         default: Optional[str] = None,
         buttons_only: bool = False,
         allow_empty: bool = False,
+        full_screen: Optional[bool] = False,
         hint: Optional[str] = None,
+        verbose: bool = True,
         initial_text: Optional[str] = None,
         source: Optional[UISource] = None,
         project_state_id: Optional[str] = None,
+        extra_info: Optional[str] = None,
+        placeholder: Optional[str] = None,
     ) -> UserInput:
         if not self.writer:
             raise UIClosedError()
@@ -265,29 +281,59 @@ class IPCClientUI(UIBase):
         category = source.type_name if source else None
 
         if hint:
-            await self._send(MessageType.HINT, content=hint, category=category, project_state_id=project_state_id)
-        else:
             await self._send(
-                MessageType.VERBOSE, content=question, category=category, project_state_id=project_state_id
+                MessageType.HINT,
+                content=hint,
+                category=category,
+                project_state_id=project_state_id,
+                extra_info=extra_info,
+            )
+        elif verbose:
+            await self._send(
+                MessageType.VERBOSE,
+                content=question,
+                category=category,
+                project_state_id=project_state_id,
+                # DO NOT SEND extra_info HERE! It is enough to send it with user_input_request
+                # extra_info=extra_info,
             )
 
         await self._send(
-            MessageType.USER_INPUT_REQUEST, content=question, category=category, project_state_id=project_state_id
+            MessageType.USER_INPUT_REQUEST,
+            content=question,
+            category=category,
+            project_state_id=project_state_id,
+            extra_info=extra_info,
+            placeholder=placeholder,
         )
         if buttons:
             buttons_str = "/".join(buttons.values())
             if buttons_only:
                 await self._send(
-                    MessageType.BUTTONS_ONLY, content=buttons_str, category=category, project_state_id=project_state_id
+                    MessageType.BUTTONS_ONLY,
+                    content=buttons_str,
+                    category=category,
+                    project_state_id=project_state_id,
+                    full_screen=full_screen,
+                    extra_info=extra_info,
                 )
             else:
                 await self._send(
-                    MessageType.BUTTONS, content=buttons_str, category=category, project_state_id=project_state_id
+                    MessageType.BUTTONS,
+                    content=buttons_str,
+                    category=category,
+                    project_state_id=project_state_id,
+                    full_screen=full_screen,
+                    extra_info=extra_info,
                 )
         if initial_text:
             # FIXME: add this to base and console and document it after merging with hint PR
             await self._send(
-                MessageType.INPUT_PREFILL, content=initial_text, category=category, project_state_id=project_state_id
+                MessageType.INPUT_PREFILL,
+                content=initial_text,
+                category=category,
+                project_state_id=project_state_id,
+                extra_info=extra_info,
             )
 
         response = await self._receive()
@@ -310,8 +356,8 @@ class IPCClientUI(UIBase):
         # Empty answer which we don't allow, treat as user cancelled the input
         return UserInput(cancelled=True)
 
-    async def send_project_stage(self, stage: ProjectStage):
-        await self._send(MessageType.INFO, content=json.dumps({"project_stage": stage.value}))
+    async def send_project_stage(self, data: dict):
+        await self._send(MessageType.INFO, content=json.dumps(data))
 
     async def send_epics_and_tasks(
         self,
@@ -394,7 +440,15 @@ class IPCClientUI(UIBase):
             content=run_command,
         )
 
+    async def send_app_link(self, app_link: str):
+        await self._send(
+            MessageType.APP_LINK,
+            content=app_link,
+        )
+
     async def open_editor(self, file: str, line: Optional[int] = None):
+        if not line:
+            pass
         await self._send(
             MessageType.OPEN_FILE,
             content={
@@ -415,23 +469,48 @@ class IPCClientUI(UIBase):
             content={},
         )
 
+    async def start_breakdown_stream(self):
+        await self._send(
+            MessageType.BREAKDOWN_STREAM,
+            content={},
+        )
+
     async def send_project_stats(self, stats: dict):
         await self._send(
             MessageType.PROJECT_STATS,
             content=stats,
         )
 
-    async def send_test_instructions(self, test_instructions: str):
+    async def send_test_instructions(self, test_instructions: str, project_state_id: Optional[str] = None):
+        try:
+            log.debug("Sending test instructions")
+            parsed_instructions = json.loads(test_instructions)
+        except Exception:
+            # this is for backwards compatibility with the old format
+            parsed_instructions = test_instructions
+
         await self._send(
             MessageType.TEST_INSTRUCTIONS,
             content={
-                "test_instructions": test_instructions,
+                "test_instructions": parsed_instructions,
+            },
+            project_state_id=project_state_id,
+        )
+
+    async def knowledge_base_update(self, knowledge_base: dict):
+        log.debug("Sending updated knowledge base")
+
+        await self._send(
+            MessageType.KNOWLEDGE_BASE_UPDATE,
+            content={
+                "knowledge_base": knowledge_base,
             },
         )
 
-    async def send_file_status(self, file_path: str, file_status: str):
+    async def send_file_status(self, file_path: str, file_status: str, source: Optional[UISource] = None):
         await self._send(
             MessageType.FILE_STATUS,
+            category=source.type_name if source else None,
             content={
                 "file_path": file_path,
                 "file_status": file_status,
@@ -448,10 +527,17 @@ class IPCClientUI(UIBase):
         )
 
     async def generate_diff(
-        self, file_path: str, file_old: str, file_new: str, n_new_lines: int = 0, n_del_lines: int = 0
+        self,
+        file_path: str,
+        file_old: str,
+        file_new: str,
+        n_new_lines: int = 0,
+        n_del_lines: int = 0,
+        source: Optional[UISource] = None,
     ):
         await self._send(
             MessageType.GENERATE_DIFF,
+            category=source.type_name if source else None,
             content={
                 "file_path": file_path,
                 "file_old": file_old,
