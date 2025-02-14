@@ -9,12 +9,16 @@
     "client-install": "cd client && npm install",
     "server": "cd server && npm run dev",
     "server-install": "cd server && npm install",
-    "start": "concurrently -n \"client,server\" \"npm run client\" \"npm run server\""
+    "start": "concurrently -n \"client,server\" \"npm run client\" \"npm run server\"",
+    "debug": "concurrently -n \"client,server\" \"npm run client\" \"cross-env NODE_OPTIONS=--inspect-brk=9229 npm run server\""
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
     "concurrently": "^9.1.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
   }
 }
