@@ -120,9 +120,9 @@ After you have Python and (optionally) PostgreSQL installed, follow these steps:
 
 All generated code will be stored in the folder `workspace` inside the folder named after the app name you enter upon starting the pilot.
 
-# 🔎 [Examples](https://github.com/Pythagora-io/gpt-pilot/wiki/Apps-created-with-GPT-Pilot)
+# 🔎 [Examples](https://github.com/Pythagora-io/gpt-pilot/wiki/Pythagora-App-Lab)
 
-[Click here](https://github.com/Pythagora-io/gpt-pilot/wiki/Apps-created-with-GPT-Pilot) to see all example apps created with GPT Pilot.
+[Click here](https://github.com/Pythagora-io/gpt-pilot/wiki/Pythagora-App-Lab) to see examples of apps created with Pythagora.
 
 ### PostgreSQL support
 
