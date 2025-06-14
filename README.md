@@ -50,6 +50,18 @@
 
 </div>
 
+<p align="center">
+<!-- Keep these links. Translations will automatically update with the README. -->
+<a href="https://www.readme-i18n.com/Pythagora-io/gpt-pilot?lang=de">Deutsch</a> | 
+<a href="https://www.readme-i18n.com/Pythagora-io/gpt-pilot?lang=es">Español</a> | 
+<a href="https://www.readme-i18n.com/Pythagora-io/gpt-pilot?lang=fr">français</a> | 
+<a href="https://www.readme-i18n.com/Pythagora-io/gpt-pilot?lang=ja">日本語</a> | 
+<a href="https://www.readme-i18n.com/Pythagora-io/gpt-pilot?lang=ko">한국어</a> | 
+<a href="https://www.readme-i18n.com/Pythagora-io/gpt-pilot?lang=pt">Português</a> | 
+<a href="https://www.readme-i18n.com/Pythagora-io/gpt-pilot?lang=ru">Русский</a> | 
+<a href="https://www.readme-i18n.com/Pythagora-io/gpt-pilot?lang=zh">中文</a>
+</p>
+
 GPT Pilot is the core technology for the [Pythagora VS Code extension](https://marketplace.visualstudio.com/items?itemName=PythagoraTechnologies.pythagora-vs-code) that aims to provide **the first real AI developer companion**. Not just an autocomplete or a helper for PR messages but rather a real AI developer that can write full features, debug them, talk to you about issues, ask for review, etc.
 
 ---
