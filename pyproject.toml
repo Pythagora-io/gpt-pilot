@@ -1,53 +1,69 @@
-[tool.poetry]
+[project]
 name = "pythagora-core"
 version = "1.2.5"
 description = "Build complete apps using AI agents"
-authors = ["Leon Ostrez <leon@pythagora.ai>"]
-license = "FSL-1.1-MIT"
+authors = [{ name = "Leon Ostrez", email = "leon@pythagora.ai" }]
+requires-python = "~=3.9"
 readme = "README.md"
-packages = [{include = "core", from = "."}]
-repository = "https://github.com/Pythagora-io/pythagora-core"
-homepage = "https://pythagora.ai"
-keywords = ["ai", "llm"]
+license = { text = "FSL-1.1-MIT" }
+keywords = [
+    "ai",
+    "llm",
+]
+dependencies = [
+    "pydantic>=2.8.2,<3",
+    "openai>=1.40.6,<2",
+    "anthropic>=0.39.0,<0.40",
+    "groq>=0.6.0,<0.7",
+    "jinja2>=3.1.4,<4",
+    "tiktoken>=0.8.0,<0.9",
+    "sqlalchemy[asyncio]>=2.0.32,<3",
+    "aiosqlite>=0.20.0,<0.21",
+    "psutil>=5.9.8,<6",
+    "httpx>=0.27.0,<0.28",
+    "alembic>=1.13.2,<2",
+    "python-dotenv>=1.0.1,<2",
+    "prompt-toolkit>=3.0.48,<4",
+    "jsonref>=1.1.0,<2",
+    "tenacity==9.0.0",
+]
 
-[[tool.poetry.source]]
+[project.urls]
+Homepage = "https://pythagora.ai"
+Repository = "https://github.com/Pythagora-io/pythagora-core"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.1.1,<9",
+    "ruff>=0.3.5,<0.4",
+    "pytest-cov>=5.0.0,<6",
+    "pytest-asyncio>=0.23.6,<0.24",
+    "pytest-timeout>=2.3.1,<3",
+    "pre-commit>=3.7.0,<4",
+]
+
+[[tool.uv.index]]
 name = "PyPI"
-priority = "primary"
+url = "https://pypi.org/simple/"
+default = true
 
-[[tool.poetry.source]]
+[[tool.uv.index]]
 name = "testpypi"
 url = "https://test.pypi.org/legacy/"
-priority = "explicit"
+explicit = true
+
+[tool.hatch.build.targets.sdist]
+include = ["./core"]
+
+[tool.hatch.build.targets.wheel]
+include = ["./core"]
+
+[tool.hatch.build.targets.wheel.sources]
+"./core" = "core"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.dependencies]
-python = "^3.9"
-pydantic = "^2.8.2"
-openai = "^1.40.6"
-anthropic = "^0.39.0"
-groq = "^0.6.0"
-jinja2 = "^3.1.4"
-tiktoken = "^0.8.0"
-sqlalchemy = { version = "^2.0.32", extras = ["asyncio"] }
-aiosqlite = "^0.20.0"
-psutil = "^5.9.8"
-httpx = "^0.27.0"
-alembic = "^1.13.2"
-python-dotenv = "^1.0.1"
-prompt-toolkit = "^3.0.48"
-jsonref = "^1.1.0"
-tenacity = "9.0.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.1.1"
-ruff = "^0.3.5"
-pytest-cov = "^5.0.0"
-pytest-asyncio = "^0.23.6"
-pytest-timeout = "^2.3.1"
-pre-commit = "^3.7.0"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
 addopts = "-ra -q --cov=core --no-cov-on-fail --timeout 10"
