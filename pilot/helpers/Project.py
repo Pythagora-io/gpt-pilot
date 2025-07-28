@@ -464,3 +464,48 @@ class Project:
     def finish_loading(self):
         print('', type='loadingFinished')
         self.skip_steps = False
+    
+
+    import pandas as pd
+import json
+import os
+
+def universal_file_processor(file_path_or_obj):
+    """
+    Detects file type and returns content as a pandas DataFrame
+    Supports: .csv, .xlsx, .json, .tsv
+    """
+    if isinstance(file_path_or_obj, str):
+        ext = os.path.splitext(file_path_or_obj)[1].lower()
+    else:
+        ext = None
+
+    try:
+        if ext == '.csv' or (ext is None and hasattr(file_path_or_obj, 'read')):
+            return pd.read_csv(file_path_or_obj)
+
+        elif ext == '.tsv':
+            return pd.read_csv(file_path_or_obj, sep='\t')
+
+        elif ext in ['.xls', '.xlsx']:
+            return pd.read_excel(file_path_or_obj)
+
+        elif ext == '.json':
+            if isinstance(file_path_or_obj, str):
+                with open(file_path_or_obj, 'r') as f:
+                    data = json.load(f)
+            else:
+                data = json.load(file_path_or_obj)
+
+            if isinstance(data, list):
+                return pd.DataFrame(data)
+            elif isinstance(data, dict):
+                return pd.DataFrame([data])
+            else:
+                raise ValueError("Unsupported JSON structure.")
+
+        else:
+            raise ValueError("Unsupported file type.")
+    except Exception as e:
+        print(f"Error processing file: {e}")
+        raise
