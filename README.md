@@ -218,3 +218,4 @@ To improve GPT Pilot, we are tracking some events from which you can opt out at 
 - Explore our [Wiki](https://github.com/Pythagora-io/gpt-pilot/wiki) for in-depth documentation.  
 - Check out our [FAQ](https://github.com/Pythagora-io/gpt-pilot/wiki/Frequently-Asked-Questions) for common questions and troubleshooting tips.
 - Visit our [YouTube](https://www.youtube.com/@pythagoraa) channel for demos and how-to videos.
+- Just created a dev branch
