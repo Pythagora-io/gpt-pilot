@@ -16,6 +16,7 @@ from core.log import get_logger
 from core.state.state_manager import StateManager
 from core.telemetry import telemetry
 from core.ui.base import ProjectStage, UIBase, UIClosedError, UserInput, pythagora_source
+from core.locales.i18n import _
 
 log = get_logger(__name__)
 
@@ -63,7 +64,7 @@ async def run_project(sm: StateManager, ui: UIBase, args) -> bool:
     except APIError as err:
         log.warning(f"LLM API error occurred: {err.message}")
         await ui.send_message(
-            f"Stopping Pythagora due to an error while calling the LLM API: {err.message}",
+            _("core.cli.main.py:stopping_due_to_llm_error", err=err),
             source=pythagora_source,
         )
         telemetry.set("end_result", "failure:api-error")
@@ -71,7 +72,7 @@ async def run_project(sm: StateManager, ui: UIBase, args) -> bool:
     except CustomAssertionError as err:
         log.warning(f"Anthropic assertion error occurred: {str(err)}")
         await ui.send_message(
-            f"Stopping Pythagora due to an error inside Anthropic SDK. {str(err)}",
+            _("core.cli.main.py:stopping_due_to_anthropic_error", err=err),
             source=pythagora_source,
         )
         telemetry.set("end_result", "failure:assertion-error")
@@ -81,7 +82,7 @@ async def run_project(sm: StateManager, ui: UIBase, args) -> bool:
         stack_trace = telemetry.record_crash(err)
         await sm.rollback()
         await ui.send_message(
-            f"Stopping Pythagora due to error:\n\n{stack_trace}",
+            _("core.cli.main.py:stopping_due_to_error", stack_trace=stack_trace),
             source=pythagora_source,
         )
 
@@ -115,7 +116,7 @@ async def llm_api_check(ui: UIBase) -> bool:
             resp = await llm_client.api_check()
             if not resp:
                 await ui.send_message(
-                    f"API check for {llm_config.provider.value} {llm_config.model} failed.",
+                    _("core.cli.main.py:api_check_failed", llm_provider=llm_config.provider.value, llm_model=llm_config.model),
                     source=pythagora_source,
                 )
                 log.warning(f"API check for {llm_config.provider.value} {llm_config.model} failed.")
@@ -125,7 +126,7 @@ async def llm_api_check(ui: UIBase) -> bool:
                 return True
         except APIError as err:
             await ui.send_message(
-                f"API check for {llm_config.provider.value} {llm_config.model} failed with: {err}",
+                _("core.cli.main.py:api_check_failed_with_error", llm_provider=llm_config.provider.value, llm_model=llm_config.model, err=err),
                 source=pythagora_source,
             )
             log.warning(f"API check for {llm_config.provider.value} failed with: {err}")
@@ -154,9 +155,9 @@ async def start_new_project(sm: StateManager, ui: UIBase) -> bool:
     """
 
     stack = await ui.ask_question(
-        "What do you want to use to build your app?",
+        _("core.cli.main.py:what_to_build"),
         allow_empty=False,
-        buttons={"node": "Node.js", "other": "Other (coming soon)"},
+        buttons={"node": _("core.cli.main.py:stack_choice:node"), "other": _("core.cli.main.py:stack_choice:other")},
         buttons_only=True,
         source=pythagora_source,
         full_screen=True,
@@ -164,7 +165,7 @@ async def start_new_project(sm: StateManager, ui: UIBase) -> bool:
 
     if stack.button == "other":
         language = await ui.ask_question(
-            "What language you want to use?",
+            _("core.cli.main.py:what_language"),
             allow_empty=False,
             source=pythagora_source,
             full_screen=True,
@@ -173,7 +174,7 @@ async def start_new_project(sm: StateManager, ui: UIBase) -> bool:
             "stack-choice-other",
             {"language": language.text},
         )
-        await ui.send_message("Thank you for submitting your request to support other languages.")
+        await ui.send_message(_("core.cli.main.py:unsupported_language"))
         return False
     elif stack.button == "node":
         await telemetry.trace_code_event(
@@ -190,7 +191,7 @@ async def start_new_project(sm: StateManager, ui: UIBase) -> bool:
         try:
             await ui.send_project_stage({"stage": ProjectStage.PROJECT_NAME})
             user_input = await ui.ask_question(
-                "What is the project name?",
+                _("core.cli.main.py:project_name_prompt"),
                 allow_empty=False,
                 source=pythagora_source,
                 full_screen=True,
@@ -203,9 +204,9 @@ async def start_new_project(sm: StateManager, ui: UIBase) -> bool:
 
         project_name = user_input.text.strip()
         if not project_name:
-            await ui.send_message("Please choose a project name", source=pythagora_source)
+            await ui.send_message(_("core.cli.main.py:project_name_required"), source=pythagora_source)
         elif len(project_name) > 100:
-            await ui.send_message("Please choose a shorter project name", source=pythagora_source)
+            await ui.send_message(_("core.cli.main.py:project_name_too_long"), source=pythagora_source)
         else:
             break
 
@@ -226,7 +227,7 @@ async def run_pythagora_session(sm: StateManager, ui: UIBase, args: Namespace):
     if not args.no_check:
         if not await llm_api_check(ui):
             await ui.send_message(
-                "Pythagora cannot start because the LLM API is not reachable.",
+                _("core.cli.main.py:llm_api_not_reachable"),
                 source=pythagora_source,
             )
             return False

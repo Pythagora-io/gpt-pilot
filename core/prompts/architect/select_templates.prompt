@@ -1,33 +1,33 @@
-You're designing the architecture and technical specifications for a new project.
+Вы проектируете архитектуру и технические спецификации для нового проекта.
 
-To speed up the project development, you need to consider if you should use a project template or start from scratch. If you decide to use a template, you should choose the one that best fits the project requirements.
+Чтобы ускорить разработку проекта, вам нужно решить, следует ли использовать шаблон проекта или начать с нуля. Если вы решите использовать шаблон, вы должны выбрать тот, который наилучшим образом соответствует требованиям проекта.
 
-Here is a high level description of "{{ state.branch.project.name }}":
+Вот высокоуровневое описание «{{ state.branch.project.name }}»:
 ```
 {{ state.specification.description }}
 ```
 
-You have an option to use project templates that implement standard boilerplate/scaffolding so you can start faster and be more productive. To be considered, a template must be compatible with the project requirements:
-* if the project description has specific technology requirements, don't consider templates that choose different tech (eg. a different framework or library)
-* to be considered, the template must use compatible technologies and implement a useful subset of required functionality
+У вас есть возможность использовать шаблоны проектов, которые реализуют стандартный бойлерплейт/каркас, чтобы вы могли начать быстрее и быть более продуктивными. Чтобы быть рассмотренным, шаблон должен быть совместим с требованиями проекта:
+* если в описании проекта есть конкретные технологические требования, не рассматривайте шаблоны, которые выбирают другие технологии (например, другой фреймворк или библиотеку)
+* чтобы быть рассмотренным, шаблон должен использовать совместимые технологии и реализовывать полезное подмножество требуемой функциональности
 
-If no project templates are a good match, don't pick any! It's better to start from scratch than to use a template that is not a good fit for the project (for example, don't use a react frontend if a different framework or plain html/css is required) and then spend time reworking it to fit the requirements. If you do choose to pick a template, choose the one that's the best match for this project.
+Если ни один из шаблонов проектов не подходит, не выбирайте ни одного! Лучше начать с нуля, чем использовать шаблон, который не подходит для проекта (например, не используйте фронтенд на React, если требуется другой фреймворк или простой html/css), а затем тратить время на его переделку в соответствии с требованиями. Если вы все же решите выбрать шаблон, выберите тот, который лучше всего подходит для этого проекта.
 
-Here are the available project templates:
+Вот доступные шаблоны проектов:
 
 {% for template in templates.values() %}
 ### {{ template.name }} ({{ template.stack }})
 
 {{ template.description }}
 
-Contains:
+Содержит:
 {{ template.summary }}
 
 {% endfor %}
-Output your response in a valid JSON format like in this example:
+Выведите свой ответ в допустимом формате JSON, как в этом примере:
 ```json
 {
-    "architecture": "Detailed description of the architecture of the application",
-    "template": "foo" // or null if you decide not to use a project template
+    "architecture": "Подробное описание архитектуры приложения",
+    "template": "foo" // или null, если вы решите не использовать шаблон проекта
 }
 ```

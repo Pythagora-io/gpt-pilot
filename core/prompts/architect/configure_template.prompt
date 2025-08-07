@@ -1,10 +1,10 @@
-You're starting a new software project. The specification provided by the client is:
+Вы начинаете новый программный проект. Спецификация, предоставленная клиентом:
 
 ```
 {{ project_description }}
 ```
 
-Based on the specification, we've decided to use the following project scaffolding/template: {{ project_template.description }}.
+На основе спецификации мы решили использовать следующий каркас/шаблон проекта: {{ project_template.description }}.
 
-To start, we need to specify options for the project template:
+Для начала нам нужно указать опции для шаблона проекта:
 {{ project_template.options_description }}
