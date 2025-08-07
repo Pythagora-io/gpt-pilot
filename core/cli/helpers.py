@@ -17,6 +17,7 @@ from core.state.state_manager import StateManager
 from core.ui.base import UIBase
 from core.ui.console import PlainConsoleUI
 from core.ui.ipc_client import IPCClientUI
+from core.locales.i18n import _, set_locale
 from core.ui.virtual import VirtualUI
 
 
@@ -184,7 +185,7 @@ def load_config(args: Namespace) -> Optional[Config]:
     try:
         Config.model_validate(config)
     except ValueError as err:
-        print(f"Configuration error: {err}", file=sys.stderr)
+        print(_("core.cli.helpers.py:config_error", err=err), file=sys.stderr)
         return None
 
     return config

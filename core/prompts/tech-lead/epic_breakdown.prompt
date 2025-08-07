@@ -1,19 +1,19 @@
-Ok, great. Now, you need to take the epic #{{ epic_number }} ("{{ epic_description }}") and break it down into smaller tasks. Each task is one testable whole that the user can test and commit. Each task will be one commit that has to be testable by a human. Return the list of tasks for the Epic #{{ epic_number }}. For each task, write the task description and a description of how a human should test if the task is successfully implemented or not. Keep in mind that there can be 1 task or multiple, depending on the complexity of the epic. The epics will be implemented one by one so make sure that the user needs to be able to test each task you write - for example, if something will be implemented in the epics after the epic #{{ epic_number }}, then you cannot write it here because the user won't be able to test it.
+Отлично. Теперь вам нужно взять эпик #{{ epic_number }} ("{{ epic_description }}") и разбить его на более мелкие задачи. Каждая задача - это единое тестируемое целое, которое пользователь может протестировать и закоммитить. Каждая задача будет одним коммитом, который должен быть тестируемым человеком. Верните список задач для Эпика #{{ epic_number }}. Для каждой задачи напишите ее описание и описание того, как человек должен проверить, успешно ли реализована задача. Имейте в виду, что может быть 1 задача или несколько, в зависимости от сложности эпика. Эпики будут реализовываться один за другим, поэтому убедитесь, что пользователь сможет протестировать каждую написанную вами задачу - например, если что-то будет реализовано в эпиках после эпика #{{ epic_number }}, то вы не можете писать это здесь, потому что пользователь не сможет это протестировать.
 
-You need to specify tasks so that all these API endpoints get implemented completely. For each API endpoint that needs to be implemented, make sure to create a separate task so each task has only one API endpoint to implement. Also, you must not create tasks that don't have an endpoint that they are related to - for example, sometimes there is no "update" endpoint for a specific entity so you don't need to create a task for that.
+Вам нужно указать задачи так, чтобы все эти конечные точки API были полностью реализованы. Для каждой конечной точки API, которую необходимо реализовать, убедитесь, что вы создали отдельную задачу, чтобы каждая задача имела только одну конечную точку API для реализации. Кроме того, вы не должны создавать задачи, которые не связаны с конечной точкой - например, иногда для определенной сущности нет конечной точки "update", поэтому вам не нужно создавать для этого задачу.
 
-You can think of tasks as a unit of functionality that needs to have a frontend component and a backend component (don't split backend and frontend of the same functionality in separate tasks).
+Вы можете думать о задачах как о единице функциональности, которая должна иметь фронтенд-компонент и бэкенд-компонент (не разделяйте бэкенд и фронтенд одной и той же функциональности на отдельные задачи).
 
-**IMPORTANT: components of a single task**
-When thinking about the scope of a single task, here are the components that need to be put into the same task:
-1. The implementation of the backend API endpoint together with the frontend API request implementation (removing the mocked data and replacing it with the real API request)
-2. The implementation of the database model
-3. The utility function (eg. 3rd party integration) that is needed for this endpoint.
+**ВАЖНО: компоненты одной задачи**
+При обдумывании объема одной задачи, вот компоненты, которые необходимо поместить в одну и ту же задачу:
+1. Реализация конечной точки бэкенд-API вместе с реализацией запроса API на фронтенде (удаление моковых данных и замена их реальным запросом API)
+2. Реализация модели базы данных
+3. Утилитарная функция (например, интеграция со сторонними сервисами), которая необходима для этой конечной точки.
 
-**IMPORTANT: order of tasks**
-The tasks you create **MUST** be in the order that they should be implemented. When CRUD operations need to be implemented, first implement the Create operation, then Read, Update, and Delete.
+**ВАЖНО: порядок задач**
+Создаваемые вами задачи **ДОЛЖНЫ** быть в том порядке, в котором они должны быть реализованы. Когда необходимо реализовать операции CRUD, сначала реализуйте операцию создания, затем чтения, обновления и удаления.
 
 {% if state.has_frontend() and not state.is_feature() and (state.options|default({})).get('auth', True) %}
-**IMPORTANT**
-If you are working on the Epic #1 that needs to implement the authentication system. The first task **MUST** be to remove the mocked data for authentication (register and login). After that, add any custom authentication requirements like different roles, different user data, etc.
+**ВАЖНО**
+Если вы работаете над Эпиком #1, который должен реализовать систему аутентификации. Первой задачей **ДОЛЖНО** быть удаление моковых данных для аутентификации (регистрация и вход). После этого добавьте любые пользовательские требования к аутентификации, такие как разные роли, разные данные пользователя и т. д.
 {% endif %}

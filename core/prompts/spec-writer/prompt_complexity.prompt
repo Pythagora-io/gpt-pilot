@@ -1,15 +1,15 @@
 {% if is_feature %}
-Here is the app description that is fully built already:
+Вот описание приложения, которое уже полностью создано:
 ```
 {{ state.specification.description }}
 ```
-Now I will show you the feature description that needs to be added to the app:
+Теперь я покажу вам описание функции, которую необходимо добавить в приложение:
 {% endif %}
 ```
 {{ prompt }}
 ```
 
-{% if not is_feature %}The above is a user prompt for application/software tool they are trying to develop. {% endif %}Determine the complexity of the user's request. Do NOT respond with thoughts, reasoning, explanations or anything similar, return ONLY a string representation of the complexity level. Use the following scale:
-"hard" for high complexity
-"moderate" for moderate complexity
-"simple" for low complexity
+{% if not is_fеature %}Выше приведен запрос пользователя для приложения/программного инструмента, который они пытаются разработать. {% endif %}Определите сложность запроса пользователя. НЕ отвечайте мыслями, рассуждениями, объяснениями или чем-либо подобным, верните ТОЛЬКО строковое представление уровня сложности. Используйте следующую шкалу:
+"hard" для высокой сложности
+"moderate" для средней сложности
+"simple" для низкой сложности

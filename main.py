@@ -4,6 +4,9 @@
 import os.path
 import sys
 
+from core.locales.i18n import _, set_locale
+set_locale("ru")
+
 try:
     from core.cli.main import run_pythagora
 except ImportError as err:
@@ -12,19 +15,19 @@ except ImportError as err:
     requirements_path = os.path.join(pythagora_root, "requirements.txt")
     if sys.prefix == sys.base_prefix:
         venv_python_path = os.path.join(venv_path, "scripts" if sys.platform == "win32" else "bin", "python")
-        print(f"Python environment for Pythagora is not set up: module `{err.name}` is missing.", file=sys.stderr)
-        print(f"Please create Python virtual environment: {sys.executable} -m venv {venv_path}", file=sys.stderr)
+        print(_("main.py:python_not_configured", err_name=err.name), file=sys.stderr)
+        print(_("main.py:create_virtual_environment", sys_executable=sys.executable, venv_path=venv_path), file=sys.stderr)
         print(
-            f"Then install the required dependencies with: {venv_python_path} -m pip install -r {requirements_path}",
+            _("main.py:install_dependencies", venv_python_path=venv_python_path, requirements_path=requirements_path),
             file=sys.stderr,
         )
     else:
         print(
-            f"Python environment for Pythagora is not completely set up: module `{err.name}` is missing",
+            _("main.py:python_partially_configured", err_name=err.name),
             file=sys.stderr,
         )
         print(
-            f"Please run `{sys.executable} -m pip install -r {requirements_path}` to finish Python setup, and rerun Pythagora.",
+            _("main.py:finish_python_setup", sys_executable=sys.executable, requirements_path=requirements_path),
             file=sys.stderr,
         )
     sys.exit(255)
