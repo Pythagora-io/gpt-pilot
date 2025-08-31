@@ -126,29 +126,67 @@ class AnthropicClient(BaseLLMClient):
         Anthropic rate limits docs:
         https://docs.anthropic.com/en/api/rate-limits#response-headers
         Limit reset times are in RFC 3339 format.
-
         """
         headers = err.response.headers
+        
+        # Check if we have the required rate limit headers
         if "anthropic-ratelimit-tokens-remaining" not in headers:
-            return None
-
-        remaining_tokens = headers["anthropic-ratelimit-tokens-remaining"]
-        if remaining_tokens == 0:
-            relevant_dt = headers["anthropic-ratelimit-tokens-reset"]
-        else:
-            relevant_dt = headers["anthropic-ratelimit-requests-reset"]
+            log.debug("Missing anthropic-ratelimit-tokens-remaining header, falling back to base implementation")
+            return super().rate_limit_sleep(err)
 
         try:
-            reset_time = datetime.datetime.fromisoformat(relevant_dt)
-        except ValueError:
-            return datetime.timedelta(seconds=5)
+            remaining_tokens = int(headers["anthropic-ratelimit-tokens-remaining"])
+        except (ValueError, TypeError):
+            log.warning("Invalid anthropic-ratelimit-tokens-remaining value, falling back")
+            return super().rate_limit_sleep(err)
 
+        # Determine which reset header to use based on token availability
+        reset_header = "anthropic-ratelimit-tokens-reset" if remaining_tokens == 0 else "anthropic-ratelimit-requests-reset"
+        
+        if reset_header not in headers:
+            log.debug(f"Missing {reset_header} header, falling back to base implementation")
+            return super().rate_limit_sleep(err)
+
+        reset_time_str = headers[reset_header]
+
+        try:
+            # Parse RFC 3339 timestamp with improved error handling
+            # Handle both 'Z' suffix and explicit timezone offsets
+            if reset_time_str.endswith('Z'):
+                reset_time_str = reset_time_str[:-1] + '+00:00'
+            
+            reset_time = datetime.datetime.fromisoformat(reset_time_str)
+            
+            # Ensure timezone-aware datetime
+            if reset_time.tzinfo is None:
+                reset_time = reset_time.replace(tzinfo=datetime.timezone.utc)
+                log.debug("Added UTC timezone to naive reset time")
+                
+        except (ValueError, TypeError) as e:
+            log.warning(f"Error parsing Anthropic reset time '{reset_time_str}': {e}, falling back")
+            return super().rate_limit_sleep(err)
+
+        # Get current UTC time with better timezone handling
         try:
             now = datetime.datetime.now(tz=zoneinfo.ZoneInfo("UTC"))
         except zoneinfo.ZoneInfoNotFoundError:
             now = datetime.datetime.now(tz=datetime.timezone.utc)
 
-        return reset_time - now
+        # Calculate wait duration
+        wait_duration = reset_time - now
+        wait_seconds = wait_duration.total_seconds()
+
+        # Apply safety bounds
+        if wait_seconds < 0:
+            log.debug(f"Rate limit reset time is in the past ({wait_seconds:.1f}s ago), using minimal wait")
+            return datetime.timedelta(seconds=1)
+            
+        if wait_seconds > 3600:  # More than 1 hour
+            log.warning(f"Rate limit reset time too far in future ({wait_seconds:.1f}s), capping at 1 hour")
+            return datetime.timedelta(seconds=3600)
+
+        log.debug(f"Anthropic rate limit: waiting {wait_seconds:.1f}s until {reset_time}")
+        return wait_duration
 
 
 __all__ = ["AnthropicClient"]

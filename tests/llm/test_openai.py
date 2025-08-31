@@ -192,3 +192,40 @@ def test_openai_rate_limit_parser(mock_AsyncOpenAI, remaining_tokens, reset_toke
 
     llm = OpenAIClient(LLMConfig(model="gpt-4"))
     assert int(llm.rate_limit_sleep(err).total_seconds()) == expected
+
+
+@patch("core.llm.openai_client.AsyncOpenAI")
+def test_openai_rate_limit_seconds_vs_total_seconds(mock_AsyncOpenAI):
+    """Test rate limit duration calculation and safety validation."""
+    # Create a mock error with headers that result in a long duration
+    headers = {
+        "x-ratelimit-remaining-tokens": 0,
+        "x-ratelimit-reset-tokens": "2h30m15s",  # 2.5 hours + 15 seconds
+        "x-ratelimit-reset-requests": "",
+    }
+    err = MagicMock(response=MagicMock(headers=headers))
+    
+    llm = OpenAIClient(LLMConfig(model="gpt-4"))
+    sleep_duration = llm.rate_limit_sleep(err)
+    
+    # Verify the timedelta object itself
+    expected_total_seconds = 2*3600 + 30*60 + 15  # 9015 seconds
+    assert sleep_duration.total_seconds() == expected_total_seconds
+    # Note: For this duration, .seconds and .total_seconds() are the same 
+    # They differ when days are involved or with negative durations
+    assert sleep_duration.seconds == 9015  # All fits in seconds component
+    
+    # Verify validation caps excessive durations
+    safe_duration = llm._validate_sleep_duration(sleep_duration, "openai")
+    assert safe_duration == 3600  # 1 hour cap
+
+
+@patch("core.llm.openai_client.AsyncOpenAI") 
+def test_openai_missing_rate_limit_headers(mock_AsyncOpenAI):
+    """Test fallback when rate limit headers are missing."""
+    # Missing required header should return None (no retry)
+    headers = {}
+    err = MagicMock(response=MagicMock(headers=headers))
+    
+    llm = OpenAIClient(LLMConfig(model="gpt-4"))
+    assert llm.rate_limit_sleep(err) is None

@@ -211,11 +211,13 @@ class BaseLLMClient:
                 request_log.error = str(f"Rate limit error: {err}")
                 request_log.status = LLMRequestStatus.ERROR
                 wait_time = self.rate_limit_sleep(err)
-                if wait_time:
-                    message = f"We've hit {self.config.provider.value} rate limit. Sleeping for {wait_time.seconds} seconds..."
+                sleep_seconds = self._validate_sleep_duration(wait_time, self.config.provider.value)
+                if sleep_seconds:
+                    message = f"We've hit {self.config.provider.value} rate limit. Sleeping for {sleep_seconds} seconds..."
+                    log.info(message)
                     if self.error_handler:
                         await self.error_handler(LLMError.RATE_LIMITED, message)
-                    await asyncio.sleep(wait_time.seconds)
+                    await asyncio.sleep(sleep_seconds)
                     continue
                 else:
                     # RateLimitError that shouldn't be retried, eg. insufficient funds
@@ -346,21 +348,73 @@ class BaseLLMClient:
         else:
             raise ValueError(f"Unsupported LLM provider: {provider.value}")
 
+    def _validate_sleep_duration(self, wait_time: Optional[datetime.timedelta], provider: str) -> Optional[int]:
+        """
+        Validate and normalize sleep duration for rate limiting with safety bounds.
+        
+        :param wait_time: Raw timedelta from provider implementation
+        :param provider: Provider name for logging context
+        :return: Safe sleep duration in seconds, or None if no sleep needed
+        """
+        if not wait_time:
+            return None
+            
+        total_seconds = wait_time.total_seconds()
+        
+        # Apply safety bounds
+        if total_seconds <= 0:
+            log.warning(f"{provider}: Invalid sleep duration {total_seconds}s, using 5s default")
+            return 5
+            
+        if total_seconds > 3600:  # 1 hour maximum
+            log.warning(f"{provider}: Sleep duration {total_seconds}s exceeds 1 hour, capping at 3600s")
+            return 3600
+            
+        if total_seconds > 300:  # Log warning for > 5 minutes
+            log.warning(f"{provider}: Long sleep duration {total_seconds:.1f}s (>5 minutes)")
+            
+        return max(1, int(total_seconds))  # Minimum 1 second
+
     def rate_limit_sleep(self, err: Exception) -> Optional[datetime.timedelta]:
         """
         Return how long we need to sleep because of rate limiting.
 
-        These are computed from the response headers that each LLM returns.
-        For details, check the implementation for the specific LLM. If there
-        are no rate limiting headers, we assume that the request should not
-        be retried and return None (this will be the case for insufficient
-        quota/funds in the account).
-
+        Base implementation that parses retry duration from error message text.
+        Provider-specific implementations should override this method to parse
+        rate limit headers for more accurate timing information.
+        
         :param err: RateLimitError that was raised by the LLM client.
         :return: optional timedelta to wait before trying again
         """
-
-        raise NotImplementedError()
+        import re
+        
+        error_str = str(err)
+        log.debug(f"Parsing rate limit duration from error: {error_str[:200]}...")
+        
+        # Pattern 1: "Please try again in 11.276s" (OpenAI style)
+        match = re.search(r'Please try again in (\d+(?:\.\d+)?)s', error_str)
+        if match:
+            wait_seconds = float(match.group(1))
+            log.debug(f"Extracted {wait_seconds}s wait time from error message")
+            return datetime.timedelta(seconds=min(wait_seconds + 1, 300))  # Cap at 5 minutes
+            
+        # Pattern 2: "retry after X seconds" variations 
+        match = re.search(r'retry after (\d+(?:\.\d+)?)\s*seconds?', error_str, re.IGNORECASE)
+        if match:
+            wait_seconds = float(match.group(1))
+            log.debug(f"Extracted {wait_seconds}s retry time from error message")
+            return datetime.timedelta(seconds=min(wait_seconds + 1, 300))
+            
+        # Pattern 3: "wait X.Y seconds" variations
+        match = re.search(r'wait (\d+(?:\.\d+)?)\s*seconds?', error_str, re.IGNORECASE)
+        if match:
+            wait_seconds = float(match.group(1))
+            log.debug(f"Extracted {wait_seconds}s wait time from error message")
+            return datetime.timedelta(seconds=min(wait_seconds + 1, 300))
+            
+        # Default fallback - start with short backoff
+        log.info(f"Could not parse rate limit duration from error, using 60s default backoff")
+        return datetime.timedelta(seconds=60)
 
 
 __all__ = ["BaseLLMClient"]
