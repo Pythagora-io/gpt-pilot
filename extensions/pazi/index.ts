@@ -1,5 +1,5 @@
-import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import type { Server as HttpServer } from "node:http";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { resolvePaziBillingConfig } from "./src/config.js";
 import { createPaziContextHandler } from "./src/pazi-context.js";
 import { startPaziProxy } from "./src/pazi-proxy.js";

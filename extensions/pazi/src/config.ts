@@ -33,14 +33,10 @@ export function resolvePaziBillingConfig(params: {
   const env = params.env ?? process.env;
   const raw = params.pluginConfig ?? {};
 
-  const apiUrl =
-    normalizeString(raw.apiUrl) ??
-    normalizeString(env.PAZI_API_URL);
+  const apiUrl = normalizeString(raw.apiUrl) ?? normalizeString(env.PAZI_API_URL);
 
   const proxyPort =
-    normalizePort(raw.proxyPort) ??
-    normalizePort(env.PAZI_PROXY_PORT) ??
-    DEFAULT_PROXY_PORT;
+    normalizePort(raw.proxyPort) ?? normalizePort(env.PAZI_PROXY_PORT) ?? DEFAULT_PROXY_PORT;
 
   return {
     apiUrl,
