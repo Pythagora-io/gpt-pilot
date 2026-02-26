@@ -1,25 +1,24 @@
 import http from "node:http";
 import https from "node:https";
 import type { IncomingHttpHeaders } from "node:http";
-import { createSubsystemLogger } from "../logging/subsystem.js";
+import { getProxyContext } from "./context.js";
 
-type ProxyContext = { userId: string; proxyToken: string };
+type ProxyLogger = {
+  info: (message: string) => void;
+  warn: (message: string) => void;
+};
+
+type ProxyServer = http.Server;
 
 type HttpRequest = typeof http.request;
 
 type ProxyError = { error: string; message?: string };
 
-const log = createSubsystemLogger("gateway/pazi-proxy");
-
-let currentContext: ProxyContext | null = null;
-
-export function setProxyContext(ctx: ProxyContext): void {
-  currentContext = ctx;
-}
-
-export function clearProxyContext(): void {
-  currentContext = null;
-}
+type StartProxyParams = {
+  apiUrl?: string;
+  port: number;
+  logger: ProxyLogger;
+};
 
 function requestForUrl(url: URL): HttpRequest {
   return url.protocol === "https:" ? https.request : http.request;
@@ -42,11 +41,19 @@ function writeJson(res: http.ServerResponse, status: number, body: ProxyError) {
   res.end(JSON.stringify(body));
 }
 
-export async function startPaziProxy(port: number): Promise<void> {
-  const paziApiUrl = process.env.PAZI_API_URL;
-  if (!paziApiUrl) {
-    log.info("pazi proxy disabled (PAZI_API_URL not set)");
-    return;
+export async function startPaziProxy(params: StartProxyParams): Promise<ProxyServer | null> {
+  const apiUrl = params.apiUrl?.trim();
+  if (!apiUrl) {
+    params.logger.info("pazi proxy disabled (PAZI_API_URL not set)");
+    return null;
+  }
+
+  let baseUrl: URL;
+  try {
+    baseUrl = new URL(apiUrl);
+  } catch {
+    params.logger.warn(`pazi proxy disabled (invalid PAZI_API_URL: ${apiUrl})`);
+    return null;
   }
 
   const server = http.createServer(async (req, res) => {
@@ -56,7 +63,7 @@ export async function startPaziProxy(port: number): Promise<void> {
       return;
     }
 
-    const context = currentContext;
+    const context = getProxyContext();
     if (!context) {
       writeJson(res, 503, { error: "no billing context set" });
       return;
@@ -72,7 +79,7 @@ export async function startPaziProxy(port: number): Promise<void> {
     }
     const body = Buffer.concat(chunks);
 
-    const target = new URL("/anthropic/v1/messages", paziApiUrl);
+    const target = new URL("/anthropic/v1/messages", baseUrl);
     const doRequest = requestForUrl(target);
 
     const proxyReq = doRequest(
@@ -92,7 +99,7 @@ export async function startPaziProxy(port: number): Promise<void> {
     );
 
     proxyReq.on("error", (err: Error) => {
-      log.warn(`pazi proxy error: ${String(err)}`);
+      params.logger.warn(`pazi proxy error: ${String(err)}`);
       if (!res.headersSent) {
         writeJson(res, 502, { error: "proxy_error", message: err.message });
       }
@@ -103,11 +110,18 @@ export async function startPaziProxy(port: number): Promise<void> {
   });
 
   server.on("clientError", (err, socket) => {
-    log.warn(`pazi proxy client error: ${String(err)}`);
+    params.logger.warn(`pazi proxy client error: ${String(err)}`);
     socket.end("HTTP/1.1 400 Bad Request\r\n\r\n");
   });
 
-  server.listen(port, "127.0.0.1", () => {
-    log.info(`pazi proxy listening on 127.0.0.1:${port}`);
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(params.port, "127.0.0.1", () => {
+      server.off("error", reject);
+      resolve();
+    });
   });
+
+  params.logger.info(`pazi proxy listening on 127.0.0.1:${params.port}`);
+  return server;
 }
