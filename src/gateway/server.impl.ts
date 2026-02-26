@@ -78,6 +78,7 @@ import { createGatewayRuntimeState } from "./server-runtime-state.js";
 import { resolveSessionKeyForRun } from "./server-session-key.js";
 import { logGatewayStartup } from "./server-startup-log.js";
 import { startGatewaySidecars } from "./server-startup.js";
+import { startPaziProxy } from "./pazi-proxy.js";
 import { startGatewayTailscaleExposure } from "./server-tailscale.js";
 import { createWizardSessionTracker } from "./server-wizard-sessions.js";
 import { attachGatewayWsHandlers } from "./server-ws-runtime.js";
@@ -267,6 +268,11 @@ export async function startGatewayServer(
         "Gateway auth token was missing. Generated a runtime token for this startup without changing config; restart will generate a different token. Persist one with `openclaw config set gateway.auth.mode token` and `openclaw config set gateway.auth.token <token>`.",
       );
     }
+  }
+  if (!minimalTestGateway) {
+    const proxyPortRaw = process.env.PAZI_PROXY_PORT;
+    const proxyPort = proxyPortRaw ? Number.parseInt(proxyPortRaw, 10) : 8765;
+    await startPaziProxy(Number.isFinite(proxyPort) ? proxyPort : 8765);
   }
   const diagnosticsEnabled = isDiagnosticsEnabled(cfgAtStart);
   if (diagnosticsEnabled) {
