@@ -388,6 +388,12 @@ importers:
 
   extensions/open-prose: {}
 
+  extensions/pazi:
+    dependencies:
+      openclaw:
+        specifier: '>=2026.1.26'
+        version: 2026.2.24(@napi-rs/canvas@0.1.95)(@types/express@5.0.6)(audio-decode@2.2.3)(hono@4.11.10)(node-llama-cpp@3.15.1(typescript@5.9.3))
+
   extensions/signal: {}
 
   extensions/slack: {}
@@ -6841,7 +6847,7 @@ snapshots:
 
   '@mariozechner/pi-agent-core@0.55.0(ws@8.19.0)(zod@4.3.6)':
     dependencies:
-      '@mariozechner/pi-ai': 0.55.0(ws@8.19.0)(zod@4.3.6)
+      '@mariozechner/pi-ai': 0.55.1(ws@8.19.0)(zod@4.3.6)
     transitivePeerDependencies:
       - '@modelcontextprotocol/sdk'
       - aws-crt
@@ -6914,9 +6920,9 @@ snapshots:
   '@mariozechner/pi-coding-agent@0.55.0(ws@8.19.0)(zod@4.3.6)':
     dependencies:
       '@mariozechner/jiti': 2.6.5
-      '@mariozechner/pi-agent-core': 0.55.0(ws@8.19.0)(zod@4.3.6)
-      '@mariozechner/pi-ai': 0.55.0(ws@8.19.0)(zod@4.3.6)
-      '@mariozechner/pi-tui': 0.55.0
+      '@mariozechner/pi-agent-core': 0.55.1(ws@8.19.0)(zod@4.3.6)
+      '@mariozechner/pi-ai': 0.55.1(ws@8.19.0)(zod@4.3.6)
+      '@mariozechner/pi-tui': 0.55.1
       '@silvia-odwyer/photon-node': 0.3.4
       chalk: 5.6.2
       cli-highlight: 2.1.11

@@ -1,0 +1,15 @@
+{
+  "name": "@openclaw/pazi",
+  "version": "2026.2.25",
+  "private": true,
+  "description": "OpenClaw Pazi proxy",
+  "type": "module",
+  "peerDependencies": {
+    "openclaw": ">=2026.1.26"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "id": "pazi",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "apiUrl": { "type": "string" },
+      "proxyPort": { "type": "number" }
+    }
+  }
+}
