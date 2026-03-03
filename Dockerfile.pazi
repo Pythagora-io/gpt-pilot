@@ -67,7 +67,7 @@ COPY --from=builder --chown=pazi:pazi /app /app
 
 # Gateway config: disable Control UI, skip device auth (gateway token handles auth)
 RUN mkdir -p /home/pazi/.openclaw && \
-    echo '{"gateway":{"controlUi":{"enabled":false,"dangerouslyDisableDeviceAuth":true}}}' > /home/pazi/.openclaw/openclaw.json && \
+    echo '{"gateway":{"controlUi":{"enabled":false,"dangerouslyDisableDeviceAuth":true,"allowedOrigins":["http://127.0.0.1:3000"]}}}' > /home/pazi/.openclaw/openclaw.json && \
     chown -R pazi:pazi /home/pazi/.openclaw
 
 # Runtime directories

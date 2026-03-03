@@ -5,6 +5,7 @@ import { setProxyContext } from "./context.js";
 
 type JsonBody = {
   userId?: string;
+  agentId?: string;
   proxyToken?: string;
 };
 
@@ -63,13 +64,13 @@ export function createPaziContextHandler(deps: ContextHandlerDeps) {
       return;
     }
 
-    const { userId, proxyToken } = body;
-    if (!userId || !proxyToken) {
-      writeJson(res, 400, { error: "missing userId or proxyToken" });
+    const { userId, agentId, proxyToken } = body;
+    if (!userId || !agentId || !proxyToken) {
+      writeJson(res, 400, { error: "missing userId, agentId, or proxyToken" });
       return;
     }
 
-    setProxyContext({ userId, proxyToken });
+    setProxyContext({ userId, agentId, proxyToken });
     writeJson(res, 200, { ok: true });
   };
 }
