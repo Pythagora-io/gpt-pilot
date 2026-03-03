@@ -1,7 +1,7 @@
 import http from "node:http";
 import type { IncomingHttpHeaders } from "node:http";
 import https from "node:https";
-import { getProxyContext } from "./context.js";
+import { getProxyContext } from "../context.js";
 
 type ProxyLogger = {
   info: (message: string) => void;
