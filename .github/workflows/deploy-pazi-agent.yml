@@ -2,7 +2,7 @@ name: Deploy Pazi Agent
 
 on:
     push:
-        branches: [main]
+        branches: [main, staging]
 
     workflow_dispatch:
 
@@ -65,8 +65,13 @@ jobs:
 
             - name: Upload latest version to S3
               run: |
-                  echo "${{ steps.get_version.outputs.VERSION }}" > latest.txt
-                  aws s3 cp latest.txt s3://assets.pazi.ai/cloud/latest.txt
+                  if [[ "${{ github.ref_name }}" == "main" ]]; then
+                    S3_KEY="latest.txt"
+                  else
+                    S3_KEY="latest-staging.txt"
+                  fi
+                  echo "${{ steps.get_version.outputs.VERSION }}" > "$S3_KEY"
+                  aws s3 cp "$S3_KEY" "s3://assets.pazi.ai/cloud/$S3_KEY"
 
             - name: Deployment Summary
               if: success()
@@ -78,6 +83,7 @@ jobs:
                   echo "**Version:** ${{ steps.get_version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
 
     push-version-tag:
+        if: github.ref_name == 'main'
         runs-on: ubuntu-latest
         needs: build-and-push
 
