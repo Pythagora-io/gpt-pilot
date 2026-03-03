@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
-import { resolveGatewayToken } from "./config.js";
-import { setProxyContext } from "./context.js";
+import { resolveGatewayToken } from "../config.js";
+import { setProxyContext } from "../context.js";
 
 type JsonBody = {
   userId?: string;
