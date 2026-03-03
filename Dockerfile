@@ -46,6 +46,9 @@ RUN if [ -n "$OPENCLAW_INSTALL_BROWSER" ]; then \
 
 USER node
 COPY --chown=node:node . .
+# Gateway config: disable Control UI dashboard, allow operator mode without device auth
+RUN mkdir -p /home/node/.openclaw && \
+    echo '{"gateway":{"controlUi":{"enabled":false,"dangerouslyDisableDeviceAuth":true}}}' > /home/node/.openclaw/openclaw.json
 RUN pnpm build
 # Force pnpm for UI build (Bun may fail on ARM/Synology architectures)
 ENV OPENCLAW_PREFER_PNPM=1
