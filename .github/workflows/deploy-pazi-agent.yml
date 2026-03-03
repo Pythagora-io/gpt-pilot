@@ -12,7 +12,7 @@ permissions:
 
 env:
     AWS_REGION: us-east-1
-    GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/pazi-agent
+    GHCR_IMAGE: ghcr.io/pythagora-io/pazi-agent
 
 jobs:
     build-and-push:
