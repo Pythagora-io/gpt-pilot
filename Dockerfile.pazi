@@ -1,0 +1,94 @@
+# Dockerfile.pazi — Pazi production wrapper
+# Builds the OpenClaw agent, then layers desktop services on top.
+
+# ---------------------------------------------------------------------------
+# Stage 1: Build OpenClaw (reuses the standard build steps from Dockerfile)
+# ---------------------------------------------------------------------------
+FROM node:22-bookworm@sha256:cd7bcd2e7a1e6f72052feb023c7f6b722205d3fcab7bbcbd2d1bfdab10b1e935 AS builder
+
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:${PATH}"
+
+RUN corepack enable
+
+WORKDIR /app
+RUN chown node:node /app
+
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY --chown=node:node ui/package.json ./ui/package.json
+COPY --chown=node:node patches ./patches
+COPY --chown=node:node scripts ./scripts
+
+USER node
+RUN NODE_OPTIONS=--max-old-space-size=2048 pnpm install --frozen-lockfile
+
+USER node
+COPY --chown=node:node . .
+RUN pnpm build
+ENV OPENCLAW_PREFER_PNPM=1
+RUN pnpm ui:build
+
+# ---------------------------------------------------------------------------
+# Stage 2: Production image with desktop environment
+# ---------------------------------------------------------------------------
+FROM node:22-bookworm-slim
+
+# Playwright: use system Chromium
+ENV CHROME_PATH=/usr/bin/chromium \
+    PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium \
+    PLAYWRIGHT_MCP_EXECUTABLE_PATH=/usr/bin/chromium \
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    # Chromium browser
+    chromium \
+    # Playwright / Chromium runtime deps
+    libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
+    libdbus-1-3 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 \
+    libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2 libatspi2.0-0 \
+    # Fonts
+    fonts-liberation fonts-noto-color-emoji \
+    # Desktop environment
+    xvfb x11vnc novnc websockify \
+    xfce4 xfce4-terminal dbus-x11 \
+    # Utilities
+    git curl ca-certificates procps \
+    # Process manager
+    supervisor \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Create pazi user (UID 1001 — matches host /home/pazi volume mounts)
+RUN groupadd -g 1001 pazi && useradd -u 1001 -g 1001 -m -d /home/pazi pazi
+
+WORKDIR /app
+
+# Copy built app from builder stage
+COPY --from=builder --chown=pazi:pazi /app /app
+
+# Gateway config: disable Control UI, skip device auth (gateway token handles auth)
+RUN mkdir -p /home/pazi/.openclaw && \
+    echo '{"gateway":{"controlUi":{"enabled":false,"dangerouslyDisableDeviceAuth":true}}}' > /home/pazi/.openclaw/openclaw.json && \
+    chown -R pazi:pazi /home/pazi/.openclaw
+
+# Runtime directories
+RUN mkdir -p /home/pazi/generations /home/pazi/.config /home/pazi/.local/share && \
+    chown -R pazi:pazi /home/pazi
+
+# Supervisord config
+COPY supervisord.pazi.conf /etc/supervisor/conf.d/supervisord.conf
+
+ENV NODE_ENV=production \
+    OPENCLAW_GATEWAY_PORT=3000 \
+    GENERATIONS_DIR=/home/pazi/generations
+
+# 3000 — OpenClaw gateway (HTTP + WS)
+# 6080 — noVNC desktop
+EXPOSE 3000 6080
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://127.0.0.1:3000/health || exit 1
+
+# supervisord runs as root to manage child processes with different users
+USER root
+
+CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
