@@ -65,11 +65,8 @@ WORKDIR /app
 # Copy built app from builder stage
 COPY --from=builder --chown=pazi:pazi /app /app
 
-# Runtime directories + Desktop shortcut to OpenClaw config
-RUN mkdir -p /home/pazi/generations /home/pazi/.config /home/pazi/.local/share /home/pazi/Desktop && \
-    printf '[Desktop Entry]\nType=Application\nName=OpenClaw Config\nIcon=folder\nExec=thunar /home/pazi/.openclaw\nTerminal=false\n' \
-    > /home/pazi/Desktop/openclaw.desktop && \
-    chmod +x /home/pazi/Desktop/openclaw.desktop && \
+# Runtime directories
+RUN mkdir -p /home/pazi/generations /home/pazi/.config /home/pazi/.local/share && \
     chown -R pazi:pazi /home/pazi
 
 # Supervisord config
