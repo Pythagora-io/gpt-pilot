@@ -57,6 +57,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     libx11-xcb1 libxcb-dri3-0 libxkbcommon0 libxdamage1 libxfixes3 \
     libxv1 libxtst6 libxext6 libgcrypt20 glib-networking \
     jq \
+    # Screenshot capture for desktop preview
+    scrot \
     # Utilities
     git curl ca-certificates procps \
     # Process manager
