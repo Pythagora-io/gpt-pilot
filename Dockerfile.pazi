@@ -83,6 +83,11 @@ WORKDIR /app
 # Copy built app from builder stage
 COPY --from=builder --chown=pazi:pazi /app /app
 
+# Download desktop wallpaper from S3
+RUN mkdir -p /usr/share/backgrounds && \
+    curl -fsSL "https://s3.us-east-1.amazonaws.com/assets.pazi.ai/cloud/pazi-desktop-bg.jpg" \
+      -o /usr/share/backgrounds/pazi-desktop.jpg
+
 # Runtime directories
 RUN mkdir -p /home/pazi/generations /home/pazi/.config /home/pazi/.local/share && \
     chown -R pazi:pazi /home/pazi
