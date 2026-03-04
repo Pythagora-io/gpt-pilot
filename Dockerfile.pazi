@@ -48,14 +48,30 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2 libatspi2.0-0 \
     # Fonts
     fonts-liberation fonts-noto-color-emoji \
-    # Desktop environment
-    xvfb x11vnc novnc websockify \
-    xfce4 xfce4-terminal dbus-x11 \
+    # Desktop environment (Xvfb + XFCE4)
+    xvfb xfce4 xfce4-terminal dbus-x11 \
+    # Selkies-GStreamer dependencies
+    python3 python3-gi python3-setuptools python3-pip python3-dev \
+    libpulse0 libwayland-dev libwayland-egl1 \
+    x11-utils x11-xkb-utils x11-xserver-utils \
+    libx11-xcb1 libxcb-dri3-0 libxkbcommon0 libxdamage1 libxfixes3 \
+    libxv1 libxtst6 libxext6 libgcrypt20 glib-networking \
+    jq \
     # Utilities
     git curl ca-certificates procps \
     # Process manager
     supervisor \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install Selkies-GStreamer (WebRTC remote desktop, replaces noVNC)
+RUN SELKIES_VERSION="$(curl -fsSL \
+      "https://api.github.com/repos/selkies-project/selkies/releases/latest" | \
+      jq -r '.tag_name' | sed 's/[^0-9\.\-]*//g')" && \
+    mkdir -p /opt/selkies && cd /opt/selkies && \
+    curl -fsSL \
+      "https://github.com/selkies-project/selkies/releases/download/v${SELKIES_VERSION}/selkies-gstreamer-portable-v${SELKIES_VERSION}_amd64.tar.gz" | \
+      tar -xzf - && \
+    echo "Selkies-GStreamer v${SELKIES_VERSION} installed"
 
 # Create pazi user (UID 1001 — matches host /home/pazi volume mounts)
 RUN groupadd -g 1001 pazi && useradd -u 1001 -g 1001 -m -d /home/pazi pazi
@@ -77,8 +93,8 @@ ENV NODE_ENV=production \
     GENERATIONS_DIR=/home/pazi/generations
 
 # 3000 — OpenClaw gateway (HTTP + WS)
-# 6080 — noVNC desktop
-EXPOSE 3000 6080
+# 8080 — Selkies-GStreamer WebRTC desktop
+EXPOSE 3000 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://127.0.0.1:3000/health || exit 1
