@@ -130,6 +130,68 @@ export async function listActions(
   }
 }
 
+export async function getAction(
+  params: { pluginConfig: Record<string, unknown> | null },
+  actionId: string,
+): Promise<PipedreamApiResult<unknown>> {
+  try {
+    const apiParams = resolveApiParams(params.pluginConfig);
+    const url = new URL(`/integrations/actions/${encodeURIComponent(actionId)}`, apiParams.apiUrl);
+    return await requestJson(apiParams, url);
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function configureActionProp(
+  params: { pluginConfig: Record<string, unknown> | null },
+  actionId: string,
+  body: {
+    propName: string;
+    configuredProps?: Record<string, unknown>;
+    query?: string;
+    page?: number;
+    prevContext?: Record<string, unknown>;
+    dynamicPropsId?: string;
+  },
+): Promise<PipedreamApiResult<unknown>> {
+  try {
+    const apiParams = resolveApiParams(params.pluginConfig);
+    const url = new URL(
+      `/integrations/actions/${encodeURIComponent(actionId)}/configure-prop`,
+      apiParams.apiUrl,
+    );
+    return await requestJson(apiParams, url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function reloadActionProps(
+  params: { pluginConfig: Record<string, unknown> | null },
+  actionId: string,
+  body: { configuredProps?: Record<string, unknown>; dynamicPropsId?: string },
+): Promise<PipedreamApiResult<unknown>> {
+  try {
+    const apiParams = resolveApiParams(params.pluginConfig);
+    const url = new URL(
+      `/integrations/actions/${encodeURIComponent(actionId)}/reload-props`,
+      apiParams.apiUrl,
+    );
+    return await requestJson(apiParams, url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 export async function checkIntegration(
   params: { pluginConfig: Record<string, unknown> | null },
   app: string,
