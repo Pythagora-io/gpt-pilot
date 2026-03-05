@@ -42,16 +42,28 @@ jobs:
                   username: ${{ github.actor }}
                   password: ${{ secrets.GH_PAT }}
 
+            - name: Determine environment
+              id: env
+              run: |
+                  if [[ "${{ github.ref_name }}" == "main" ]]; then
+                    echo "environment=production" >> $GITHUB_OUTPUT
+                    echo "suffix=" >> $GITHUB_OUTPUT
+                  else
+                    echo "environment=staging" >> $GITHUB_OUTPUT
+                    echo "suffix=-staging" >> $GITHUB_OUTPUT
+                  fi
+
             - name: Build, tag, and push image to GHCR
               id: build-image
               env:
-                  IMAGE_TAG: ${{ steps.get_version.outputs.VERSION }}
+                  IMAGE_TAG: ${{ steps.get_version.outputs.VERSION }}${{ steps.env.outputs.suffix }}
+                  LATEST_TAG: latest${{ steps.env.outputs.suffix }}
               run: |
                   docker build -f Dockerfile.pazi -t $GHCR_IMAGE:$IMAGE_TAG .
-                  docker tag $GHCR_IMAGE:$IMAGE_TAG $GHCR_IMAGE:latest
+                  docker tag $GHCR_IMAGE:$IMAGE_TAG $GHCR_IMAGE:$LATEST_TAG
 
                   docker push $GHCR_IMAGE:$IMAGE_TAG
-                  docker push $GHCR_IMAGE:latest
+                  docker push $GHCR_IMAGE:$LATEST_TAG
 
                   echo "image=$GHCR_IMAGE:$IMAGE_TAG" >> $GITHUB_OUTPUT
                   echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
@@ -64,13 +76,15 @@ jobs:
                   aws-region: ${{ env.AWS_REGION }}
 
             - name: Upload latest version to S3
+              env:
+                  IMAGE_TAG: ${{ steps.build-image.outputs.image_tag }}
               run: |
                   if [[ "${{ github.ref_name }}" == "main" ]]; then
                     S3_KEY="latest.txt"
                   else
                     S3_KEY="latest-staging.txt"
                   fi
-                  echo "${{ steps.get_version.outputs.VERSION }}" > "$S3_KEY"
+                  echo "$IMAGE_TAG" > "$S3_KEY"
                   aws s3 cp "$S3_KEY" "s3://assets.pazi.ai/cloud/$S3_KEY"
 
             - name: Deployment Summary
