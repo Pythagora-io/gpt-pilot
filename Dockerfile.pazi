@@ -1,4 +1,5 @@
-# Dockerfile.pazi — Pazi production wrapper
+# Dockerfile.pazi 
+# Pazi production wrapper
 # Builds the OpenClaw agent, then layers desktop services on top.
 
 # ---------------------------------------------------------------------------
