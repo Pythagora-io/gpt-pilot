@@ -1,6 +1,7 @@
 import type { Server as HttpServer } from "node:http";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { resolvePaziBillingConfig } from "./src/config.js";
+import { getProxyContext } from "./src/context.js";
 import { createPipedreamTools } from "./src/pipedream/tools.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
@@ -68,6 +69,29 @@ export default {
           return;
         }
         await contextHandler(req, res);
+      },
+    });
+
+    api.registerHttpRoute({
+      path: "/health",
+      handler: (_req, res) => {
+        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }));
+      },
+    });
+
+    api.registerHttpRoute({
+      path: "/status",
+      handler: (_req, res) => {
+        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(
+          JSON.stringify({
+            status: "running",
+            busy: getProxyContext() !== null,
+            version: process.env.AGENT_VERSION ?? "unknown",
+            environment: process.env.NODE_ENV ?? "development",
+          }),
+        );
       },
     });
 

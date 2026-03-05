@@ -1,5 +1,6 @@
 type ProxyContext = {
   userId: string;
+  agentId: string;
   proxyToken: string;
 };
 
