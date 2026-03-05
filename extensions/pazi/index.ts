@@ -2,8 +2,10 @@ import type { Server as HttpServer } from "node:http";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { resolvePaziBillingConfig } from "./src/config.js";
 import { getProxyContext } from "./src/context.js";
-import { createPaziContextHandler } from "./src/pazi-context.js";
-import { startPaziProxy } from "./src/pazi-proxy.js";
+import { createPipedreamTools } from "./src/pipedream/tools.js";
+import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
+import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
+import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
 
 function normalizePluginConfig(
   value: OpenClawPluginApi["pluginConfig"],
@@ -37,8 +39,28 @@ export default {
       logger: api.logger,
     });
 
+    const uploadHandler = createPaziUploadHandler({
+      configToken: api.config.gateway?.auth?.token,
+      env: process.env,
+      logger: api.logger,
+    });
+
+    api.registerGatewayMethod("pazi.integration.emit", ({ params, respond, context }) => {
+      context.broadcast("integration", params);
+      respond(true, { emitted: true });
+    });
+
+    const tools = createPipedreamTools({
+      pluginConfig,
+      config: api.config,
+    });
+    for (const tool of tools) {
+      api.registerTool(tool);
+    }
+
     api.registerHttpRoute({
       path: "/pazi/context",
+      auth: "gateway",
       handler: async (req, res) => {
         if (req.method !== "POST") {
           res.statusCode = 404;
@@ -70,6 +92,20 @@ export default {
             environment: process.env.NODE_ENV ?? "development",
           }),
         );
+      },
+    });
+
+    api.registerHttpRoute({
+      path: "/pazi/upload",
+      auth: "gateway",
+      handler: async (req, res) => {
+        if (req.method !== "POST") {
+          res.statusCode = 404;
+          res.setHeader("Content-Type", "text/plain; charset=utf-8");
+          res.end("Not Found");
+          return;
+        }
+        await uploadHandler(req, res);
       },
     });
 

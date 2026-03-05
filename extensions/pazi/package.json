@@ -4,6 +4,9 @@
   "private": true,
   "description": "OpenClaw Pazi proxy",
   "type": "module",
+  "dependencies": {
+    "@sinclair/typebox": "0.34.48"
+  },
   "peerDependencies": {
     "openclaw": ">=2026.1.26"
   },
