@@ -40,7 +40,7 @@ jobs:
               with:
                   registry: ghcr.io
                   username: ${{ github.actor }}
-                  password: ${{ secrets.GH_PAT }}
+                  password: ${{ secrets.GHCR_TOKEN }}
 
             - name: Determine environment
               id: env
