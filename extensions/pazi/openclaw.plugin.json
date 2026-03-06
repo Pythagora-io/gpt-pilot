@@ -5,7 +5,9 @@
     "additionalProperties": false,
     "properties": {
       "apiUrl": { "type": "string" },
-      "proxyPort": { "type": "number" }
+      "proxyPort": { "type": "number" },
+      "browserUseEnabled": { "type": "boolean" },
+      "browserUseTimeoutMs": { "type": "number" }
     }
   }
 }
