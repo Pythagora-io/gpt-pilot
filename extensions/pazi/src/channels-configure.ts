@@ -16,9 +16,9 @@ interface ProbeResult {
   ok: boolean;
   status?: number | null;
   error?: string | null;
-  bot?: { id?: string | number; name?: string | null; username?: string | null };
-  team?: { id?: string; name?: string };
-  elapsedMs?: number;
+  bot?: { id?: string | number | null; name?: string | null; username?: string | null };
+  team?: { id?: string | null; name?: string | null };
+  elapsedMs?: number | null;
 }
 
 interface ChannelConfigureResult {
@@ -28,12 +28,17 @@ interface ChannelConfigureResult {
   probe?: ProbeResult;
 }
 
+type GatewayErrorShape = {
+  code: string;
+  message: string;
+};
+
 interface GatewayMethodContext {
   params: unknown;
-  respond: (ok: boolean, data: unknown) => void;
+  respond: (ok: boolean, data?: unknown, error?: GatewayErrorShape) => void;
   context: {
-    stopChannel: (channel: string, accountId?: string) => void;
-    startChannel: (channel: string, accountId?: string) => void;
+    stopChannel: (channel: string, accountId?: string) => Promise<void>;
+    startChannel: (channel: string, accountId?: string) => Promise<void>;
   };
 }
 
@@ -52,6 +57,17 @@ interface ChannelConfigureDeps {
 }
 
 const VALID_CHANNELS: ReadonlySet<string> = new Set(["slack", "telegram"]);
+const ERROR_INVALID_REQUEST = "INVALID_REQUEST";
+const ERROR_UNAVAILABLE = "UNAVAILABLE";
+
+function respondError(
+  respond: GatewayMethodContext["respond"],
+  code: string,
+  message: string,
+  payload?: unknown,
+): void {
+  respond(false, payload, { code, message });
+}
 
 function isChannelType(value: unknown): value is ChannelType {
   return typeof value === "string" && VALID_CHANNELS.has(value);
@@ -208,49 +224,87 @@ export function createPaziChannelsConfigureHandler(
   return async ({ params, respond, context }: GatewayMethodContext) => {
     const validation = validateParams(params);
     if (!validation.ok || !validation.params) {
-      respond(false, { error: validation.error ?? "invalid params" });
+      respondError(respond, ERROR_INVALID_REQUEST, validation.error ?? "invalid params");
       return;
     }
 
     const { channel, config: inputConfig } = validation.params;
-    const accountId = validation.params.accountId || "default";
+    const rawAccountId = validation.params.accountId?.trim();
+    const accountId = rawAccountId || "default";
     const timeoutMs = validation.params.timeoutMs ?? 5000;
 
     let probe: ProbeResult;
     try {
       if (channel === "slack") {
         const token = inputConfig.botToken?.trim() ?? "";
+        // probeSlack validates botToken. appToken validity is verified on channel restart.
         probe = await deps.probeSlack(token, timeoutMs);
       } else {
         const token = (inputConfig.token ?? inputConfig.botToken ?? "").trim();
         probe = await deps.probeTelegram(token, timeoutMs, undefined);
       }
     } catch (err) {
-      respond(false, {
-        error: `probe failed: ${err instanceof Error ? err.message : String(err)}`,
-      });
+      respondError(
+        respond,
+        ERROR_UNAVAILABLE,
+        `probe failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
       return;
     }
 
     if (!probe.ok) {
-      respond(false, {
-        error: probe.error ?? "token probe failed",
-        probe,
-      });
+      respondError(respond, ERROR_UNAVAILABLE, probe.error ?? "token probe failed", { probe });
       return;
     }
 
-    context.stopChannel(channel, accountId);
-
-    let cfg = deps.loadConfig();
-    if (channel === "slack") {
-      cfg = applySlackConfig(cfg, accountId, inputConfig);
-    } else {
-      cfg = applyTelegramConfig(cfg, accountId, inputConfig);
+    try {
+      await context.stopChannel(channel, accountId);
+    } catch (err) {
+      respondError(
+        respond,
+        ERROR_UNAVAILABLE,
+        `failed to stop channel: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return;
     }
-    await deps.writeConfigFile(cfg);
 
-    context.startChannel(channel, accountId);
+    try {
+      let cfg = deps.loadConfig();
+      if (channel === "slack") {
+        cfg = applySlackConfig(cfg, accountId, inputConfig);
+      } else {
+        cfg = applyTelegramConfig(cfg, accountId, inputConfig);
+      }
+      await deps.writeConfigFile(cfg);
+    } catch (err) {
+      try {
+        await context.startChannel(channel, accountId);
+      } catch (restartErr) {
+        respondError(
+          respond,
+          ERROR_UNAVAILABLE,
+          `config write failed and restart failed: ${restartErr instanceof Error ? restartErr.message : String(restartErr)}`,
+        );
+        return;
+      }
+      respondError(
+        respond,
+        ERROR_UNAVAILABLE,
+        `config write failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return;
+    }
+
+    try {
+      await context.startChannel(channel, accountId);
+    } catch (err) {
+      respondError(
+        respond,
+        ERROR_UNAVAILABLE,
+        `channel restart failed after config update: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return;
+    }
 
     const result: ChannelConfigureResult = {
       ok: true,
