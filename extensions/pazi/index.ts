@@ -60,6 +60,7 @@ export default {
 
     api.registerHttpRoute({
       path: "/pazi/context",
+      auth: "gateway",
       handler: async (req, res) => {
         if (req.method !== "POST") {
           res.statusCode = 404;
@@ -73,6 +74,7 @@ export default {
 
     api.registerHttpRoute({
       path: "/health",
+      auth: "gateway",
       handler: (_req, res) => {
         res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
         res.end(JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }));
@@ -81,6 +83,7 @@ export default {
 
     api.registerHttpRoute({
       path: "/status",
+      auth: "gateway",
       handler: (_req, res) => {
         res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
         res.end(
@@ -96,6 +99,7 @@ export default {
 
     api.registerHttpRoute({
       path: "/pazi/upload",
+      auth: "gateway",
       handler: async (req, res) => {
         if (req.method !== "POST") {
           res.statusCode = 404;
