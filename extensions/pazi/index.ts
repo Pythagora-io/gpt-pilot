@@ -1,5 +1,7 @@
 import type { Server as HttpServer } from "node:http";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
+import { resolveBrowserUseConfig } from "./src/browser-use/config.js";
+import { createBrowserUseTools } from "./src/browser-use/tools.js";
 import { resolvePaziBillingConfig } from "./src/config.js";
 import { getProxyContext } from "./src/context.js";
 import { createPipedreamTools } from "./src/pipedream/tools.js";
@@ -58,6 +60,17 @@ export default {
       api.registerTool(tool);
     }
 
+    const browserUseConfig = resolveBrowserUseConfig({
+      pluginConfig,
+      env: process.env,
+    });
+    if (browserUseConfig.browserUseEnabled) {
+      const browserUseTools = createBrowserUseTools({ pluginConfig });
+      for (const tool of browserUseTools) {
+        api.registerTool(tool);
+      }
+    }
+
     api.registerHttpRoute({
       path: "/pazi/context",
       auth: "gateway",
@@ -74,6 +87,7 @@ export default {
 
     api.registerHttpRoute({
       path: "/health",
+      auth: "gateway",
       handler: (_req, res) => {
         res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
         res.end(JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }));
@@ -82,6 +96,7 @@ export default {
 
     api.registerHttpRoute({
       path: "/status",
+      auth: "gateway",
       handler: (_req, res) => {
         res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
         res.end(

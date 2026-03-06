@@ -94,6 +94,8 @@ RUN mkdir -p /home/pazi/generations /home/pazi/.config /home/pazi/.local/share &
 
 # Supervisord config
 COPY supervisord.pazi.conf /etc/supervisor/conf.d/supervisord.conf
+COPY entrypoint.pazi.sh /usr/local/bin/entrypoint.pazi.sh
+RUN chmod +x /usr/local/bin/entrypoint.pazi.sh
 
 ENV NODE_ENV=production \
     OPENCLAW_GATEWAY_PORT=3000 \
@@ -109,4 +111,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # supervisord runs as root to manage child processes with different users
 USER root
 
-CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/usr/local/bin/entrypoint.pazi.sh"]
