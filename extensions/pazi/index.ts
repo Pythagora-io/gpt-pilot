@@ -7,6 +7,7 @@ import { getProxyContext } from "./src/context.js";
 import { createPipedreamTools } from "./src/pipedream/tools.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
+import { createPaziChannelsConfigureHandler } from "./src/channels-configure.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
 
 function normalizePluginConfig(
@@ -51,6 +52,17 @@ export default {
       context.broadcast("integration", params);
       respond(true, { emitted: true });
     });
+
+    api.registerGatewayMethod(
+      "pazi.channels.configure",
+      createPaziChannelsConfigureHandler({
+        loadConfig: () => api.runtime.config.loadConfig(),
+        writeConfigFile: (cfg) => api.runtime.config.writeConfigFile(cfg),
+        probeSlack: (token, timeoutMs) => api.runtime.channel.slack.probeSlack(token, timeoutMs),
+        probeTelegram: (token, timeoutMs, proxyUrl) =>
+          api.runtime.channel.telegram.probeTelegram(token, timeoutMs, proxyUrl),
+      }),
+    );
 
     const tools = createPipedreamTools({
       pluginConfig,
