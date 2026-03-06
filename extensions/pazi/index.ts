@@ -60,7 +60,6 @@ export default {
 
     api.registerHttpRoute({
       path: "/pazi/context",
-      auth: "gateway",
       handler: async (req, res) => {
         if (req.method !== "POST") {
           res.statusCode = 404;
@@ -97,7 +96,6 @@ export default {
 
     api.registerHttpRoute({
       path: "/pazi/upload",
-      auth: "gateway",
       handler: async (req, res) => {
         if (req.method !== "POST") {
           res.statusCode = 404;
