@@ -14,7 +14,6 @@ const PAIRING_CODE_LENGTH = 8;
 const PAIRING_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const PAIRING_PENDING_TTL_MS = 60 * 60 * 1000;
 const PAIRING_PENDING_MAX = 3;
-const CHANNEL_ONBOARDING_CODE_TTL_MS = 15 * 60 * 1000;
 const PAIRING_STORE_LOCK_OPTIONS = {
   retries: {
     retries: 10,
@@ -53,13 +52,6 @@ type PairingStore = {
 type AllowFromStore = {
   version: 1;
   allowFrom: string[];
-};
-
-type ChannelOnboardingCodeStore = {
-  version: 1;
-  code: string;
-  issuedAt: string;
-  expiresAt: string;
 };
 
 function resolveCredentialsDir(env: NodeJS.ProcessEnv = process.env): string {
@@ -109,19 +101,6 @@ function resolveAllowFromPath(
   return path.join(
     resolveCredentialsDir(env),
     `${base}-${safeAccountKey(normalizedAccountId)}-allowFrom.json`,
-  );
-}
-
-function resolveOnboardingCodePath(
-  channel: PairingChannel,
-  env: NodeJS.ProcessEnv = process.env,
-  accountId?: string,
-): string {
-  const base = safeChannelKey(channel);
-  const resolvedAccountId = resolveAllowFromAccountId(accountId);
-  return path.join(
-    resolveCredentialsDir(env),
-    `${base}-${safeAccountKey(resolvedAccountId)}-onboarding.json`,
   );
 }
 
@@ -240,10 +219,6 @@ function generateUniqueCode(existing: Set<string>): string {
     }
   }
   throw new Error("failed to generate unique pairing code");
-}
-
-function normalizePairingCode(value: string): string {
-  return value.trim().toUpperCase();
 }
 
 function normalizePairingAccountId(accountId?: string): string {
@@ -828,7 +803,7 @@ export async function approveChannelPairingCode(params: {
   env?: NodeJS.ProcessEnv;
 }): Promise<{ id: string; entry?: PairingRequest } | null> {
   const env = params.env ?? process.env;
-  const code = normalizePairingCode(params.code);
+  const code = params.code.trim().toUpperCase();
   if (!code) {
     return null;
   }
@@ -874,90 +849,4 @@ export async function approveChannelPairingCode(params: {
       return { id: entry.id, entry };
     },
   );
-}
-
-export async function issueChannelOnboardingCode(params: {
-  channel: PairingChannel;
-  accountId?: string;
-  ttlMs?: number;
-  env?: NodeJS.ProcessEnv;
-}): Promise<{ code: string; expiresAt: string }> {
-  const env = params.env ?? process.env;
-  const filePath = resolveOnboardingCodePath(params.channel, env, params.accountId);
-  const requestedTtlMs =
-    typeof params.ttlMs === "number" && Number.isFinite(params.ttlMs)
-      ? Math.floor(params.ttlMs)
-      : CHANNEL_ONBOARDING_CODE_TTL_MS;
-  const ttlMs =
-    requestedTtlMs > 0
-      ? Math.min(requestedTtlMs, 24 * 60 * 60 * 1000)
-      : CHANNEL_ONBOARDING_CODE_TTL_MS;
-  return await withFileLock(
-    filePath,
-    {
-      version: 1,
-      code: "",
-      issuedAt: "",
-      expiresAt: "",
-    } satisfies ChannelOnboardingCodeStore,
-    async () => {
-      const nowMs = Date.now();
-      const code = randomCode();
-      const issuedAt = new Date(nowMs).toISOString();
-      const expiresAt = new Date(nowMs + ttlMs).toISOString();
-      await writeJsonFile(filePath, {
-        version: 1,
-        code,
-        issuedAt,
-        expiresAt,
-      } satisfies ChannelOnboardingCodeStore);
-      return { code, expiresAt };
-    },
-  );
-}
-
-export async function consumeChannelOnboardingCode(params: {
-  channel: PairingChannel;
-  accountId?: string;
-  code: string;
-  env?: NodeJS.ProcessEnv;
-}): Promise<boolean> {
-  const env = params.env ?? process.env;
-  const requestedCode = normalizePairingCode(params.code);
-  if (!requestedCode) {
-    return false;
-  }
-  const filePath = resolveOnboardingCodePath(params.channel, env, params.accountId);
-  try {
-    await fs.promises.access(filePath);
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
-      return false;
-    }
-    throw err;
-  }
-  const emptyStore = {
-    version: 1,
-    code: "",
-    issuedAt: "",
-    expiresAt: "",
-  } satisfies ChannelOnboardingCodeStore;
-  return await withFileLock(filePath, emptyStore, async () => {
-    const { value } = await readJsonFile<ChannelOnboardingCodeStore>(filePath, emptyStore);
-    const storedCode = normalizePairingCode(typeof value.code === "string" ? value.code : "");
-    if (!storedCode) {
-      return false;
-    }
-    const expiresAtMs = parseTimestamp(value.expiresAt);
-    const expired = expiresAtMs === null || expiresAtMs <= Date.now();
-    if (expired) {
-      await writeJsonFile(filePath, emptyStore);
-      return false;
-    }
-    if (storedCode !== requestedCode) {
-      return false;
-    }
-    await writeJsonFile(filePath, emptyStore);
-    return true;
-  });
 }

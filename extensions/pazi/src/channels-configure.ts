@@ -26,12 +26,12 @@ interface ProbeResult {
 }
 
 interface TelegramOnboardingResult {
-  mode: "start-code";
+  mode: "pairing";
   dmPolicy: "pairing";
   command: string;
-  codeExpiresAt: string;
   botUsername?: string | null;
   deepLink?: string;
+  pollingIntervalMs?: number;
 }
 
 interface ChannelConfigureResult {
@@ -68,17 +68,11 @@ interface ChannelConfigureDeps {
     timeoutMs: number,
     proxyUrl: string | undefined,
   ) => Promise<ProbeResult>;
-  issueOnboardingCode: (params: {
-    channel: "telegram";
-    accountId: string;
-    ttlMs?: number;
-  }) => Promise<{ code: string; expiresAt: string }>;
 }
 
 const VALID_CHANNELS: ReadonlySet<string> = new Set(["slack", "telegram"]);
 const ERROR_INVALID_REQUEST = "INVALID_REQUEST";
 const ERROR_UNAVAILABLE = "UNAVAILABLE";
-const TELEGRAM_ONBOARDING_TTL_MS = 15 * 60 * 1000;
 
 function respondError(
   respond: GatewayMethodContext["respond"],
@@ -337,28 +331,19 @@ export function createPaziChannelsConfigureHandler(
       probe,
     };
     if (channel === "telegram") {
-      try {
-        const onboardingCode = await deps.issueOnboardingCode({
-          channel: "telegram",
-          accountId,
-          ttlMs: TELEGRAM_ONBOARDING_TTL_MS,
-        });
-        const botUsername = probe.bot?.username?.trim() ?? "";
-        result.onboarding = {
-          mode: "start-code",
-          dmPolicy: "pairing",
-          command: `/start ${onboardingCode.code}`,
-          codeExpiresAt: onboardingCode.expiresAt,
-          botUsername: botUsername || undefined,
-          ...(botUsername
-            ? {
-                deepLink: `https://t.me/${encodeURIComponent(botUsername)}?start=${onboardingCode.code}`,
-              }
-            : {}),
-        };
-      } catch {
-        // Fail open on onboarding hint generation so channel configuration still succeeds.
-      }
+      const botUsername = probe.bot?.username?.trim() ?? "";
+      result.onboarding = {
+        mode: "pairing",
+        dmPolicy: "pairing",
+        command: "/start",
+        botUsername: botUsername || undefined,
+        pollingIntervalMs: 3000,
+        ...(botUsername
+          ? {
+              deepLink: `https://t.me/${encodeURIComponent(botUsername)}`,
+            }
+          : {}),
+      };
     }
     respond(true, result);
   };

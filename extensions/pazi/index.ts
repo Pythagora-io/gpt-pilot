@@ -1,8 +1,17 @@
 import type { Server as HttpServer } from "node:http";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
+import { notifyPairingApproved } from "../../src/channels/plugins/pairing.js";
+import {
+  approveChannelPairingCode,
+  listChannelPairingRequests,
+} from "../../src/pairing/pairing-store.js";
 import { resolveBrowserUseConfig } from "./src/browser-use/config.js";
 import { createBrowserUseTools } from "./src/browser-use/tools.js";
 import { createPaziChannelsConfigureHandler } from "./src/channels-configure.js";
+import {
+  createPaziChannelsPairingApproveHandler,
+  createPaziChannelsPairingListHandler,
+} from "./src/channels-pairing.js";
 import { resolvePaziBillingConfig } from "./src/config.js";
 import { getProxyContext } from "./src/context.js";
 import { createPipedreamTools } from "./src/pipedream/tools.js";
@@ -36,14 +45,18 @@ export default {
   description: "Routes Anthropic calls through the Pazi API.",
   register(api: OpenClawPluginApi) {
     const pluginConfig = normalizePluginConfig(api.pluginConfig);
+    const gatewayAuthToken =
+      typeof api.config.gateway?.auth?.token === "string"
+        ? api.config.gateway.auth.token
+        : undefined;
     const contextHandler = createPaziContextHandler({
-      configToken: api.config.gateway?.auth?.token,
+      configToken: gatewayAuthToken,
       env: process.env,
       logger: api.logger,
     });
 
     const uploadHandler = createPaziUploadHandler({
-      configToken: api.config.gateway?.auth?.token,
+      configToken: gatewayAuthToken,
       env: process.env,
       logger: api.logger,
     });
@@ -61,13 +74,43 @@ export default {
         probeSlack: (token, timeoutMs) => api.runtime.channel.slack.probeSlack(token, timeoutMs),
         probeTelegram: (token, timeoutMs, proxyUrl) =>
           api.runtime.channel.telegram.probeTelegram(token, timeoutMs, proxyUrl),
-        issueOnboardingCode: ({ channel, accountId, ttlMs }) =>
-          api.runtime.channel.pairing.issueOnboardingCode({
-            channel,
-            accountId,
-            ttlMs,
-          }),
       }),
+    );
+    const pairingGatewayDeps = {
+      loadConfig: () => api.runtime.config.loadConfig(),
+      listRequests: async (channel: "telegram", accountId?: string) =>
+        await listChannelPairingRequests(channel, process.env, accountId),
+      approveCode: async ({
+        channel,
+        accountId,
+        code,
+      }: {
+        channel: "telegram";
+        accountId?: string;
+        code: string;
+      }) => await approveChannelPairingCode({ channel, accountId, code }),
+      notifyApproved: async ({
+        channelId,
+        id,
+        cfg,
+      }: {
+        channelId: "telegram";
+        id: string;
+        cfg: Record<string, unknown>;
+      }) =>
+        await notifyPairingApproved({
+          channelId,
+          id,
+          cfg,
+        }),
+    };
+    api.registerGatewayMethod(
+      "pazi.channels.pairing.list",
+      createPaziChannelsPairingListHandler(pairingGatewayDeps),
+    );
+    api.registerGatewayMethod(
+      "pazi.channels.pairing.approve",
+      createPaziChannelsPairingApproveHandler(pairingGatewayDeps),
     );
 
     const tools = createPipedreamTools({

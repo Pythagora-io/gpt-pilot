@@ -90,7 +90,6 @@ import { saveMediaBuffer } from "../../media/store.js";
 import { buildPairingReply } from "../../pairing/pairing-messages.js";
 import {
   readChannelAllowFromStore,
-  issueChannelOnboardingCode,
   upsertChannelPairingRequest,
 } from "../../pairing/pairing-store.js";
 import { buildAgentSessionKey, resolveAgentRoute } from "../../routing/resolve-route.js";
@@ -160,13 +159,6 @@ export function createRuntimeChannel(): PluginRuntime["channel"] {
           meta,
           env,
           pairingAdapter,
-        }),
-      issueOnboardingCode: ({ channel, accountId, env, ttlMs }) =>
-        issueChannelOnboardingCode({
-          channel,
-          accountId,
-          env,
-          ttlMs,
         }),
     },
     media: {
