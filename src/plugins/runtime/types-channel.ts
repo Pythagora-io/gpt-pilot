@@ -2,6 +2,8 @@ type ReadChannelAllowFromStore =
   typeof import("../../pairing/pairing-store.js").readChannelAllowFromStore;
 type UpsertChannelPairingRequest =
   typeof import("../../pairing/pairing-store.js").upsertChannelPairingRequest;
+type IssueChannelOnboardingCode =
+  typeof import("../../pairing/pairing-store.js").issueChannelOnboardingCode;
 
 type ReadChannelAllowFromStoreForAccount = (params: {
   channel: Parameters<ReadChannelAllowFromStore>[0];
@@ -10,8 +12,16 @@ type ReadChannelAllowFromStoreForAccount = (params: {
 }) => ReturnType<ReadChannelAllowFromStore>;
 
 type UpsertChannelPairingRequestForAccount = (
-  params: Omit<Parameters<UpsertChannelPairingRequest>[0], "accountId"> & { accountId: string },
+  params: Omit<Parameters<UpsertChannelPairingRequest>[0], "accountId"> & {
+    accountId: string;
+  },
 ) => ReturnType<UpsertChannelPairingRequest>;
+
+type IssueChannelOnboardingCodeForAccount = (
+  params: Omit<Parameters<IssueChannelOnboardingCode>[0], "accountId"> & {
+    accountId: string;
+  },
+) => ReturnType<IssueChannelOnboardingCode>;
 
 export type PluginRuntimeChannel = {
   text: {
@@ -47,6 +57,7 @@ export type PluginRuntimeChannel = {
     buildPairingReply: typeof import("../../pairing/pairing-messages.js").buildPairingReply;
     readAllowFromStore: ReadChannelAllowFromStoreForAccount;
     upsertPairingRequest: UpsertChannelPairingRequestForAccount;
+    issueOnboardingCode: IssueChannelOnboardingCodeForAccount;
   };
   media: {
     fetchRemoteMedia: typeof import("../../media/fetch.js").fetchRemoteMedia;

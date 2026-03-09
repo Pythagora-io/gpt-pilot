@@ -10,6 +10,8 @@ import { withEnvAsync } from "../test-utils/env.js";
 import {
   addChannelAllowFromStoreEntry,
   clearPairingAllowFromReadCacheForTest,
+  consumeChannelOnboardingCode,
+  issueChannelOnboardingCode,
   approveChannelPairingCode,
   listChannelPairingRequests,
   readChannelAllowFromStore,
@@ -471,6 +473,59 @@ describe("pairing store", () => {
       const syncScoped = readChannelAllowFromStoreSync("telegram", process.env);
       expect(asyncScoped).toEqual(["1002", "1001"]);
       expect(syncScoped).toEqual(["1002", "1001"]);
+    });
+  });
+
+  it("issues onboarding codes and consumes them once", async () => {
+    await withTempStateDir(async () => {
+      const issued = await issueChannelOnboardingCode({
+        channel: "telegram",
+        accountId: "yy",
+      });
+      expect(issued.code).toMatch(/^[A-Z2-9]{8}$/);
+      expect(issued.expiresAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+
+      const consumed = await consumeChannelOnboardingCode({
+        channel: "telegram",
+        accountId: "yy",
+        code: issued.code.toLowerCase(),
+      });
+      expect(consumed).toBe(true);
+
+      const consumedAgain = await consumeChannelOnboardingCode({
+        channel: "telegram",
+        accountId: "yy",
+        code: issued.code,
+      });
+      expect(consumedAgain).toBe(false);
+    });
+  });
+
+  it("rejects onboarding codes for wrong account and after expiry", async () => {
+    await withTempStateDir(async () => {
+      const issued = await issueChannelOnboardingCode({
+        channel: "telegram",
+        accountId: "yy",
+        ttlMs: 5,
+      });
+
+      const mismatchedAccount = await consumeChannelOnboardingCode({
+        channel: "telegram",
+        accountId: "zz",
+        code: issued.code,
+      });
+      expect(mismatchedAccount).toBe(false);
+
+      await new Promise((resolve) => {
+        setTimeout(resolve, 20);
+      });
+
+      const expired = await consumeChannelOnboardingCode({
+        channel: "telegram",
+        accountId: "yy",
+        code: issued.code,
+      });
+      expect(expired).toBe(false);
     });
   });
 

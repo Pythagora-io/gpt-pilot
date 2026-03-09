@@ -17,7 +17,9 @@ function isObject(value: unknown): value is Record<string, unknown> {
 }
 
 function mergeDeep<T>(base: T, overrides: DeepPartial<T>): T {
-  const result: Record<string, unknown> = { ...(base as Record<string, unknown>) };
+  const result: Record<string, unknown> = {
+    ...(base as Record<string, unknown>),
+  };
   for (const [key, overrideValue] of Object.entries(overrides as Record<string, unknown>)) {
     if (overrideValue === undefined) {
       continue;
@@ -153,6 +155,10 @@ export function createPluginRuntimeMock(overrides: DeepPartial<PluginRuntime> = 
           code: "TESTCODE",
           created: true,
         }) as unknown as PluginRuntime["channel"]["pairing"]["upsertPairingRequest"],
+        issueOnboardingCode: vi.fn().mockResolvedValue({
+          code: "TESTCODE",
+          expiresAt: "2099-01-01T00:00:00.000Z",
+        }) as unknown as PluginRuntime["channel"]["pairing"]["issueOnboardingCode"],
       },
       media: {
         fetchRemoteMedia:

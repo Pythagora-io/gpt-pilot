@@ -16,9 +16,22 @@ interface ProbeResult {
   ok: boolean;
   status?: number | null;
   error?: string | null;
-  bot?: { id?: string | number | null; name?: string | null; username?: string | null };
+  bot?: {
+    id?: string | number | null;
+    name?: string | null;
+    username?: string | null;
+  };
   team?: { id?: string | null; name?: string | null };
   elapsedMs?: number | null;
+}
+
+interface TelegramOnboardingResult {
+  mode: "start-code";
+  dmPolicy: "pairing";
+  command: string;
+  codeExpiresAt: string;
+  botUsername?: string | null;
+  deepLink?: string;
 }
 
 interface ChannelConfigureResult {
@@ -26,6 +39,7 @@ interface ChannelConfigureResult {
   channel: ChannelType;
   accountId: string;
   probe?: ProbeResult;
+  onboarding?: TelegramOnboardingResult;
 }
 
 type GatewayErrorShape = {
@@ -54,11 +68,17 @@ interface ChannelConfigureDeps {
     timeoutMs: number,
     proxyUrl: string | undefined,
   ) => Promise<ProbeResult>;
+  issueOnboardingCode: (params: {
+    channel: "telegram";
+    accountId: string;
+    ttlMs?: number;
+  }) => Promise<{ code: string; expiresAt: string }>;
 }
 
 const VALID_CHANNELS: ReadonlySet<string> = new Set(["slack", "telegram"]);
 const ERROR_INVALID_REQUEST = "INVALID_REQUEST";
 const ERROR_UNAVAILABLE = "UNAVAILABLE";
+const TELEGRAM_ONBOARDING_TTL_MS = 15 * 60 * 1000;
 
 function respondError(
   respond: GatewayMethodContext["respond"],
@@ -193,7 +213,7 @@ function applyTelegramConfig(
           ...cfg.channels?.telegram,
           enabled: true,
           botToken: token,
-          dmPolicy: "open",
+          dmPolicy: "pairing",
           ...(input.name ? { name: input.name } : {}),
         },
       },
@@ -213,7 +233,7 @@ function applyTelegramConfig(
             ...cfg.channels?.telegram?.accounts?.[accountId],
             enabled: true,
             botToken: token,
-            dmPolicy: "open",
+            dmPolicy: "pairing",
             ...(input.name ? { name: input.name } : {}),
           },
         },
@@ -316,6 +336,30 @@ export function createPaziChannelsConfigureHandler(
       accountId,
       probe,
     };
+    if (channel === "telegram") {
+      try {
+        const onboardingCode = await deps.issueOnboardingCode({
+          channel: "telegram",
+          accountId,
+          ttlMs: TELEGRAM_ONBOARDING_TTL_MS,
+        });
+        const botUsername = probe.bot?.username?.trim() ?? "";
+        result.onboarding = {
+          mode: "start-code",
+          dmPolicy: "pairing",
+          command: `/start ${onboardingCode.code}`,
+          codeExpiresAt: onboardingCode.expiresAt,
+          botUsername: botUsername || undefined,
+          ...(botUsername
+            ? {
+                deepLink: `https://t.me/${encodeURIComponent(botUsername)}?start=${onboardingCode.code}`,
+              }
+            : {}),
+        };
+      } catch {
+        // Fail open on onboarding hint generation so channel configuration still succeeds.
+      }
+    }
     respond(true, result);
   };
 }

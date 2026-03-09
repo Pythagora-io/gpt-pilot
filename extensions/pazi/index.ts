@@ -2,12 +2,12 @@ import type { Server as HttpServer } from "node:http";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { resolveBrowserUseConfig } from "./src/browser-use/config.js";
 import { createBrowserUseTools } from "./src/browser-use/tools.js";
+import { createPaziChannelsConfigureHandler } from "./src/channels-configure.js";
 import { resolvePaziBillingConfig } from "./src/config.js";
 import { getProxyContext } from "./src/context.js";
 import { createPipedreamTools } from "./src/pipedream/tools.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
-import { createPaziChannelsConfigureHandler } from "./src/channels-configure.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
 
 function normalizePluginConfig(
@@ -61,6 +61,12 @@ export default {
         probeSlack: (token, timeoutMs) => api.runtime.channel.slack.probeSlack(token, timeoutMs),
         probeTelegram: (token, timeoutMs, proxyUrl) =>
           api.runtime.channel.telegram.probeTelegram(token, timeoutMs, proxyUrl),
+        issueOnboardingCode: ({ channel, accountId, ttlMs }) =>
+          api.runtime.channel.pairing.issueOnboardingCode({
+            channel,
+            accountId,
+            ttlMs,
+          }),
       }),
     );
 
@@ -101,7 +107,9 @@ export default {
       path: "/health",
       auth: "gateway",
       handler: (_req, res) => {
-        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.writeHead(200, {
+          "Content-Type": "application/json; charset=utf-8",
+        });
         res.end(JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }));
       },
     });
@@ -110,7 +118,9 @@ export default {
       path: "/status",
       auth: "gateway",
       handler: (_req, res) => {
-        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.writeHead(200, {
+          "Content-Type": "application/json; charset=utf-8",
+        });
         res.end(
           JSON.stringify({
             status: "running",

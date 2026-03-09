@@ -1,9 +1,10 @@
 import type { Message } from "@grammyjs/types";
 import type { Bot } from "grammy";
+import { PAIRING_APPROVED_MESSAGE } from "../channels/plugins/pairing-message.js";
 import type { DmPolicy } from "../config/types.js";
 import { logVerbose } from "../globals.js";
 import { issuePairingChallenge } from "../pairing/pairing-challenge.js";
-import { upsertChannelPairingRequest } from "../pairing/pairing-store.js";
+import * as pairingStore from "../pairing/pairing-store.js";
 import { withTelegramApiErrorLogging } from "./api-logging.js";
 import { resolveSenderAllowMatch, type NormalizedAllowFrom } from "./bot-access.js";
 
@@ -31,6 +32,16 @@ function resolveTelegramSenderIdentity(msg: Message, chatId: number): TelegramSe
   };
 }
 
+function resolveTelegramStartPayload(msg: Message): string | null {
+  const text = typeof msg.text === "string" ? msg.text.trim() : "";
+  if (!text) {
+    return null;
+  }
+  const match = text.match(/^\/start(?:@[a-z0-9_]+)?(?:\s+([a-z0-9_-]{1,64}))?\s*$/i);
+  const payload = match?.[1]?.trim();
+  return payload || null;
+}
+
 export async function enforceTelegramDmAccess(params: {
   isGroup: boolean;
   dmPolicy: DmPolicy;
@@ -53,6 +64,43 @@ export async function enforceTelegramDmAccess(params: {
   }
 
   const sender = resolveTelegramSenderIdentity(msg, chatId);
+  const onboardingPayload = resolveTelegramStartPayload(msg);
+  if (onboardingPayload) {
+    try {
+      const consumed = await pairingStore.consumeChannelOnboardingCode({
+        channel: "telegram",
+        accountId,
+        code: onboardingPayload,
+      });
+      if (consumed) {
+        const approvedId = sender.userId ?? sender.candidateId;
+        await pairingStore.addChannelAllowFromStoreEntry({
+          channel: "telegram",
+          accountId,
+          entry: approvedId,
+        });
+        logger.info(
+          {
+            chatId: String(chatId),
+            senderUserId: sender.userId ?? undefined,
+            username: sender.username || undefined,
+            firstName: sender.firstName,
+            lastName: sender.lastName,
+          },
+          "telegram onboarding approved sender",
+        );
+        await withTelegramApiErrorLogging({
+          operation: "sendMessage",
+          fn: () => bot.api.sendMessage(chatId, PAIRING_APPROVED_MESSAGE),
+        });
+        // /start <code> is a setup handshake; ask for a follow-up message after approval.
+        return false;
+      }
+    } catch (err) {
+      logVerbose(`telegram onboarding flow failed for chat ${chatId}: ${String(err)}`);
+    }
+  }
+
   const allowMatch = resolveSenderAllowMatch({
     allow: effectiveDmAllow,
     senderId: sender.candidateId,
@@ -80,7 +128,7 @@ export async function enforceTelegramDmAccess(params: {
           lastName: sender.lastName,
         },
         upsertPairingRequest: async ({ id, meta }) =>
-          await upsertChannelPairingRequest({
+          await pairingStore.upsertChannelPairingRequest({
             channel: "telegram",
             id,
             accountId,
