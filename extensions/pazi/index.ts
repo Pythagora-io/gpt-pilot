@@ -1,13 +1,22 @@
 import type { Server as HttpServer } from "node:http";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
+import { notifyPairingApproved } from "../../src/channels/plugins/pairing.js";
+import {
+  approveChannelPairingCode,
+  listChannelPairingRequests,
+} from "../../src/pairing/pairing-store.js";
 import { resolveBrowserUseConfig } from "./src/browser-use/config.js";
 import { createBrowserUseTools } from "./src/browser-use/tools.js";
+import { createPaziChannelsConfigureHandler } from "./src/channels-configure.js";
+import {
+  createPaziChannelsPairingApproveHandler,
+  createPaziChannelsPairingListHandler,
+} from "./src/channels-pairing.js";
 import { resolvePaziBillingConfig } from "./src/config.js";
 import { getProxyContext } from "./src/context.js";
 import { createPipedreamTools } from "./src/pipedream/tools.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
-import { createPaziChannelsConfigureHandler } from "./src/channels-configure.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
 
 function normalizePluginConfig(
@@ -36,14 +45,18 @@ export default {
   description: "Routes Anthropic calls through the Pazi API.",
   register(api: OpenClawPluginApi) {
     const pluginConfig = normalizePluginConfig(api.pluginConfig);
+    const gatewayAuthToken =
+      typeof api.config.gateway?.auth?.token === "string"
+        ? api.config.gateway.auth.token
+        : undefined;
     const contextHandler = createPaziContextHandler({
-      configToken: api.config.gateway?.auth?.token,
+      configToken: gatewayAuthToken,
       env: process.env,
       logger: api.logger,
     });
 
     const uploadHandler = createPaziUploadHandler({
-      configToken: api.config.gateway?.auth?.token,
+      configToken: gatewayAuthToken,
       env: process.env,
       logger: api.logger,
     });
@@ -62,6 +75,56 @@ export default {
         probeTelegram: (token, timeoutMs, proxyUrl) =>
           api.runtime.channel.telegram.probeTelegram(token, timeoutMs, proxyUrl),
       }),
+    );
+    const gatewayEnv = process.env;
+    const pairingGatewayDeps = {
+      loadConfig: () => api.runtime.config.loadConfig(),
+      env: gatewayEnv,
+      logWarn: (message: string) => {
+        api.logger.warn(message);
+      },
+      listRequests: ({
+        channel,
+        accountId,
+        env,
+      }: {
+        channel: "telegram";
+        accountId: string;
+        env: NodeJS.ProcessEnv;
+      }) => listChannelPairingRequests(channel, env, accountId),
+      approveCode: ({
+        channel,
+        accountId,
+        code,
+        env,
+      }: {
+        channel: "telegram";
+        accountId: string;
+        code: string;
+        env: NodeJS.ProcessEnv;
+      }) => approveChannelPairingCode({ channel, accountId, code, env }),
+      notifyApproved: ({
+        channelId,
+        id,
+        cfg,
+      }: {
+        channelId: "telegram";
+        id: string;
+        cfg: Record<string, unknown>;
+      }) =>
+        notifyPairingApproved({
+          channelId,
+          id,
+          cfg,
+        }),
+    };
+    api.registerGatewayMethod(
+      "pazi.channels.pairing.list",
+      createPaziChannelsPairingListHandler(pairingGatewayDeps),
+    );
+    api.registerGatewayMethod(
+      "pazi.channels.pairing.approve",
+      createPaziChannelsPairingApproveHandler(pairingGatewayDeps),
     );
 
     const tools = createPipedreamTools({
@@ -101,7 +164,9 @@ export default {
       path: "/health",
       auth: "gateway",
       handler: (_req, res) => {
-        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.writeHead(200, {
+          "Content-Type": "application/json; charset=utf-8",
+        });
         res.end(JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }));
       },
     });
@@ -110,7 +175,9 @@ export default {
       path: "/status",
       auth: "gateway",
       handler: (_req, res) => {
-        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.writeHead(200, {
+          "Content-Type": "application/json; charset=utf-8",
+        });
         res.end(
           JSON.stringify({
             status: "running",

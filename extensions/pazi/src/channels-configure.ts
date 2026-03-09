@@ -16,9 +16,22 @@ interface ProbeResult {
   ok: boolean;
   status?: number | null;
   error?: string | null;
-  bot?: { id?: string | number | null; name?: string | null; username?: string | null };
+  bot?: {
+    id?: string | number | null;
+    name?: string | null;
+    username?: string | null;
+  };
   team?: { id?: string | null; name?: string | null };
   elapsedMs?: number | null;
+}
+
+interface TelegramOnboardingResult {
+  mode: "pairing";
+  dmPolicy: "pairing";
+  command: string;
+  botUsername?: string | null;
+  deepLink?: string;
+  pollingIntervalMs?: number;
 }
 
 interface ChannelConfigureResult {
@@ -26,6 +39,7 @@ interface ChannelConfigureResult {
   channel: ChannelType;
   accountId: string;
   probe?: ProbeResult;
+  onboarding?: TelegramOnboardingResult;
 }
 
 type GatewayErrorShape = {
@@ -59,6 +73,7 @@ interface ChannelConfigureDeps {
 const VALID_CHANNELS: ReadonlySet<string> = new Set(["slack", "telegram"]);
 const ERROR_INVALID_REQUEST = "INVALID_REQUEST";
 const ERROR_UNAVAILABLE = "UNAVAILABLE";
+const TELEGRAM_PAIRING_POLL_INTERVAL_MS = 3000;
 
 function respondError(
   respond: GatewayMethodContext["respond"],
@@ -193,7 +208,7 @@ function applyTelegramConfig(
           ...cfg.channels?.telegram,
           enabled: true,
           botToken: token,
-          dmPolicy: "open",
+          dmPolicy: "pairing",
           ...(input.name ? { name: input.name } : {}),
         },
       },
@@ -213,7 +228,7 @@ function applyTelegramConfig(
             ...cfg.channels?.telegram?.accounts?.[accountId],
             enabled: true,
             botToken: token,
-            dmPolicy: "open",
+            dmPolicy: "pairing",
             ...(input.name ? { name: input.name } : {}),
           },
         },
@@ -316,6 +331,21 @@ export function createPaziChannelsConfigureHandler(
       accountId,
       probe,
     };
+    if (channel === "telegram") {
+      const botUsername = probe.bot?.username?.trim() ?? "";
+      result.onboarding = {
+        mode: "pairing",
+        dmPolicy: "pairing",
+        command: "/start",
+        botUsername: botUsername || undefined,
+        pollingIntervalMs: TELEGRAM_PAIRING_POLL_INTERVAL_MS,
+        ...(botUsername
+          ? {
+              deepLink: `https://t.me/${encodeURIComponent(botUsername)}`,
+            }
+          : {}),
+      };
+    }
     respond(true, result);
   };
 }
