@@ -200,8 +200,15 @@ export function createPaziChannelsPairingApproveHandler(
     }
 
     const accountId = resolveAccountId(parsed.value.accountId);
+    let cfgSnapshot: OpenClawConfig | null = null;
     try {
-      const cfgSnapshot = deps.loadConfig();
+      cfgSnapshot = deps.loadConfig();
+    } catch (err) {
+      deps.logWarn(
+        `pazi.channels.pairing.approve failed to load config snapshot before approval: ${String(err)}`,
+      );
+    }
+    try {
       const approved = await deps.approveCode({
         channel: parsed.value.channel,
         accountId,
@@ -218,17 +225,23 @@ export function createPaziChannelsPairingApproveHandler(
         respond(true, result);
         return;
       }
-      try {
-        await deps.notifyApproved({
-          channelId: parsed.value.channel,
-          id: approved.id,
-          cfg: cfgSnapshot,
-        });
-      } catch (err) {
+      if (cfgSnapshot) {
+        try {
+          await deps.notifyApproved({
+            channelId: parsed.value.channel,
+            id: approved.id,
+            cfg: cfgSnapshot,
+          });
+        } catch (err) {
+          deps.logWarn(
+            `pazi.channels.pairing.approve notification failed for telegram id=${approved.id}: ${String(err)}`,
+          );
+          // Approval is persisted even when notification back to Telegram fails.
+        }
+      } else {
         deps.logWarn(
-          `pazi.channels.pairing.approve notification failed for telegram id=${approved.id}: ${String(err)}`,
+          `pazi.channels.pairing.approve notification skipped for telegram id=${approved.id} because config snapshot was unavailable`,
         );
-        // Approval is persisted even when notification back to Telegram fails.
       }
       const result: PairingApproveResult = {
         ok: true,
