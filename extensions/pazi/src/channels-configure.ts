@@ -73,6 +73,7 @@ interface ChannelConfigureDeps {
 const VALID_CHANNELS: ReadonlySet<string> = new Set(["slack", "telegram"]);
 const ERROR_INVALID_REQUEST = "INVALID_REQUEST";
 const ERROR_UNAVAILABLE = "UNAVAILABLE";
+const TELEGRAM_PAIRING_POLL_INTERVAL_MS = 3000;
 
 function respondError(
   respond: GatewayMethodContext["respond"],
@@ -337,7 +338,7 @@ export function createPaziChannelsConfigureHandler(
         dmPolicy: "pairing",
         command: "/start",
         botUsername: botUsername || undefined,
-        pollingIntervalMs: 3000,
+        pollingIntervalMs: TELEGRAM_PAIRING_POLL_INTERVAL_MS,
         ...(botUsername
           ? {
               deepLink: `https://t.me/${encodeURIComponent(botUsername)}`,

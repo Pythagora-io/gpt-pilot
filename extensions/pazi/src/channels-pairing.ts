@@ -53,11 +53,18 @@ interface GatewayMethodContext {
 
 interface PairingHandlersDeps {
   loadConfig: () => OpenClawConfig;
-  listRequests: (channel: ChannelType, accountId?: string) => Promise<PairingRequest[]>;
+  env: NodeJS.ProcessEnv;
+  logWarn: (message: string) => void;
+  listRequests: (params: {
+    channel: ChannelType;
+    accountId: string;
+    env: NodeJS.ProcessEnv;
+  }) => Promise<PairingRequest[]>;
   approveCode: (params: {
     channel: ChannelType;
-    accountId?: string;
+    accountId: string;
     code: string;
+    env: NodeJS.ProcessEnv;
   }) => Promise<{ id: string; entry?: PairingRequest } | null>;
   notifyApproved: (params: {
     channelId: ChannelType;
@@ -81,6 +88,8 @@ function respondError(
 }
 
 function resolveAccountId(raw: unknown): string {
+  // These gateway methods are intentionally account-scoped. Missing/blank account IDs default
+  // to "default" instead of unscoped pairing-store reads.
   if (typeof raw !== "string") {
     return DEFAULT_ACCOUNT_ID;
   }
@@ -158,7 +167,11 @@ export function createPaziChannelsPairingListHandler(
 
     const accountId = resolveAccountId(parsed.value.accountId);
     try {
-      const pending = await deps.listRequests(parsed.value.channel, accountId);
+      const pending = await deps.listRequests({
+        channel: parsed.value.channel,
+        accountId,
+        env: deps.env,
+      });
       const result: PairingListResult = {
         ok: true,
         channel: parsed.value.channel,
@@ -188,10 +201,12 @@ export function createPaziChannelsPairingApproveHandler(
 
     const accountId = resolveAccountId(parsed.value.accountId);
     try {
+      const cfgSnapshot = deps.loadConfig();
       const approved = await deps.approveCode({
         channel: parsed.value.channel,
         accountId,
         code: parsed.value.code,
+        env: deps.env,
       });
       if (!approved) {
         const result: PairingApproveResult = {
@@ -207,9 +222,12 @@ export function createPaziChannelsPairingApproveHandler(
         await deps.notifyApproved({
           channelId: parsed.value.channel,
           id: approved.id,
-          cfg: deps.loadConfig(),
+          cfg: cfgSnapshot,
         });
-      } catch {
+      } catch (err) {
+        deps.logWarn(
+          `pazi.channels.pairing.approve notification failed for telegram id=${approved.id}: ${String(err)}`,
+        );
         // Approval is persisted even when notification back to Telegram fails.
       }
       const result: PairingApproveResult = {

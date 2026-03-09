@@ -76,20 +76,34 @@ export default {
           api.runtime.channel.telegram.probeTelegram(token, timeoutMs, proxyUrl),
       }),
     );
+    const gatewayEnv = process.env;
     const pairingGatewayDeps = {
       loadConfig: () => api.runtime.config.loadConfig(),
-      listRequests: async (channel: "telegram", accountId?: string) =>
-        await listChannelPairingRequests(channel, process.env, accountId),
-      approveCode: async ({
+      env: gatewayEnv,
+      logWarn: (message: string) => {
+        api.logger.warn(message);
+      },
+      listRequests: ({
+        channel,
+        accountId,
+        env,
+      }: {
+        channel: "telegram";
+        accountId: string;
+        env: NodeJS.ProcessEnv;
+      }) => listChannelPairingRequests(channel, env, accountId),
+      approveCode: ({
         channel,
         accountId,
         code,
+        env,
       }: {
         channel: "telegram";
-        accountId?: string;
+        accountId: string;
         code: string;
-      }) => await approveChannelPairingCode({ channel, accountId, code }),
-      notifyApproved: async ({
+        env: NodeJS.ProcessEnv;
+      }) => approveChannelPairingCode({ channel, accountId, code, env }),
+      notifyApproved: ({
         channelId,
         id,
         cfg,
@@ -98,7 +112,7 @@ export default {
         id: string;
         cfg: Record<string, unknown>;
       }) =>
-        await notifyPairingApproved({
+        notifyPairingApproved({
           channelId,
           id,
           cfg,
