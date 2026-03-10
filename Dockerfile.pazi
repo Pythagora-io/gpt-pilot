@@ -50,6 +50,12 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     fonts-liberation fonts-noto-color-emoji \
     # Desktop environment (Xvfb + XFCE4)
     xvfb xfce4 xfce4-terminal dbus-x11 \
+    # GUI viewers for common local files in Selkies sessions
+    mousepad ristretto evince parole \
+    # MIME + desktop integration for file open actions
+    xdg-utils shared-mime-info gvfs gvfs-backends \
+    # Media codecs for MP4/MP3 playback in Parole
+    gstreamer1.0-libav gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly \
     # Selkies-GStreamer dependencies
     python3 python3-gi python3-setuptools python3-pip python3-dev \
     libpulse0 libwayland-dev libwayland-egl1 \
@@ -59,8 +65,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     jq \
     # Screenshot capture for desktop preview
     scrot \
-    # Utilities
-    git curl ca-certificates procps sudo \
+    # Utilities + baseline CLI tools for workspace terminals
+    git curl wget nano less file unzip zip ca-certificates procps sudo \
     # Process manager
     supervisor \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
