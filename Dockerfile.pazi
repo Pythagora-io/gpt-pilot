@@ -60,7 +60,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     # Screenshot capture for desktop preview
     scrot \
     # Utilities
-    git curl ca-certificates procps \
+    git curl ca-certificates procps sudo \
     # Process manager
     supervisor \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -76,7 +76,8 @@ RUN SELKIES_VERSION="$(curl -fsSL \
     echo "Selkies-GStreamer v${SELKIES_VERSION} installed"
 
 # Create pazi user (UID 1001 — matches host /home/pazi volume mounts)
-RUN groupadd -g 1001 pazi && useradd -u 1001 -g 1001 -m -d /home/pazi pazi
+RUN groupadd -g 1001 pazi && useradd -u 1001 -g 1001 -m -d /home/pazi pazi && \
+    echo "pazi ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/pazi && chmod 440 /etc/sudoers.d/pazi
 
 WORKDIR /app
 
