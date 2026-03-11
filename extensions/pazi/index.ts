@@ -1,10 +1,12 @@
 import type { Server as HttpServer } from "node:http";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
+import { resolveAgentWorkspaceDir, resolveDefaultAgentId } from "../../src/agents/agent-scope.js";
 import { notifyPairingApproved } from "../../src/channels/plugins/pairing.js";
 import {
   approveChannelPairingCode,
   listChannelPairingRequests,
 } from "../../src/pairing/pairing-store.js";
+import { normalizeAgentId } from "../../src/routing/session-key.js";
 import { resolveBrowserUseConfig } from "./src/browser-use/config.js";
 import { createBrowserUseTools } from "./src/browser-use/tools.js";
 import { createPaziChannelsConfigureHandler } from "./src/channels-configure.js";
@@ -14,6 +16,11 @@ import {
 } from "./src/channels-pairing.js";
 import { resolvePaziBillingConfig } from "./src/config.js";
 import { getProxyContext } from "./src/context.js";
+import {
+  createPaziFilesGet,
+  createPaziFilesList,
+  createPaziFilesSet,
+} from "./src/gateway/pazi-files.js";
 import { createPipedreamTools } from "./src/pipedream/tools.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
@@ -44,6 +51,20 @@ export default {
   name: "Pazi Proxy",
   description: "Routes Anthropic calls through the Pazi API.",
   register(api: OpenClawPluginApi) {
+    const defaultAgentId = resolveDefaultAgentId(api.config);
+    const resolveWorkspace = (requestedAgentId: unknown) => {
+      const requested =
+        typeof requestedAgentId === "number" ? String(requestedAgentId) : requestedAgentId;
+      const normalized =
+        typeof requested === "string" && requested.trim()
+          ? normalizeAgentId(requested)
+          : defaultAgentId;
+      return {
+        agentId: normalized,
+        workspaceDir: resolveAgentWorkspaceDir(api.config, normalized),
+      };
+    };
+
     const pluginConfig = normalizePluginConfig(api.pluginConfig);
     const gatewayAuthToken =
       typeof api.config.gateway?.auth?.token === "string"
@@ -65,6 +86,9 @@ export default {
       context.broadcast("integration", params);
       respond(true, { emitted: true });
     });
+    api.registerGatewayMethod("pazi.files.list", createPaziFilesList(resolveWorkspace));
+    api.registerGatewayMethod("pazi.files.get", createPaziFilesGet(resolveWorkspace));
+    api.registerGatewayMethod("pazi.files.set", createPaziFilesSet(resolveWorkspace));
 
     api.registerGatewayMethod(
       "pazi.channels.configure",
