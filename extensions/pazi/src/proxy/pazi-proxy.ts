@@ -1,7 +1,7 @@
 import http from "node:http";
 import type { IncomingHttpHeaders } from "node:http";
 import https from "node:https";
-import { getProxyContext } from "../context.js";
+import { getProxyContext, markProxyActivity } from "../context.js";
 
 type ProxyLogger = {
   info: (message: string) => void;
@@ -68,6 +68,7 @@ export async function startPaziProxy(params: StartProxyParams): Promise<ProxySer
       writeJson(res, 503, { error: "no billing context set" });
       return;
     }
+    markProxyActivity();
 
     const chunks: Buffer[] = [];
     for await (const chunk of req) {

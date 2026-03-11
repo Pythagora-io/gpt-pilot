@@ -15,7 +15,7 @@ import {
   createPaziChannelsPairingListHandler,
 } from "./src/channels-pairing.js";
 import { resolvePaziBillingConfig } from "./src/config.js";
-import { getProxyContext } from "./src/context.js";
+import { getProxyLastActivityAt, isProxyBusyForStatus } from "./src/context.js";
 import {
   createPaziFilesGet,
   createPaziFilesList,
@@ -199,13 +199,16 @@ export default {
       path: "/status",
       auth: "gateway",
       handler: (_req, res) => {
+        const lastActivityAtMs = getProxyLastActivityAt();
         res.writeHead(200, {
           "Content-Type": "application/json; charset=utf-8",
         });
         res.end(
           JSON.stringify({
             status: "running",
-            busy: getProxyContext() !== null,
+            busy: isProxyBusyForStatus(),
+            lastActivityAt:
+              lastActivityAtMs === null ? null : new Date(lastActivityAtMs).toISOString(),
             version: process.env.AGENT_VERSION ?? "unknown",
             environment: process.env.NODE_ENV ?? "development",
           }),
