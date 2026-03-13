@@ -259,7 +259,7 @@ jobs:
             version="${GITHUB_REF#refs/tags/v}"
             tags+=("${IMAGE}:${version}")
             slim_tags+=("${IMAGE}:${version}-slim")
-            if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?(-[0-9]+)?$ ]]; then
+            if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+)?$ ]]; then
               tags+=("${IMAGE}:latest")
               slim_tags+=("${IMAGE}:slim")
             fi

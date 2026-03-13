@@ -118,7 +118,7 @@ const laneFloorAdoptionDateKey = 20260227;
 
 function normalizePluginSyncVersion(version: string): string {
   const normalized = version.trim().replace(/^v/, "");
-  const base = /^([0-9]+\.[0-9]+\.[0-9]+(?:\.[0-9]+)?)/.exec(normalized)?.[1];
+  const base = /^([0-9]+\.[0-9]+\.[0-9]+)/.exec(normalized)?.[1];
   if (base) {
     return base;
   }
@@ -218,9 +218,6 @@ function runPackDry(): PackResult[] {
   return JSON.parse(raw) as PackResult[];
 }
 
-// Only the pazi extension must match root version; upstream extensions keep their own versions.
-const paziManagedExtensions = new Set(["pazi"]);
-
 function checkPluginVersions() {
   const rootPackagePath = resolve("package.json");
   const rootPackage = JSON.parse(readFileSync(rootPackagePath, "utf8")) as PackageJson;
@@ -233,8 +230,8 @@ function checkPluginVersions() {
   }
 
   const extensionsDir = resolve("extensions");
-  const entries = readdirSync(extensionsDir, { withFileTypes: true }).filter(
-    (entry) => entry.isDirectory() && paziManagedExtensions.has(entry.name),
+  const entries = readdirSync(extensionsDir, { withFileTypes: true }).filter((entry) =>
+    entry.isDirectory(),
   );
 
   const mismatches: string[] = [];
@@ -264,9 +261,7 @@ function checkPluginVersions() {
     for (const item of mismatches) {
       console.error(`  - ${item}`);
     }
-    console.error(
-      "release-check: manually update the version in the mismatched extension's package.json to align.",
-    );
+    console.error("release-check: run `pnpm plugins:sync` to align plugin versions.");
     process.exit(1);
   }
 }

@@ -355,9 +355,6 @@ export function compareSemverStrings(a: string | null, b: string | null): number
   if (pa.patch !== pb.patch) {
     return pa.patch < pb.patch ? -1 : 1;
   }
-  if (pa.subpatch !== pb.subpatch) {
-    return pa.subpatch < pb.subpatch ? -1 : 1;
-  }
   return comparePrerelease(pa.prerelease, pb.prerelease);
 }
 
@@ -365,7 +362,6 @@ type ComparableSemver = {
   major: number;
   minor: number;
   patch: number;
-  subpatch: number;
   prerelease: string[] | null;
 };
 
@@ -374,14 +370,13 @@ function parseComparableSemver(version: string | null): ComparableSemver | null 
     return null;
   }
   const normalized = normalizeLegacyDotBetaVersion(version.trim());
-  const match =
-    /^v?([0-9]+)\.([0-9]+)\.([0-9]+)(?:\.([0-9]+))?(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/.exec(
-      normalized,
-    );
+  const match = /^v?([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/.exec(
+    normalized,
+  );
   if (!match) {
     return null;
   }
-  const [, major, minor, patch, subpatch, prereleaseRaw] = match;
+  const [, major, minor, patch, prereleaseRaw] = match;
   if (!major || !minor || !patch) {
     return null;
   }
@@ -389,7 +384,6 @@ function parseComparableSemver(version: string | null): ComparableSemver | null 
     major: Number.parseInt(major, 10),
     minor: Number.parseInt(minor, 10),
     patch: Number.parseInt(patch, 10),
-    subpatch: subpatch ? Number.parseInt(subpatch, 10) : 0,
     prerelease: prereleaseRaw ? prereleaseRaw.split(".").filter(Boolean) : null,
   };
 }
