@@ -103,15 +103,15 @@ RUN mkdir -p /home/pazi/generations /home/pazi/.config /home/pazi/.local/share &
 COPY supervisord.pazi.conf /etc/supervisor/conf.d/supervisord.conf
 
 ENV NODE_ENV=production \
-    OPENCLAW_GATEWAY_PORT=3000 \
+    OPENCLAW_GATEWAY_PORT=12420 \
     GENERATIONS_DIR=/home/pazi/generations
 
-# 3000 — OpenClaw gateway (HTTP + WS)
+# 12420 — OpenClaw gateway (HTTP + WS)
 # 8080 — Selkies-GStreamer WebRTC desktop
-EXPOSE 3000 8080
+EXPOSE 12420 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://127.0.0.1:3000/health || exit 1
+    CMD curl -f http://127.0.0.1:12420/health || exit 1
 
 # supervisord runs as root to manage child processes with different users
 USER root
