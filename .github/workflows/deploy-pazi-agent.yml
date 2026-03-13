@@ -145,10 +145,15 @@ jobs:
           fi
 
           CURRENT=$(node -p "require('./package.json').version")
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-          NEXT="${MAJOR}.${MINOR}.$((PATCH + 1))"
+          # Version format: UPSTREAM.PAZI_PATCH (e.g. 2026.3.11.9)
+          # Bump only the 4th segment (pazi patch number)
+          IFS='.' read -r MAJOR MINOR UPSTREAM_PATCH PAZI_PATCH <<< "$CURRENT"
+          NEXT="${MAJOR}.${MINOR}.${UPSTREAM_PATCH}.$((PAZI_PATCH + 1))"
           node -e "const pkg=require('./package.json'); pkg.version='${NEXT}'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, '\t') + '\n')"
 
-          git add package.json
+          # Sync pazi extension version to match root (upstream extensions keep their own versions)
+          node -e "const fs=require('fs'),p='extensions/pazi/package.json',pkg=JSON.parse(fs.readFileSync(p,'utf8'));pkg.version='${NEXT}';fs.writeFileSync(p,JSON.stringify(pkg,null,2)+'\n')"
+
+          git add package.json extensions/pazi/package.json
           git commit -m "chore: release ${NEXT} [skip ci]"
           git push origin HEAD:${{ github.ref_name }}
