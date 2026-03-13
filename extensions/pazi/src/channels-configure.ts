@@ -224,8 +224,6 @@ function applySlackConfig(
 ): OpenClawConfig {
   const botToken = input.botToken?.trim() ?? "";
   const appToken = input.appToken?.trim() ?? "";
-  const appId = input.appId?.trim().toUpperCase() || undefined;
-  const teamId = probe.team?.id?.trim() || undefined;
   const accessMode = input.accessMode === "closed" ? "closed" : "open";
   const groupAccessMode = input.groupAccessMode === "closed" ? "closed" : "open";
   const allowFrom = accessMode === "open" ? ["*"] : normalizeSlackAllowFrom(input.allowFrom);
@@ -243,8 +241,6 @@ function applySlackConfig(
           enabled: true,
           botToken,
           appToken,
-          ...(appId ? { appId } : {}),
-          ...(teamId ? { teamId } : {}),
           dmPolicy,
           groupPolicy,
           allowFrom,
@@ -270,8 +266,6 @@ function applySlackConfig(
               enabled: true,
               botToken,
               appToken,
-              ...(appId ? { appId } : {}),
-              ...(teamId ? { teamId } : {}),
               dmPolicy,
               groupPolicy,
               allowFrom,
