@@ -245,6 +245,9 @@ function applySlackConfig(
           groupPolicy,
           allowFrom,
           dm,
+          // Disable block streaming so tool execution traces and intermediate
+          // steps are not posted to Slack — only the final response is sent.
+          blockStreaming: false,
           ...(input.name ? { name: input.name } : {}),
         },
       },
@@ -270,6 +273,9 @@ function applySlackConfig(
               groupPolicy,
               allowFrom,
               dm,
+              // Disable block streaming so tool execution traces and intermediate
+              // steps are not posted to Slack — only the final response is sent.
+              blockStreaming: false,
               ...(input.name ? { name: input.name } : {}),
             },
           },
