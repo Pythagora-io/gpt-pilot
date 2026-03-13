@@ -8,6 +8,10 @@ interface ChannelConfigureParams {
     name?: string;
     botToken?: string;
     appToken?: string;
+    appId?: string;
+    accessMode?: "open" | "closed";
+    groupAccessMode?: "open" | "closed";
+    allowFrom?: string[];
     token?: string;
   };
 }
@@ -39,6 +43,11 @@ interface ChannelConfigureResult {
   channel: ChannelType;
   accountId: string;
   probe?: ProbeResult;
+  appId?: string;
+  teamId?: string;
+  dmPolicy?: "open" | "allowlist";
+  groupPolicy?: "open" | "allowlist";
+  allowFrom?: string[];
   onboarding?: TelegramOnboardingResult;
 }
 
@@ -111,8 +120,20 @@ function validateParams(raw: unknown): {
   if (p.channel === "slack") {
     const botToken = typeof cfg.botToken === "string" ? cfg.botToken.trim() : "";
     const appToken = typeof cfg.appToken === "string" ? cfg.appToken.trim() : "";
+    const accessMode = cfg.accessMode === "closed" ? "closed" : "open";
+    const allowFrom = Array.isArray(cfg.allowFrom)
+      ? cfg.allowFrom.filter(
+          (entry): entry is string => typeof entry === "string" && entry.trim().length > 0,
+        )
+      : [];
     if (!botToken || !appToken) {
       return { ok: false, error: "Slack requires botToken and appToken" };
+    }
+    if (accessMode === "closed" && allowFrom.length === 0) {
+      return {
+        ok: false,
+        error: "Closed Slack access requires at least one allowed Slack user ID",
+      };
     }
   }
 
@@ -138,9 +159,60 @@ function validateParams(raw: unknown): {
         name: typeof cfg.name === "string" ? cfg.name : undefined,
         botToken: typeof cfg.botToken === "string" ? cfg.botToken : undefined,
         appToken: typeof cfg.appToken === "string" ? cfg.appToken : undefined,
+        appId: typeof cfg.appId === "string" ? cfg.appId : undefined,
+        accessMode: cfg.accessMode === "closed" ? "closed" : "open",
+        groupAccessMode: cfg.groupAccessMode === "closed" ? "closed" : "open",
+        allowFrom: Array.isArray(cfg.allowFrom)
+          ? cfg.allowFrom.filter((entry): entry is string => typeof entry === "string")
+          : undefined,
         token: typeof cfg.token === "string" ? cfg.token : undefined,
       },
     },
+  };
+}
+
+function normalizeSlackAllowFrom(input: string[] | undefined): string[] {
+  return (input ?? [])
+    .map((entry) => entry.trim().toUpperCase())
+    .filter((entry) => entry.length > 0);
+}
+
+function normalizeBindingChannel(channel: string): string {
+  return channel.trim().toLowerCase();
+}
+
+function upsertChannelAgentBinding(
+  cfg: OpenClawConfig,
+  params: { channel: ChannelType; accountId: string; agentId: string },
+): OpenClawConfig {
+  const channel = normalizeBindingChannel(params.channel);
+  const accountId = params.accountId.trim();
+  const agentId = params.agentId.trim();
+  if (!channel || !accountId || !agentId || accountId === "default") {
+    return cfg;
+  }
+
+  const existing = Array.isArray(cfg.bindings) ? cfg.bindings : [];
+  const filtered = existing.filter((binding) => {
+    const match = binding?.match;
+    return !(
+      binding?.agentId &&
+      typeof match?.channel === "string" &&
+      typeof match?.accountId === "string" &&
+      normalizeBindingChannel(match.channel) === channel &&
+      match.accountId.trim() === accountId
+    );
+  });
+
+  return {
+    ...cfg,
+    bindings: [
+      ...filtered,
+      {
+        agentId,
+        match: { channel, accountId },
+      },
+    ],
   };
 }
 
@@ -148,9 +220,18 @@ function applySlackConfig(
   cfg: OpenClawConfig,
   accountId: string,
   input: ChannelConfigureParams["config"],
+  probe: ProbeResult,
 ): OpenClawConfig {
   const botToken = input.botToken?.trim() ?? "";
   const appToken = input.appToken?.trim() ?? "";
+  const appId = input.appId?.trim().toUpperCase() || undefined;
+  const teamId = probe.team?.id?.trim() || undefined;
+  const accessMode = input.accessMode === "closed" ? "closed" : "open";
+  const groupAccessMode = input.groupAccessMode === "closed" ? "closed" : "open";
+  const allowFrom = accessMode === "open" ? ["*"] : normalizeSlackAllowFrom(input.allowFrom);
+  const dmPolicy = accessMode === "open" ? "open" : "allowlist";
+  const groupPolicy = groupAccessMode === "open" ? "open" : "allowlist";
+  const dm = { policy: dmPolicy, allowFrom };
 
   if (accountId === "default") {
     return {
@@ -162,34 +243,47 @@ function applySlackConfig(
           enabled: true,
           botToken,
           appToken,
-          dmPolicy: "open",
+          ...(appId ? { appId } : {}),
+          ...(teamId ? { teamId } : {}),
+          dmPolicy,
+          groupPolicy,
+          allowFrom,
+          dm,
           ...(input.name ? { name: input.name } : {}),
         },
       },
     };
   }
 
-  return {
-    ...cfg,
-    channels: {
-      ...cfg.channels,
-      slack: {
-        ...cfg.channels?.slack,
-        enabled: true,
-        accounts: {
-          ...cfg.channels?.slack?.accounts,
-          [accountId]: {
-            ...cfg.channels?.slack?.accounts?.[accountId],
-            enabled: true,
-            botToken,
-            appToken,
-            dmPolicy: "open",
-            ...(input.name ? { name: input.name } : {}),
+  return upsertChannelAgentBinding(
+    {
+      ...cfg,
+      channels: {
+        ...cfg.channels,
+        slack: {
+          ...cfg.channels?.slack,
+          enabled: true,
+          accounts: {
+            ...cfg.channels?.slack?.accounts,
+            [accountId]: {
+              ...cfg.channels?.slack?.accounts?.[accountId],
+              enabled: true,
+              botToken,
+              appToken,
+              ...(appId ? { appId } : {}),
+              ...(teamId ? { teamId } : {}),
+              dmPolicy,
+              groupPolicy,
+              allowFrom,
+              dm,
+              ...(input.name ? { name: input.name } : {}),
+            },
           },
         },
       },
     },
-  };
+    { channel: "slack", accountId, agentId: accountId },
+  );
 }
 
 function applyTelegramConfig(
@@ -215,26 +309,29 @@ function applyTelegramConfig(
     };
   }
 
-  return {
-    ...cfg,
-    channels: {
-      ...cfg.channels,
-      telegram: {
-        ...cfg.channels?.telegram,
-        enabled: true,
-        accounts: {
-          ...cfg.channels?.telegram?.accounts,
-          [accountId]: {
-            ...cfg.channels?.telegram?.accounts?.[accountId],
-            enabled: true,
-            botToken: token,
-            dmPolicy: "pairing",
-            ...(input.name ? { name: input.name } : {}),
+  return upsertChannelAgentBinding(
+    {
+      ...cfg,
+      channels: {
+        ...cfg.channels,
+        telegram: {
+          ...cfg.channels?.telegram,
+          enabled: true,
+          accounts: {
+            ...cfg.channels?.telegram?.accounts,
+            [accountId]: {
+              ...cfg.channels?.telegram?.accounts?.[accountId],
+              enabled: true,
+              botToken: token,
+              dmPolicy: "pairing",
+              ...(input.name ? { name: input.name } : {}),
+            },
           },
         },
       },
     },
-  };
+    { channel: "telegram", accountId, agentId: accountId },
+  );
 }
 
 export function createPaziChannelsConfigureHandler(
@@ -290,7 +387,7 @@ export function createPaziChannelsConfigureHandler(
     try {
       let cfg = deps.loadConfig();
       if (channel === "slack") {
-        cfg = applySlackConfig(cfg, accountId, inputConfig);
+        cfg = applySlackConfig(cfg, accountId, inputConfig, probe);
       } else {
         cfg = applyTelegramConfig(cfg, accountId, inputConfig);
       }
@@ -330,6 +427,20 @@ export function createPaziChannelsConfigureHandler(
       channel,
       accountId,
       probe,
+      ...(channel === "slack" && inputConfig.appId?.trim()
+        ? { appId: inputConfig.appId.trim().toUpperCase() }
+        : {}),
+      ...(channel === "slack" && probe.team?.id?.trim() ? { teamId: probe.team.id.trim() } : {}),
+      ...(channel === "slack"
+        ? {
+            dmPolicy: inputConfig.accessMode === "closed" ? "allowlist" : "open",
+            groupPolicy: inputConfig.groupAccessMode === "closed" ? "allowlist" : "open",
+            allowFrom:
+              inputConfig.accessMode === "closed"
+                ? normalizeSlackAllowFrom(inputConfig.allowFrom)
+                : ["*"],
+          }
+        : {}),
     };
     if (channel === "telegram") {
       const botUsername = probe.bot?.username?.trim() ?? "";
