@@ -232,6 +232,10 @@
   - changed-files:
       - any-glob-to-any-file:
           - "extensions/open-prose/**"
+"extensions: pazi":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "extensions/pazi/**"
 "extensions: qwen-portal-auth":
   - changed-files:
       - any-glob-to-any-file:

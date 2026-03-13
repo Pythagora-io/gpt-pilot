@@ -11,10 +11,16 @@ RUN --mount=type=cache,id=openclaw-sandbox-bookworm-apt-cache,target=/var/cache/
     bash \
     ca-certificates \
     curl \
+    file \
     git \
     jq \
+    less \
+    nano \
     python3 \
-    ripgrep
+    ripgrep \
+    unzip \
+    wget \
+    zip
 
 RUN useradd --create-home --shell /bin/bash sandbox
 USER sandbox
