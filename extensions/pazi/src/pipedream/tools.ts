@@ -1,6 +1,5 @@
 import { Type } from "@sinclair/typebox";
 import type { AnyAgentTool, OpenClawConfig } from "openclaw/plugin-sdk";
-import { callGateway } from "../../../../src/gateway/call.js";
 import {
   checkIntegration,
   listActions,
@@ -11,6 +10,20 @@ import {
   searchApps,
   type PipedreamApiResult,
 } from "./api.js";
+
+type EmitIntegrationRequired =
+  typeof import("./integration-gateway.runtime.js").emitIntegrationRequired;
+
+let emitIntegrationRequiredPromise: Promise<EmitIntegrationRequired> | null = null;
+
+async function loadEmitIntegrationRequired(): Promise<EmitIntegrationRequired> {
+  if (!emitIntegrationRequiredPromise) {
+    emitIntegrationRequiredPromise = import("./integration-gateway.runtime.js").then(
+      (mod) => mod.emitIntegrationRequired,
+    );
+  }
+  return await emitIntegrationRequiredPromise;
+}
 
 export type PipedreamToolsDeps = {
   pluginConfig: Record<string, unknown> | null;
@@ -729,10 +742,11 @@ export function createPipedreamTools(deps: PipedreamToolsDeps): AnyAgentTool[] {
         try {
           const app = readRequiredString(params, "app");
           const message = readOptionalString(params, "message");
-          const result = await callGateway({
-            method: "pazi.integration.emit",
-            params: { action: "required", app, message },
+          const emitIntegrationRequired = await loadEmitIntegrationRequired();
+          const result = await emitIntegrationRequired({
             config: deps.config,
+            app,
+            message,
           });
           return json(result);
         } catch (err) {
