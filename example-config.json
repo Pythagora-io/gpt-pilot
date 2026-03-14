@@ -27,6 +27,14 @@
         "azure_deployment": "your-azure-deployment-id",
         "api_version": "2024-02-01"
       }
+    },
+    // Example config for MiniMax (see https://platform.minimax.io/docs/api-reference/text-openai-api)
+    // Available models: MiniMax-M2.5, MiniMax-M2.5-highspeed (204K context window)
+    "minimax": {
+      "base_url": "https://api.minimax.io/v1",
+      "api_key": "your-minimax-api-key",
+      "connect_timeout": 60.0,
+      "read_timeout": 20.0
     }
   },
   // Each agent can use a different model or configuration. The default, as before, is GPT4 Turbo

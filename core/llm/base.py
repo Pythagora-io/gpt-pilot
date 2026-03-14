@@ -423,6 +423,7 @@ class BaseLLMClient:
         from .anthropic_client import AnthropicClient
         from .azure_client import AzureClient
         from .groq_client import GroqClient
+        from .minimax_client import MiniMaxClient
         from .openai_client import OpenAIClient
         from .relace_client import RelaceClient
 
@@ -436,6 +437,8 @@ class BaseLLMClient:
             return GroqClient
         elif provider == LLMProvider.AZURE:
             return AzureClient
+        elif provider == LLMProvider.MINIMAX:
+            return MiniMaxClient
         else:
             raise ValueError(f"Unsupported LLM provider: {provider.value}")
 
