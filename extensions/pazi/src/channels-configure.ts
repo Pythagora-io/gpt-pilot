@@ -248,6 +248,8 @@ function applySlackConfig(
           // Disable block streaming so tool execution traces and intermediate
           // steps are not posted to Slack — only the final response is sent.
           blockStreaming: false,
+          // Always reply inside threads so the bot doesn't spam the channel.
+          replyToMode: "all",
           ...(input.name ? { name: input.name } : {}),
         },
       },
@@ -276,6 +278,8 @@ function applySlackConfig(
               // Disable block streaming so tool execution traces and intermediate
               // steps are not posted to Slack — only the final response is sent.
               blockStreaming: false,
+              // Always reply inside threads so the bot doesn't spam the channel.
+              replyToMode: "all",
               ...(input.name ? { name: input.name } : {}),
             },
           },
