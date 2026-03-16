@@ -153,7 +153,6 @@ export default {
 
     const tools = createPipedreamTools({
       pluginConfig,
-      config: api.config,
     });
     for (const tool of tools) {
       api.registerTool(tool);

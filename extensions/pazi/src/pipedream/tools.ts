@@ -1,5 +1,6 @@
 import { Type } from "@sinclair/typebox";
-import type { AnyAgentTool, OpenClawConfig } from "openclaw/plugin-sdk";
+import type { AnyAgentTool } from "openclaw/plugin-sdk";
+import { getPluginRuntimeGatewayRequestScope } from "../../../../src/plugins/runtime/gateway-request-scope.js";
 import {
   checkIntegration,
   listActions,
@@ -11,23 +12,8 @@ import {
   type PipedreamApiResult,
 } from "./api.js";
 
-type EmitIntegrationRequired =
-  typeof import("./integration-gateway.runtime.js").emitIntegrationRequired;
-
-let emitIntegrationRequiredPromise: Promise<EmitIntegrationRequired> | null = null;
-
-async function loadEmitIntegrationRequired(): Promise<EmitIntegrationRequired> {
-  if (!emitIntegrationRequiredPromise) {
-    emitIntegrationRequiredPromise = import("./integration-gateway.runtime.js").then(
-      (mod) => mod.emitIntegrationRequired,
-    );
-  }
-  return await emitIntegrationRequiredPromise;
-}
-
 export type PipedreamToolsDeps = {
   pluginConfig: Record<string, unknown> | null;
-  config: OpenClawConfig;
 };
 
 type AgentToolResult = {
@@ -200,6 +186,19 @@ async function sleep(ms: number, signal?: AbortSignal): Promise<"ok" | "aborted"
     };
     signal.addEventListener("abort", onAbort, { once: true });
   });
+}
+
+function emitIntegrationRequired(params: { app: string; message?: string }) {
+  const scope = getPluginRuntimeGatewayRequestScope();
+  if (!scope?.context) {
+    throw new Error("Cannot emit integration request outside a gateway request.");
+  }
+  scope.context.broadcast("integration", {
+    action: "required",
+    app: params.app,
+    message: params.message,
+  });
+  return { emitted: true };
 }
 
 export function createPipedreamTools(deps: PipedreamToolsDeps): AnyAgentTool[] {
@@ -742,9 +741,7 @@ export function createPipedreamTools(deps: PipedreamToolsDeps): AnyAgentTool[] {
         try {
           const app = readRequiredString(params, "app");
           const message = readOptionalString(params, "message");
-          const emitIntegrationRequired = await loadEmitIntegrationRequired();
           const result = await emitIntegrationRequired({
-            config: deps.config,
             app,
             message,
           });
