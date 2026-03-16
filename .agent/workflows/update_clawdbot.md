@@ -1,19 +1,25 @@
 ---
-description: Update Clawdbot from upstream when branch has diverged (ahead/behind)
+description: Mirror upstream into upstream-main, then optionally rebase/merge main and rebuild
 ---
 
 # Clawdbot Upstream Sync Workflow
 
 Use this workflow when your fork has diverged from upstream (e.g., "18 commits ahead, 29 commits behind").
+This flow mirrors upstream to `upstream-main` first, then (optionally) updates your `main` branch.
 
 ## Quick Reference
 
 ```bash
-# Check divergence status
-git fetch upstream && git rev-list --left-right --count main...upstream/main
+# Mirror upstream/main to upstream-main (no working tree changes)
+git fetch upstream main
+git update-ref refs/heads/upstream-main upstream/main
+git push origin +upstream-main:upstream-main
+
+# Check divergence status (after mirror)
+git rev-list --left-right --count main...upstream-main
 
 # Full sync (rebase preferred)
-git fetch upstream && git rebase upstream/main && pnpm install && pnpm build && ./scripts/restart-mac.sh
+git rebase upstream-main && pnpm install && pnpm build && ./scripts/restart-mac.sh
 
 # Check for Swift 6.2 issues after sync
 grep -r "FileManager\.default\|Thread\.isMainThread" src/ apps/ --include="*.swift"
@@ -21,11 +27,28 @@ grep -r "FileManager\.default\|Thread\.isMainThread" src/ apps/ --include="*.swi
 
 ---
 
+## Step 0: Mirror Upstream to `upstream-main`
+
+This keeps `upstream-main` as a clean mirror of `upstream/main` without touching `main`.
+
+```bash
+git fetch upstream main
+
+# If the branch exists, update it directly:
+git update-ref refs/heads/upstream-main upstream/main
+
+# If the branch does not exist yet, create it:
+git branch --track upstream-main upstream/main
+
+git push origin +upstream-main:upstream-main
+```
+
+---
+
 ## Step 1: Assess Divergence
 
 ```bash
-git fetch upstream
-git log --oneline --left-right main...upstream/main | head -20
+git log --oneline --left-right main...upstream-main | head -20
 ```
 
 This shows:
@@ -48,8 +71,8 @@ Replays your commits on top of upstream. Results in linear history.
 # Ensure working tree is clean
 git status
 
-# Rebase onto upstream
-git rebase upstream/main
+# Rebase onto mirrored upstream
+git rebase upstream-main
 ```
 
 ### Handling Rebase Conflicts
@@ -86,7 +109,7 @@ git rebase --abort
 Preserves all history with a merge commit.
 
 ```bash
-git merge upstream/main --no-edit
+git merge upstream-main --no-edit
 ```
 
 Resolve conflicts same as rebase, then:

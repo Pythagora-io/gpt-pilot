@@ -97,7 +97,9 @@ export async function drainFormattedSystemEvents(params: {
       })
       .filter((v): v is string => Boolean(v)),
   );
-  if (params.isMainSession && params.isNewSession) {
+  // Inject channel summary on any new session (not just main) so task sessions
+  // also get awareness of configured channels and capabilities.
+  if (params.isNewSession) {
     const summary = await buildChannelSummary(params.cfg);
     if (summary.length > 0) {
       systemLines.unshift(...summary);

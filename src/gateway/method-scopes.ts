@@ -93,6 +93,7 @@ const METHOD_SCOPE_GROUPS: Record<OperatorScope, readonly string[]> = {
     "agent",
     "agent.wait",
     "wake",
+    "pazi.integration.emit",
     "talk.mode",
     "tts.enable",
     "tts.disable",
