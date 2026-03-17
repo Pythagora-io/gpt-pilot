@@ -1,4 +1,5 @@
 import type { Server as HttpServer } from "node:http";
+import path from "node:path";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { resolveAgentWorkspaceDir, resolveDefaultAgentId } from "../../src/agents/agent-scope.js";
 import { notifyPairingApproved } from "../../src/channels/plugins/pairing.js";
@@ -15,7 +16,12 @@ import {
   createPaziChannelsPairingListHandler,
 } from "./src/channels-pairing.js";
 import { resolvePaziBillingConfig } from "./src/config.js";
-import { getProxyLastActivityAt, isProxyBusyForStatus } from "./src/context.js";
+import {
+  configurePersistencePath,
+  configurePersistenceWarnLogger,
+  getProxyLastActivityAt,
+  isProxyBusyForStatus,
+} from "./src/context.js";
 import {
   createPaziFilesGet,
   createPaziFilesList,
@@ -51,6 +57,13 @@ export default {
   name: "Pazi Proxy",
   description: "Routes Anthropic calls through the Pazi API.",
   register(api: OpenClawPluginApi) {
+    // PAZ-131: Persist proxy context to disk so it survives gateway restarts
+    configurePersistenceWarnLogger((message) => {
+      api.logger.warn(message);
+    });
+    const stateDir = api.runtime.state.resolveStateDir();
+    configurePersistencePath(path.join(stateDir, "pazi", "proxy-context.json"));
+
     const defaultAgentId = resolveDefaultAgentId(api.config);
     const resolveWorkspace = (requestedAgentId: unknown) => {
       const requested =
