@@ -6,6 +6,7 @@ import {
   _resetForTest,
   clearProxyContext,
   configurePersistencePath,
+  configurePersistenceWarnLogger,
   getProxyContext,
   getProxyLastActivityAt,
   isProxyBusyForStatus,
@@ -56,6 +57,10 @@ describe("pazi context busy status", () => {
 });
 
 describe("pazi context persistence", () => {
+  beforeEach(() => {
+    configurePersistenceWarnLogger(() => {});
+  });
+
   afterEach(() => {
     _resetForTest();
   });
@@ -136,7 +141,7 @@ describe("pazi context persistence", () => {
     });
   });
 
-  it("clearProxyContext nullifies the persisted file", async () => {
+  it("clearProxyContext removes the persisted file", async () => {
     await withTempDir("pazi-ctx-", async (dir) => {
       const filePath = path.join(dir, "pazi", "proxy-context.json");
       configurePersistencePath(filePath);
@@ -149,9 +154,8 @@ describe("pazi context persistence", () => {
       // After clear, getProxyContext should return null
       expect(getProxyContext()).toBeNull();
 
-      // File should contain null
-      const raw = fs.readFileSync(filePath, "utf-8");
-      expect(JSON.parse(raw)).toBeNull();
+      // File should be deleted
+      expect(fs.existsSync(filePath)).toBe(false);
 
       // Simulate restart: even loading from disk should give null
       _resetForTest();
@@ -222,5 +226,33 @@ describe("pazi context persistence", () => {
         expect(dirMode).toBe(0o700);
       }
     });
+  });
+
+  it("emits warning when persisting context fails", async () => {
+    await withTempDir("pazi-ctx-", async (dir) => {
+      const warnings: string[] = [];
+      configurePersistenceWarnLogger((message) => {
+        warnings.push(message);
+      });
+
+      // Use a directory path as a file path so writeFileSync fails with EISDIR.
+      configurePersistencePath(dir);
+      setProxyContext(sampleContext);
+
+      expect(warnings.some((message) => message.includes("failed to persist context"))).toBe(true);
+    });
+  });
+
+  it("emits warning when configuring an empty persistence path", () => {
+    const warnings: string[] = [];
+    configurePersistenceWarnLogger((message) => {
+      warnings.push(message);
+    });
+
+    configurePersistencePath("   ");
+
+    expect(
+      warnings.some((message) => message.includes("disabled because configured path was empty")),
+    ).toBe(true);
   });
 });

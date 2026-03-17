@@ -18,6 +18,7 @@ import {
 import { resolvePaziBillingConfig } from "./src/config.js";
 import {
   configurePersistencePath,
+  configurePersistenceWarnLogger,
   getProxyLastActivityAt,
   isProxyBusyForStatus,
 } from "./src/context.js";
@@ -57,6 +58,9 @@ export default {
   description: "Routes Anthropic calls through the Pazi API.",
   register(api: OpenClawPluginApi) {
     // PAZ-131: Persist proxy context to disk so it survives gateway restarts
+    configurePersistenceWarnLogger((message) => {
+      api.logger.warn(message);
+    });
     const stateDir = api.runtime.state.resolveStateDir();
     configurePersistencePath(path.join(stateDir, "pazi", "proxy-context.json"));
 

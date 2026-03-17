@@ -1,4 +1,4 @@
-import path from "node:path";
+import fs from "node:fs";
 import { loadJsonFile, saveJsonFile } from "../../../src/infra/json-file.js";
 
 type ProxyContext = {
@@ -17,6 +17,19 @@ let lastProxyActivityAtMs: number | null = null;
 // Persistence configuration
 let persistencePath: string | null = null;
 let diskLoaded = false;
+let persistenceWarnLogger: ((message: string) => void) | null = null;
+
+function warnPersistence(message: string, err?: unknown): void {
+  const formatErr = err instanceof Error ? err.message : String(err);
+  const suffix = err === undefined ? "" : ` (${formatErr})`;
+  const text = `pazi proxy context persistence: ${message}${suffix}`;
+  if (persistenceWarnLogger) {
+    persistenceWarnLogger(text);
+    return;
+  }
+  // Fallback for contexts where plugin logger is not wired.
+  console.warn(text);
+}
 
 /**
  * Configure the file path for persisting proxy context.
@@ -24,7 +37,23 @@ let diskLoaded = false;
  * Must be called before any get/set operations for persistence to work.
  */
 export function configurePersistencePath(filePath: string): void {
-  persistencePath = filePath || null;
+  const normalized = filePath.trim();
+  if (!normalized) {
+    persistencePath = null;
+    diskLoaded = false;
+    warnPersistence("disabled because configured path was empty");
+    return;
+  }
+  persistencePath = normalized;
+  diskLoaded = false;
+}
+
+/**
+ * Configure warning logger used for persistence failures.
+ * Called from plugin register() to route warnings to gateway logger.
+ */
+export function configurePersistenceWarnLogger(logger: ((message: string) => void) | null): void {
+  persistenceWarnLogger = logger;
 }
 
 /**
@@ -60,9 +89,11 @@ export function getProxyContext(): ProxyContext | null {
       const loaded = loadJsonFile(persistencePath);
       if (isValidProxyContext(loaded)) {
         currentContext = loaded;
+      } else if (loaded !== undefined && loaded !== null) {
+        warnPersistence(`ignored invalid persisted context at ${persistencePath}`);
       }
-    } catch {
-      // Disk read failed — fall through to null
+    } catch (err) {
+      warnPersistence(`failed to load persisted context from ${persistencePath}`, err);
     }
   }
 
@@ -87,9 +118,9 @@ function persistToDisk(ctx: ProxyContext): void {
   if (!persistencePath) return;
   try {
     saveJsonFile(persistencePath, ctx);
-  } catch {
+  } catch (err) {
     // Best-effort: disk write failed, in-memory is still authoritative.
-    // Don't crash, don't log — saveJsonFile handles its own safety.
+    warnPersistence(`failed to persist context to ${persistencePath}`, err);
   }
 }
 
@@ -122,9 +153,10 @@ export function clearProxyContext(): void {
 function clearPersistedContext(): void {
   if (!persistencePath) return;
   try {
-    saveJsonFile(persistencePath, null);
-  } catch {
+    fs.rmSync(persistencePath, { force: true });
+  } catch (err) {
     // Best-effort
+    warnPersistence(`failed to clear persisted context at ${persistencePath}`, err);
   }
 }
 
@@ -132,10 +164,12 @@ function clearPersistedContext(): void {
 
 /**
  * Reset ALL module state. For use in tests only.
+ * @internal
  */
 export function _resetForTest(): void {
   currentContext = null;
   lastProxyActivityAtMs = null;
   persistencePath = null;
   diskLoaded = false;
+  persistenceWarnLogger = null;
 }
