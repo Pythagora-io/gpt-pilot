@@ -29,7 +29,7 @@ def _mock_state_manager():
 async def test_incorrect_key():
     cfg = LLMConfig(
         provider=LLMProvider.MINIMAX,
-        model="MiniMax-M2.5",
+        model="MiniMax-M2.7",
         api_key="invalid-key",
         base_url="https://api.minimax.io/v1",
         temperature=0.5,
@@ -46,7 +46,7 @@ async def test_incorrect_key():
 async def test_minimax_success():
     cfg = LLMConfig(
         provider=LLMProvider.MINIMAX,
-        model="MiniMax-M2.5",
+        model="MiniMax-M2.7",
         base_url="https://api.minimax.io/v1",
         temperature=0.5,
     )
@@ -69,7 +69,43 @@ async def test_minimax_success():
 
 
 @pytest.mark.asyncio
-async def test_minimax_highspeed_model():
+async def test_minimax_m27_highspeed_model():
+    cfg = LLMConfig(
+        provider=LLMProvider.MINIMAX,
+        model="MiniMax-M2.7-highspeed",
+        base_url="https://api.minimax.io/v1",
+        temperature=0.5,
+    )
+
+    llm = MiniMaxClient(cfg, state_manager=_mock_state_manager())
+    convo = Convo("you're a friendly assistant").user("say hello")
+
+    response, req_log = await llm(convo)
+    assert len(response) > 0
+    assert req_log.model == "MiniMax-M2.7-highspeed"
+
+
+@pytest.mark.asyncio
+async def test_minimax_m25_model():
+    """Verify older M2.5 model still works."""
+    cfg = LLMConfig(
+        provider=LLMProvider.MINIMAX,
+        model="MiniMax-M2.5",
+        base_url="https://api.minimax.io/v1",
+        temperature=0.5,
+    )
+
+    llm = MiniMaxClient(cfg, state_manager=_mock_state_manager())
+    convo = Convo("you're a friendly assistant").user("say hello")
+
+    response, req_log = await llm(convo)
+    assert len(response) > 0
+    assert req_log.model == "MiniMax-M2.5"
+
+
+@pytest.mark.asyncio
+async def test_minimax_m25_highspeed_model():
+    """Verify older M2.5-highspeed model still works."""
     cfg = LLMConfig(
         provider=LLMProvider.MINIMAX,
         model="MiniMax-M2.5-highspeed",
