@@ -231,31 +231,6 @@ function applySlackConfig(
   const groupPolicy = groupAccessMode === "open" ? "open" : "allowlist";
   const dm = { policy: dmPolicy, allowFrom };
 
-  if (accountId === "default") {
-    return {
-      ...cfg,
-      channels: {
-        ...cfg.channels,
-        slack: {
-          ...cfg.channels?.slack,
-          enabled: true,
-          botToken,
-          appToken,
-          dmPolicy,
-          groupPolicy,
-          allowFrom,
-          dm,
-          // Disable block streaming so tool execution traces and intermediate
-          // steps are not posted to Slack — only the final response is sent.
-          blockStreaming: false,
-          // Always reply inside threads so the bot doesn't spam the channel.
-          replyToMode: "all",
-          ...(input.name ? { name: input.name } : {}),
-        },
-      },
-    };
-  }
-
   return upsertChannelAgentBinding(
     {
       ...cfg,
@@ -296,22 +271,6 @@ function applyTelegramConfig(
   input: ChannelConfigureParams["config"],
 ): OpenClawConfig {
   const token = (input.token ?? input.botToken ?? "").trim();
-
-  if (accountId === "default") {
-    return {
-      ...cfg,
-      channels: {
-        ...cfg.channels,
-        telegram: {
-          ...cfg.channels?.telegram,
-          enabled: true,
-          botToken: token,
-          dmPolicy: "pairing",
-          ...(input.name ? { name: input.name } : {}),
-        },
-      },
-    };
-  }
 
   return upsertChannelAgentBinding(
     {
