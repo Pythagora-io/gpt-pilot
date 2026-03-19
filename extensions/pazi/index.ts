@@ -11,6 +11,7 @@ import { normalizeAgentId } from "../../src/routing/session-key.js";
 import { resolveBrowserUseConfig } from "./src/browser-use/config.js";
 import { createBrowserUseTools } from "./src/browser-use/tools.js";
 import { createPaziChannelsConfigureHandler } from "./src/channels-configure.js";
+import { createPaziChannelsDisconnectHandler } from "./src/channels-disconnect.js";
 import {
   createPaziChannelsPairingApproveHandler,
   createPaziChannelsPairingListHandler,
@@ -111,6 +112,13 @@ export default {
         probeSlack: (token, timeoutMs) => api.runtime.channel.slack.probeSlack(token, timeoutMs),
         probeTelegram: (token, timeoutMs, proxyUrl) =>
           api.runtime.channel.telegram.probeTelegram(token, timeoutMs, proxyUrl),
+      }),
+    );
+    api.registerGatewayMethod(
+      "pazi.channels.disconnect",
+      createPaziChannelsDisconnectHandler({
+        loadConfig: () => api.runtime.config.loadConfig(),
+        writeConfigFile: (cfg) => api.runtime.config.writeConfigFile(cfg),
       }),
     );
     const gatewayEnv = process.env;
