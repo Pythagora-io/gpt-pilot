@@ -5,6 +5,7 @@ type ProxyContext = {
   userId: string;
   agentId: string;
   proxyToken: string;
+  dashboardBaseUrl?: string;
 };
 
 export type { ProxyContext };
@@ -69,7 +70,8 @@ function isValidProxyContext(value: unknown): value is ProxyContext {
     typeof obj.proxyToken === "string" &&
     obj.userId.length > 0 &&
     obj.agentId.length > 0 &&
-    obj.proxyToken.length > 0
+    obj.proxyToken.length > 0 &&
+    (obj.dashboardBaseUrl === undefined || typeof obj.dashboardBaseUrl === "string")
   );
 }
 

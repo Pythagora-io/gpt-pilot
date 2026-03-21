@@ -7,6 +7,7 @@ type JsonBody = {
   userId?: string;
   agentId?: string;
   proxyToken?: string;
+  dashboardBaseUrl?: string;
 };
 
 type ContextHandlerDeps = {
@@ -64,13 +65,18 @@ export function createPaziContextHandler(deps: ContextHandlerDeps) {
       return;
     }
 
-    const { userId, agentId, proxyToken } = body;
+    const { userId, agentId, proxyToken, dashboardBaseUrl } = body;
     if (!userId || !agentId || !proxyToken) {
       writeJson(res, 400, { error: "missing userId, agentId, or proxyToken" });
       return;
     }
 
-    setProxyContext({ userId, agentId, proxyToken });
+    const resolvedDashboardBaseUrl =
+      typeof dashboardBaseUrl === "string" && dashboardBaseUrl.trim()
+        ? dashboardBaseUrl.trim()
+        : undefined;
+
+    setProxyContext({ userId, agentId, proxyToken, dashboardBaseUrl: resolvedDashboardBaseUrl });
     writeJson(res, 200, { ok: true });
   };
 }
