@@ -20,9 +20,11 @@ import { resolvePaziBillingConfig } from "./src/config.js";
 import {
   configurePersistencePath,
   configurePersistenceWarnLogger,
+  getProxyContext,
   getProxyLastActivityAt,
   isProxyBusyForStatus,
 } from "./src/context.js";
+import { buildDashboardConversationUrl } from "./src/dashboard-url.js";
 import {
   createPaziFilesGet,
   createPaziFilesList,
@@ -256,6 +258,25 @@ export default {
         }
         await uploadHandler(req, res);
       },
+    });
+
+    // Inject dashboard conversation URL into the agent's system prompt
+    api.on("before_prompt_build", (_event, ctx) => {
+      const proxyCtx = getProxyContext();
+      const conversationUrl = buildDashboardConversationUrl({
+        dashboardBaseUrl: proxyCtx?.dashboardBaseUrl,
+        sessionKey: ctx.sessionKey,
+      });
+
+      if (!conversationUrl) return;
+
+      return {
+        appendSystemContext: [
+          "## Pazi Dashboard",
+          `The URL of this conversation is: ${conversationUrl}`,
+          "If the user asks for the link to this conversation, share the URL above.",
+        ].join("\n"),
+      };
     });
 
     let proxyServer: HttpServer | null = null;
