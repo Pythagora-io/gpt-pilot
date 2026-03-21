@@ -75,28 +75,33 @@ function upsertFrontmatterScalar(
 /**
  * Build the final SKILL.md content.
  *
- * The `content` parameter is the raw text the user submitted from the editor.
- * We patch (or prepend) frontmatter so `name` / `description` from the
- * separate input fields always win.
+ * The `content` parameter is body text only (no frontmatter) — the user edits
+ * body in the content field, while name/description come from separate inputs.
+ * We read the existing file to preserve any extra frontmatter fields (metadata,
+ * etc.) and patch only name/description.
  */
 function buildUpdatedDocument(params: {
+  existingRaw: string | null;
   name: string;
   description: string;
   content: string;
 }): string {
-  const { content, name, description } = params;
-  const { frontmatter, body } = splitSkillDocument(content);
+  const { existingRaw, content, name, description } = params;
 
-  if (frontmatter === null) {
-    // No frontmatter in submitted content — prepend one.
-    const fm = `---\nname: ${JSON.stringify(name)}\ndescription: ${JSON.stringify(description)}\n---\n\n`;
-    return fm + content;
+  // Get existing frontmatter to preserve extra fields (metadata, etc.)
+  let baseFm: string;
+  if (existingRaw) {
+    const { frontmatter } = splitSkillDocument(existingRaw);
+    baseFm = frontmatter ?? "";
+  } else {
+    baseFm = "";
   }
 
-  let patchedFm = upsertFrontmatterScalar(frontmatter, "name", name);
+  let patchedFm = upsertFrontmatterScalar(baseFm || `name: ${JSON.stringify(name)}`, "name", name);
   patchedFm = upsertFrontmatterScalar(patchedFm, "description", description);
 
-  return `---\n${patchedFm}\n---\n${body ? "\n" + body : "\n"}`;
+  const separator = content.startsWith("\n") ? "" : "\n";
+  return `---\n${patchedFm}\n---\n${separator}${content}`;
 }
 
 function slugify(name: string): string {
@@ -147,12 +152,12 @@ export function createPaziSkillsGet(deps: PaziSkillsDeps): GatewayRequestHandler
     }
 
     try {
-      const content = await fs.readFile(entry.filePath, "utf-8");
+      const raw = await fs.readFile(entry.filePath, "utf-8");
+      const { body } = splitSkillDocument(raw);
       respond(true, {
         skillKey,
-        filePath: entry.filePath,
         source: entry.source,
-        content,
+        content: body,
         bundled: entry.source === "openclaw-bundled",
       });
     } catch {
@@ -194,28 +199,37 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
     const status = buildWorkspaceSkillStatus(resolved.workspaceDir, { config: cfg });
     const entry = status.skills.find((s: { skillKey: string }) => s.skillKey === skillKey);
 
-    const finalContent = buildUpdatedDocument({ name, description, content });
+    if (!entry) {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.INVALID_REQUEST, `skill "${skillKey}" not found`),
+      );
+      return;
+    }
+
+    // Read existing file to preserve extra frontmatter fields
+    let existingRaw: string | null = null;
+    try {
+      existingRaw = await fs.readFile(entry.filePath, "utf-8");
+    } catch {
+      // File may not be readable; we'll build fresh frontmatter
+    }
+
+    const finalContent = buildUpdatedDocument({ existingRaw, name, description, content });
 
     // Determine write path
     let writePath: string;
     let createdOverride = false;
 
-    if (entry) {
-      const isWorkspaceSkill =
-        entry.source === "openclaw-workspace" || entry.source === "agents-skills-project";
+    const isWorkspaceSkill =
+      entry.source === "openclaw-workspace" || entry.source === "agents-skills-project";
 
-      if (isWorkspaceSkill) {
-        writePath = entry.filePath;
-      } else {
-        // Bundled/managed — create workspace override
-        const dirName = slugify(name);
-        const overrideDir = path.join(resolved.workspaceDir, "skills", dirName);
-        writePath = path.join(overrideDir, "SKILL.md");
-        createdOverride = true;
-      }
+    if (isWorkspaceSkill) {
+      writePath = entry.filePath;
     } else {
-      // New skill (shouldn't normally happen via edit, but handle gracefully)
-      const dirName = slugify(name);
+      // Bundled/managed — create workspace override using skillKey for stable path
+      const dirName = slugify(entry.skillKey);
       const overrideDir = path.join(resolved.workspaceDir, "skills", dirName);
       writePath = path.join(overrideDir, "SKILL.md");
       createdOverride = true;
@@ -232,7 +246,6 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
     respond(true, {
       ok: true,
       skillKey,
-      writtenTo: writePath,
       createdOverride,
     });
   };
