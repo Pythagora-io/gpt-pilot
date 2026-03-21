@@ -1,5 +1,5 @@
 const TASK_RE = /^agent:([^:]+):task:([^:]+)$/;
-const MAIN_RE = /^agent:([^:]+):(main|web)$/;
+const MAIN_RE = /^agent:([^:]+):(?!task:)[^:]+$/;
 
 export function buildDashboardConversationUrl(params: {
   dashboardBaseUrl?: string;
