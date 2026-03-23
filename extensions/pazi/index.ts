@@ -28,6 +28,7 @@ import {
   createPaziFilesList,
   createPaziFilesSet,
 } from "./src/gateway/pazi-files.js";
+import { createPaziSkillsDeleteHandler } from "./src/gateway/skills-delete.js";
 import { createPipedreamTools } from "./src/pipedream/tools.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
@@ -103,6 +104,14 @@ export default {
     api.registerGatewayMethod("pazi.files.list", createPaziFilesList(resolveWorkspace));
     api.registerGatewayMethod("pazi.files.get", createPaziFilesGet(resolveWorkspace));
     api.registerGatewayMethod("pazi.files.set", createPaziFilesSet(resolveWorkspace));
+    api.registerGatewayMethod(
+      "skills.delete",
+      createPaziSkillsDeleteHandler({
+        loadConfig: () => api.runtime.config.loadConfig(),
+        writeConfigFile: (cfg) => api.runtime.config.writeConfigFile(cfg),
+        resolveWorkspace,
+      }),
+    );
 
     api.registerGatewayMethod(
       "pazi.channels.configure",
