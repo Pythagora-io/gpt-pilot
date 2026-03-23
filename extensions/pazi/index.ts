@@ -8,6 +8,11 @@ import {
   listChannelPairingRequests,
 } from "../../src/pairing/pairing-store.js";
 import { normalizeAgentId } from "../../src/routing/session-key.js";
+import { installBraveEnvDefaults, uninstallBraveEnvDefaults } from "./src/brave/brave-env.js";
+import {
+  installBraveFetchInterceptor,
+  uninstallBraveFetchInterceptor,
+} from "./src/brave/brave-fetch-interceptor.js";
 import { resolveBrowserUseConfig } from "./src/browser-use/config.js";
 import { createBrowserUseTools } from "./src/browser-use/tools.js";
 import { createPaziChannelsConfigureHandler } from "./src/channels-configure.js";
@@ -20,17 +25,14 @@ import { resolvePaziBillingConfig } from "./src/config.js";
 import {
   configurePersistencePath,
   configurePersistenceWarnLogger,
-  getProxyContext,
   getProxyLastActivityAt,
   isProxyBusyForStatus,
 } from "./src/context.js";
-import { buildDashboardConversationUrl } from "./src/dashboard-url.js";
 import {
   createPaziFilesGet,
   createPaziFilesList,
   createPaziFilesSet,
 } from "./src/gateway/pazi-files.js";
-import { createPaziSkillsGet, createPaziSkillsSet } from "./src/gateway/pazi-skills.js";
 import { createPipedreamTools } from "./src/pipedream/tools.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
@@ -106,13 +108,6 @@ export default {
     api.registerGatewayMethod("pazi.files.list", createPaziFilesList(resolveWorkspace));
     api.registerGatewayMethod("pazi.files.get", createPaziFilesGet(resolveWorkspace));
     api.registerGatewayMethod("pazi.files.set", createPaziFilesSet(resolveWorkspace));
-
-    const paziSkillsDeps = {
-      resolveWorkspace,
-      loadConfig: () => api.runtime.config.loadConfig(),
-    };
-    api.registerGatewayMethod("pazi.skills.get", createPaziSkillsGet(paziSkillsDeps));
-    api.registerGatewayMethod("pazi.skills.set", createPaziSkillsSet(paziSkillsDeps));
 
     api.registerGatewayMethod(
       "pazi.channels.configure",
@@ -260,25 +255,6 @@ export default {
       },
     });
 
-    // Inject dashboard conversation URL into the agent's system prompt
-    api.on("before_prompt_build", (_event, ctx) => {
-      const proxyCtx = getProxyContext();
-      const conversationUrl = buildDashboardConversationUrl({
-        dashboardBaseUrl: proxyCtx?.dashboardBaseUrl,
-        sessionKey: ctx.sessionKey,
-      });
-
-      if (!conversationUrl) return;
-
-      return {
-        appendSystemContext: [
-          "## Pazi Dashboard",
-          `The URL of this conversation is: ${conversationUrl}`,
-          "If the user asks for the link to this conversation, share the URL above.",
-        ].join("\n"),
-      };
-    });
-
     let proxyServer: HttpServer | null = null;
 
     api.registerService({
@@ -293,8 +269,19 @@ export default {
           port: resolved.proxyPort,
           logger: api.logger,
         });
+
+        // Enable Brave Search proxying through the Pazi backend
+        // Only set sentinel + interceptor when apiUrl is configured,
+        // so agents without Pazi API URL behave normally.
+        if (resolved.apiUrl) {
+          installBraveEnvDefaults();
+          installBraveFetchInterceptor(resolved.apiUrl);
+        }
       },
       stop: async () => {
+        uninstallBraveFetchInterceptor();
+        uninstallBraveEnvDefaults();
+
         if (!proxyServer) {
           return;
         }
