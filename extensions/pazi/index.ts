@@ -37,6 +37,7 @@ import { createPipedreamTools } from "./src/pipedream/tools.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
+import { startSlackThreadCachePersistence } from "./src/slack-thread-cache-persistence.js";
 
 function normalizePluginConfig(
   value: OpenClawPluginApi["pluginConfig"],
@@ -256,6 +257,30 @@ export default {
     });
 
     let proxyServer: HttpServer | null = null;
+    let stopSlackThreadCachePersistence: (() => Promise<void>) | null = null;
+
+    api.registerService({
+      id: "pazi-slack-thread-cache-persistence",
+      start: async () => {
+        if (stopSlackThreadCachePersistence) {
+          await stopSlackThreadCachePersistence();
+          stopSlackThreadCachePersistence = null;
+        }
+        const persistenceStateDir = api.runtime.state.resolveStateDir();
+        const manager = await startSlackThreadCachePersistence({
+          stateDir: persistenceStateDir,
+          logWarn: (message) => api.logger.warn(message),
+        });
+        stopSlackThreadCachePersistence = manager.stop;
+      },
+      stop: async () => {
+        if (!stopSlackThreadCachePersistence) {
+          return;
+        }
+        await stopSlackThreadCachePersistence();
+        stopSlackThreadCachePersistence = null;
+      },
+    });
 
     api.registerService({
       id: "pazi-proxy",
