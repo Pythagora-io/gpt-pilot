@@ -70,13 +70,13 @@ function loadFromDisk(filePath: string, logWarn?: (message: string) => void): vo
   }
 }
 
-function snapshotToString(snapshot: ReadonlyMap<string, number>): string {
-  // Cheap identity check: sorted keys + timestamps
-  const parts: string[] = [];
-  for (const [key, ts] of snapshot) {
-    parts.push(`${key}:${ts}`);
+/** Cheap size+sum fingerprint — avoids sorting the full map on every poll. */
+function snapshotFingerprint(snapshot: ReadonlyMap<string, number>): string {
+  let sum = 0;
+  for (const ts of snapshot.values()) {
+    sum += ts;
   }
-  return parts.sort().join("\n");
+  return `${snapshot.size}:${sum}`;
 }
 
 export async function startSlackThreadCachePersistence(params: {
@@ -88,15 +88,16 @@ export async function startSlackThreadCachePersistence(params: {
 
   const withWriteLock = createAsyncLock();
   let hasLoggedPersistError = false;
-  let lastPersistedIdentity = snapshotToString(getSlackThreadParticipationEntriesSnapshot());
+  let lastFingerprint = snapshotFingerprint(getSlackThreadParticipationEntriesSnapshot());
 
   async function persistIfChanged(): Promise<void> {
-    const snapshot = getSlackThreadParticipationEntriesSnapshot();
-    const identity = snapshotToString(snapshot);
-    if (identity === lastPersistedIdentity) {
-      return;
-    }
     await withWriteLock(async () => {
+      // Snapshot inside the lock so shutdown always captures the latest state.
+      const snapshot = getSlackThreadParticipationEntriesSnapshot();
+      const fingerprint = snapshotFingerprint(snapshot);
+      if (fingerprint === lastFingerprint) {
+        return;
+      }
       const payload: StoredSlackThreadCache = {
         version: STORE_VERSION,
         entries: [...snapshot.entries()].map(([key, ts]) => ({ key, ts })),
@@ -107,7 +108,7 @@ export async function startSlackThreadCachePersistence(params: {
           ensureDirMode: 0o700,
           trailingNewline: true,
         });
-        lastPersistedIdentity = identity;
+        lastFingerprint = fingerprint;
         hasLoggedPersistError = false;
       } catch (err) {
         if (!hasLoggedPersistError) {
@@ -126,7 +127,6 @@ export async function startSlackThreadCachePersistence(params: {
 
   const flush = async (): Promise<void> => {
     await persistIfChanged();
-    await withWriteLock(async () => {});
   };
 
   const stop = async (): Promise<void> => {
