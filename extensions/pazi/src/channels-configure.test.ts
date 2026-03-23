@@ -212,4 +212,22 @@ describe("createPaziChannelsConfigureHandler slash command config", () => {
     const account = cfg.channels?.slack?.accounts?.default;
     expect(account?.slashCommand).toBeUndefined();
   });
+
+  it("enforces Slack length cap and trims trailing hyphen after truncation", async () => {
+    const harness = createHarness();
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-bot",
+        appToken: "xapp-app",
+        slashCommandName: `${"a".repeat(30)}-b`,
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect(account?.slashCommand?.name).toBe("a".repeat(30));
+    expect(account?.slashCommand?.name?.length).toBeLessThanOrEqual(31);
+  });
 });

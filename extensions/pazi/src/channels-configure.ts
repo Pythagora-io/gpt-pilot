@@ -85,7 +85,10 @@ const ERROR_INVALID_REQUEST = "INVALID_REQUEST";
 const ERROR_UNAVAILABLE = "UNAVAILABLE";
 const TELEGRAM_PAIRING_POLL_INTERVAL_MS = 3000;
 const DEFAULT_SLASH_COMMAND = "pazi-agent";
+const MAX_SLASH_COMMAND_CHARS = 32;
+const MAX_SLASH_COMMAND_NAME_CHARS = MAX_SLASH_COMMAND_CHARS - 1;
 
+// Keep these rules in sync with `shared/utils/SlackCommand.ts` in the `pazi` repository.
 function sanitizeSlashCommandName(
   raw: string | undefined,
   fallback = DEFAULT_SLASH_COMMAND,
@@ -96,7 +99,8 @@ function sanitizeSlashCommandName(
     .replace(/[^a-z0-9-]+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 32);
+    .slice(0, MAX_SLASH_COMMAND_NAME_CHARS)
+    .replace(/-+$/g, "");
   return normalized || fallback;
 }
 
