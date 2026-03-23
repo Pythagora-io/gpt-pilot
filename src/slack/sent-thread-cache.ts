@@ -74,6 +74,32 @@ export function hasSlackThreadParticipation(
   return true;
 }
 
+/**
+ * Bulk-load entries into the in-memory cache (e.g. from persisted storage).
+ * Callers are responsible for filtering expired/invalid entries before calling.
+ */
+export function hydrateSlackThreadParticipationCache(
+  entries: Iterable<[key: string, timestamp: number]>,
+): void {
+  for (const [key, ts] of entries) {
+    threadParticipation.set(key, ts);
+  }
+  if (threadParticipation.size > MAX_ENTRIES) {
+    evictExpired();
+  }
+  while (threadParticipation.size > MAX_ENTRIES) {
+    evictOldest();
+  }
+}
+
+/**
+ * Snapshot current in-memory entries for external persistence layers.
+ * Returns a copy — mutations do not affect the live cache.
+ */
+export function getSlackThreadParticipationEntriesSnapshot(): ReadonlyMap<string, number> {
+  return new Map(threadParticipation);
+}
+
 export function clearSlackThreadParticipationCache(): void {
   threadParticipation.clear();
 }
