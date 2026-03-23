@@ -12,6 +12,7 @@ interface ChannelConfigureParams {
     accessMode?: "open" | "closed";
     groupAccessMode?: "open" | "closed";
     allowFrom?: string[];
+    slashCommandName?: string;
     token?: string;
   };
 }
@@ -83,6 +84,25 @@ const VALID_CHANNELS: ReadonlySet<string> = new Set(["slack", "telegram"]);
 const ERROR_INVALID_REQUEST = "INVALID_REQUEST";
 const ERROR_UNAVAILABLE = "UNAVAILABLE";
 const TELEGRAM_PAIRING_POLL_INTERVAL_MS = 3000;
+const DEFAULT_SLASH_COMMAND = "pazi-agent";
+const MAX_SLASH_COMMAND_CHARS = 32;
+const MAX_SLASH_COMMAND_NAME_CHARS = MAX_SLASH_COMMAND_CHARS - 1;
+
+// Keep these rules in sync with `shared/utils/SlackCommand.ts` in the `pazi` repository.
+function sanitizeSlashCommandName(
+  raw: string | undefined,
+  fallback = DEFAULT_SLASH_COMMAND,
+): string {
+  const normalized = (raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, MAX_SLASH_COMMAND_NAME_CHARS)
+    .replace(/-+$/g, "");
+  return normalized || fallback;
+}
 
 function respondError(
   respond: GatewayMethodContext["respond"],
@@ -165,6 +185,8 @@ function validateParams(raw: unknown): {
         allowFrom: Array.isArray(cfg.allowFrom)
           ? cfg.allowFrom.filter((entry): entry is string => typeof entry === "string")
           : undefined,
+        slashCommandName:
+          typeof cfg.slashCommandName === "string" ? cfg.slashCommandName : undefined,
         token: typeof cfg.token === "string" ? cfg.token : undefined,
       },
     },
@@ -231,6 +253,11 @@ function applySlackConfig(
   const groupPolicy = groupAccessMode === "open" ? "open" : "allowlist";
   const dm = { policy: dmPolicy, allowFrom };
 
+  const slashCommandName =
+    input.slashCommandName !== undefined
+      ? sanitizeSlashCommandName(input.slashCommandName)
+      : undefined;
+
   return upsertChannelAgentBinding(
     {
       ...cfg,
@@ -256,6 +283,15 @@ function applySlackConfig(
               // Always reply inside threads so the bot doesn't spam the channel.
               replyToMode: "all",
               ...(input.name ? { name: input.name } : {}),
+              ...(slashCommandName
+                ? {
+                    slashCommand: {
+                      ...cfg.channels?.slack?.accounts?.[accountId]?.slashCommand,
+                      enabled: true,
+                      name: slashCommandName,
+                    },
+                  }
+                : {}),
             },
           },
         },

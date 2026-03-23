@@ -5,6 +5,11 @@ interface SlackAccountConfig {
   enabled?: boolean;
   botToken?: string;
   appToken?: string;
+  slashCommand?: {
+    enabled?: boolean;
+    name?: string;
+    sessionPrefix?: string;
+  };
 }
 
 interface TelegramAccountConfig {
@@ -111,5 +116,118 @@ describe("createPaziChannelsConfigureHandler account config writes", () => {
     expect(cfg.channels?.telegram?.botToken).toBeUndefined();
     expect(harness.stopChannel).toHaveBeenCalledWith("telegram", "default");
     expect(harness.startChannel).toHaveBeenCalledWith("telegram", "default");
+  });
+});
+
+describe("createPaziChannelsConfigureHandler slash command config", () => {
+  it("writes slash command into account config", async () => {
+    const harness = createHarness();
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-bot",
+        appToken: "xapp-app",
+        slashCommandName: "My Agent",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect(account?.slashCommand).toEqual({
+      enabled: true,
+      name: "my-agent",
+    });
+  });
+
+  it("sanitizes bad slash command input", async () => {
+    const harness = createHarness();
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-bot",
+        appToken: "xapp-app",
+        slashCommandName: "!!! QA Bot !!!",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect(account?.slashCommand?.name).toBe("qa-bot");
+  });
+
+  it("preserves existing slashCommand sub-fields", async () => {
+    const harness = createHarness({
+      channels: {
+        slack: {
+          enabled: true,
+          accounts: {
+            default: {
+              enabled: true,
+              botToken: "xoxb-old",
+              appToken: "xapp-old",
+              slashCommand: {
+                enabled: true,
+                name: "old-name",
+                sessionPrefix: "custom-prefix",
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-new",
+        appToken: "xapp-new",
+        slashCommandName: "new-name",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect(account?.slashCommand).toEqual({
+      enabled: true,
+      name: "new-name",
+      sessionPrefix: "custom-prefix",
+    });
+  });
+
+  it("omits slashCommand when not provided", async () => {
+    const harness = createHarness();
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-bot",
+        appToken: "xapp-app",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect(account?.slashCommand).toBeUndefined();
+  });
+
+  it("enforces Slack length cap and trims trailing hyphen after truncation", async () => {
+    const harness = createHarness();
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-bot",
+        appToken: "xapp-app",
+        slashCommandName: `${"a".repeat(30)}-b`,
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect(account?.slashCommand?.name).toBe("a".repeat(30));
+    expect(account?.slashCommand?.name?.length).toBeLessThanOrEqual(31);
   });
 });
