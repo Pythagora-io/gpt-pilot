@@ -9,10 +9,10 @@ description: First-session onboarding guidance for new Pazi users. Runs once per
 
 ## Pre-check
 
-Before running this skill, check whether the file `~/.pazi/onboarding-completed` exists in the workspace.
+Before running this skill, check whether the file `.pazi/onboarding-completed` exists in the workspace (relative to the working directory).
 
-- If `~/.pazi/onboarding-completed` **exists**: Do NOT use this skill. Continue with the user's request normally.
-- If `~/.pazi/onboarding-completed` **does not exist**: Run the onboarding flow below.
+- If `.pazi/onboarding-completed` **exists**: Do NOT use this skill. Continue with the user's request normally.
+- If `.pazi/onboarding-completed` **does not exist**: Run the onboarding flow below.
 
 ## Onboarding Flow
 
@@ -41,9 +41,9 @@ When greeting a user in a new workspace for the first time:
 
 When the onboarding conversation is finished (user confirms the plan, gives a concrete task, or explicitly wants to move on):
 
-1. Create the completion marker:
+1. Create the completion marker (workspace-local, relative to working directory):
    ```bash
-   mkdir -p ~/.pazi && date -Iseconds > ~/.pazi/onboarding-completed
+   mkdir -p .pazi && date -Iseconds > .pazi/onboarding-completed
    ```
 
 2. After creating the marker, do not run this onboarding flow again in future sessions.
