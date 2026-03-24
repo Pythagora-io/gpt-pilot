@@ -8,6 +8,14 @@ import {
   SafeOpenError,
 } from "../../../../src/infra/fs-safe.js";
 
+function isLikelyBinary(buffer: Buffer): boolean {
+  const sampleLen = Math.min(buffer.length, 4096);
+  for (let i = 0; i < sampleLen; i++) {
+    if (buffer[i] === 0) return true;
+  }
+  return false;
+}
+
 const SCAN_SKIP_DIRS = new Set([".git", "node_modules", ".DS_Store", "__pycache__", ".cache"]);
 const SCAN_MAX_FILES = 10_000;
 const SCAN_MAX_DEPTH = 10;
@@ -139,6 +147,7 @@ export function createPaziFilesGet(resolveWorkspace: ResolveWorkspace): GatewayR
         relativePath: name,
       });
       const filePath = path.join(workspaceDir, name);
+      const binary = isLikelyBinary(result.buffer);
       respond(true, {
         agentId,
         workspace: workspaceDir,
@@ -148,7 +157,10 @@ export function createPaziFilesGet(resolveWorkspace: ResolveWorkspace): GatewayR
           missing: false,
           size: result.stat.size,
           updatedAtMs: Math.floor(result.stat.mtimeMs),
-          content: result.buffer.toString("utf-8"),
+          content: binary
+            ? result.buffer.toString("base64")
+            : result.buffer.toString("utf-8"),
+          encoding: binary ? "base64" : "utf8",
         },
       });
     } catch (err) {

@@ -22,19 +22,17 @@ on:
 
 permissions:
   contents: write
-  packages: write
 
 env:
   AWS_REGION: us-east-1
-  GHCR_IMAGE: ghcr.io/pythagora-io/pazi-agent
 
 jobs:
-  build-and-push:
+  version-and-publish:
     runs-on: ubuntu-latest
 
     outputs:
-      image_tag: ${{ steps.build-image.outputs.image_tag }}
       version: ${{ steps.get_version.outputs.VERSION }}
+      version_tag: ${{ steps.version_tag.outputs.VERSION_TAG }}
 
     steps:
       - name: Checkout code
@@ -49,13 +47,6 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "Version: v${VERSION}"
           echo "VERSION=v${VERSION}" >> $GITHUB_OUTPUT
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Determine environment
         id: env
@@ -76,20 +67,11 @@ jobs:
             echo "suffix=-staging" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build, tag, and push image to GHCR
-        id: build-image
-        env:
-          IMAGE_TAG: ${{ steps.get_version.outputs.VERSION }}${{ steps.env.outputs.suffix }}
-          LATEST_TAG: latest${{ steps.env.outputs.suffix }}
+      - name: Compute version tag
+        id: version_tag
         run: |
-          docker build -f Dockerfile.pazi -t $GHCR_IMAGE:$IMAGE_TAG .
-          docker tag $GHCR_IMAGE:$IMAGE_TAG $GHCR_IMAGE:$LATEST_TAG
-
-          docker push $GHCR_IMAGE:$IMAGE_TAG
-          docker push $GHCR_IMAGE:$LATEST_TAG
-
-          echo "image=$GHCR_IMAGE:$IMAGE_TAG" >> $GITHUB_OUTPUT
-          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          VERSION_TAG="${{ steps.get_version.outputs.VERSION }}${{ steps.env.outputs.suffix }}"
+          echo "VERSION_TAG=$VERSION_TAG" >> $GITHUB_OUTPUT
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -99,30 +81,28 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Upload latest version to S3
-        env:
-          IMAGE_TAG: ${{ steps.build-image.outputs.image_tag }}
         run: |
           if [ "${{ steps.env.outputs.environment }}" = "production" ]; then
             S3_KEY="latest.txt"
           else
             S3_KEY="latest-staging.txt"
           fi
-          echo "$IMAGE_TAG" > "$S3_KEY"
+          echo "${{ steps.version_tag.outputs.VERSION_TAG }}" > "$S3_KEY"
           aws s3 cp "$S3_KEY" "s3://assets.pazi.ai/cloud/$S3_KEY"
 
       - name: Deployment Summary
         if: success()
         run: |
-          echo "### Build and Push Successful! :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "### Version Published! :rocket:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** ${{ steps.build-image.outputs.image }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Registry:** GHCR (${{ env.GHCR_IMAGE }})" >> $GITHUB_STEP_SUMMARY
           echo "**Version:** ${{ steps.get_version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ steps.env.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**S3 Tag:** ${{ steps.version_tag.outputs.VERSION_TAG }}" >> $GITHUB_STEP_SUMMARY
 
   push-version-tag:
     if: github.ref_name == 'main'
     runs-on: ubuntu-latest
-    needs: build-and-push
+    needs: version-and-publish
 
     steps:
       - name: Checkout code
@@ -136,7 +116,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          RELEASE_TAG="${{ needs.build-and-push.outputs.version }}"
+          RELEASE_TAG="${{ needs.version-and-publish.outputs.version }}"
           if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" >/dev/null; then
             echo "Tag ${RELEASE_TAG} already exists on origin; skipping tag creation."
           else
@@ -145,10 +125,12 @@ jobs:
           fi
 
           CURRENT=$(node -p "require('./package.json').version")
-          # Version format: UPSTREAM.PAZI_PATCH (e.g. 2026.3.11.9)
-          # Bump only the 4th segment (pazi patch number)
-          IFS='.' read -r MAJOR MINOR UPSTREAM_PATCH PAZI_PATCH <<< "$CURRENT"
-          NEXT="${MAJOR}.${MINOR}.${UPSTREAM_PATCH}.$((PAZI_PATCH + 1))"
+          # Version format: UPSTREAM-PAZI_PATCH (e.g. 2026.3.13-2)
+          # Bump only the prerelease segment (pazi patch number)
+          BASE="${CURRENT%%-*}"
+          PAZI_PATCH="${CURRENT##*-}"
+          if [ "$PAZI_PATCH" = "$CURRENT" ]; then PAZI_PATCH=0; fi
+          NEXT="${BASE}-$((PAZI_PATCH + 1))"
           node -e "const pkg=require('./package.json'); pkg.version='${NEXT}'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, '\t') + '\n')"
 
           # Sync pazi extension version to match root (upstream extensions keep their own versions)

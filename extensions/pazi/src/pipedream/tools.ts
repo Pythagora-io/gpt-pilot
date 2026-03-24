@@ -1,6 +1,6 @@
 import { Type } from "@sinclair/typebox";
-import type { AnyAgentTool, OpenClawConfig } from "openclaw/plugin-sdk";
-import { callGateway } from "../../../../src/gateway/call.js";
+import type { AnyAgentTool } from "openclaw/plugin-sdk";
+import { getPluginRuntimeGatewayRequestScope } from "../../../../src/plugins/runtime/gateway-request-scope.js";
 import {
   checkIntegration,
   listActions,
@@ -14,7 +14,6 @@ import {
 
 export type PipedreamToolsDeps = {
   pluginConfig: Record<string, unknown> | null;
-  config: OpenClawConfig;
 };
 
 type AgentToolResult = {
@@ -187,6 +186,19 @@ async function sleep(ms: number, signal?: AbortSignal): Promise<"ok" | "aborted"
     };
     signal.addEventListener("abort", onAbort, { once: true });
   });
+}
+
+function emitIntegrationRequired(params: { app: string; message?: string }) {
+  const scope = getPluginRuntimeGatewayRequestScope();
+  if (!scope?.context) {
+    throw new Error("Cannot emit integration request outside a gateway request.");
+  }
+  scope.context.broadcast("integration", {
+    action: "required",
+    app: params.app,
+    message: params.message,
+  });
+  return { emitted: true };
 }
 
 export function createPipedreamTools(deps: PipedreamToolsDeps): AnyAgentTool[] {
@@ -729,10 +741,9 @@ export function createPipedreamTools(deps: PipedreamToolsDeps): AnyAgentTool[] {
         try {
           const app = readRequiredString(params, "app");
           const message = readOptionalString(params, "message");
-          const result = await callGateway({
-            method: "pazi.integration.emit",
-            params: { action: "required", app, message },
-            config: deps.config,
+          const result = await emitIntegrationRequired({
+            app,
+            message,
           });
           return json(result);
         } catch (err) {

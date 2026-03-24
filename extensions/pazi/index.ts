@@ -1,4 +1,5 @@
 import type { Server as HttpServer } from "node:http";
+import path from "node:path";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { resolveAgentWorkspaceDir, resolveDefaultAgentId } from "../../src/agents/agent-scope.js";
 import { notifyPairingApproved } from "../../src/channels/plugins/pairing.js";
@@ -7,24 +8,39 @@ import {
   listChannelPairingRequests,
 } from "../../src/pairing/pairing-store.js";
 import { normalizeAgentId } from "../../src/routing/session-key.js";
+import { installBraveEnvDefaults, uninstallBraveEnvDefaults } from "./src/brave/brave-env.js";
+import {
+  installBraveFetchInterceptor,
+  uninstallBraveFetchInterceptor,
+} from "./src/brave/brave-fetch-interceptor.js";
 import { resolveBrowserUseConfig } from "./src/browser-use/config.js";
 import { createBrowserUseTools } from "./src/browser-use/tools.js";
 import { createPaziChannelsConfigureHandler } from "./src/channels-configure.js";
+import { createPaziChannelsDisconnectHandler } from "./src/channels-disconnect.js";
 import {
   createPaziChannelsPairingApproveHandler,
   createPaziChannelsPairingListHandler,
 } from "./src/channels-pairing.js";
 import { resolvePaziBillingConfig } from "./src/config.js";
-import { getProxyLastActivityAt, isProxyBusyForStatus } from "./src/context.js";
+import {
+  configurePersistencePath,
+  configurePersistenceWarnLogger,
+  getProxyLastActivityAt,
+  isProxyBusyForStatus,
+} from "./src/context.js";
 import {
   createPaziFilesGet,
   createPaziFilesList,
   createPaziFilesSet,
 } from "./src/gateway/pazi-files.js";
+import { createPaziSkillsCreateHandler } from "./src/gateway/skills-create.js";
+import { createPaziSkillsDeleteHandler } from "./src/gateway/skills-delete.js";
 import { createPipedreamTools } from "./src/pipedream/tools.js";
+import { paziBootstrapActionsHook } from "./src/hooks/pazi-bootstrap-actions.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
+import { startSlackThreadCachePersistence } from "./src/slack-thread-cache-persistence.js";
 
 function normalizePluginConfig(
   value: OpenClawPluginApi["pluginConfig"],
@@ -51,6 +67,13 @@ export default {
   name: "Pazi Proxy",
   description: "Routes Anthropic calls through the Pazi API.",
   register(api: OpenClawPluginApi) {
+    // PAZ-131: Persist proxy context to disk so it survives gateway restarts
+    configurePersistenceWarnLogger((message) => {
+      api.logger.warn(message);
+    });
+    const stateDir = api.runtime.state.resolveStateDir();
+    configurePersistencePath(path.join(stateDir, "pazi", "proxy-context.json"));
+
     const defaultAgentId = resolveDefaultAgentId(api.config);
     const resolveWorkspace = (requestedAgentId: unknown) => {
       const requested =
@@ -89,6 +112,21 @@ export default {
     api.registerGatewayMethod("pazi.files.list", createPaziFilesList(resolveWorkspace));
     api.registerGatewayMethod("pazi.files.get", createPaziFilesGet(resolveWorkspace));
     api.registerGatewayMethod("pazi.files.set", createPaziFilesSet(resolveWorkspace));
+    api.registerGatewayMethod(
+      "skills.create",
+      createPaziSkillsCreateHandler({
+        loadConfig: () => api.runtime.config.loadConfig(),
+        resolveWorkspace,
+      }),
+    );
+    api.registerGatewayMethod(
+      "skills.delete",
+      createPaziSkillsDeleteHandler({
+        loadConfig: () => api.runtime.config.loadConfig(),
+        writeConfigFile: (cfg) => api.runtime.config.writeConfigFile(cfg),
+        resolveWorkspace,
+      }),
+    );
 
     api.registerGatewayMethod(
       "pazi.channels.configure",
@@ -98,6 +136,13 @@ export default {
         probeSlack: (token, timeoutMs) => api.runtime.channel.slack.probeSlack(token, timeoutMs),
         probeTelegram: (token, timeoutMs, proxyUrl) =>
           api.runtime.channel.telegram.probeTelegram(token, timeoutMs, proxyUrl),
+      }),
+    );
+    api.registerGatewayMethod(
+      "pazi.channels.disconnect",
+      createPaziChannelsDisconnectHandler({
+        loadConfig: () => api.runtime.config.loadConfig(),
+        writeConfigFile: (cfg) => api.runtime.config.writeConfigFile(cfg),
       }),
     );
     const gatewayEnv = process.env;
@@ -151,9 +196,13 @@ export default {
       createPaziChannelsPairingApproveHandler(pairingGatewayDeps),
     );
 
+    api.registerHook("agent:bootstrap", paziBootstrapActionsHook, {
+      name: "pazi-bootstrap-actions",
+      description: "Appends Pazi frontend-action docs (voice tools + PAZI_COMMAND markers) to AGENTS.md",
+    });
+
     const tools = createPipedreamTools({
       pluginConfig,
-      config: api.config,
     });
     for (const tool of tools) {
       api.registerTool(tool);
@@ -231,6 +280,30 @@ export default {
     });
 
     let proxyServer: HttpServer | null = null;
+    let stopSlackThreadCachePersistence: (() => Promise<void>) | null = null;
+
+    api.registerService({
+      id: "pazi-slack-thread-cache-persistence",
+      start: async () => {
+        if (stopSlackThreadCachePersistence) {
+          await stopSlackThreadCachePersistence();
+          stopSlackThreadCachePersistence = null;
+        }
+        const persistenceStateDir = api.runtime.state.resolveStateDir();
+        const manager = await startSlackThreadCachePersistence({
+          stateDir: persistenceStateDir,
+          logWarn: (message) => api.logger.warn(message),
+        });
+        stopSlackThreadCachePersistence = manager.stop;
+      },
+      stop: async () => {
+        if (!stopSlackThreadCachePersistence) {
+          return;
+        }
+        await stopSlackThreadCachePersistence();
+        stopSlackThreadCachePersistence = null;
+      },
+    });
 
     api.registerService({
       id: "pazi-proxy",
@@ -244,8 +317,19 @@ export default {
           port: resolved.proxyPort,
           logger: api.logger,
         });
+
+        // Enable Brave Search proxying through the Pazi backend
+        // Only set sentinel + interceptor when apiUrl is configured,
+        // so agents without Pazi API URL behave normally.
+        if (resolved.apiUrl) {
+          installBraveEnvDefaults();
+          installBraveFetchInterceptor(resolved.apiUrl);
+        }
       },
       stop: async () => {
+        uninstallBraveFetchInterceptor();
+        uninstallBraveEnvDefaults();
+
         if (!proxyServer) {
           return;
         }

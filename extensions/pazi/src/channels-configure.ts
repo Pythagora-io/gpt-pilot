@@ -1,4 +1,4 @@
-type ChannelType = "slack" | "telegram";
+type ChannelType = "slack" | "telegram" | "whatsapp";
 
 interface ChannelConfigureParams {
   channel: ChannelType;
@@ -12,6 +12,7 @@ interface ChannelConfigureParams {
     accessMode?: "open" | "closed";
     groupAccessMode?: "open" | "closed";
     allowFrom?: string[];
+    slashCommandName?: string;
     token?: string;
   };
 }
@@ -38,6 +39,12 @@ interface TelegramOnboardingResult {
   pollingIntervalMs?: number;
 }
 
+interface WhatsAppOnboardingResult {
+  mode: "pairing";
+  dmPolicy: "pairing";
+  method: "qr";
+}
+
 interface ChannelConfigureResult {
   ok: true;
   channel: ChannelType;
@@ -48,7 +55,7 @@ interface ChannelConfigureResult {
   dmPolicy?: "open" | "allowlist";
   groupPolicy?: "open" | "allowlist";
   allowFrom?: string[];
-  onboarding?: TelegramOnboardingResult;
+  onboarding?: TelegramOnboardingResult | WhatsAppOnboardingResult;
 }
 
 type GatewayErrorShape = {
@@ -79,10 +86,29 @@ interface ChannelConfigureDeps {
   ) => Promise<ProbeResult>;
 }
 
-const VALID_CHANNELS: ReadonlySet<string> = new Set(["slack", "telegram"]);
+const VALID_CHANNELS: ReadonlySet<string> = new Set(["slack", "telegram", "whatsapp"]);
 const ERROR_INVALID_REQUEST = "INVALID_REQUEST";
 const ERROR_UNAVAILABLE = "UNAVAILABLE";
 const TELEGRAM_PAIRING_POLL_INTERVAL_MS = 3000;
+const DEFAULT_SLASH_COMMAND = "pazi-agent";
+const MAX_SLASH_COMMAND_CHARS = 32;
+const MAX_SLASH_COMMAND_NAME_CHARS = MAX_SLASH_COMMAND_CHARS - 1;
+
+// Keep these rules in sync with `shared/utils/SlackCommand.ts` in the `pazi` repository.
+function sanitizeSlashCommandName(
+  raw: string | undefined,
+  fallback = DEFAULT_SLASH_COMMAND,
+): string {
+  const normalized = (raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, MAX_SLASH_COMMAND_NAME_CHARS)
+    .replace(/-+$/g, "");
+  return normalized || fallback;
+}
 
 function respondError(
   respond: GatewayMethodContext["respond"],
@@ -108,7 +134,7 @@ function validateParams(raw: unknown): {
   const p = raw as Record<string, unknown>;
 
   if (!isChannelType(p.channel)) {
-    return { ok: false, error: "channel must be 'slack' or 'telegram'" };
+    return { ok: false, error: "channel must be 'slack', 'telegram', or 'whatsapp'" };
   }
 
   const config = p.config;
@@ -149,6 +175,8 @@ function validateParams(raw: unknown): {
     }
   }
 
+  // WhatsApp uses QR-code pairing — no token required at configure time.
+
   return {
     ok: true,
     params: {
@@ -165,6 +193,8 @@ function validateParams(raw: unknown): {
         allowFrom: Array.isArray(cfg.allowFrom)
           ? cfg.allowFrom.filter((entry): entry is string => typeof entry === "string")
           : undefined,
+        slashCommandName:
+          typeof cfg.slashCommandName === "string" ? cfg.slashCommandName : undefined,
         token: typeof cfg.token === "string" ? cfg.token : undefined,
       },
     },
@@ -231,28 +261,10 @@ function applySlackConfig(
   const groupPolicy = groupAccessMode === "open" ? "open" : "allowlist";
   const dm = { policy: dmPolicy, allowFrom };
 
-  if (accountId === "default") {
-    return {
-      ...cfg,
-      channels: {
-        ...cfg.channels,
-        slack: {
-          ...cfg.channels?.slack,
-          enabled: true,
-          botToken,
-          appToken,
-          dmPolicy,
-          groupPolicy,
-          allowFrom,
-          dm,
-          // Disable block streaming so tool execution traces and intermediate
-          // steps are not posted to Slack — only the final response is sent.
-          blockStreaming: false,
-          ...(input.name ? { name: input.name } : {}),
-        },
-      },
-    };
-  }
+  const slashCommandName =
+    input.slashCommandName !== undefined
+      ? sanitizeSlashCommandName(input.slashCommandName)
+      : undefined;
 
   return upsertChannelAgentBinding(
     {
@@ -276,7 +288,18 @@ function applySlackConfig(
               // Disable block streaming so tool execution traces and intermediate
               // steps are not posted to Slack — only the final response is sent.
               blockStreaming: false,
+              // Always reply inside threads so the bot doesn't spam the channel.
+              replyToMode: "all",
               ...(input.name ? { name: input.name } : {}),
+              ...(slashCommandName
+                ? {
+                    slashCommand: {
+                      ...cfg.channels?.slack?.accounts?.[accountId]?.slashCommand,
+                      enabled: true,
+                      name: slashCommandName,
+                    },
+                  }
+                : {}),
             },
           },
         },
@@ -292,22 +315,6 @@ function applyTelegramConfig(
   input: ChannelConfigureParams["config"],
 ): OpenClawConfig {
   const token = (input.token ?? input.botToken ?? "").trim();
-
-  if (accountId === "default") {
-    return {
-      ...cfg,
-      channels: {
-        ...cfg.channels,
-        telegram: {
-          ...cfg.channels?.telegram,
-          enabled: true,
-          botToken: token,
-          dmPolicy: "pairing",
-          ...(input.name ? { name: input.name } : {}),
-        },
-      },
-    };
-  }
 
   return upsertChannelAgentBinding(
     {
@@ -334,6 +341,37 @@ function applyTelegramConfig(
   );
 }
 
+function applyWhatsAppConfig(
+  cfg: OpenClawConfig,
+  accountId: string,
+  input: ChannelConfigureParams["config"],
+): OpenClawConfig {
+  // WhatsApp uses QR-code pairing — no token stored at configure time.
+  // This prepares the account so the WhatsApp monitor can request QR auth on startup.
+  return upsertChannelAgentBinding(
+    {
+      ...cfg,
+      channels: {
+        ...cfg.channels,
+        whatsapp: {
+          ...cfg.channels?.whatsapp,
+          enabled: true,
+          accounts: {
+            ...cfg.channels?.whatsapp?.accounts,
+            [accountId]: {
+              ...cfg.channels?.whatsapp?.accounts?.[accountId],
+              enabled: true,
+              dmPolicy: "pairing",
+              ...(input.name ? { name: input.name } : {}),
+            },
+          },
+        },
+      },
+    },
+    { channel: "whatsapp", accountId, agentId: accountId },
+  );
+}
+
 export function createPaziChannelsConfigureHandler(
   deps: ChannelConfigureDeps,
 ): (ctx: GatewayMethodContext) => Promise<void> {
@@ -349,28 +387,31 @@ export function createPaziChannelsConfigureHandler(
     const accountId = rawAccountId || "default";
     const timeoutMs = validation.params.timeoutMs ?? 5000;
 
-    let probe: ProbeResult;
-    try {
-      if (channel === "slack") {
-        const token = inputConfig.botToken?.trim() ?? "";
-        // probeSlack validates botToken. appToken validity is verified on channel restart.
-        probe = await deps.probeSlack(token, timeoutMs);
-      } else {
-        const token = (inputConfig.token ?? inputConfig.botToken ?? "").trim();
-        probe = await deps.probeTelegram(token, timeoutMs, undefined);
+    // WhatsApp uses QR-code pairing — skip token probe.
+    let probe: ProbeResult | undefined;
+    if (channel !== "whatsapp") {
+      try {
+        if (channel === "slack") {
+          const token = inputConfig.botToken?.trim() ?? "";
+          // probeSlack validates botToken. appToken validity is verified on channel restart.
+          probe = await deps.probeSlack(token, timeoutMs);
+        } else {
+          const token = (inputConfig.token ?? inputConfig.botToken ?? "").trim();
+          probe = await deps.probeTelegram(token, timeoutMs, undefined);
+        }
+      } catch (err) {
+        respondError(
+          respond,
+          ERROR_UNAVAILABLE,
+          `probe failed: ${err instanceof Error ? err.message : String(err)}`,
+        );
+        return;
       }
-    } catch (err) {
-      respondError(
-        respond,
-        ERROR_UNAVAILABLE,
-        `probe failed: ${err instanceof Error ? err.message : String(err)}`,
-      );
-      return;
-    }
 
-    if (!probe.ok) {
-      respondError(respond, ERROR_UNAVAILABLE, probe.error ?? "token probe failed", { probe });
-      return;
+      if (!probe.ok) {
+        respondError(respond, ERROR_UNAVAILABLE, probe.error ?? "token probe failed", { probe });
+        return;
+      }
     }
 
     try {
@@ -387,9 +428,18 @@ export function createPaziChannelsConfigureHandler(
     try {
       let cfg = deps.loadConfig();
       if (channel === "slack") {
+        if (!probe) {
+          respondError(respond, ERROR_UNAVAILABLE, "slack probe result missing");
+          return;
+        }
         cfg = applySlackConfig(cfg, accountId, inputConfig, probe);
-      } else {
+      } else if (channel === "telegram") {
         cfg = applyTelegramConfig(cfg, accountId, inputConfig);
+      } else if (channel === "whatsapp") {
+        cfg = applyWhatsAppConfig(cfg, accountId, inputConfig);
+      } else {
+        const unsupportedChannel: never = channel;
+        throw new Error(`unsupported channel: ${unsupportedChannel}`);
       }
       await deps.writeConfigFile(cfg);
     } catch (err) {
@@ -422,15 +472,16 @@ export function createPaziChannelsConfigureHandler(
       return;
     }
 
+    const slackTeamId = channel === "slack" ? (probe?.team?.id?.trim() ?? "") : "";
     const result: ChannelConfigureResult = {
       ok: true,
       channel,
       accountId,
-      probe,
+      ...(probe ? { probe } : {}),
       ...(channel === "slack" && inputConfig.appId?.trim()
         ? { appId: inputConfig.appId.trim().toUpperCase() }
         : {}),
-      ...(channel === "slack" && probe.team?.id?.trim() ? { teamId: probe.team.id.trim() } : {}),
+      ...(slackTeamId ? { teamId: slackTeamId } : {}),
       ...(channel === "slack"
         ? {
             dmPolicy: inputConfig.accessMode === "closed" ? "allowlist" : "open",
@@ -443,7 +494,7 @@ export function createPaziChannelsConfigureHandler(
         : {}),
     };
     if (channel === "telegram") {
-      const botUsername = probe.bot?.username?.trim() ?? "";
+      const botUsername = probe?.bot?.username?.trim() ?? "";
       result.onboarding = {
         mode: "pairing",
         dmPolicy: "pairing",
@@ -455,6 +506,12 @@ export function createPaziChannelsConfigureHandler(
               deepLink: `https://t.me/${encodeURIComponent(botUsername)}`,
             }
           : {}),
+      };
+    } else if (channel === "whatsapp") {
+      result.onboarding = {
+        mode: "pairing",
+        dmPolicy: "pairing",
+        method: "qr",
       };
     }
     respond(true, result);

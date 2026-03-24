@@ -1,4 +1,22 @@
-# Repository Guidelines
+# Pazi Extension (OpenClaw Fork)
+
+This repository is Pazi's fork of [OpenClaw](https://github.com/openclaw/openclaw). All Pazi-specific functionality lives in `extensions/pazi/`.
+
+## Core Rule: Do Not Modify the OpenClaw Codebase
+
+**All new features and fixes MUST be implemented inside `extensions/pazi/`.** Do not modify core OpenClaw files outside of the extensions directory.
+
+- PRs that make significant changes to core OpenClaw code will be closed.
+- Minor, unavoidable core changes (e.g., exposing a hook or fixing a blocking bug) are acceptable only when there is no extension-based alternative, and must be kept to an absolute minimum.
+- When in doubt, implement it in `extensions/pazi/` first. If that's truly not possible, explain why in the PR description.
+
+This discipline keeps our fork easy to rebase onto upstream OpenClaw updates and avoids merge conflicts.
+
+---
+
+# OpenClaw Repository Guidelines
+
+> Everything below this line is the original OpenClaw CLAUDE.md content, kept for reference.
 
 - Repo: https://github.com/openclaw/openclaw
 - In chat replies, file references must be repo-root relative only (example: `extensions/bluebubbles/src/channel.ts:80`); never absolute paths or `~/...`.
