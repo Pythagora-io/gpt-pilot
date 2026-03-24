@@ -29,7 +29,7 @@ import {
   createPaziFilesSet,
 } from "./src/gateway/pazi-files.js";
 import { createPipedreamTools } from "./src/pipedream/tools.js";
-import { createPaziAgentsTemplateGet } from "./src/gateway/pazi-agents-template.js";
+import { paziBootstrapActionsHook } from "./src/hooks/pazi-bootstrap-actions.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
@@ -173,7 +173,7 @@ export default {
       createPaziChannelsPairingApproveHandler(pairingGatewayDeps),
     );
 
-    api.registerGatewayMethod("pazi.agents.template.get", createPaziAgentsTemplateGet());
+    api.registerHook("agent:bootstrap", paziBootstrapActionsHook);
 
     const tools = createPipedreamTools({
       pluginConfig,
