@@ -5,7 +5,7 @@ import {
   clearSlackThreadParticipationCache,
   hasSlackThreadParticipation,
   recordSlackThreadParticipation,
-} from "../../../src/slack/sent-thread-cache.js";
+} from "../../slack/src/sent-thread-cache.js";
 import { withTempDir } from "../../../src/test-utils/temp-dir.js";
 import { startSlackThreadCachePersistence } from "./slack-thread-cache-persistence.js";
 
