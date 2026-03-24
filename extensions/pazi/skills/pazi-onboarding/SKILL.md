@@ -1,6 +1,7 @@
 ---
 name: pazi-onboarding
 description: First-session onboarding guidance for new Pazi users. Runs once per workspace, then self-disables.
+metadata: { "openclaw": { "emoji": "👋" } }
 ---
 
 # Pazi Onboarding
