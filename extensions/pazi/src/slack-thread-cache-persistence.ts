@@ -4,7 +4,7 @@ import { createAsyncLock, writeJsonAtomic } from "../../../src/infra/json-files.
 import {
   getSlackThreadParticipationEntriesSnapshot,
   hydrateSlackThreadParticipationCache,
-} from "../../../src/slack/sent-thread-cache.js";
+} from "../../slack/src/sent-thread-cache.js";
 
 const STORE_VERSION = 1;
 const TTL_MS = 24 * 60 * 60 * 1000;
