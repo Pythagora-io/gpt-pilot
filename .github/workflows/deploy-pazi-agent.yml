@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to deploy to'
+        description: "Environment to deploy to"
         required: true
         type: choice
         options:
@@ -15,7 +15,7 @@ on:
           - production
         default: staging
       branch:
-        description: 'Branch to deploy'
+        description: "Branch to deploy"
         required: true
         type: string
         default: staging
