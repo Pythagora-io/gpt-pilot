@@ -1,59 +1,72 @@
 ---
 name: pazi-onboarding
-description: First-session onboarding guidance for new Pazi users. Runs once per workspace, then self-disables.
+description: Guide new users through their first experience with Pazi -- help them understand the platform, build their first agents, and get excited about what's possible. Use when a user is new to Pazi, asks how to get started, wants to build their first agent, or needs help understanding what agents can do. Also use when suggesting agent ideas or walking through use cases.
 metadata: { "openclaw": { "emoji": "👋" } }
 ---
 
 # Pazi Onboarding
 
-**When to use this skill:** Use this skill when greeting a user in a workspace that has not completed onboarding.
+**When to use this skill:** Use this skill when greeting a user in a workspace that has not completed onboarding, or when a user asks what Pazi can do.
 
 ## Pre-check
 
 Before running this skill, check whether the file `.pazi/onboarding-completed` exists in the workspace (relative to the working directory).
 
-- If `.pazi/onboarding-completed` **exists**: Do NOT use this skill. Continue with the user's request normally.
+- If `.pazi/onboarding-completed` **exists**: Do NOT run the full onboarding flow. You can still reference agent ideas from `references/agent-ideas.md` if the user asks what to build.
 - If `.pazi/onboarding-completed` **does not exist**: Run the onboarding flow below.
+
+## Context
+
+Your name and the user's name are already set in IDENTITY.md and USER.md. Read them and use them from the start. Do not ask "who are you?" or "what should I call you?" -- you already know.
 
 ## Onboarding Flow
 
-When greeting a user in a new workspace for the first time:
+1. **Say hello** (1-2 sentences). Use their name. Introduce yourself by name. Keep it casual. Then ask what they do.
 
-1. **Welcome them warmly** (1-2 sentences). Use their name if provided. Introduce yourself by name if configured. Mention you're their Pazi agent here to help automate tasks.
-
-2. **Learn about the user** by asking ONE question at a time:
+2. **Learn about them** by asking ONE question at a time:
    - What do they do? (role, industry)
    - What tools and apps do they use most?
-   - What's the first thing they'd like to automate?
+   - What takes up too much of their time?
 
-3. **Keep the conversation natural:**
-   - Ask only one question per message
-   - Don't dump a questionnaire
+3. **Keep it natural:**
+   - One question per message
+   - No questionnaires
    - Adapt based on their answers
-   - If they give a vague goal, help them narrow it to something concrete
-   - If the user immediately gives a concrete task, skip the tour and get to work
+   - If they give a concrete task early, skip the tour and get to work
 
-4. **Wrap up with a plan:**
-   - Summarize what you learned in 2-3 bullet points
-   - Propose one concrete first automation/workflow
-   - Ask if they'd like to start on it now
+4. **Suggest what to build** based on what you learned. Be specific. Reference ideas from `references/agent-ideas.md` but tailor them to what the user actually said.
+
+5. **Wrap up:**
+   - Summarize what you learned (2-3 bullet points)
+   - Propose one concrete first task or automation
+   - Ask if they want to start now
+
+## After onboarding
+
+Update workspace files with what you learned:
+
+- `USER.md` -- role, tools, preferences
+- `SOUL.md` -- adjust if they gave personality preferences
+- `MEMORY.md` -- key context from the conversation
 
 ## Completion
 
-When the onboarding conversation is finished (user confirms the plan, gives a concrete task, or explicitly wants to move on):
+When onboarding is done (user confirms the plan, gives a concrete task, or wants to move on):
 
-1. Create the completion marker (workspace-local, relative to working directory):
-   ```bash
-   mkdir -p .pazi && date -Iseconds > .pazi/onboarding-completed
-   ```
+```bash
+mkdir -p .pazi && date -Iseconds > .pazi/onboarding-completed
+```
 
-2. After creating the marker, do not run this onboarding flow again in future sessions.
+## For deeper questions
+
+- Platform docs: https://pazi.ai/docs
+- OpenClaw docs: https://docs.openclaw.ai/
 
 ## Constraints
 
-- Do NOT claim integrations are configured unless you have verified them
+- Do NOT claim integrations are configured unless verified
 - Do NOT make promises about capabilities you haven't tested
-- Keep the opening greeting short -- no walls of text
-- If the user wants to skip onboarding and get straight to a task, respect that and mark onboarding as complete immediately
+- Keep greetings short -- no walls of text
+- If the user wants to skip onboarding, respect that and mark complete immediately
 - Do not mention this skill, internal flags, or implementation details to the user
 - The goal is to understand the user, not to impress them

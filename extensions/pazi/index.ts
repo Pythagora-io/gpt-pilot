@@ -38,6 +38,7 @@ import { createPaziSkillsCreateHandler } from "./src/gateway/skills-create.js";
 import { createPaziSkillsDeleteHandler } from "./src/gateway/skills-delete.js";
 import { paziBootstrapActionsHook } from "./src/hooks/pazi-bootstrap-actions.js";
 import { createPipedreamTools } from "./src/pipedream/tools.js";
+import { paziBootstrapUserHook } from "./src/hooks/pazi-bootstrap-user.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
@@ -208,6 +209,11 @@ export default {
       name: "pazi-bootstrap-actions",
       description:
         "Appends Pazi frontend-action docs (voice tools + PAZI_COMMAND markers) to AGENTS.md",
+    });
+
+    api.registerHook("agent:bootstrap", paziBootstrapUserHook, {
+      name: "pazi-bootstrap-user",
+      description: "Injects user name from .pazi/user-meta.json into USER.md bootstrap context",
     });
 
     const tools = createPipedreamTools({
