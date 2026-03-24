@@ -173,7 +173,10 @@ export default {
       createPaziChannelsPairingApproveHandler(pairingGatewayDeps),
     );
 
-    api.registerHook("agent:bootstrap", paziBootstrapActionsHook);
+    api.registerHook("agent:bootstrap", paziBootstrapActionsHook, {
+      name: "pazi-bootstrap-actions",
+      description: "Appends Pazi frontend-action docs (voice tools + PAZI_COMMAND markers) to AGENTS.md",
+    });
 
     const tools = createPipedreamTools({
       pluginConfig,
