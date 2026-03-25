@@ -37,8 +37,8 @@ import { createPaziSkillsGet, createPaziSkillsSet } from "./src/gateway/pazi-ski
 import { createPaziSkillsCreateHandler } from "./src/gateway/skills-create.js";
 import { createPaziSkillsDeleteHandler } from "./src/gateway/skills-delete.js";
 import { paziBootstrapActionsHook } from "./src/hooks/pazi-bootstrap-actions.js";
-import { createPipedreamTools } from "./src/pipedream/tools.js";
 import { paziBootstrapUserHook } from "./src/hooks/pazi-bootstrap-user.js";
+import { createPipedreamTools } from "./src/pipedream/tools.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
