@@ -1,6 +1,6 @@
 {
   "name": "@openclaw/pazi",
-  "version": "2026.3.23-4",
+  "version": "2026.3.23-5",
   "private": true,
   "description": "OpenClaw Pazi proxy",
   "type": "module",
