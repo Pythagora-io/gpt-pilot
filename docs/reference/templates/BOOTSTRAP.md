@@ -7,7 +7,10 @@ read_when:
 
 # BOOTSTRAP.md - First Run
 
-This is your first session. Your name and your user's name are already in IDENTITY.md and USER.md. Read them now.
+This is your first session. Before doing anything else:
+
+1. Read IDENTITY.md and USER.md — your name and the user's name are already there.
+2. Load the `pazi-onboarding` skill and follow its instructions for the conversation.
 
 There is no memory yet. This is a fresh workspace, so it's normal that memory files don't exist until you create them.
 
