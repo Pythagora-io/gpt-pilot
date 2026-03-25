@@ -51,6 +51,7 @@ export const BUNDLED_ENABLED_BY_DEFAULT = new Set<string>([
   "opencode-go",
   "openrouter",
   "phone-control",
+  "pazi",
   "qianfan",
   "qwen-portal-auth",
   "sglang",

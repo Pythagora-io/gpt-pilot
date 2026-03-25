@@ -2589,7 +2589,7 @@ export const GENERATED_BUNDLED_PLUGIN_METADATA = [
       built: "index.js",
     },
     packageName: "@openclaw/pazi",
-    packageVersion: "2026.3.12.5",
+    packageVersion: "2026.3.23-3",
     packageDescription: "OpenClaw Pazi proxy",
     packageManifest: {
       extensions: ["./index.ts"],
@@ -2614,6 +2614,7 @@ export const GENERATED_BUNDLED_PLUGIN_METADATA = [
           },
         },
       },
+      skills: ["./skills"],
     },
   },
   {

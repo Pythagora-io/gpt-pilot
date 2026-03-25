@@ -271,6 +271,11 @@ describe("resolveEnableState", () => {
     expect(state).toEqual({ enabled: true });
   });
 
+  it("keeps pazi enabled by default so the Anthropic proxy service starts on gateway boot", () => {
+    const state = resolveEnableState("pazi", "bundled", normalizePluginsConfig({}));
+    expect(state).toEqual({ enabled: true });
+  });
+
   it("allows bundled plugins to opt into default enablement from manifest metadata", () => {
     const state = resolveEnableState("profile-aware", "bundled", normalizePluginsConfig({}), true);
     expect(state).toEqual({ enabled: true });
