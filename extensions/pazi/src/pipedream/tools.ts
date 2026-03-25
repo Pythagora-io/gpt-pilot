@@ -18,7 +18,7 @@ export type PipedreamToolsDeps = {
 
 type AgentToolResult = {
   content: Array<{ type: "text"; text: string }>;
-  details?: unknown;
+  details: unknown;
 };
 
 function json(payload: unknown): AgentToolResult {
@@ -215,7 +215,8 @@ export function createPipedreamTools(deps: PipedreamToolsDeps): AnyAgentTool[] {
         },
         { additionalProperties: false },
       ),
-      async execute(_toolCallId: string, params: Record<string, unknown>) {
+      // oxlint-disable-next-line typescript/no-explicit-any
+      async execute(_toolCallId: string, params: any) {
         try {
           const query = readRequiredString(params, "query");
           const limit = coerceLimit(readOptionalNumber(params, "limit"));
@@ -238,7 +239,8 @@ export function createPipedreamTools(deps: PipedreamToolsDeps): AnyAgentTool[] {
         },
         { additionalProperties: false },
       ),
-      async execute(_toolCallId: string, params: Record<string, unknown>) {
+      // oxlint-disable-next-line typescript/no-explicit-any
+      async execute(_toolCallId: string, params: any) {
         try {
           const app = readRequiredString(params, "app");
           const limit = coerceLimit(readOptionalNumber(params, "limit"));
@@ -262,7 +264,8 @@ export function createPipedreamTools(deps: PipedreamToolsDeps): AnyAgentTool[] {
         },
         { additionalProperties: false },
       ),
-      async execute(_toolCallId: string, params: Record<string, unknown>) {
+      // oxlint-disable-next-line typescript/no-explicit-any
+      async execute(_toolCallId: string, params: any) {
         try {
           const actionId = readRequiredString(params, "actionId");
           const result = await getAction({ pluginConfig: deps.pluginConfig }, actionId);
@@ -310,7 +313,8 @@ export function createPipedreamTools(deps: PipedreamToolsDeps): AnyAgentTool[] {
         },
         { additionalProperties: false },
       ),
-      async execute(_toolCallId: string, params: Record<string, unknown>) {
+      // oxlint-disable-next-line typescript/no-explicit-any
+      async execute(_toolCallId: string, params: any) {
         try {
           const actionId = readRequiredString(params, "actionId");
           const propName = readRequiredString(params, "propName");
@@ -365,7 +369,8 @@ export function createPipedreamTools(deps: PipedreamToolsDeps): AnyAgentTool[] {
         },
         { additionalProperties: false },
       ),
-      async execute(_toolCallId: string, params: Record<string, unknown>) {
+      // oxlint-disable-next-line typescript/no-explicit-any
+      async execute(_toolCallId: string, params: any) {
         try {
           const actionId = readRequiredString(params, "actionId");
           const configuredProps = params.configuredProps;
@@ -403,7 +408,8 @@ export function createPipedreamTools(deps: PipedreamToolsDeps): AnyAgentTool[] {
         },
         { additionalProperties: false },
       ),
-      async execute(_toolCallId: string, params: Record<string, unknown>) {
+      // oxlint-disable-next-line typescript/no-explicit-any
+      async execute(_toolCallId: string, params: any) {
         try {
           const app = readRequiredString(params, "app");
           const result = await checkIntegration({ pluginConfig: deps.pluginConfig }, app);
@@ -445,7 +451,8 @@ export function createPipedreamTools(deps: PipedreamToolsDeps): AnyAgentTool[] {
         },
         { additionalProperties: false },
       ),
-      async execute(_toolCallId: string, params: Record<string, unknown>) {
+      // oxlint-disable-next-line typescript/no-explicit-any
+      async execute(_toolCallId: string, params: any) {
         try {
           const app = readRequiredString(params, "app");
           const actionId = readRequiredString(params, "actionId");
@@ -737,7 +744,8 @@ export function createPipedreamTools(deps: PipedreamToolsDeps): AnyAgentTool[] {
         },
         { additionalProperties: false },
       ),
-      async execute(_toolCallId: string, params: Record<string, unknown>) {
+      // oxlint-disable-next-line typescript/no-explicit-any
+      async execute(_toolCallId: string, params: any) {
         try {
           const app = readRequiredString(params, "app");
           const message = readOptionalString(params, "message");
@@ -766,7 +774,8 @@ export function createPipedreamTools(deps: PipedreamToolsDeps): AnyAgentTool[] {
         },
         { additionalProperties: false },
       ),
-      async execute(_toolCallId: string, params: Record<string, unknown>, signal?: AbortSignal) {
+      // oxlint-disable-next-line typescript/no-explicit-any
+      async execute(_toolCallId: string, params: any, signal?: AbortSignal) {
         try {
           const app = readRequiredString(params, "app");
           const timeoutMs = readOptionalNumber(params, "timeoutMs");
