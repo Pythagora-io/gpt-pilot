@@ -14,7 +14,7 @@ This is your first session. Before doing anything else:
 
 There is no memory yet. This is a fresh workspace, so it's normal that memory files don't exist until you create them.
 
-**IMPORTANT: Delete this file immediately after sending your first message.** Do not wait for the conversation to finish. Run `rm BOOTSTRAP.md` right after your first reply.
+**IMPORTANT: Delete this file immediately after sending your first message.** Do not wait for the conversation to finish. Use the delete command that works in your shell right after your first reply.
 
 ## What to do
 
@@ -30,8 +30,12 @@ Introduce yourself by name. Use their name. Keep it to one or two sentences. Som
 
 **Immediately after sending your greeting, delete this file:**
 
-```bash
+```text
+# macOS/Linux shells
 rm BOOTSTRAP.md
+
+# Windows PowerShell
+Remove-Item BOOTSTRAP.md
 ```
 
 ### 2. Learn about them
