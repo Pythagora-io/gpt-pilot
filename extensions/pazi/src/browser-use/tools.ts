@@ -27,7 +27,7 @@ type BrowserUseAction = (typeof BROWSER_USE_ACTIONS)[number];
 
 type AgentToolResult = {
   content: Array<{ type: "text"; text: string }>;
-  details?: unknown;
+  details: unknown;
 };
 
 export type BrowserUseToolsDeps = {
@@ -225,7 +225,8 @@ export function createBrowserUseTools(deps: BrowserUseToolsDeps): AnyAgentTool[]
         },
         { additionalProperties: false },
       ),
-      async execute(_toolCallId: string, params: Record<string, unknown>, signal?: AbortSignal) {
+      // oxlint-disable-next-line typescript/no-explicit-any
+      async execute(_toolCallId: string, params: any, signal?: AbortSignal) {
         try {
           const actionRaw = params.action;
           const action =
@@ -380,7 +381,7 @@ export function createBrowserUseTools(deps: BrowserUseToolsDeps): AnyAgentTool[]
                   return json({ error: result.error });
                 }
 
-                return json({ taskId, ...result.data }, "Browser Use task status.");
+                return json({ ...result.data, taskId }, "Browser Use task status.");
               }
 
               const sessionResult = await getSessionStatus(
@@ -394,7 +395,7 @@ export function createBrowserUseTools(deps: BrowserUseToolsDeps): AnyAgentTool[]
                 return json({ error: sessionResult.error });
               }
 
-              return json({ sessionId, ...sessionResult.data }, "Browser Use session status.");
+              return json({ ...sessionResult.data, sessionId }, "Browser Use session status.");
             }
 
             default: {
