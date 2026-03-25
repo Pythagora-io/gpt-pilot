@@ -274,10 +274,19 @@ class BaseLLMClient:
                 request_log.status = LLMRequestStatus.ERROR
                 wait_time = self.rate_limit_sleep(err)
                 if wait_time:
-                    message = f"We've hit {self.config.provider.value} rate limit. Sleeping for {wait_time.seconds} seconds..."
+                    # Use total_seconds() instead of .seconds to correctly
+                    # handle timedeltas that span days (e.g. daily rate limits).
+                    # The .seconds attribute only returns the seconds component
+                    # within the current day, which can be 0 for timedelta(days=1)
+                    # or ~86400 for small negative timedeltas.
+                    sleep_seconds = int(wait_time.total_seconds())
+                    # Clamp to a reasonable range: at least 1 second, at most 1 hour
+                    sleep_seconds = max(1, min(sleep_seconds, 3600))
+                    message = f"We've hit {self.config.provider.value} rate limit. Sleeping for {sleep_seconds} seconds..."
+                    log.info(message)
                     if self.error_handler:
                         await self.error_handler(LLMError.RATE_LIMITED, message)
-                    await asyncio.sleep(wait_time.seconds)
+                    await asyncio.sleep(sleep_seconds)
                     continue
                 else:
                     # RateLimitError that shouldn't be retried, eg. insufficient funds
