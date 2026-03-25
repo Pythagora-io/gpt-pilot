@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { listAgentIds, resolveAgentWorkspaceDir } from "../../../../src/agents/agent-scope.js";
 import { ErrorCodes, errorShape } from "../../../../src/gateway/protocol/index.js";
 import type { GatewayRequestHandler } from "../../../../src/gateway/server-methods/types.js";
 
@@ -43,7 +44,7 @@ function splitSkillDocument(raw: string): { frontmatter: string | null; body: st
   }
   return {
     frontmatter: normalized.slice(4, endIndex),
-    body: normalized.slice(endIndex + 4).replace(/^\n/, ""),
+    body: normalized.slice(endIndex + 4).replace(/^\n+/, ""),
   };
 }
 
@@ -157,8 +158,10 @@ export function createPaziSkillsGet(deps: PaziSkillsDeps): GatewayRequestHandler
       respond(true, {
         skillKey,
         source: entry.source,
+        description: entry.description ?? "",
         content: body,
         bundled: entry.source === "openclaw-bundled",
+        scope: entry.source === "openclaw-extra" ? "all" : "agent",
       });
     } catch {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, "failed to read skill file"));
@@ -183,6 +186,7 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
     const name = typeof p.name === "string" ? p.name.trim() : "";
     const description = typeof p.description === "string" ? p.description.trim() : "";
     const content = typeof p.content === "string" ? p.content : "";
+    const scope = typeof p.scope === "string" ? p.scope : undefined;
 
     if (!skillKey) {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing skillKey"));
@@ -190,6 +194,14 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
     }
     if (!name) {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing name"));
+      return;
+    }
+    if (!description) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing description"));
+      return;
+    }
+    if (!content.trim()) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing content"));
       return;
     }
 
@@ -218,26 +230,115 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
 
     const finalContent = buildUpdatedDocument({ existingRaw, name, description, content });
 
+    // Determine if scope is changing
+    const currentIsShared = entry.source === "openclaw-extra";
+    const wantShared = scope === "all";
+    const wantAgent = scope === "agent";
+    const scopeChanging = (wantShared && !currentIsShared) || (wantAgent && currentIsShared);
+
     // Determine write path
     let writePath: string;
     let createdOverride = false;
+    let oldDirToRemove: string | undefined;
 
-    const isWorkspaceSkill =
-      entry.source === "openclaw-workspace" || entry.source === "agents-skills-project";
+    // Helper to check file existence
+    const fileExists = async (filePath: string): Promise<boolean> => {
+      try {
+        await fs.access(filePath);
+        return true;
+      } catch {
+        return false;
+      }
+    };
 
-    if (isWorkspaceSkill) {
-      writePath = entry.filePath;
+    // Check name collision across ALL locations (shared + every agent workspace).
+    // Skip the current skill's own location.
+    const checkGlobalCollision = async (
+      dirName: string,
+      currentFilePath: string,
+    ): Promise<boolean> => {
+      const extraDirs = cfg.skills?.load?.extraDirs;
+      const sharedDir =
+        Array.isArray(extraDirs) && typeof extraDirs[0] === "string" ? extraDirs[0].trim() : "";
+
+      // Check shared dir
+      if (sharedDir) {
+        const sharedFile = path.join(sharedDir, dirName, "SKILL.md");
+        if (sharedFile !== currentFilePath && (await fileExists(sharedFile))) return true;
+      }
+
+      // Check all agent workspaces
+      const allAgentIds = listAgentIds(cfg);
+      for (const id of allAgentIds) {
+        const wsDir = resolveAgentWorkspaceDir(cfg, id);
+        const agentFile = path.join(wsDir, "skills", dirName, "SKILL.md");
+        if (agentFile !== currentFilePath && (await fileExists(agentFile))) return true;
+      }
+
+      return false;
+    };
+
+    // Always check for global name collision (covers renames, scope changes, everything).
+    const targetDirName = slugify(name);
+    if (await checkGlobalCollision(targetDirName, entry.filePath)) {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.INVALID_REQUEST, `skill "${targetDirName}" already exists`),
+      );
+      return;
+    }
+
+    if (scopeChanging && wantShared) {
+      // Move from agent workspace → shared dir
+      const extraDirs = cfg.skills?.load?.extraDirs;
+      const sharedDir =
+        Array.isArray(extraDirs) && typeof extraDirs[0] === "string" ? extraDirs[0].trim() : "";
+      if (!sharedDir) {
+        respond(
+          false,
+          undefined,
+          errorShape(
+            ErrorCodes.INVALID_REQUEST,
+            "no shared skills directory configured (skills.load.extraDirs)",
+          ),
+        );
+        return;
+      }
+      writePath = path.join(sharedDir, slugify(name), "SKILL.md");
+      oldDirToRemove = path.dirname(entry.filePath);
+    } else if (scopeChanging && wantAgent) {
+      // Move from shared dir → agent workspace
+      writePath = path.join(resolved.workspaceDir, "skills", slugify(name), "SKILL.md");
+      oldDirToRemove = path.dirname(entry.filePath);
     } else {
-      // Bundled/managed — create workspace override using skillKey for stable path
-      const dirName = slugify(entry.skillKey);
-      const overrideDir = path.join(resolved.workspaceDir, "skills", dirName);
-      writePath = path.join(overrideDir, "SKILL.md");
-      createdOverride = true;
+      const isWorkspaceSkill =
+        entry.source === "openclaw-workspace" || entry.source === "agents-skills-project";
+      const isExtraSkill = entry.source === "openclaw-extra";
+
+      if (isWorkspaceSkill || isExtraSkill) {
+        writePath = entry.filePath;
+      } else {
+        // Bundled/managed — create workspace override using skillKey for stable path
+        const dirName = slugify(entry.skillKey);
+        const overrideDir = path.join(resolved.workspaceDir, "skills", dirName);
+        writePath = path.join(overrideDir, "SKILL.md");
+        createdOverride = true;
+      }
     }
 
     try {
-      await fs.mkdir(path.dirname(writePath), { recursive: true });
-      await fs.writeFile(writePath, finalContent, "utf-8");
+      if (oldDirToRemove) {
+        // Scope change: copy entire skill directory first to preserve sibling assets,
+        // then overwrite SKILL.md with updated content, then remove old dir.
+        const newDir = path.dirname(writePath);
+        await fs.cp(oldDirToRemove, newDir, { recursive: true });
+        await fs.writeFile(writePath, finalContent, "utf-8");
+        await fs.rm(oldDirToRemove, { recursive: true }).catch(() => {});
+      } else {
+        await fs.mkdir(path.dirname(writePath), { recursive: true });
+        await fs.writeFile(writePath, finalContent, "utf-8");
+      }
     } catch {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, "failed to write skill file"));
       return;

@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { loadWorkspaceSkillEntries } from "../../../../src/agents/skills.js";
+import type { OpenClawConfig } from "../../../../src/config/config.js";
 import { ErrorCodes, errorShape } from "../../../../src/gateway/protocol/index.js";
 import type { GatewayRequestHandler } from "../../../../src/gateway/server-methods/types.js";
-import type { OpenClawConfig } from "../../../../src/config/config.js";
-import { loadWorkspaceSkillEntries } from "../../../../src/agents/skills.js";
 
 type ResolvedWorkspace = {
   agentId: string;
@@ -19,6 +19,7 @@ type ResolveWorkspace = (agentId: unknown) => ResolvedWorkspace | null;
 const DELETABLE_SOURCES = new Set([
   "openclaw-workspace",
   "openclaw-managed",
+  "openclaw-extra",
   "agents-skills-project",
   "agents-skills-personal",
 ]);
@@ -29,29 +30,18 @@ export function createPaziSkillsDeleteHandler(deps: {
   resolveWorkspace: ResolveWorkspace;
 }): GatewayRequestHandler {
   return async ({ params, respond }) => {
-    const skillKey =
-      typeof params.skillKey === "string" ? params.skillKey.trim() : "";
+    const skillKey = typeof params.skillKey === "string" ? params.skillKey.trim() : "";
 
     if (!skillKey) {
-      respond(
-        false,
-        undefined,
-        errorShape(ErrorCodes.INVALID_REQUEST, "skillKey is required"),
-      );
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "skillKey is required"));
       return;
     }
 
     const agentId =
-      params && typeof params === "object"
-        ? (params as { agentId?: unknown }).agentId
-        : undefined;
+      params && typeof params === "object" ? (params as { agentId?: unknown }).agentId : undefined;
     const resolved = deps.resolveWorkspace(agentId);
     if (!resolved) {
-      respond(
-        false,
-        undefined,
-        errorShape(ErrorCodes.INVALID_REQUEST, "unknown agent id"),
-      );
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "unknown agent id"));
       return;
     }
 
@@ -70,10 +60,7 @@ export function createPaziSkillsDeleteHandler(deps: {
       respond(
         false,
         undefined,
-        errorShape(
-          ErrorCodes.INVALID_REQUEST,
-          `skill "${skillKey}" not found`,
-        ),
+        errorShape(ErrorCodes.INVALID_REQUEST, `skill "${skillKey}" not found`),
       );
       return;
     }
@@ -92,6 +79,24 @@ export function createPaziSkillsDeleteHandler(deps: {
 
     // The skill directory is the parent directory of SKILL.md.
     const skillDir = path.dirname(entry.skill.filePath);
+
+    // For extra skills, only allow deleting from user-configured extraDirs (not plugin dirs).
+    if (entry.skill.source === "openclaw-extra") {
+      const extraDirs = (cfg.skills?.load?.extraDirs ?? []).filter(
+        (d): d is string => typeof d === "string" && d.trim().length > 0,
+      );
+      const insideUserExtraDir = extraDirs.some(
+        (dir) => skillDir.startsWith(dir + path.sep) || skillDir === dir,
+      );
+      if (!insideUserExtraDir) {
+        respond(
+          false,
+          undefined,
+          errorShape(ErrorCodes.INVALID_REQUEST, "cannot delete plugin-provided skills"),
+        );
+        return;
+      }
+    }
 
     try {
       await fs.rm(skillDir, { recursive: true, force: true });

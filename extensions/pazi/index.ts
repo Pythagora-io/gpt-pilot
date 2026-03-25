@@ -33,10 +33,11 @@ import {
   createPaziFilesList,
   createPaziFilesSet,
 } from "./src/gateway/pazi-files.js";
+import { createPaziSkillsGet, createPaziSkillsSet } from "./src/gateway/pazi-skills.js";
 import { createPaziSkillsCreateHandler } from "./src/gateway/skills-create.js";
 import { createPaziSkillsDeleteHandler } from "./src/gateway/skills-delete.js";
-import { createPipedreamTools } from "./src/pipedream/tools.js";
 import { paziBootstrapActionsHook } from "./src/hooks/pazi-bootstrap-actions.js";
+import { createPipedreamTools } from "./src/pipedream/tools.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
@@ -128,6 +129,13 @@ export default {
       }),
     );
 
+    const skillsDeps = {
+      resolveWorkspace,
+      loadConfig: () => api.runtime.config.loadConfig(),
+    };
+    api.registerGatewayMethod("pazi.skills.get", createPaziSkillsGet(skillsDeps));
+    api.registerGatewayMethod("pazi.skills.set", createPaziSkillsSet(skillsDeps));
+
     api.registerGatewayMethod(
       "pazi.channels.configure",
       createPaziChannelsConfigureHandler({
@@ -198,7 +206,8 @@ export default {
 
     api.registerHook("agent:bootstrap", paziBootstrapActionsHook, {
       name: "pazi-bootstrap-actions",
-      description: "Appends Pazi frontend-action docs (voice tools + PAZI_COMMAND markers) to AGENTS.md",
+      description:
+        "Appends Pazi frontend-action docs (voice tools + PAZI_COMMAND markers) to AGENTS.md",
     });
 
     const tools = createPipedreamTools({
