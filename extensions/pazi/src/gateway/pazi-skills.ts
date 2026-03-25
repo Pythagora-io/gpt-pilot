@@ -196,6 +196,14 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing name"));
       return;
     }
+    if (!description) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing description"));
+      return;
+    }
+    if (!content.trim()) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing content"));
+      return;
+    }
 
     const { buildWorkspaceSkillStatus } = await import("../../../../src/agents/skills-status.js");
 

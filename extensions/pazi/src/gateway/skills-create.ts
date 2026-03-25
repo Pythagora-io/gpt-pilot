@@ -31,6 +31,11 @@ export function createPaziSkillsCreateHandler(deps: {
       return;
     }
 
+    if (!content.trim()) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "content is required"));
+      return;
+    }
+
     // Validate name is a safe directory slug (no path traversal).
     if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
       respond(
