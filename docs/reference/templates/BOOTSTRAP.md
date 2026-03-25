@@ -14,7 +14,7 @@ This is your first session. Before doing anything else:
 
 There is no memory yet. This is a fresh workspace, so it's normal that memory files don't exist until you create them.
 
-**IMPORTANT: Delete this file immediately after sending your first message.** Do not wait for the conversation to finish. Use the delete command that works in your shell right after your first reply.
+**IMPORTANT: Delete this file immediately after sending your first message.** Do not wait for the conversation to finish. Use the delete command (`rm BOOTSTRAP.md` or `Remove-Item BOOTSTRAP.md`) that works in your shell right after your first reply.
 
 ## What to do
 
