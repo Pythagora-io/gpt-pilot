@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { listAgentIds, resolveAgentWorkspaceDir } from "../../../../src/agents/agent-scope.js";
 import { ErrorCodes, errorShape } from "../../../../src/gateway/protocol/index.js";
 import type { GatewayRequestHandler } from "../../../../src/gateway/server-methods/types.js";
 
@@ -160,6 +161,7 @@ export function createPaziSkillsGet(deps: PaziSkillsDeps): GatewayRequestHandler
         description: entry.description ?? "",
         content: body,
         bundled: entry.source === "openclaw-bundled",
+        scope: entry.source === "openclaw-extra" ? "all" : "agent",
       });
     } catch {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, "failed to read skill file"));
@@ -224,21 +226,66 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
     const currentIsShared = entry.source === "openclaw-extra";
     const wantShared = scope === "all";
     const wantAgent = scope === "agent";
-    const scopeChanging =
-      (wantShared && !currentIsShared) || (wantAgent && currentIsShared);
+    const scopeChanging = (wantShared && !currentIsShared) || (wantAgent && currentIsShared);
 
     // Determine write path
     let writePath: string;
     let createdOverride = false;
     let oldDirToRemove: string | undefined;
 
+    // Helper to check file existence
+    const fileExists = async (filePath: string): Promise<boolean> => {
+      try {
+        await fs.access(filePath);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    // Check name collision across ALL locations (shared + every agent workspace).
+    // Skip the current skill's own location.
+    const checkGlobalCollision = async (
+      dirName: string,
+      currentFilePath: string,
+    ): Promise<boolean> => {
+      const extraDirs = cfg.skills?.load?.extraDirs;
+      const sharedDir =
+        Array.isArray(extraDirs) && typeof extraDirs[0] === "string" ? extraDirs[0].trim() : "";
+
+      // Check shared dir
+      if (sharedDir) {
+        const sharedFile = path.join(sharedDir, dirName, "SKILL.md");
+        if (sharedFile !== currentFilePath && (await fileExists(sharedFile))) return true;
+      }
+
+      // Check all agent workspaces
+      const allAgentIds = listAgentIds(cfg);
+      for (const id of allAgentIds) {
+        const wsDir = resolveAgentWorkspaceDir(cfg, id);
+        const agentFile = path.join(wsDir, "skills", dirName, "SKILL.md");
+        if (agentFile !== currentFilePath && (await fileExists(agentFile))) return true;
+      }
+
+      return false;
+    };
+
+    // Always check for global name collision (covers renames, scope changes, everything).
+    const targetDirName = slugify(name);
+    if (await checkGlobalCollision(targetDirName, entry.filePath)) {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.INVALID_REQUEST, `skill "${targetDirName}" already exists`),
+      );
+      return;
+    }
+
     if (scopeChanging && wantShared) {
       // Move from agent workspace → shared dir
       const extraDirs = cfg.skills?.load?.extraDirs;
       const sharedDir =
-        Array.isArray(extraDirs) && typeof extraDirs[0] === "string"
-          ? extraDirs[0].trim()
-          : "";
+        Array.isArray(extraDirs) && typeof extraDirs[0] === "string" ? extraDirs[0].trim() : "";
       if (!sharedDir) {
         respond(
           false,
@@ -250,13 +297,11 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
         );
         return;
       }
-      const dirName = slugify(name);
-      writePath = path.join(sharedDir, dirName, "SKILL.md");
+      writePath = path.join(sharedDir, slugify(name), "SKILL.md");
       oldDirToRemove = path.dirname(entry.filePath);
     } else if (scopeChanging && wantAgent) {
       // Move from shared dir → agent workspace
-      const dirName = slugify(name);
-      writePath = path.join(resolved.workspaceDir, "skills", dirName, "SKILL.md");
+      writePath = path.join(resolved.workspaceDir, "skills", slugify(name), "SKILL.md");
       oldDirToRemove = path.dirname(entry.filePath);
     } else {
       const isWorkspaceSkill =
@@ -275,20 +320,20 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
     }
 
     try {
-      await fs.mkdir(path.dirname(writePath), { recursive: true });
-      await fs.writeFile(writePath, finalContent, "utf-8");
+      if (oldDirToRemove) {
+        // Scope change: copy entire skill directory first to preserve sibling assets,
+        // then overwrite SKILL.md with updated content, then remove old dir.
+        const newDir = path.dirname(writePath);
+        await fs.cp(oldDirToRemove, newDir, { recursive: true });
+        await fs.writeFile(writePath, finalContent, "utf-8");
+        await fs.rm(oldDirToRemove, { recursive: true }).catch(() => {});
+      } else {
+        await fs.mkdir(path.dirname(writePath), { recursive: true });
+        await fs.writeFile(writePath, finalContent, "utf-8");
+      }
     } catch {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, "failed to write skill file"));
       return;
-    }
-
-    // Clean up old location after successful write
-    if (oldDirToRemove) {
-      try {
-        await fs.rm(oldDirToRemove, { recursive: true });
-      } catch {
-        // Best effort — new file is already written
-      }
     }
 
     respond(true, {

@@ -80,6 +80,24 @@ export function createPaziSkillsDeleteHandler(deps: {
     // The skill directory is the parent directory of SKILL.md.
     const skillDir = path.dirname(entry.skill.filePath);
 
+    // For extra skills, only allow deleting from user-configured extraDirs (not plugin dirs).
+    if (entry.skill.source === "openclaw-extra") {
+      const extraDirs = (cfg.skills?.load?.extraDirs ?? []).filter(
+        (d): d is string => typeof d === "string" && d.trim().length > 0,
+      );
+      const insideUserExtraDir = extraDirs.some(
+        (dir) => skillDir.startsWith(dir + path.sep) || skillDir === dir,
+      );
+      if (!insideUserExtraDir) {
+        respond(
+          false,
+          undefined,
+          errorShape(ErrorCodes.INVALID_REQUEST, "cannot delete plugin-provided skills"),
+        );
+        return;
+      }
+    }
+
     try {
       await fs.rm(skillDir, { recursive: true, force: true });
     } catch (err) {
