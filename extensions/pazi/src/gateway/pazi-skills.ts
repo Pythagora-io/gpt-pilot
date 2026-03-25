@@ -43,7 +43,7 @@ function splitSkillDocument(raw: string): { frontmatter: string | null; body: st
   }
   return {
     frontmatter: normalized.slice(4, endIndex),
-    body: normalized.slice(endIndex + 4).replace(/^\n/, ""),
+    body: normalized.slice(endIndex + 4).replace(/^\n+/, ""),
   };
 }
 
@@ -157,6 +157,7 @@ export function createPaziSkillsGet(deps: PaziSkillsDeps): GatewayRequestHandler
       respond(true, {
         skillKey,
         source: entry.source,
+        description: entry.description ?? "",
         content: body,
         bundled: entry.source === "openclaw-bundled",
       });
