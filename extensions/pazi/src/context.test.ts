@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { withTempDir } from "../../../src/test-utils/temp-dir.js";
+import { withTempDir } from "../../../test/helpers/extensions/temp-dir.js";
 import {
   _resetForTest,
   clearProxyContext,
@@ -254,5 +254,43 @@ describe("pazi context persistence", () => {
     expect(
       warnings.some((message) => message.includes("disabled because configured path was empty")),
     ).toBe(true);
+  });
+
+  it("persists atomically — file is valid even if stale temp exists from prior crash", async () => {
+    await withTempDir("pazi-ctx-", async (dir) => {
+      const filePath = path.join(dir, "pazi", "proxy-context.json");
+      configurePersistencePath(filePath);
+
+      // Simulate stale temp from a previous crash
+      const staleTemp = `${filePath}.99999.tmp`;
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(staleTemp, "corrupted partial write", "utf-8");
+
+      setProxyContext(sampleContext);
+
+      const raw = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      expect(raw).toEqual(sampleContext);
+
+      // Simulate restart: reset in-memory, reload from disk
+      _resetForTest();
+      configurePersistencePath(filePath);
+      expect(getProxyContext()).toEqual(sampleContext);
+    });
+  });
+
+  it("survives a truncated file gracefully (loads null, next set overwrites)", async () => {
+    await withTempDir("pazi-ctx-", async (dir) => {
+      const filePath = path.join(dir, "proxy-context.json");
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, '{"userId":"u1","age', "utf-8");
+      configurePersistencePath(filePath);
+
+      expect(getProxyContext()).toBeNull();
+
+      setProxyContext(sampleContext);
+      _resetForTest();
+      configurePersistencePath(filePath);
+      expect(getProxyContext()).toEqual(sampleContext);
+    });
   });
 });

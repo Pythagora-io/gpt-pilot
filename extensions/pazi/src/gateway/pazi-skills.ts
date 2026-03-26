@@ -1,8 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { listAgentIds, resolveAgentWorkspaceDir } from "../../../../src/agents/agent-scope.js";
-import { ErrorCodes, errorShape } from "../../../../src/gateway/protocol/index.js";
-import type { GatewayRequestHandler } from "../../../../src/gateway/server-methods/types.js";
+import { listAgentIds, resolveAgentWorkspaceDir } from "openclaw/plugin-sdk/agent-runtime";
+import {
+  ErrorCodes,
+  errorShape,
+  type GatewayRequestHandler,
+} from "openclaw/plugin-sdk/gateway-runtime";
 
 type ResolvedWorkspace = {
   agentId: string;
@@ -15,6 +18,14 @@ interface PaziSkillsDeps {
   resolveWorkspace: ResolveWorkspace;
   loadConfig: () => Record<string, unknown>;
 }
+
+type SkillsLoadConfig = {
+  skills?: {
+    load?: {
+      extraDirs?: unknown;
+    };
+  };
+};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -137,7 +148,7 @@ export function createPaziSkillsGet(deps: PaziSkillsDeps): GatewayRequestHandler
     }
 
     // Dynamic import to avoid circular dependency at module level
-    const { buildWorkspaceSkillStatus } = await import("../../../../src/agents/skills-status.js");
+    const { buildWorkspaceSkillStatus } = await import("openclaw/plugin-sdk/agent-runtime");
 
     const cfg = deps.loadConfig();
     const status = buildWorkspaceSkillStatus(resolved.workspaceDir, { config: cfg });
@@ -205,7 +216,7 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
       return;
     }
 
-    const { buildWorkspaceSkillStatus } = await import("../../../../src/agents/skills-status.js");
+    const { buildWorkspaceSkillStatus } = await import("openclaw/plugin-sdk/agent-runtime");
 
     const cfg = deps.loadConfig();
     const status = buildWorkspaceSkillStatus(resolved.workspaceDir, { config: cfg });
@@ -253,13 +264,18 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
 
     // Check name collision across ALL locations (shared + every agent workspace).
     // Skip the current skill's own location.
+    const resolveSharedSkillsDir = () => {
+      const extraDirs = (cfg as SkillsLoadConfig).skills?.load?.extraDirs;
+      return Array.isArray(extraDirs) && typeof extraDirs[0] === "string"
+        ? extraDirs[0].trim()
+        : "";
+    };
+
     const checkGlobalCollision = async (
       dirName: string,
       currentFilePath: string,
     ): Promise<boolean> => {
-      const extraDirs = cfg.skills?.load?.extraDirs;
-      const sharedDir =
-        Array.isArray(extraDirs) && typeof extraDirs[0] === "string" ? extraDirs[0].trim() : "";
+      const sharedDir = resolveSharedSkillsDir();
 
       // Check shared dir
       if (sharedDir) {
@@ -291,9 +307,7 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
 
     if (scopeChanging && wantShared) {
       // Move from agent workspace → shared dir
-      const extraDirs = cfg.skills?.load?.extraDirs;
-      const sharedDir =
-        Array.isArray(extraDirs) && typeof extraDirs[0] === "string" ? extraDirs[0].trim() : "";
+      const sharedDir = resolveSharedSkillsDir();
       if (!sharedDir) {
         respond(
           false,

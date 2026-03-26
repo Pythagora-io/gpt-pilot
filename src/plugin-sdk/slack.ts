@@ -72,6 +72,11 @@ export {
   resolveSlackUserAllowlist,
   sendMessageSlack,
 } from "../../extensions/slack/runtime-api.js";
+export { registerSlackReplySuppression } from "../../extensions/slack/src/reply-suppression.js";
+export {
+  getSlackThreadParticipationEntriesSnapshot,
+  hydrateSlackThreadParticipationCache,
+} from "../../extensions/slack/src/sent-thread-cache.js";
 export {
   deleteSlackMessage,
   downloadSlackFile,

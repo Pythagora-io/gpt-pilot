@@ -1,20 +1,14 @@
 import type { Server as HttpServer } from "node:http";
 import path from "node:path";
-import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
-import {
-  resolveAgentWorkspaceDir,
-  resolveDefaultAgentId,
-} from "../../src/agents/agent-scope.js";
-import { notifyPairingApproved } from "../../src/channels/plugins/pairing.js";
+import { resolveAgentWorkspaceDir, resolveDefaultAgentId } from "openclaw/plugin-sdk/agent-runtime";
 import {
   approveChannelPairingCode,
   listChannelPairingRequests,
-} from "../../src/pairing/pairing-store.js";
-import { normalizeAgentId } from "../../src/routing/session-key.js";
-import {
-  installBraveEnvDefaults,
-  uninstallBraveEnvDefaults,
-} from "./src/brave/brave-env.js";
+  notifyPairingApproved,
+} from "openclaw/plugin-sdk/channel-pairing";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk/core";
+import { normalizeAgentId } from "openclaw/plugin-sdk/routing";
+import { installBraveEnvDefaults, uninstallBraveEnvDefaults } from "./src/brave/brave-env.js";
 import {
   installBraveFetchInterceptor,
   uninstallBraveFetchInterceptor,
@@ -39,12 +33,14 @@ import {
   createPaziFilesList,
   createPaziFilesSet,
 } from "./src/gateway/pazi-files.js";
-import {
-  createPaziSkillsGet,
-  createPaziSkillsSet,
-} from "./src/gateway/pazi-skills.js";
+import { createPaziMemoryGet } from "./src/gateway/pazi-memory.js";
+import { createPaziSkillsGet, createPaziSkillsSet } from "./src/gateway/pazi-skills.js";
 import { createPaziSkillsCreateHandler } from "./src/gateway/skills-create.js";
 import { createPaziSkillsDeleteHandler } from "./src/gateway/skills-delete.js";
+import {
+  createPaziTemplatesInstantiateHandler,
+  createPaziTemplatesListHandler,
+} from "./src/gateway/templates-instantiate.js";
 import { paziBootstrapActionsHook } from "./src/hooks/pazi-bootstrap-actions.js";
 import { paziBootstrapUserHook } from "./src/hooks/pazi-bootstrap-user.js";
 import { createPipedreamTools } from "./src/pipedream/tools.js";
@@ -63,10 +59,7 @@ function normalizePluginConfig(
   return value as Record<string, unknown>;
 }
 
-async function stopServer(
-  server: HttpServer,
-  logger: OpenClawPluginApi["logger"],
-) {
+async function stopServer(server: HttpServer, logger: OpenClawPluginApi["logger"]) {
   await new Promise<void>((resolve) => {
     server.close((err) => {
       if (err) {
@@ -92,9 +85,7 @@ export default {
     const defaultAgentId = resolveDefaultAgentId(api.config);
     const resolveWorkspace = (requestedAgentId: unknown) => {
       const requested =
-        typeof requestedAgentId === "number"
-          ? String(requestedAgentId)
-          : requestedAgentId;
+        typeof requestedAgentId === "number" ? String(requestedAgentId) : requestedAgentId;
       const normalized =
         typeof requested === "string" && requested.trim()
           ? normalizeAgentId(requested)
@@ -122,25 +113,14 @@ export default {
       logger: api.logger,
     });
 
-    api.registerGatewayMethod(
-      "pazi.integration.emit",
-      ({ params, respond, context }) => {
-        context.broadcast("integration", params);
-        respond(true, { emitted: true });
-      },
-    );
-    api.registerGatewayMethod(
-      "pazi.files.list",
-      createPaziFilesList(resolveWorkspace),
-    );
-    api.registerGatewayMethod(
-      "pazi.files.get",
-      createPaziFilesGet(resolveWorkspace),
-    );
-    api.registerGatewayMethod(
-      "pazi.files.set",
-      createPaziFilesSet(resolveWorkspace),
-    );
+    api.registerGatewayMethod("pazi.integration.emit", ({ params, respond, context }) => {
+      context.broadcast("integration", params);
+      respond(true, { emitted: true });
+    });
+    api.registerGatewayMethod("pazi.files.list", createPaziFilesList(resolveWorkspace));
+    api.registerGatewayMethod("pazi.files.get", createPaziFilesGet(resolveWorkspace));
+    api.registerGatewayMethod("pazi.files.set", createPaziFilesSet(resolveWorkspace));
+    api.registerGatewayMethod("pazi.memory.get", createPaziMemoryGet(resolveWorkspace));
     api.registerGatewayMethod(
       "skills.create",
       createPaziSkillsCreateHandler({
@@ -161,28 +141,23 @@ export default {
       resolveWorkspace,
       loadConfig: () => api.runtime.config.loadConfig(),
     };
+    api.registerGatewayMethod("pazi.skills.get", createPaziSkillsGet(skillsDeps));
+    api.registerGatewayMethod("pazi.skills.set", createPaziSkillsSet(skillsDeps));
+
     api.registerGatewayMethod(
-      "pazi.skills.get",
-      createPaziSkillsGet(skillsDeps),
+      "pazi.templates.instantiate",
+      createPaziTemplatesInstantiateHandler({ resolveWorkspace }),
     );
-    api.registerGatewayMethod(
-      "pazi.skills.set",
-      createPaziSkillsSet(skillsDeps),
-    );
+    api.registerGatewayMethod("pazi.templates.list", createPaziTemplatesListHandler());
 
     api.registerGatewayMethod(
       "pazi.channels.configure",
       createPaziChannelsConfigureHandler({
         loadConfig: () => api.runtime.config.loadConfig(),
         writeConfigFile: (cfg) => api.runtime.config.writeConfigFile(cfg),
-        probeSlack: (token, timeoutMs) =>
-          api.runtime.channel.slack.probeSlack(token, timeoutMs),
+        probeSlack: (token, timeoutMs) => api.runtime.channel.slack.probeSlack(token, timeoutMs),
         probeTelegram: (token, timeoutMs, proxyUrl) =>
-          api.runtime.channel.telegram.probeTelegram(
-            token,
-            timeoutMs,
-            proxyUrl,
-          ),
+          api.runtime.channel.telegram.probeTelegram(token, timeoutMs, proxyUrl),
       }),
     );
     api.registerGatewayMethod(
@@ -251,8 +226,7 @@ export default {
 
     api.registerHook("agent:bootstrap", paziBootstrapUserHook, {
       name: "pazi-bootstrap-user",
-      description:
-        "Injects user name from .pazi/user-meta.json into USER.md bootstrap context",
+      description: "Injects user name from .pazi/user-meta.json into USER.md bootstrap context",
     });
 
     // PAZ-206: Slack thread reply mode — suppress intermediate messages
@@ -297,9 +271,7 @@ export default {
         res.writeHead(200, {
           "Content-Type": "application/json; charset=utf-8",
         });
-        res.end(
-          JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }),
-        );
+        res.end(JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }));
       },
     });
 
@@ -316,9 +288,7 @@ export default {
             status: "running",
             busy: isProxyBusyForStatus(),
             lastActivityAt:
-              lastActivityAtMs === null
-                ? null
-                : new Date(lastActivityAtMs).toISOString(),
+              lastActivityAtMs === null ? null : new Date(lastActivityAtMs).toISOString(),
             version: process.env.AGENT_VERSION ?? "unknown",
             environment: process.env.NODE_ENV ?? "development",
           }),

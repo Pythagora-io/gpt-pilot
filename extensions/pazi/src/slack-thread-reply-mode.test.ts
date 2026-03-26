@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  buildFinalSummary,
-  resolveThreadReplyConfig,
-} from "./slack-thread-reply-mode.js";
+import { buildFinalSummary, resolveThreadReplyConfig } from "./slack-thread-reply-mode.js";
 
 describe("resolveThreadReplyConfig", () => {
   it("returns full mode when no config exists", () => {
@@ -165,13 +162,7 @@ describe("buildFinalSummary", () => {
   });
 
   it("handles invalid message shapes gracefully", () => {
-    const messages = [
-      null,
-      undefined,
-      "not an object",
-      42,
-      { role: "assistant" },
-    ];
+    const messages = [null, undefined, "not an object", 42, { role: "assistant" }];
     expect(buildFinalSummary(messages as unknown[], true)).toBe("Done.");
   });
 

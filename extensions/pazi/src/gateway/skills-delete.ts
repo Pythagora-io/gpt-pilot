@@ -1,9 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { loadWorkspaceSkillEntries } from "../../../../src/agents/skills.js";
-import type { OpenClawConfig } from "../../../../src/config/config.js";
-import { ErrorCodes, errorShape } from "../../../../src/gateway/protocol/index.js";
-import type { GatewayRequestHandler } from "../../../../src/gateway/server-methods/types.js";
+import { loadWorkspaceSkillEntries } from "openclaw/plugin-sdk/agent-runtime";
+import type { OpenClawConfig } from "openclaw/plugin-sdk/core";
+import {
+  ErrorCodes,
+  errorShape,
+  type GatewayRequestHandler,
+} from "openclaw/plugin-sdk/gateway-runtime";
 
 type ResolvedWorkspace = {
   agentId: string;

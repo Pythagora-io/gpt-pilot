@@ -1,12 +1,15 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ErrorCodes, errorShape } from "../../../../src/gateway/protocol/index.js";
-import type { GatewayRequestHandler } from "../../../../src/gateway/server-methods/types.js";
+import {
+  ErrorCodes,
+  errorShape,
+  type GatewayRequestHandler,
+} from "openclaw/plugin-sdk/gateway-runtime";
 import {
   readFileWithinRoot,
   writeFileWithinRoot,
   SafeOpenError,
-} from "../../../../src/infra/fs-safe.js";
+} from "openclaw/plugin-sdk/infra-runtime";
 
 function isLikelyBinary(buffer: Buffer): boolean {
   const sampleLen = Math.min(buffer.length, 4096);
@@ -157,9 +160,7 @@ export function createPaziFilesGet(resolveWorkspace: ResolveWorkspace): GatewayR
           missing: false,
           size: result.stat.size,
           updatedAtMs: Math.floor(result.stat.mtimeMs),
-          content: binary
-            ? result.buffer.toString("base64")
-            : result.buffer.toString("utf-8"),
+          content: binary ? result.buffer.toString("base64") : result.buffer.toString("utf-8"),
           encoding: binary ? "base64" : "utf8",
         },
       });

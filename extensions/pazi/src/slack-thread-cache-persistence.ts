@@ -1,10 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
-import { createAsyncLock, writeJsonAtomic } from "../../../src/infra/json-files.js";
+import { createAsyncLock, writeJsonAtomic } from "openclaw/plugin-sdk/infra-runtime";
 import {
   getSlackThreadParticipationEntriesSnapshot,
   hydrateSlackThreadParticipationCache,
-} from "../../slack/src/sent-thread-cache.js";
+} from "openclaw/plugin-sdk/slack";
 
 const STORE_VERSION = 1;
 const TTL_MS = 24 * 60 * 60 * 1000;

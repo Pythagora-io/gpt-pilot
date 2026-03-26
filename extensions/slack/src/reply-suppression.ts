@@ -16,9 +16,7 @@ const suppressionChecks: SlackReplySuppressCheck[] = [];
 /**
  * Register a suppression check. Returns a cleanup function.
  */
-export function registerSlackReplySuppression(
-  check: SlackReplySuppressCheck,
-): () => void {
+export function registerSlackReplySuppression(check: SlackReplySuppressCheck): () => void {
   suppressionChecks.push(check);
   return () => {
     const idx = suppressionChecks.indexOf(check);

@@ -1,6 +1,5 @@
-import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
-import { registerSlackReplySuppression } from "../../slack/src/reply-suppression.js";
-import { sendMessageSlack } from "../../slack/src/send.js";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk/core";
+import { registerSlackReplySuppression, sendMessageSlack } from "openclaw/plugin-sdk/slack";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -65,21 +64,13 @@ function extractSlackTargetId(from: string): string | null {
 /**
  * Build a composite key for thread tracking.
  */
-function threadKey(
-  accountId: string,
-  targetId: string,
-  threadTs: string,
-): string {
+function threadKey(accountId: string, targetId: string, threadTs: string): string {
   return `${accountId}:${targetId}:${threadTs}`;
 }
 
 // ── Final Summary Builder ──────────────────────────────────────────────
 
-export function buildFinalSummary(
-  messages: unknown[],
-  success: boolean,
-  error?: string,
-): string {
+export function buildFinalSummary(messages: unknown[], success: boolean, error?: string): string {
   // Scan from end to find last assistant message with text content
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i];
@@ -96,11 +87,7 @@ export function buildFinalSummary(
     if (Array.isArray(record.content)) {
       const textParts: string[] = [];
       for (const part of record.content) {
-        if (
-          part &&
-          typeof part === "object" &&
-          (part as Record<string, unknown>).type === "text"
-        ) {
+        if (part && typeof part === "object" && (part as Record<string, unknown>).type === "text") {
           const text = (part as Record<string, unknown>).text;
           if (typeof text === "string" && text.trim()) {
             textParts.push(text.trim());
@@ -134,10 +121,7 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
 
     // Check all suppressed threads for this accountId + threadTs combo
     for (const thread of suppressedThreads.values()) {
-      if (
-        thread.accountId === params.accountId &&
-        thread.threadTs === params.threadTs
-      ) {
+      if (thread.accountId === params.accountId && thread.threadTs === params.threadTs) {
         return true;
       }
     }
@@ -154,9 +138,7 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
 
     const accountId = ctx.accountId ?? "default";
     const threadTs =
-      typeof event.metadata?.threadId === "string"
-        ? event.metadata.threadId
-        : undefined;
+      typeof event.metadata?.threadId === "string" ? event.metadata.threadId : undefined;
     if (!threadTs?.trim()) return;
 
     const cfg = api.runtime.config.loadConfig();
@@ -165,9 +147,7 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
 
     // Resolve Slack target — conversationId has the proper format (channel:C123 or user:U123)
     const sendTarget = (ctx.conversationId ?? "").trim();
-    const targetId =
-      extractSlackTargetId(sendTarget) ??
-      extractSlackTargetId(event.from ?? "");
+    const targetId = extractSlackTargetId(sendTarget) ?? extractSlackTargetId(event.from ?? "");
     if (!targetId || !sendTarget) return;
 
     const key = threadKey(accountId, targetId, threadTs);

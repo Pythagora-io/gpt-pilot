@@ -1,0 +1,11 @@
+{
+  "id": "devops",
+  "name": "DevOps & Infrastructure",
+  "description": "Cloud infrastructure, CI/CD pipelines, containerization, monitoring, and automation expert.",
+  "files": ["IDENTITY.md", "SOUL.md"],
+  "skills": [
+    "skills/infrastructure-audit/SKILL.md",
+    "skills/cicd-pipeline/SKILL.md",
+    "skills/incident-response/SKILL.md"
+  ]
+}
