@@ -1,11 +1,25 @@
 {
   "id": "devops",
-  "name": "DevOps & Infrastructure",
+  "name": "DevOps",
   "description": "Cloud infrastructure, CI/CD pipelines, containerization, monitoring, and automation expert.",
   "files": ["IDENTITY.md", "SOUL.md"],
   "skills": [
-    "skills/infrastructure-audit/SKILL.md",
-    "skills/cicd-pipeline/SKILL.md",
-    "skills/incident-response/SKILL.md"
+    "skills/devops-onboarding/SKILL.md",
+    "skills/devops-onboarding/references/credential-storage.md",
+    "skills/devops-onboarding/references/ssh-setup-guide.md",
+    "skills/devops-onboarding/scripts/test_connections.py",
+    "skills/infra-architecture/SKILL.md",
+    "skills/infra-architecture/references/environment-vars.md",
+    "skills/infra-architecture/references/servers.md",
+    "skills/infra-codebase/SKILL.md",
+    "skills/infra-codebase/references/services.md",
+    "skills/infra-critical-findings/SKILL.md",
+    "skills/infra-critical-findings/references/findings.md",
+    "skills/infra-debugging/SKILL.md",
+    "skills/infra-debugging/references/issues.md",
+    "skills/infra-deployment/SKILL.md",
+    "skills/infra-deployment/references/deploy-checklist.md",
+    "skills/infra-monitoring/SKILL.md",
+    "skills/infra-monitoring/references/tool-configs.md"
   ]
 }

@@ -58,24 +58,11 @@ export function createPaziTemplatesInstantiateHandler(deps: {
     const errors: string[] = [...loadErrors];
 
     for (const file of files) {
-      // Determine target path:
-      // - Top-level agent files (IDENTITY.md, SOUL.md) → workspace root
-      // - Skills → workspace/skills/{name}/SKILL.md
-      let targetPath: string;
-
-      if (manifest.skills.includes(file.relativePath)) {
-        // Template skills are expected in "skills/{name}/SKILL.md".
-        const parts = file.relativePath.split("/").filter(Boolean);
-        if (parts.length !== 3 || parts[0] !== "skills" || parts[2] !== "SKILL.md") {
-          errors.push(`${file.relativePath}: invalid skill path`);
-          continue;
-        }
-        const skillName = parts[1];
-        targetPath = path.join(resolved.workspaceDir, "skills", skillName, "SKILL.md");
-      } else {
-        // Top-level file (IDENTITY.md, SOUL.md, etc.)
-        targetPath = path.join(resolved.workspaceDir, file.relativePath);
-      }
+      // Write each file at its relative path within the workspace.
+      // Both top-level files (IDENTITY.md, SOUL.md) and skill files
+      // (skills/devops-onboarding/SKILL.md, skills/devops-onboarding/references/credential-storage.md, etc.)
+      // are placed at their relative path under the workspace root.
+      const targetPath = path.join(resolved.workspaceDir, file.relativePath);
 
       // Safety: ensure target is within the workspace
       const resolvedTarget = path.resolve(targetPath);
