@@ -33,6 +33,7 @@ import {
   createPaziFilesList,
   createPaziFilesSet,
 } from "./src/gateway/pazi-files.js";
+import { createPaziMemoryGet } from "./src/gateway/pazi-memory.js";
 import { createPaziSkillsGet, createPaziSkillsSet } from "./src/gateway/pazi-skills.js";
 import { createPaziSkillsCreateHandler } from "./src/gateway/skills-create.js";
 import { createPaziSkillsDeleteHandler } from "./src/gateway/skills-delete.js";
@@ -118,6 +119,7 @@ export default {
     api.registerGatewayMethod("pazi.files.list", createPaziFilesList(resolveWorkspace));
     api.registerGatewayMethod("pazi.files.get", createPaziFilesGet(resolveWorkspace));
     api.registerGatewayMethod("pazi.files.set", createPaziFilesSet(resolveWorkspace));
+    api.registerGatewayMethod("pazi.memory.get", createPaziMemoryGet(resolveWorkspace));
     api.registerGatewayMethod(
       "skills.create",
       createPaziSkillsCreateHandler({
