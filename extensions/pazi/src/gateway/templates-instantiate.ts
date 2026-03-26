@@ -94,6 +94,19 @@ export function createPaziTemplatesInstantiateHandler(deps: {
       }
     }
 
+    // If nothing was written and there are errors, treat as a failure
+    if (written.length === 0 && errors.length > 0) {
+      respond(
+        false,
+        undefined,
+        errorShape(
+          ErrorCodes.UNAVAILABLE,
+          `failed to write any template files: ${errors.join("; ")}`,
+        ),
+      );
+      return;
+    }
+
     respond(true, {
       ok: true,
       templateId: manifest.id,
