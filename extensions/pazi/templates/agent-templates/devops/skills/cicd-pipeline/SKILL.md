@@ -39,6 +39,7 @@ Help users create, optimize, and debug continuous integration and deployment pip
 ## Deployment Stages
 
 Recommend a standard promotion path:
+
 1. **Build** → Compile, lint, test
 2. **Staging** → Deploy to staging, run smoke tests
 3. **Production** → Deploy with strategy (canary/blue-green), verify health checks

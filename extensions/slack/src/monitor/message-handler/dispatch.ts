@@ -18,6 +18,7 @@ import { editSlackMessage, reactSlackMessage, removeSlackReaction } from "../../
 import { createSlackDraftStream } from "../../draft-stream.js";
 import { normalizeSlackOutboundText } from "../../format.js";
 import { SLACK_TEXT_LIMIT } from "../../limits.js";
+import { shouldSuppressSlackReply } from "../../reply-suppression.js";
 import { recordSlackThreadParticipation } from "../../sent-thread-cache.js";
 import {
   applyAppendOnlyStreamUpdate,
@@ -224,16 +225,35 @@ export async function dispatchPreparedSlackMessage(prepared: PreparedSlackMessag
     messageTs,
     isThreadReply,
   });
-  const useStreaming = shouldUseStreaming({
-    streamingEnabled,
+  const isSuppressed = shouldSuppressSlackReply({
+    accountId: account.accountId,
+    target: prepared.replyTarget,
     threadTs: streamThreadHint,
   });
+  const useStreaming =
+    shouldUseStreaming({
+      streamingEnabled,
+      threadTs: streamThreadHint,
+    }) && !isSuppressed;
   let streamSession: SlackStreamSession | null = null;
   let streamFailed = false;
   let usedReplyThreadTs: string | undefined;
 
   const deliverNormally = async (payload: ReplyPayload, forcedThreadTs?: string): Promise<void> => {
     const replyThreadTs = forcedThreadTs ?? replyPlan.nextThreadTs();
+
+    // Check if reply suppression is active for this thread
+    if (
+      shouldSuppressSlackReply({
+        accountId: account.accountId,
+        target: prepared.replyTarget,
+        threadTs: replyThreadTs,
+      })
+    ) {
+      replyPlan.markSent();
+      return;
+    }
+
     await deliverReplies({
       replies: [payload],
       target: prepared.replyTarget,

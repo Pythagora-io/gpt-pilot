@@ -1,5 +1,7 @@
 type ChannelType = "slack" | "telegram" | "whatsapp";
 
+export type SlackThreadReplyMode = "full" | "summary-only" | "quiet";
+
 interface ChannelConfigureParams {
   channel: ChannelType;
   accountId?: string;
@@ -14,6 +16,8 @@ interface ChannelConfigureParams {
     allowFrom?: string[];
     slashCommandName?: string;
     token?: string;
+    threadReplyMode?: SlackThreadReplyMode;
+    ackMessage?: string;
   };
 }
 
@@ -55,6 +59,8 @@ interface ChannelConfigureResult {
   dmPolicy?: "open" | "allowlist";
   groupPolicy?: "open" | "allowlist";
   allowFrom?: string[];
+  threadReplyMode?: SlackThreadReplyMode;
+  ackMessage?: string;
   onboarding?: TelegramOnboardingResult | WhatsAppOnboardingResult;
 }
 
@@ -134,7 +140,10 @@ function validateParams(raw: unknown): {
   const p = raw as Record<string, unknown>;
 
   if (!isChannelType(p.channel)) {
-    return { ok: false, error: "channel must be 'slack', 'telegram', or 'whatsapp'" };
+    return {
+      ok: false,
+      error: "channel must be 'slack', 'telegram', or 'whatsapp'",
+    };
   }
 
   const config = p.config;
@@ -196,6 +205,13 @@ function validateParams(raw: unknown): {
         slashCommandName:
           typeof cfg.slashCommandName === "string" ? cfg.slashCommandName : undefined,
         token: typeof cfg.token === "string" ? cfg.token : undefined,
+        threadReplyMode:
+          cfg.threadReplyMode === "summary-only" || cfg.threadReplyMode === "quiet"
+            ? cfg.threadReplyMode
+            : cfg.threadReplyMode === "full"
+              ? "full"
+              : undefined,
+        ackMessage: typeof cfg.ackMessage === "string" ? cfg.ackMessage : undefined,
       },
     },
   };
@@ -291,6 +307,8 @@ function applySlackConfig(
               // Always reply inside threads so the bot doesn't spam the channel.
               replyToMode: "all",
               ...(input.name ? { name: input.name } : {}),
+              ...(input.threadReplyMode ? { threadReplyMode: input.threadReplyMode } : {}),
+              ...(input.ackMessage?.trim() ? { ackMessage: input.ackMessage.trim() } : {}),
               ...(slashCommandName
                 ? {
                     slashCommand: {
@@ -490,6 +508,8 @@ export function createPaziChannelsConfigureHandler(
               inputConfig.accessMode === "closed"
                 ? normalizeSlackAllowFrom(inputConfig.allowFrom)
                 : ["*"],
+            threadReplyMode: inputConfig.threadReplyMode ?? "full",
+            ackMessage: inputConfig.ackMessage?.trim() || "On it",
           }
         : {}),
     };

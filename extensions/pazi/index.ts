@@ -1,13 +1,13 @@
 import type { Server as HttpServer } from "node:http";
 import path from "node:path";
-import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
-import { resolveAgentWorkspaceDir, resolveDefaultAgentId } from "../../src/agents/agent-scope.js";
-import { notifyPairingApproved } from "../../src/channels/plugins/pairing.js";
+import { resolveAgentWorkspaceDir, resolveDefaultAgentId } from "openclaw/plugin-sdk/agent-runtime";
 import {
   approveChannelPairingCode,
   listChannelPairingRequests,
-} from "../../src/pairing/pairing-store.js";
-import { normalizeAgentId } from "../../src/routing/session-key.js";
+  notifyPairingApproved,
+} from "openclaw/plugin-sdk/channel-pairing";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk/core";
+import { normalizeAgentId } from "openclaw/plugin-sdk/routing";
 import { installBraveEnvDefaults, uninstallBraveEnvDefaults } from "./src/brave/brave-env.js";
 import {
   installBraveFetchInterceptor,
@@ -48,6 +48,7 @@ import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
 import { startSlackThreadCachePersistence } from "./src/slack-thread-cache-persistence.js";
+import { registerSlackThreadReplyMode } from "./src/slack-thread-reply-mode.js";
 
 function normalizePluginConfig(
   value: OpenClawPluginApi["pluginConfig"],
@@ -227,6 +228,9 @@ export default {
       name: "pazi-bootstrap-user",
       description: "Injects user name from .pazi/user-meta.json into USER.md bootstrap context",
     });
+
+    // PAZ-206: Slack thread reply mode — suppress intermediate messages
+    registerSlackThreadReplyMode(api);
 
     const tools = createPipedreamTools({
       pluginConfig,

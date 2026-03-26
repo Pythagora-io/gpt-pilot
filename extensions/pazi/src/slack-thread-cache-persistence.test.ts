@@ -1,12 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { withTempDir } from "../../../test/helpers/extensions/temp-dir.js";
 import {
   clearSlackThreadParticipationCache,
   hasSlackThreadParticipation,
   recordSlackThreadParticipation,
 } from "../../slack/src/sent-thread-cache.js";
-import { withTempDir } from "../../../src/test-utils/temp-dir.js";
 import { startSlackThreadCachePersistence } from "./slack-thread-cache-persistence.js";
 
 describe("pazi slack thread cache persistence", () => {

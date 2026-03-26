@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { loadJsonFile } from "../../../src/infra/json-file.js";
+import { loadJsonFile } from "openclaw/plugin-sdk/json-store";
 
 type ProxyContext = {
   userId: string;

@@ -10,6 +10,7 @@ Perform a systematic review of the user's cloud infrastructure.
 ## Audit Checklist
 
 ### Security
+
 1. Review IAM policies and roles — look for overly permissive policies (`*` actions, `*` resources)
 2. Check for public S3 buckets / storage objects
 3. Verify encryption at rest and in transit
@@ -18,6 +19,7 @@ Perform a systematic review of the user's cloud infrastructure.
 6. Verify MFA is enabled for root and admin accounts
 
 ### Cost
+
 1. Identify unused resources (unattached EBS volumes, idle instances, orphaned snapshots)
 2. Review instance sizing — suggest rightsizing based on utilization
 3. Check for Reserved Instance / Savings Plan coverage
@@ -25,6 +27,7 @@ Perform a systematic review of the user's cloud infrastructure.
 5. Review data transfer costs and suggest optimizations
 
 ### Reliability
+
 1. Check for single points of failure (single-AZ deployments)
 2. Verify backup and disaster recovery configurations
 3. Review auto-scaling policies
@@ -34,12 +37,14 @@ Perform a systematic review of the user's cloud infrastructure.
 ## Output Format
 
 Present findings as a prioritized list with:
+
 - **Critical**: Immediate security risks or production reliability issues
 - **High**: Should be addressed within a week
 - **Medium**: Best-practice improvements
 - **Low**: Nice-to-have optimizations
 
 For each finding, provide:
+
 1. What was found
 2. Why it matters
 3. How to fix it (with commands or IaC snippets)

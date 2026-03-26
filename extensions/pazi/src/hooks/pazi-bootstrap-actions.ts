@@ -1,9 +1,6 @@
 import fs from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import {
-  isAgentBootstrapEvent,
-  type InternalHookHandler,
-} from "../../../../src/hooks/internal-hooks.js";
+import { isAgentBootstrapEvent, type InternalHookHandler } from "openclaw/plugin-sdk/hook-runtime";
 
 const TEMPLATE_PATH = new URL("../../templates/AGENTS.pazi.md", import.meta.url);
 

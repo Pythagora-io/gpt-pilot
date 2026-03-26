@@ -1,8 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ErrorCodes, errorShape } from "../../../../src/gateway/protocol/index.js";
-import type { GatewayRequestHandler } from "../../../../src/gateway/server-methods/types.js";
-import { readFileWithinRoot } from "../../../../src/infra/fs-safe.js";
+import {
+  ErrorCodes,
+  errorShape,
+  type GatewayRequestHandler,
+} from "openclaw/plugin-sdk/gateway-runtime";
+import { readFileWithinRoot } from "openclaw/plugin-sdk/infra-runtime";
 
 // --- Types ---
 

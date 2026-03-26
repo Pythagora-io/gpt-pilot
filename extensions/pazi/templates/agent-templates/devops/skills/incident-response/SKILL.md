@@ -18,6 +18,7 @@ Help users diagnose and resolve production incidents quickly and systematically.
 ## Common Investigation Commands
 
 Suggest commands appropriate for the user's environment:
+
 - Container logs, resource usage, pod status
 - Database connection counts, slow queries, replication lag
 - Network connectivity tests, DNS resolution
@@ -27,6 +28,7 @@ Suggest commands appropriate for the user's environment:
 ## Mitigation Strategies
 
 When the root cause isn't immediately clear, suggest mitigation in this order:
+
 1. **Rollback** — If a recent deployment correlates with the issue
 2. **Scale up** — If the issue looks like a capacity problem
 3. **Restart** — If a service appears to be in a bad state
@@ -36,6 +38,7 @@ When the root cause isn't immediately clear, suggest mitigation in this order:
 ## Post-Incident
 
 After resolution, help the user document:
+
 1. Timeline of events
 2. Root cause analysis
 3. What worked and what didn't in the response

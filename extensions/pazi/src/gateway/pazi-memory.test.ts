@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { withTempDir } from "../../../../src/test-utils/temp-dir.js";
+import { withTempDir } from "../../../../test/helpers/extensions/temp-dir.js";
 import { createPaziMemoryGet } from "./pazi-memory.js";
 
 type HandlerResponse = {
@@ -16,7 +16,10 @@ async function invokeMemoryGet(workspaceDir: string): Promise<HandlerResponse> {
   const handler = createPaziMemoryGet(() => ({ agentId: "agent-1", workspaceDir }));
   let response: HandlerResponse | null = null;
   await handler({
+    req: {} as never,
     params: { agentId: "agent-1" },
+    client: null,
+    isWebchatConnect: () => false,
     respond: (ok, result, error) => {
       response = { ok, result: result as HandlerResponse["result"], error };
     },

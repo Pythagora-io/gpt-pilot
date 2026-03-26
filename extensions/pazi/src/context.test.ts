@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { withTempDir } from "../../../src/test-utils/temp-dir.js";
+import { withTempDir } from "../../../test/helpers/extensions/temp-dir.js";
 import {
   _resetForTest,
   clearProxyContext,

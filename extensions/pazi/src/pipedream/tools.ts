@@ -1,6 +1,6 @@
 import { Type } from "@sinclair/typebox";
-import type { AnyAgentTool } from "openclaw/plugin-sdk";
-import { getPluginRuntimeGatewayRequestScope } from "../../../../src/plugins/runtime/gateway-request-scope.js";
+import type { AnyAgentTool } from "openclaw/plugin-sdk/core";
+import { getPluginRuntimeGatewayRequestScope } from "openclaw/plugin-sdk/plugin-runtime";
 import {
   checkIntegration,
   listActions,

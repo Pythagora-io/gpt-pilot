@@ -1,9 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import {
-  isAgentBootstrapEvent,
-  type InternalHookHandler,
-} from "../../../../src/hooks/internal-hooks.js";
+import { isAgentBootstrapEvent, type InternalHookHandler } from "openclaw/plugin-sdk/hook-runtime";
 
 function normalizeInjectedName(value: string): string {
   return value.replace(/[\r\n]+/g, " ").trim();

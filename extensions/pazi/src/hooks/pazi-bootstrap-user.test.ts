@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import type { AgentBootstrapHookContext } from "openclaw/plugin-sdk/hook-runtime";
+import { createInternalHookEvent } from "openclaw/plugin-sdk/hook-runtime";
 import { describe, expect, it } from "vitest";
-import type { AgentBootstrapHookContext } from "../../../../src/hooks/internal-hooks.js";
-import { createInternalHookEvent } from "../../../../src/hooks/internal-hooks.js";
-import { withTempDir } from "../../../../src/test-utils/temp-dir.js";
+import { withTempDir } from "../../../../test/helpers/extensions/temp-dir.js";
 import { paziBootstrapUserHook } from "./pazi-bootstrap-user.js";
 
 describe("pazi bootstrap user hook", () => {
