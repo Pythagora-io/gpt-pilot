@@ -26,12 +26,18 @@ interface MemoryEntry {
 
 // --- Memory file detection ---
 
-const ROOT_MEMORY_NAMES = new Set(["MEMORY.md", "memory.md"]);
+const ROOT_MEMORY_FILES = ["MEMORY.md", "memory.md"] as const;
+const ROOT_MEMORY_NAMES = new Set<string>(ROOT_MEMORY_FILES);
 const DATED_MEMORY_RE = /^memory\/\d{4}-\d{2}-\d{2}(?:-[^/]+)?\.md$/;
 
+function normalizeMemoryPath(name: string): string {
+  return name.replaceAll("\\", "/");
+}
+
 function classifyMemoryFile(name: string): MemoryFileKind {
-  if (ROOT_MEMORY_NAMES.has(name)) return "root";
-  if (DATED_MEMORY_RE.test(name)) return "daily";
+  const normalizedName = normalizeMemoryPath(name);
+  if (ROOT_MEMORY_NAMES.has(normalizedName)) return "root";
+  if (DATED_MEMORY_RE.test(normalizedName)) return "daily";
   return "note";
 }
 
@@ -70,13 +76,18 @@ async function discoverMemoryFiles(
 ): Promise<string[]> {
   const result: string[] = [];
 
-  // Check root memory files
-  for (const rootFile of ROOT_MEMORY_NAMES) {
-    try {
-      await fs.access(path.join(workspaceDir, rootFile));
+  // Check root memory files by directory entries to avoid alias duplicates
+  // on case-insensitive filesystems (for example MEMORY.md vs memory.md).
+  let rootEntries: string[] = [];
+  try {
+    rootEntries = await fs.readdir(workspaceDir);
+  } catch {
+    // workspace may not exist yet
+  }
+  const rootEntrySet = new Set(rootEntries);
+  for (const rootFile of ROOT_MEMORY_FILES) {
+    if (rootEntrySet.has(rootFile)) {
       result.push(rootFile);
-    } catch {
-      // doesn't exist
     }
   }
 
@@ -97,7 +108,7 @@ async function discoverMemoryFiles(
       if (entry.isDirectory()) {
         await walk(fullPath, depth + 1);
       } else if (entry.isFile() && entry.name.endsWith(".md")) {
-        result.push(path.relative(workspaceDir, fullPath));
+        result.push(normalizeMemoryPath(path.relative(workspaceDir, fullPath)));
       }
     }
   }
