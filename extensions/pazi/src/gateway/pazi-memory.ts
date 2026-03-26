@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { ErrorCodes, errorShape } from "../../../../src/gateway/protocol/index.js";
 import type { GatewayRequestHandler } from "../../../../src/gateway/server-methods/types.js";
+import { readFileWithinRoot } from "../../../../src/infra/fs-safe.js";
 
 // --- Types ---
 
@@ -135,18 +136,18 @@ export function createPaziMemoryGet(resolveWorkspace: ResolveWorkspace): Gateway
 
     for (const relPath of filePaths) {
       try {
+        const result = await readFileWithinRoot({
+          rootDir: workspaceDir,
+          relativePath: relPath,
+        });
         const fullPath = path.join(workspaceDir, relPath);
-        const [stat, content] = await Promise.all([
-          fs.stat(fullPath),
-          fs.readFile(fullPath, "utf-8"),
-        ]);
         entries.push({
           name: relPath,
           path: fullPath,
           missing: false,
-          size: stat.size,
-          updatedAtMs: Math.floor(stat.mtimeMs),
-          content,
+          size: result.stat.size,
+          updatedAtMs: Math.floor(result.stat.mtimeMs),
+          content: result.buffer.toString("utf-8"),
           kind: classifyMemoryFile(relPath),
         });
       } catch {
