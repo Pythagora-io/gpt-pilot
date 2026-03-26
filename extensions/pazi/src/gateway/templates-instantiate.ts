@@ -25,15 +25,10 @@ export function createPaziTemplatesInstantiateHandler(deps: {
   resolveWorkspace: ResolveWorkspace;
 }): GatewayRequestHandler {
   return async ({ params, respond }) => {
-    const templateId =
-      typeof params.templateId === "string" ? params.templateId.trim() : "";
+    const templateId = typeof params.templateId === "string" ? params.templateId.trim() : "";
 
     if (!templateId) {
-      respond(
-        false,
-        undefined,
-        errorShape(ErrorCodes.INVALID_REQUEST, "templateId is required"),
-      );
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "templateId is required"));
       return;
     }
 
@@ -42,31 +37,22 @@ export function createPaziTemplatesInstantiateHandler(deps: {
       respond(
         false,
         undefined,
-        errorShape(
-          ErrorCodes.INVALID_REQUEST,
-          `template "${templateId}" not found`,
-        ),
+        errorShape(ErrorCodes.INVALID_REQUEST, `template "${templateId}" not found`),
       );
       return;
     }
 
     const agentId =
-      params && typeof params === "object"
-        ? (params as { agentId?: unknown }).agentId
-        : undefined;
+      params && typeof params === "object" ? (params as { agentId?: unknown }).agentId : undefined;
     const resolved = deps.resolveWorkspace(agentId);
     if (!resolved) {
-      respond(
-        false,
-        undefined,
-        errorShape(ErrorCodes.INVALID_REQUEST, "unknown agent id"),
-      );
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "unknown agent id"));
       return;
     }
 
-    const { manifest, files } = result;
+    const { manifest, files, errors: loadErrors } = result;
     const written: string[] = [];
-    const errors: string[] = [];
+    const errors: string[] = [...loadErrors];
 
     for (const file of files) {
       // Determine target path:
@@ -75,15 +61,14 @@ export function createPaziTemplatesInstantiateHandler(deps: {
       let targetPath: string;
 
       if (manifest.skills.includes(file.relativePath)) {
-        // Extract skill name from path: "skills/cicd-pipeline/SKILL.md" → "cicd-pipeline"
-        const parts = file.relativePath.split("/");
-        const skillName = parts.length >= 2 ? parts[parts.length - 2] : parts[0];
-        targetPath = path.join(
-          resolved.workspaceDir,
-          "skills",
-          skillName,
-          "SKILL.md",
-        );
+        // Template skills are expected in "skills/{name}/SKILL.md".
+        const parts = file.relativePath.split("/").filter(Boolean);
+        if (parts.length !== 3 || parts[0] !== "skills" || parts[2] !== "SKILL.md") {
+          errors.push(`${file.relativePath}: invalid skill path`);
+          continue;
+        }
+        const skillName = parts[1];
+        targetPath = path.join(resolved.workspaceDir, "skills", skillName, "SKILL.md");
       } else {
         // Top-level file (IDENTITY.md, SOUL.md, etc.)
         targetPath = path.join(resolved.workspaceDir, file.relativePath);
@@ -105,9 +90,7 @@ export function createPaziTemplatesInstantiateHandler(deps: {
         await fs.writeFile(targetPath, file.content, "utf-8");
         written.push(file.relativePath);
       } catch (err) {
-        errors.push(
-          `${file.relativePath}: ${err instanceof Error ? err.message : String(err)}`,
-        );
+        errors.push(`${file.relativePath}: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
 

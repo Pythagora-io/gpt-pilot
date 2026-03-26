@@ -25,6 +25,12 @@ export interface TemplateManifest {
   skills: string[];
 }
 
+export interface LoadedTemplate {
+  manifest: TemplateManifest;
+  files: TemplateFile[];
+  errors: string[];
+}
+
 const TEMPLATES_ROOT = new URL("../../templates/agent-templates", import.meta.url);
 
 /**
@@ -57,9 +63,7 @@ export async function listTemplateIds(): Promise<string[]> {
  *
  * Returns `null` if the template does not exist or its manifest is invalid.
  */
-export async function loadTemplate(
-  templateId: string,
-): Promise<{ manifest: TemplateManifest; files: TemplateFile[] } | null> {
+export async function loadTemplate(templateId: string): Promise<LoadedTemplate | null> {
   // Prevent path traversal
   if (!/^[a-zA-Z0-9_-]+$/.test(templateId)) {
     return null;
@@ -84,29 +88,43 @@ export async function loadTemplate(
 
   if (
     typeof manifest.id !== "string" ||
+    manifest.id.trim() === "" ||
+    manifest.id !== templateId ||
+    typeof manifest.name !== "string" ||
+    typeof manifest.description !== "string" ||
     !Array.isArray(manifest.files) ||
-    !Array.isArray(manifest.skills)
+    !Array.isArray(manifest.skills) ||
+    !manifest.files.every((entry) => typeof entry === "string" && entry.trim() !== "") ||
+    !manifest.skills.every((entry) => typeof entry === "string" && entry.trim() !== "")
   ) {
     return null;
   }
 
   // Read all referenced files
-  const allRelativePaths = [...manifest.files, ...manifest.skills];
+  const allRelativePaths = [...manifest.files, ...manifest.skills].map((entry) => entry.trim());
   const files: TemplateFile[] = [];
+  const errors: string[] = [];
+  const resolvedTemplateDir = path.resolve(templateDir);
 
   for (const relPath of allRelativePaths) {
-    const absPath = path.join(templateDir, relPath);
+    const resolvedPath = path.resolve(templateDir, relPath);
     // Safety check: resolved path must be under templateDir
-    if (!absPath.startsWith(templateDir + path.sep) && absPath !== templateDir) {
+    if (
+      !resolvedPath.startsWith(resolvedTemplateDir + path.sep) &&
+      resolvedPath !== resolvedTemplateDir
+    ) {
+      errors.push(`${relPath}: path traversal rejected`);
       continue;
     }
     try {
-      const content = await fs.readFile(absPath, "utf-8");
+      const content = await fs.readFile(resolvedPath, "utf-8");
       files.push({ relativePath: relPath, content });
-    } catch {
-      // Skip files that can't be read — log in caller if needed
+    } catch (err) {
+      errors.push(
+        `${relPath}: ${err instanceof Error ? err.message : "failed to read template file"}`,
+      );
     }
   }
 
-  return { manifest, files };
+  return { manifest, files, errors };
 }
