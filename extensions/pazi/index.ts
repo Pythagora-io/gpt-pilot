@@ -36,6 +36,10 @@ import {
 import { createPaziSkillsGet, createPaziSkillsSet } from "./src/gateway/pazi-skills.js";
 import { createPaziSkillsCreateHandler } from "./src/gateway/skills-create.js";
 import { createPaziSkillsDeleteHandler } from "./src/gateway/skills-delete.js";
+import {
+  createPaziTemplatesInstantiateHandler,
+  createPaziTemplatesListHandler,
+} from "./src/gateway/templates-instantiate.js";
 import { paziBootstrapActionsHook } from "./src/hooks/pazi-bootstrap-actions.js";
 import { paziBootstrapUserHook } from "./src/hooks/pazi-bootstrap-user.js";
 import { createPipedreamTools } from "./src/pipedream/tools.js";
@@ -136,6 +140,12 @@ export default {
     };
     api.registerGatewayMethod("pazi.skills.get", createPaziSkillsGet(skillsDeps));
     api.registerGatewayMethod("pazi.skills.set", createPaziSkillsSet(skillsDeps));
+
+    api.registerGatewayMethod(
+      "pazi.templates.instantiate",
+      createPaziTemplatesInstantiateHandler({ resolveWorkspace }),
+    );
+    api.registerGatewayMethod("pazi.templates.list", createPaziTemplatesListHandler());
 
     api.registerGatewayMethod(
       "pazi.channels.configure",
