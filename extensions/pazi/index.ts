@@ -43,12 +43,14 @@ import {
 } from "./src/gateway/templates-instantiate.js";
 import { paziBootstrapActionsHook } from "./src/hooks/pazi-bootstrap-actions.js";
 import { paziBootstrapUserHook } from "./src/hooks/pazi-bootstrap-user.js";
+import { registerToolResultPersistHook } from "./src/hooks/pazi-tool-result-persist.js";
 import { createPipedreamTools } from "./src/pipedream/tools.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
 import { startSlackThreadCachePersistence } from "./src/slack-thread-cache-persistence.js";
 import { registerSlackThreadReplyMode } from "./src/slack-thread-reply-mode.js";
+import { createUserActionTools } from "./src/user-actions/tools.js";
 
 function normalizePluginConfig(
   value: OpenClawPluginApi["pluginConfig"],
@@ -220,14 +222,16 @@ export default {
 
     api.registerHook("agent:bootstrap", paziBootstrapActionsHook, {
       name: "pazi-bootstrap-actions",
-      description:
-        "Appends Pazi frontend-action docs (voice tools + PAZI_COMMAND markers) to AGENTS.md",
+      description: "Appends Pazi frontend-action docs to AGENTS.md",
     });
 
     api.registerHook("agent:bootstrap", paziBootstrapUserHook, {
       name: "pazi-bootstrap-user",
       description: "Injects user name from .pazi/user-meta.json into USER.md bootstrap context",
     });
+
+    // PAZ-211: Redact credential values from persisted tool results
+    registerToolResultPersistHook(api);
 
     // PAZ-206: Slack thread reply mode — suppress intermediate messages
     registerSlackThreadReplyMode(api);
@@ -236,6 +240,11 @@ export default {
       pluginConfig,
     });
     for (const tool of tools) {
+      api.registerTool(tool);
+    }
+
+    const userActionTools = createUserActionTools({ pluginConfig });
+    for (const tool of userActionTools) {
       api.registerTool(tool);
     }
 
