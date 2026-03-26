@@ -1,5 +1,7 @@
 type ChannelType = "slack" | "telegram" | "whatsapp";
 
+export type SlackThreadReplyMode = "full" | "summary-only" | "quiet";
+
 interface ChannelConfigureParams {
   channel: ChannelType;
   accountId?: string;
@@ -14,6 +16,8 @@ interface ChannelConfigureParams {
     allowFrom?: string[];
     slashCommandName?: string;
     token?: string;
+    threadReplyMode?: SlackThreadReplyMode;
+    ackMessage?: string;
   };
 }
 
@@ -55,6 +59,8 @@ interface ChannelConfigureResult {
   dmPolicy?: "open" | "allowlist";
   groupPolicy?: "open" | "allowlist";
   allowFrom?: string[];
+  threadReplyMode?: SlackThreadReplyMode;
+  ackMessage?: string;
   onboarding?: TelegramOnboardingResult | WhatsAppOnboardingResult;
 }
 
@@ -86,7 +92,11 @@ interface ChannelConfigureDeps {
   ) => Promise<ProbeResult>;
 }
 
-const VALID_CHANNELS: ReadonlySet<string> = new Set(["slack", "telegram", "whatsapp"]);
+const VALID_CHANNELS: ReadonlySet<string> = new Set([
+  "slack",
+  "telegram",
+  "whatsapp",
+]);
 const ERROR_INVALID_REQUEST = "INVALID_REQUEST";
 const ERROR_UNAVAILABLE = "UNAVAILABLE";
 const TELEGRAM_PAIRING_POLL_INTERVAL_MS = 3000;
@@ -134,7 +144,10 @@ function validateParams(raw: unknown): {
   const p = raw as Record<string, unknown>;
 
   if (!isChannelType(p.channel)) {
-    return { ok: false, error: "channel must be 'slack', 'telegram', or 'whatsapp'" };
+    return {
+      ok: false,
+      error: "channel must be 'slack', 'telegram', or 'whatsapp'",
+    };
   }
 
   const config = p.config;
@@ -144,12 +157,15 @@ function validateParams(raw: unknown): {
   const cfg = config as Record<string, unknown>;
 
   if (p.channel === "slack") {
-    const botToken = typeof cfg.botToken === "string" ? cfg.botToken.trim() : "";
-    const appToken = typeof cfg.appToken === "string" ? cfg.appToken.trim() : "";
+    const botToken =
+      typeof cfg.botToken === "string" ? cfg.botToken.trim() : "";
+    const appToken =
+      typeof cfg.appToken === "string" ? cfg.appToken.trim() : "";
     const accessMode = cfg.accessMode === "closed" ? "closed" : "open";
     const allowFrom = Array.isArray(cfg.allowFrom)
       ? cfg.allowFrom.filter(
-          (entry): entry is string => typeof entry === "string" && entry.trim().length > 0,
+          (entry): entry is string =>
+            typeof entry === "string" && entry.trim().length > 0,
         )
       : [];
     if (!botToken || !appToken) {
@@ -158,7 +174,8 @@ function validateParams(raw: unknown): {
     if (accessMode === "closed" && allowFrom.length === 0) {
       return {
         ok: false,
-        error: "Closed Slack access requires at least one allowed Slack user ID",
+        error:
+          "Closed Slack access requires at least one allowed Slack user ID",
       };
     }
   }
@@ -191,11 +208,24 @@ function validateParams(raw: unknown): {
         accessMode: cfg.accessMode === "closed" ? "closed" : "open",
         groupAccessMode: cfg.groupAccessMode === "closed" ? "closed" : "open",
         allowFrom: Array.isArray(cfg.allowFrom)
-          ? cfg.allowFrom.filter((entry): entry is string => typeof entry === "string")
+          ? cfg.allowFrom.filter(
+              (entry): entry is string => typeof entry === "string",
+            )
           : undefined,
         slashCommandName:
-          typeof cfg.slashCommandName === "string" ? cfg.slashCommandName : undefined,
+          typeof cfg.slashCommandName === "string"
+            ? cfg.slashCommandName
+            : undefined,
         token: typeof cfg.token === "string" ? cfg.token : undefined,
+        threadReplyMode:
+          cfg.threadReplyMode === "summary-only" ||
+          cfg.threadReplyMode === "quiet"
+            ? cfg.threadReplyMode
+            : cfg.threadReplyMode === "full"
+              ? "full"
+              : undefined,
+        ackMessage:
+          typeof cfg.ackMessage === "string" ? cfg.ackMessage : undefined,
       },
     },
   };
@@ -255,8 +285,10 @@ function applySlackConfig(
   const botToken = input.botToken?.trim() ?? "";
   const appToken = input.appToken?.trim() ?? "";
   const accessMode = input.accessMode === "closed" ? "closed" : "open";
-  const groupAccessMode = input.groupAccessMode === "closed" ? "closed" : "open";
-  const allowFrom = accessMode === "open" ? ["*"] : normalizeSlackAllowFrom(input.allowFrom);
+  const groupAccessMode =
+    input.groupAccessMode === "closed" ? "closed" : "open";
+  const allowFrom =
+    accessMode === "open" ? ["*"] : normalizeSlackAllowFrom(input.allowFrom);
   const dmPolicy = accessMode === "open" ? "open" : "allowlist";
   const groupPolicy = groupAccessMode === "open" ? "open" : "allowlist";
   const dm = { policy: dmPolicy, allowFrom };
@@ -291,10 +323,17 @@ function applySlackConfig(
               // Always reply inside threads so the bot doesn't spam the channel.
               replyToMode: "all",
               ...(input.name ? { name: input.name } : {}),
+              ...(input.threadReplyMode
+                ? { threadReplyMode: input.threadReplyMode }
+                : {}),
+              ...(input.ackMessage?.trim()
+                ? { ackMessage: input.ackMessage.trim() }
+                : {}),
               ...(slashCommandName
                 ? {
                     slashCommand: {
-                      ...cfg.channels?.slack?.accounts?.[accountId]?.slashCommand,
+                      ...cfg.channels?.slack?.accounts?.[accountId]
+                        ?.slashCommand,
                       enabled: true,
                       name: slashCommandName,
                     },
@@ -378,7 +417,11 @@ export function createPaziChannelsConfigureHandler(
   return async ({ params, respond, context }: GatewayMethodContext) => {
     const validation = validateParams(params);
     if (!validation.ok || !validation.params) {
-      respondError(respond, ERROR_INVALID_REQUEST, validation.error ?? "invalid params");
+      respondError(
+        respond,
+        ERROR_INVALID_REQUEST,
+        validation.error ?? "invalid params",
+      );
       return;
     }
 
@@ -396,7 +439,11 @@ export function createPaziChannelsConfigureHandler(
           // probeSlack validates botToken. appToken validity is verified on channel restart.
           probe = await deps.probeSlack(token, timeoutMs);
         } else {
-          const token = (inputConfig.token ?? inputConfig.botToken ?? "").trim();
+          const token = (
+            inputConfig.token ??
+            inputConfig.botToken ??
+            ""
+          ).trim();
           probe = await deps.probeTelegram(token, timeoutMs, undefined);
         }
       } catch (err) {
@@ -409,7 +456,12 @@ export function createPaziChannelsConfigureHandler(
       }
 
       if (!probe.ok) {
-        respondError(respond, ERROR_UNAVAILABLE, probe.error ?? "token probe failed", { probe });
+        respondError(
+          respond,
+          ERROR_UNAVAILABLE,
+          probe.error ?? "token probe failed",
+          { probe },
+        );
         return;
       }
     }
@@ -429,7 +481,11 @@ export function createPaziChannelsConfigureHandler(
       let cfg = deps.loadConfig();
       if (channel === "slack") {
         if (!probe) {
-          respondError(respond, ERROR_UNAVAILABLE, "slack probe result missing");
+          respondError(
+            respond,
+            ERROR_UNAVAILABLE,
+            "slack probe result missing",
+          );
           return;
         }
         cfg = applySlackConfig(cfg, accountId, inputConfig, probe);
@@ -472,7 +528,8 @@ export function createPaziChannelsConfigureHandler(
       return;
     }
 
-    const slackTeamId = channel === "slack" ? (probe?.team?.id?.trim() ?? "") : "";
+    const slackTeamId =
+      channel === "slack" ? (probe?.team?.id?.trim() ?? "") : "";
     const result: ChannelConfigureResult = {
       ok: true,
       channel,
@@ -484,12 +541,16 @@ export function createPaziChannelsConfigureHandler(
       ...(slackTeamId ? { teamId: slackTeamId } : {}),
       ...(channel === "slack"
         ? {
-            dmPolicy: inputConfig.accessMode === "closed" ? "allowlist" : "open",
-            groupPolicy: inputConfig.groupAccessMode === "closed" ? "allowlist" : "open",
+            dmPolicy:
+              inputConfig.accessMode === "closed" ? "allowlist" : "open",
+            groupPolicy:
+              inputConfig.groupAccessMode === "closed" ? "allowlist" : "open",
             allowFrom:
               inputConfig.accessMode === "closed"
                 ? normalizeSlackAllowFrom(inputConfig.allowFrom)
                 : ["*"],
+            threadReplyMode: inputConfig.threadReplyMode ?? "full",
+            ackMessage: inputConfig.ackMessage?.trim() || "On it",
           }
         : {}),
     };
