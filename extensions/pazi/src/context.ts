@@ -1,5 +1,6 @@
 import fs from "node:fs";
-import { loadJsonFile, saveJsonFile } from "../../../src/infra/json-file.js";
+import path from "node:path";
+import { loadJsonFile } from "../../../src/infra/json-file.js";
 
 type ProxyContext = {
   userId: string;
@@ -113,13 +114,19 @@ export function setProxyContext(ctx: ProxyContext): void {
 }
 
 /**
- * Best-effort persist context to disk.
- * Uses saveJsonFile which handles: mkdir with 0o700, writeFileSync, chmod 0o600.
+ * Best-effort persist context to disk using atomic write-then-rename.
+ * Writes to a temp file first, then renames — so a kill mid-write
+ * can never leave a truncated proxy-context.json.
  */
 function persistToDisk(ctx: ProxyContext): void {
   if (!persistencePath) return;
   try {
-    saveJsonFile(persistencePath, ctx);
+    const dir = path.dirname(persistencePath);
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+    const tmpPath = `${persistencePath}.${process.pid}.tmp`;
+    fs.writeFileSync(tmpPath, JSON.stringify(ctx, null, 2) + "\n", "utf8");
+    fs.chmodSync(tmpPath, 0o600);
+    fs.renameSync(tmpPath, persistencePath);
   } catch (err) {
     // Best-effort: disk write failed, in-memory is still authoritative.
     warnPersistence(`failed to persist context to ${persistencePath}`, err);
