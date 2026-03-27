@@ -1,0 +1,9 @@
+{
+  "plugins": {
+    "entries": {
+      "pazi": {
+        "enabled": true
+      }
+    }
+  }
+}
