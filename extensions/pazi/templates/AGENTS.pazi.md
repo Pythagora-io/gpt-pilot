@@ -1,40 +1,46 @@
 ## Pazi Frontend Actions
 
-You can trigger interactive dashboard cards via voice tools or text markers.
+### Registered Tools (All Sessions)
 
-### Voice Client Tools
+These tools work across all session types (text, voice, web, Slack):
 
-These tools are available during ElevenLabs voice sessions. They display UI cards on the user's dashboard.
+| Tool                            | Description                                                                                             |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `ask_for_credentials`           | Prompt user for credentials (API keys, passwords, tokens). Opens a secure form. Returns entered values. |
+| `ask_for_browser_login`         | Prompt user to complete a browser login. Shows link + confirmation. Returns when done.                  |
+| `pipedream_request_integration` | Request an OAuth integration connection via Pipedream.                                                  |
+| `pipedream_wait_for_connection` | Wait for Pipedream OAuth flow to complete.                                                              |
 
-| Tool                      | Parameters                             | Description                        |
-| ------------------------- | -------------------------------------- | ---------------------------------- |
-| `show_case_study`         | `topic`, `description`                 | Display a case study card          |
-| `ask_for_credentials`     | `service`, `fields` (comma-separated)  | Prompt user for credentials        |
-| `ask_for_browser_login`   | `service`, `url`                       | Prompt user to log in via browser  |
-| `task_scheduled`          | `task_name`, `schedule`, `description` | Show task scheduling confirmation  |
-| `show_sample_report`      | `report_type`, `content`               | Display a sample report preview    |
-| `start_slack_integration` | (none)                                 | Trigger Slack integration setup    |
-| `get_docs`                | `slug`                                 | Fetch documentation text (no card) |
+### Voice-Only Client Tools
+
+Available only during ElevenLabs voice sessions:
+
+| Tool                      | Parameters                             | Description                       |
+| ------------------------- | -------------------------------------- | --------------------------------- |
+| `show_case_study`         | `topic`, `description`                 | Display a case study card         |
+| `task_scheduled`          | `task_name`, `schedule`, `description` | Show task scheduling confirmation |
+| `show_sample_report`      | `report_type`, `content`               | Display a sample report preview   |
+| `start_slack_integration` | (none)                                 | Trigger Slack integration setup   |
+| `get_docs`                | `slug`                                 | Fetch documentation text          |
 
 ### Text Markers (PAZI_COMMAND)
 
-Emit a marker in a text message. The frontend parses it and renders the corresponding card.
+Display-only cards rendered from text. Used for non-auth display features:
 
 Format: `PAZI_COMMAND:COMMAND_NAME:key=value:key=value`
 
-URL-encode values to avoid ambiguity with the colon delimiter.
-
-| Command                 | Parameters                             | Example                                                                                 |
-| ----------------------- | -------------------------------------- | --------------------------------------------------------------------------------------- |
-| `SLACK_SETUP`           | (none)                                 | `PAZI_COMMAND:SLACK_SETUP`                                                              |
-| `SHOW_CASE_STUDY`       | `topic`, `description`                 | `PAZI_COMMAND:SHOW_CASE_STUDY:topic=AI%20Automation:description=How%20Pazi%20automates` |
-| `ASK_FOR_CREDENTIALS`   | `service`, `fields`                    | `PAZI_COMMAND:ASK_FOR_CREDENTIALS:service=GitHub:fields=token,password`                 |
-| `ASK_FOR_BROWSER_LOGIN` | `service`, `url`                       | `PAZI_COMMAND:ASK_FOR_BROWSER_LOGIN:service=CellKeys:url=https%3A%2F%2Fexample.com`     |
-| `TASK_SCHEDULED`        | `task_name`, `schedule`, `description` | `PAZI_COMMAND:TASK_SCHEDULED:task_name=Daily%20Report:schedule=Every%20day%20at%209am`  |
+| Command           | Parameters                             | Example                                                              |
+| ----------------- | -------------------------------------- | -------------------------------------------------------------------- |
+| `SLACK_SETUP`     | (none)                                 | `PAZI_COMMAND:SLACK_SETUP`                                           |
+| `SHOW_CASE_STUDY` | `topic`, `description`                 | `PAZI_COMMAND:SHOW_CASE_STUDY:topic=AI%20Automation:description=...` |
+| `TASK_SCHEDULED`  | `task_name`, `schedule`, `description` | `PAZI_COMMAND:TASK_SCHEDULED:task_name=Daily%20Report:schedule=...`  |
 
 ### Rules
 
-- URL-encode values in text markers (spaces -> `%20`, colons -> `%3A`).
-- Only emit one `PAZI_COMMAND:` marker per message.
-- Prefer voice tools during ElevenLabs sessions.
-- The card is automatically dismissed when the user sends their next message.
+- **NEVER use PAZI_COMMAND for credentials or browser login** — use `ask_for_credentials` or `ask_for_browser_login` tools
+- Use `ask_for_credentials` for API keys, passwords, tokens
+- Use `ask_for_browser_login` when user must log into a site in their browser
+- Use Pipedream tools when an OAuth integration is available
+- Credential values are sensitive — do not echo them in chat messages
+- URL-encode values in text markers (spaces -> `%20`, colons -> `%3A`)
+- Only one `PAZI_COMMAND:` marker per message
