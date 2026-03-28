@@ -15,6 +15,9 @@ function normalizeInjectedName(value: string): string {
  * after agents.create with: { "name": "Zvonimir" }
  *
  * The agent's display name comes from the agents.list config entry.
+ *
+ * Names are injected both in-memory (for the system prompt) and on disk
+ * (so the agent sees correct values when reading files with the read tool).
  */
 export const paziBootstrapUserHook: InternalHookHandler = async (event) => {
   if (!isAgentBootstrapEvent(event)) return;
@@ -33,10 +36,19 @@ export const paziBootstrapUserHook: InternalHookHandler = async (event) => {
       const agentName =
         typeof agentEntry?.name === "string" ? normalizeInjectedName(agentEntry.name) : "";
       if (agentName) {
-        identityFile.content = identityFile.content.replace(
+        const updated = identityFile.content.replace(
           /^- \*\*Name:\*\*\s*$(\n\s+_\(set during agent creation\)_)?/m,
           () => `- **Name:** ${agentName}`,
         );
+        identityFile.content = updated;
+        // Also write to disk so `read` tool sees the correct value
+        if (identityFile.path) {
+          try {
+            await fs.writeFile(identityFile.path, updated, "utf-8");
+          } catch {
+            // Best-effort; don't fail the hook if disk write fails
+          }
+        }
       }
     }
   }
@@ -62,7 +74,16 @@ export const paziBootstrapUserHook: InternalHookHandler = async (event) => {
 
   if (!userName) return;
 
-  userFile.content = userFile.content
+  const updated = userFile.content
     .replace(/^- \*\*Name:\*\*\s*$/m, () => `- **Name:** ${userName}`)
     .replace(/^- \*\*What to call them:\*\*\s*$/m, () => `- **What to call them:** ${userName}`);
+  userFile.content = updated;
+  // Also write to disk so `read` tool sees the correct value
+  if (userFile.path) {
+    try {
+      await fs.writeFile(userFile.path, updated, "utf-8");
+    } catch {
+      // Best-effort; don't fail the hook if disk write fails
+    }
+  }
 };
