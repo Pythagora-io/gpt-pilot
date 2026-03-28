@@ -892,6 +892,7 @@ export const SlackAccountSchema = z
     replyToMode: ReplyToModeSchema.optional(),
     replyToModeByChatType: SlackReplyToModeByChatTypeSchema.optional(),
     thread: SlackThreadSchema.optional(),
+    threadReplyMode: z.enum(["full", "summary-only", "quiet"]).optional(),
     actions: z
       .object({
         reactions: z.boolean().optional(),
