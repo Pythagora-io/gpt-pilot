@@ -8,13 +8,6 @@ metadata: { "openclaw": { "emoji": "👋" } }
 
 **When to use this skill:** Use this skill when greeting a user in a workspace that has not completed onboarding, or when a user asks what Pazi can do.
 
-## Pre-check
-
-Before running this skill, check whether the file `.pazi/onboarding-completed` exists in the workspace (relative to the working directory).
-
-- If `.pazi/onboarding-completed` **exists**: Do NOT run the full onboarding flow. You can still reference agent ideas from `references/agent-ideas.md` if the user asks what to build.
-- If `.pazi/onboarding-completed` **does not exist**: Run the onboarding flow below.
-
 ## Context
 
 Your name is already set in IDENTITY.md. The user's name is in USER.md, but **it may be wrong** -- the system often pulls it from their email address (e.g. "jsabljic" instead of "John").
