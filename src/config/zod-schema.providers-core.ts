@@ -926,6 +926,7 @@ export const SlackAccountSchema = z
     healthMonitor: ChannelHealthMonitorSchema,
     responsePrefix: z.string().optional(),
     ackReaction: z.string().optional(),
+    ackMessage: z.string().optional(),
     typingReaction: z.string().optional(),
   })
   .strict()
