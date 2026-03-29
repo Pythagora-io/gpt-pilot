@@ -1,12 +1,24 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { listAgentIds, resolveAgentWorkspaceDir } from "openclaw/plugin-sdk/agent-runtime";
+import { buildWorkspaceSkillStatus } from "openclaw/plugin-sdk/agent-runtime";
 import type { OpenClawConfig } from "openclaw/plugin-sdk/core";
 import {
   ErrorCodes,
   errorShape,
   type GatewayRequestHandler,
 } from "openclaw/plugin-sdk/gateway-runtime";
+
+/**
+ * Strip a leading YAML frontmatter block from user-pasted content
+ * to prevent double-frontmatter in the written SKILL.md.
+ */
+function stripLeadingFrontmatter(text: string): string {
+  const normalized = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  if (!normalized.startsWith("---")) return normalized;
+  const endIndex = normalized.indexOf("\n---", 3);
+  if (endIndex === -1) return normalized;
+  return normalized.slice(endIndex + 4).replace(/^\n+/, "");
+}
 
 type ResolvedWorkspace = {
   agentId: string;
@@ -82,18 +94,13 @@ export function createPaziSkillsCreateHandler(deps: {
       return;
     }
 
-    // Check ALL locations — no duplicate names allowed anywhere (shared or any agent).
-    const exists = async (filePath: string): Promise<boolean> => {
-      try {
-        await fs.access(filePath);
-        return true;
-      } catch {
-        return false;
-      }
-    };
-
-    // Check shared dir
-    if (sharedDir && (await exists(path.join(sharedDir, normalizedName, "SKILL.md")))) {
+    // Check ALL loaded skills (bundled, workspace, shared, plugin) for name collision.
+    const status = buildWorkspaceSkillStatus(resolved.workspaceDir, { config: cfg });
+    const collision = status.skills.find(
+      (s: { filePath: string }) =>
+        path.basename(path.dirname(s.filePath)).toLowerCase() === normalizedName,
+    );
+    if (collision) {
       respond(
         false,
         undefined,
@@ -102,25 +109,14 @@ export function createPaziSkillsCreateHandler(deps: {
       return;
     }
 
-    // Check every agent workspace
-    const allAgentIds = listAgentIds(cfg);
-    for (const agentIdEntry of allAgentIds) {
-      const wsDir = resolveAgentWorkspaceDir(cfg, agentIdEntry);
-      if (await exists(path.join(wsDir, "skills", normalizedName, "SKILL.md"))) {
-        respond(
-          false,
-          undefined,
-          errorShape(ErrorCodes.INVALID_REQUEST, `skill "${normalizedName}" already exists`),
-        );
-        return;
-      }
-    }
-
     const skillDir =
       scope === "all"
         ? path.join(sharedDir, normalizedName)
         : path.join(resolved.workspaceDir, "skills", normalizedName);
     const skillFile = path.join(skillDir, "SKILL.md");
+
+    // Strip any frontmatter from user-pasted content to prevent double-frontmatter.
+    const sanitizedContent = stripLeadingFrontmatter(content.trim());
 
     // Build SKILL.md content with frontmatter.
     const skillContent =
@@ -129,7 +125,7 @@ name: ${normalizedName}
 description: ${description}
 ---
 
-${content}
+${sanitizedContent}
 `.trimEnd() + "\n";
 
     try {
