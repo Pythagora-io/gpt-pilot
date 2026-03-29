@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { listAgentIds, resolveAgentWorkspaceDir } from "openclaw/plugin-sdk/agent-runtime";
 import {
   ErrorCodes,
   errorShape,
@@ -133,7 +134,7 @@ function slugify(name: string): string {
       .trim()
       .toLowerCase()
       .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "")
+      .replace(/[^a-z0-9_-]/g, "")
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "") || "skill"
   );
@@ -314,6 +315,29 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
         errorShape(ErrorCodes.INVALID_REQUEST, `skill "${targetDirName}" already exists`),
       );
       return;
+    }
+
+    // Cross-workspace check: iterate ALL agent workspaces to catch collisions
+    // that buildWorkspaceSkillStatus (scoped to one workspace) cannot see.
+    const allAgentIds = listAgentIds(cfg);
+    for (const agentIdEntry of allAgentIds) {
+      if (agentIdEntry === resolved.agentId) continue; // already checked above
+      const wsDir = resolveAgentWorkspaceDir(cfg, agentIdEntry);
+      try {
+        await fs.access(path.join(wsDir, "skills", targetDirName, "SKILL.md"));
+        // Allow if this IS the skill being edited (same file path)
+        const candidatePath = path.join(wsDir, "skills", targetDirName, "SKILL.md");
+        if (path.resolve(candidatePath) !== path.resolve(entry.filePath)) {
+          respond(
+            false,
+            undefined,
+            errorShape(ErrorCodes.INVALID_REQUEST, `skill "${targetDirName}" already exists`),
+          );
+          return;
+        }
+      } catch {
+        // No collision in this workspace — continue
+      }
     }
 
     if (scopeChanging && wantShared) {

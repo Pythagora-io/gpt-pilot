@@ -1,6 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { buildWorkspaceSkillStatus } from "openclaw/plugin-sdk/agent-runtime";
+import {
+  buildWorkspaceSkillStatus,
+  listAgentIds,
+  resolveAgentWorkspaceDir,
+} from "openclaw/plugin-sdk/agent-runtime";
 import type { OpenClawConfig } from "openclaw/plugin-sdk/core";
 import {
   ErrorCodes,
@@ -107,6 +111,25 @@ export function createPaziSkillsCreateHandler(deps: {
         errorShape(ErrorCodes.INVALID_REQUEST, `skill "${normalizedName}" already exists`),
       );
       return;
+    }
+
+    // Cross-workspace check: iterate ALL agent workspaces to catch collisions
+    // that buildWorkspaceSkillStatus (scoped to one workspace) cannot see.
+    const allAgentIds = listAgentIds(cfg);
+    for (const agentIdEntry of allAgentIds) {
+      if (agentIdEntry === resolved.agentId) continue; // already checked above
+      const wsDir = resolveAgentWorkspaceDir(cfg, agentIdEntry);
+      try {
+        await fs.access(path.join(wsDir, "skills", normalizedName, "SKILL.md"));
+        respond(
+          false,
+          undefined,
+          errorShape(ErrorCodes.INVALID_REQUEST, `skill "${normalizedName}" already exists`),
+        );
+        return;
+      } catch {
+        // No collision in this workspace — continue
+      }
     }
 
     const skillDir =
