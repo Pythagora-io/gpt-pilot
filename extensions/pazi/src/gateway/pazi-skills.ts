@@ -43,12 +43,18 @@ function resolveRequestWorkspace(
 /**
  * Strip a leading YAML frontmatter block from user-pasted content
  * to prevent double-frontmatter in the written SKILL.md.
+ * Only strips if the block between `---` delimiters contains YAML-like
+ * key-value pairs (e.g. `name: value`) to avoid mangling legitimate
+ * markdown thematic breaks.
  */
 function stripLeadingFrontmatter(text: string): string {
   const normalized = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-  if (!normalized.startsWith("---")) return normalized;
-  const endIndex = normalized.indexOf("\n---", 3);
+  if (!normalized.startsWith("---\n")) return normalized;
+  const endIndex = normalized.indexOf("\n---", 4);
   if (endIndex === -1) return normalized;
+  const block = normalized.slice(4, endIndex);
+  // Only strip if it looks like YAML frontmatter (contains key: value lines)
+  if (!/^[a-zA-Z_][a-zA-Z0-9_-]*\s*:/m.test(block)) return normalized;
   return normalized.slice(endIndex + 4).replace(/^\n+/, "");
 }
 
