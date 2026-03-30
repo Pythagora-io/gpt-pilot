@@ -11,7 +11,7 @@ type ProxyContext = {
 
 export type { ProxyContext };
 
-const STALE_BUSY_AFTER_MS = 30 * 60 * 1000;
+const STALE_BUSY_AFTER_MS = 20 * 60 * 1000;
 
 let currentContext: ProxyContext | null = null;
 let lastProxyActivityAtMs: number | null = null;

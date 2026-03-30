@@ -33,25 +33,25 @@ describe("pazi context busy status", () => {
     expect(isProxyBusyForStatus(1_000_000)).toBe(false);
   });
 
-  it("returns busy when activity is within the 30-minute window", () => {
+  it("returns busy when activity is within the 20-minute window", () => {
     const nowMs = 1_000_000;
     setProxyContext({
       userId: "u1",
       agentId: "a1",
       proxyToken: "p1",
     });
-    markProxyActivity(nowMs - 29 * 60 * 1000);
+    markProxyActivity(nowMs - 19 * 60 * 1000);
     expect(isProxyBusyForStatus(nowMs)).toBe(true);
   });
 
-  it("returns not busy when activity is older than 30 minutes", () => {
+  it("returns not busy when activity is older than 20 minutes", () => {
     const nowMs = 1_000_000;
     setProxyContext({
       userId: "u1",
       agentId: "a1",
       proxyToken: "p1",
     });
-    markProxyActivity(nowMs - 31 * 60 * 1000);
+    markProxyActivity(nowMs - 21 * 60 * 1000);
     expect(isProxyBusyForStatus(nowMs)).toBe(false);
   });
 });
@@ -361,9 +361,7 @@ describe("pazi context persistence", () => {
       expect(renameSpy).not.toHaveBeenCalled();
 
       // Fallback warning emitted exactly once
-      const fallbackWarnings = warnings.filter((m) =>
-        m.includes("falling back to direct writes"),
-      );
+      const fallbackWarnings = warnings.filter((m) => m.includes("falling back to direct writes"));
       expect(fallbackWarnings).toHaveLength(1);
 
       // Second context was persisted correctly
