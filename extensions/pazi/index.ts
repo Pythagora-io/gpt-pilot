@@ -48,6 +48,7 @@ import {
 } from "./src/gateway/templates-instantiate.js";
 import { paziBootstrapActionsHook } from "./src/hooks/pazi-bootstrap-actions.js";
 import { paziBootstrapUserHook } from "./src/hooks/pazi-bootstrap-user.js";
+import { registerProxyAgentSyncHook } from "./src/hooks/pazi-proxy-agent-sync.js";
 import { registerToolResultPersistHook } from "./src/hooks/pazi-tool-result-persist.js";
 import { createPipedreamTools } from "./src/pipedream/tools.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
@@ -249,6 +250,7 @@ export default {
 
     // PAZ-211: Redact credential values from persisted tool results
     registerToolResultPersistHook(api);
+    registerProxyAgentSyncHook(api);
 
     // PAZ-206: Slack thread reply mode — suppress intermediate messages
     registerSlackThreadReplyMode(api);

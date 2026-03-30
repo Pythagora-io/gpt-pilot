@@ -4,6 +4,7 @@ import { getProxyContext } from "../context.js";
 type ApiParams = {
   apiUrl: string;
   proxyToken: string;
+  agentId: string;
 };
 
 export type PipedreamApiResult<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -27,7 +28,12 @@ function resolveApiParams(pluginConfig: Record<string, unknown> | null): ApiPara
     throw new Error(`Invalid PAZI_API_URL: ${apiUrl}`);
   }
 
-  return { apiUrl: baseUrl.toString(), proxyToken: context.proxyToken };
+  const agentId = typeof context.agentId === "string" ? context.agentId : "";
+  return {
+    apiUrl: baseUrl.toString(),
+    proxyToken: context.proxyToken,
+    agentId,
+  };
 }
 
 function readErrorMessage(payload: unknown): string | undefined {
@@ -74,6 +80,9 @@ async function parseResponse<T>(res: Response): Promise<PipedreamApiResult<T>> {
 async function fetchWithToken(params: ApiParams, url: URL, init?: RequestInit): Promise<Response> {
   const headers = new Headers(init?.headers);
   headers.set("x-proxy-token", params.proxyToken);
+  if (params.agentId.trim()) {
+    headers.set("x-agent-id", params.agentId);
+  }
   return await fetch(url, { ...init, headers });
 }
 
