@@ -91,6 +91,7 @@ export async function startPaziProxy(params: StartProxyParams): Promise<ProxySer
           ...pickAnthropicHeaders(req.headers),
           "X-Proxy-Token": context.proxyToken,
           "X-User-Id": context.userId,
+          "X-Agent-Id": context.agentId,
         },
       },
       (proxyRes) => {

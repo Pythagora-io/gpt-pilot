@@ -8,6 +8,7 @@ import {
 } from "openclaw/plugin-sdk/channel-pairing";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk/core";
 import { normalizeAgentId } from "openclaw/plugin-sdk/routing";
+import { trackChannelConnected } from "./src/analytics.js";
 import { installBraveEnvDefaults, uninstallBraveEnvDefaults } from "./src/brave/brave-env.js";
 import {
   installBraveFetchInterceptor,
@@ -168,6 +169,9 @@ export default {
         probeSlack: (token, timeoutMs) => api.runtime.channel.slack.probeSlack(token, timeoutMs),
         probeTelegram: (token, timeoutMs, proxyUrl) =>
           api.runtime.channel.telegram.probeTelegram(token, timeoutMs, proxyUrl),
+        onConfigured: (result) => {
+          void trackChannelConnected(pluginConfig, result.channel, result.accountId);
+        },
       }),
     );
     api.registerGatewayMethod(
