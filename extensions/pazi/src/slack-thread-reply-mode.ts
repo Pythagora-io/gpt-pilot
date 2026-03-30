@@ -38,6 +38,11 @@ export function resolveThreadReplyConfig(
     return { mode: "full", ackMessage: DEFAULT_ACK_MESSAGE };
   }
   const raw = account as Record<string, unknown>;
+  // New Slack setup uses replyToMode/ackReaction. If replyToMode is configured,
+  // treat legacy threadReplyMode/ackMessage as inactive compatibility fields.
+  if (raw.replyToMode === "off" || raw.replyToMode === "first" || raw.replyToMode === "all") {
+    return { mode: "full", ackMessage: DEFAULT_ACK_MESSAGE };
+  }
   const mode: SlackThreadReplyMode =
     raw.threadReplyMode === "summary-only" || raw.threadReplyMode === "quiet"
       ? raw.threadReplyMode

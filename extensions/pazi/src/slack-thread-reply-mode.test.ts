@@ -49,6 +49,24 @@ describe("resolveThreadReplyConfig", () => {
     expect(result).toEqual({ mode: "quiet", ackMessage: "On it" });
   });
 
+  it("ignores legacy threadReplyMode when replyToMode is configured", () => {
+    const cfg = {
+      channels: {
+        slack: {
+          accounts: {
+            default: {
+              replyToMode: "all",
+              threadReplyMode: "summary-only",
+              ackMessage: "Legacy ack",
+            },
+          },
+        },
+      },
+    };
+    const result = resolveThreadReplyConfig(cfg, "default");
+    expect(result).toEqual({ mode: "full", ackMessage: "On it" });
+  });
+
   it("ignores invalid threadReplyMode values", () => {
     const cfg = {
       channels: {

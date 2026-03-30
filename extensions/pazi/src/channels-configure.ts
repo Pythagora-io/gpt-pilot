@@ -236,6 +236,15 @@ function normalizeBindingChannel(channel: string): string {
   return channel.trim().toLowerCase();
 }
 
+function removeLegacySlackReplySettings(account: unknown): Record<string, unknown> {
+  if (!account || typeof account !== "object") {
+    return {};
+  }
+  const raw = account as Record<string, unknown>;
+  const { threadReplyMode: _legacyThreadReplyMode, ackMessage: _legacyAckMessage, ...rest } = raw;
+  return rest;
+}
+
 function upsertChannelAgentBinding(
   cfg: OpenClawConfig,
   params: { channel: ChannelType; accountId: string; agentId: string },
@@ -290,6 +299,9 @@ function applySlackConfig(
     input.slashCommandName !== undefined
       ? sanitizeSlashCommandName(input.slashCommandName)
       : undefined;
+  const existingAccount = removeLegacySlackReplySettings(
+    cfg.channels?.slack?.accounts?.[accountId],
+  );
 
   return upsertChannelAgentBinding(
     {
@@ -302,7 +314,7 @@ function applySlackConfig(
           accounts: {
             ...cfg.channels?.slack?.accounts,
             [accountId]: {
-              ...cfg.channels?.slack?.accounts?.[accountId],
+              ...existingAccount,
               enabled: true,
               botToken,
               appToken,
