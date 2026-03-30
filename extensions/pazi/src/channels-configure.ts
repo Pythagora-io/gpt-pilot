@@ -90,6 +90,7 @@ interface ChannelConfigureDeps {
     timeoutMs: number,
     proxyUrl: string | undefined,
   ) => Promise<ProbeResult>;
+  onConfigured?: (result: ChannelConfigureResult) => Promise<void> | void;
 }
 
 const VALID_CHANNELS: ReadonlySet<string> = new Set(["slack", "telegram", "whatsapp"]);
@@ -534,6 +535,7 @@ export function createPaziChannelsConfigureHandler(
         method: "qr",
       };
     }
+    await deps.onConfigured?.(result);
     respond(true, result);
   };
 }
