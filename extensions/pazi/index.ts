@@ -29,6 +29,7 @@ import {
   getProxyLastActivityAt,
   isProxyBusyForStatus,
 } from "./src/context.js";
+import { createCredentialTools } from "./src/credentials/index.js";
 import {
   createPaziFilesGet,
   createPaziFilesList,
@@ -264,6 +265,11 @@ export default {
 
     const userActionTools = createUserActionTools({ pluginConfig });
     for (const tool of userActionTools) {
+      api.registerTool(tool);
+    }
+
+    const credentialTools = createCredentialTools();
+    for (const tool of credentialTools) {
       api.registerTool(tool);
     }
 

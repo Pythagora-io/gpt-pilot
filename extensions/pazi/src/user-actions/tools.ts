@@ -77,7 +77,9 @@ async function pollUntilResolved(
           content: [
             {
               type: "text",
-              text: `Credentials received securely for ${service}. Fields: ${Object.keys(values).join(", ")}`,
+              text:
+                `Credentials received securely for ${service}. Fields: ${Object.keys(values).join(", ")}\n` +
+                "Tip: use save_credential to persist these for future sessions.",
             },
           ],
           details: { status: "completed", requestId, service, values },
