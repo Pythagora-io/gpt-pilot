@@ -55,6 +55,7 @@ import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
 import { startSlackThreadCachePersistence } from "./src/slack-thread-cache-persistence.js";
 import { registerSlackThreadReplyMode } from "./src/slack-thread-reply-mode.js";
+import { installChannelAuthCrashGuard } from "./src/suppress-channel-auth-crash.js";
 import { createUserActionTools } from "./src/user-actions/tools.js";
 
 function normalizePluginConfig(
@@ -82,6 +83,10 @@ export default {
   name: "Pazi Proxy",
   description: "Routes Anthropic calls through the Pazi API.",
   register(api: OpenClawPluginApi) {
+    // Suppress channel auth errors (e.g. expired Slack tokens) to prevent
+    // infinite restart loops — restarting won't fix invalid credentials.
+    installChannelAuthCrashGuard(api.logger);
+
     // PAZ-131: Persist proxy context to disk so it survives gateway restarts
     configurePersistenceWarnLogger((message) => {
       api.logger.warn(message);
