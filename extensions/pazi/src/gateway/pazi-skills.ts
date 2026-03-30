@@ -41,6 +41,24 @@ function resolveRequestWorkspace(
 }
 
 /**
+ * Strip a leading YAML frontmatter block from user-pasted content
+ * to prevent double-frontmatter in the written SKILL.md.
+ * Only strips if the block between `---` delimiters contains YAML-like
+ * key-value pairs (e.g. `name: value`) to avoid mangling legitimate
+ * markdown thematic breaks.
+ */
+function stripLeadingFrontmatter(text: string): string {
+  const normalized = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  if (!normalized.startsWith("---\n")) return normalized;
+  const endIndex = normalized.indexOf("\n---", 4);
+  if (endIndex === -1) return normalized;
+  const block = normalized.slice(4, endIndex);
+  // Only strip if it looks like YAML frontmatter (contains key: value lines)
+  if (!/^[a-zA-Z_][a-zA-Z0-9_-]*\s*:/m.test(block)) return normalized;
+  return normalized.slice(endIndex + 4).replace(/^\n+/, "");
+}
+
+/**
  * Split a SKILL.md file into frontmatter block and body.
  * Returns `null` frontmatter when the file doesn't start with `---`.
  */
@@ -122,10 +140,29 @@ function slugify(name: string): string {
       .trim()
       .toLowerCase()
       .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "")
+      .replace(/[^a-z0-9_-]/g, "")
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "") || "skill"
   );
+}
+
+// ---------------------------------------------------------------------------
+// pazi.skills.capabilities
+// ---------------------------------------------------------------------------
+
+export function createPaziSkillsCapabilities(deps: {
+  loadConfig: () => Record<string, unknown>;
+}): GatewayRequestHandler {
+  return async ({ respond }) => {
+    const cfg = deps.loadConfig() as SkillsLoadConfig;
+    const extraDirs = cfg.skills?.load?.extraDirs;
+    const sharedDir =
+      Array.isArray(extraDirs) && typeof extraDirs[0] === "string" ? extraDirs[0].trim() : "";
+
+    respond(true, {
+      sharedScopeSupported: Boolean(sharedDir),
+    });
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -166,11 +203,14 @@ export function createPaziSkillsGet(deps: PaziSkillsDeps): GatewayRequestHandler
     try {
       const raw = await fs.readFile(entry.filePath, "utf-8");
       const { body } = splitSkillDocument(raw);
+      // Safety: strip any residual frontmatter from body (handles double-frontmatter files)
+      const cleanBody = stripLeadingFrontmatter(body);
       respond(true, {
         skillKey,
+        name: entry.name,
         source: entry.source,
         description: entry.description ?? "",
-        content: body,
+        content: cleanBody,
         bundled: entry.source === "openclaw-bundled",
         scope: entry.source === "openclaw-extra" ? "all" : "agent",
       });
@@ -239,7 +279,14 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
       // File may not be readable; we'll build fresh frontmatter
     }
 
-    const finalContent = buildUpdatedDocument({ existingRaw, name, description, content });
+    // Strip any frontmatter from user-pasted content to prevent double-frontmatter.
+    const sanitizedContent = stripLeadingFrontmatter(content.trim());
+    const finalContent = buildUpdatedDocument({
+      existingRaw,
+      name,
+      description,
+      content: sanitizedContent,
+    });
 
     // Determine if scope is changing
     const currentIsShared = entry.source === "openclaw-extra";
@@ -252,18 +299,6 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
     let createdOverride = false;
     let oldDirToRemove: string | undefined;
 
-    // Helper to check file existence
-    const fileExists = async (filePath: string): Promise<boolean> => {
-      try {
-        await fs.access(filePath);
-        return true;
-      } catch {
-        return false;
-      }
-    };
-
-    // Check name collision across ALL locations (shared + every agent workspace).
-    // Skip the current skill's own location.
     const resolveSharedSkillsDir = () => {
       const extraDirs = (cfg as SkillsLoadConfig).skills?.load?.extraDirs;
       return Array.isArray(extraDirs) && typeof extraDirs[0] === "string"
@@ -271,38 +306,44 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
         : "";
     };
 
-    const checkGlobalCollision = async (
-      dirName: string,
-      currentFilePath: string,
-    ): Promise<boolean> => {
-      const sharedDir = resolveSharedSkillsDir();
-
-      // Check shared dir
-      if (sharedDir) {
-        const sharedFile = path.join(sharedDir, dirName, "SKILL.md");
-        if (sharedFile !== currentFilePath && (await fileExists(sharedFile))) return true;
-      }
-
-      // Check all agent workspaces
-      const allAgentIds = listAgentIds(cfg);
-      for (const id of allAgentIds) {
-        const wsDir = resolveAgentWorkspaceDir(cfg, id);
-        const agentFile = path.join(wsDir, "skills", dirName, "SKILL.md");
-        if (agentFile !== currentFilePath && (await fileExists(agentFile))) return true;
-      }
-
-      return false;
-    };
-
-    // Always check for global name collision (covers renames, scope changes, everything).
+    // Check ALL loaded skills (bundled, workspace, shared, plugin) for name collision.
+    // Skip the current skill being edited.
     const targetDirName = slugify(name);
-    if (await checkGlobalCollision(targetDirName, entry.filePath)) {
+    const collision = status.skills.find(
+      (s: { filePath: string }) =>
+        path.basename(path.dirname(s.filePath)).toLowerCase() === targetDirName &&
+        path.resolve(s.filePath) !== path.resolve(entry.filePath),
+    );
+    if (collision) {
       respond(
         false,
         undefined,
         errorShape(ErrorCodes.INVALID_REQUEST, `skill "${targetDirName}" already exists`),
       );
       return;
+    }
+
+    // Cross-workspace check: iterate ALL agent workspaces to catch collisions
+    // that buildWorkspaceSkillStatus (scoped to one workspace) cannot see.
+    const allAgentIds = listAgentIds(cfg);
+    for (const agentIdEntry of allAgentIds) {
+      if (agentIdEntry === resolved.agentId) continue; // already checked above
+      const wsDir = resolveAgentWorkspaceDir(cfg, agentIdEntry);
+      try {
+        await fs.access(path.join(wsDir, "skills", targetDirName, "SKILL.md"));
+        // Allow if this IS the skill being edited (same file path)
+        const candidatePath = path.join(wsDir, "skills", targetDirName, "SKILL.md");
+        if (path.resolve(candidatePath) !== path.resolve(entry.filePath)) {
+          respond(
+            false,
+            undefined,
+            errorShape(ErrorCodes.INVALID_REQUEST, `skill "${targetDirName}" already exists`),
+          );
+          return;
+        }
+      } catch {
+        // No collision in this workspace — continue
+      }
     }
 
     if (scopeChanging && wantShared) {
