@@ -5,6 +5,10 @@ interface SlackAccountConfig {
   enabled?: boolean;
   botToken?: string;
   appToken?: string;
+  replyToMode?: "off" | "first" | "all";
+  ackReaction?: string;
+  threadReplyMode?: "full" | "summary-only" | "quiet";
+  ackMessage?: string;
   slashCommand?: {
     enabled?: boolean;
     name?: string;
@@ -232,44 +236,44 @@ describe("createPaziChannelsConfigureHandler slash command config", () => {
   });
 });
 
-describe("createPaziChannelsConfigureHandler threadReplyMode config", () => {
-  it("stores summary-only mode with custom ack", async () => {
+describe("createPaziChannelsConfigureHandler reply mode config", () => {
+  it("stores replyToMode with custom ack reaction", async () => {
     const harness = createHarness();
     const response = await harness.invoke({
       channel: "slack",
       config: {
         botToken: "xoxb-bot",
         appToken: "xapp-app",
-        threadReplyMode: "summary-only",
-        ackMessage: "Working on it!",
+        replyToMode: "first",
+        ackReaction: "rocket",
       },
     });
 
     expect(response.ok).toBe(true);
     const cfg = harness.getConfig();
     const account = cfg.channels?.slack?.accounts?.default;
-    expect((account as Record<string, unknown>)?.threadReplyMode).toBe("summary-only");
-    expect((account as Record<string, unknown>)?.ackMessage).toBe("Working on it!");
+    expect((account as Record<string, unknown>)?.replyToMode).toBe("first");
+    expect((account as Record<string, unknown>)?.ackReaction).toBe("rocket");
   });
 
-  it("returns threadReplyMode and ackMessage in response", async () => {
+  it("returns replyToMode and ackReaction in response", async () => {
     const harness = createHarness();
     const response = await harness.invoke({
       channel: "slack",
       config: {
         botToken: "xoxb-bot",
         appToken: "xapp-app",
-        threadReplyMode: "quiet",
+        replyToMode: "off",
       },
     });
 
     expect(response.ok).toBe(true);
     const data = response.data as Record<string, unknown>;
-    expect(data.threadReplyMode).toBe("quiet");
-    expect(data.ackMessage).toBe("On it");
+    expect(data.replyToMode).toBe("off");
+    expect(data.ackReaction).toBe("eyes");
   });
 
-  it("defaults threadReplyMode to full when not provided", async () => {
+  it("defaults replyToMode to all when not provided", async () => {
     const harness = createHarness();
     const response = await harness.invoke({
       channel: "slack",
@@ -281,43 +285,62 @@ describe("createPaziChannelsConfigureHandler threadReplyMode config", () => {
 
     expect(response.ok).toBe(true);
     const data = response.data as Record<string, unknown>;
-    expect(data.threadReplyMode).toBe("full");
-    expect(data.ackMessage).toBe("On it");
+    expect(data.replyToMode).toBe("all");
+    expect(data.ackReaction).toBe("eyes");
   });
 
-  it("trims whitespace from ackMessage", async () => {
+  it("trims whitespace from ackReaction", async () => {
     const harness = createHarness();
     const response = await harness.invoke({
       channel: "slack",
       config: {
         botToken: "xoxb-bot",
         appToken: "xapp-app",
-        threadReplyMode: "summary-only",
-        ackMessage: "  Got it!  ",
+        replyToMode: "all",
+        ackReaction: "  white_check_mark  ",
       },
     });
 
     expect(response.ok).toBe(true);
     const cfg = harness.getConfig();
     const account = cfg.channels?.slack?.accounts?.default;
-    expect((account as Record<string, unknown>)?.ackMessage).toBe("Got it!");
+    expect((account as Record<string, unknown>)?.ackReaction).toBe("white_check_mark");
   });
 
-  it("ignores invalid threadReplyMode values", async () => {
-    const harness = createHarness();
+  it("removes legacy threadReplyMode and ackMessage when reconfiguring", async () => {
+    const harness = createHarness({
+      channels: {
+        slack: {
+          enabled: true,
+          accounts: {
+            default: {
+              enabled: true,
+              botToken: "xoxb-old",
+              appToken: "xapp-old",
+              threadReplyMode: "summary-only",
+              ackMessage: "Old ack",
+            },
+          },
+        },
+      },
+    });
+
     const response = await harness.invoke({
       channel: "slack",
       config: {
-        botToken: "xoxb-bot",
-        appToken: "xapp-app",
-        threadReplyMode: "invalid" as "full",
+        botToken: "xoxb-new",
+        appToken: "xapp-new",
+        replyToMode: "first",
+        ackReaction: "thumbsup",
       },
     });
 
     expect(response.ok).toBe(true);
     const cfg = harness.getConfig();
     const account = cfg.channels?.slack?.accounts?.default;
-    // Invalid mode should not be persisted
     expect((account as Record<string, unknown>)?.threadReplyMode).toBeUndefined();
+    expect((account as Record<string, unknown>)?.ackMessage).toBeUndefined();
+    expect((account as Record<string, unknown>)?.replyToMode).toBe("first");
+    expect((account as Record<string, unknown>)?.ackReaction).toBe("thumbsup");
   });
 });
