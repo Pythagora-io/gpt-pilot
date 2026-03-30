@@ -1,6 +1,6 @@
 type ChannelType = "slack" | "telegram" | "whatsapp";
 
-export type SlackThreadReplyMode = "full" | "summary-only" | "quiet";
+type ReplyToMode = "off" | "first" | "all";
 
 interface ChannelConfigureParams {
   channel: ChannelType;
@@ -16,8 +16,8 @@ interface ChannelConfigureParams {
     allowFrom?: string[];
     slashCommandName?: string;
     token?: string;
-    threadReplyMode?: SlackThreadReplyMode;
-    ackMessage?: string;
+    replyToMode?: ReplyToMode;
+    ackReaction?: string;
   };
 }
 
@@ -59,8 +59,8 @@ interface ChannelConfigureResult {
   dmPolicy?: "open" | "allowlist";
   groupPolicy?: "open" | "allowlist";
   allowFrom?: string[];
-  threadReplyMode?: SlackThreadReplyMode;
-  ackMessage?: string;
+  replyToMode?: ReplyToMode;
+  ackReaction?: string;
   onboarding?: TelegramOnboardingResult | WhatsAppOnboardingResult;
 }
 
@@ -93,6 +93,13 @@ interface ChannelConfigureDeps {
 }
 
 const VALID_CHANNELS: ReadonlySet<string> = new Set(["slack", "telegram", "whatsapp"]);
+const VALID_ACK_REACTIONS: ReadonlySet<string> = new Set([
+  "eyes",
+  "thumbsup",
+  "rocket",
+  "white_check_mark",
+  "hourglass_flowing_sand",
+]);
 const ERROR_INVALID_REQUEST = "INVALID_REQUEST";
 const ERROR_UNAVAILABLE = "UNAVAILABLE";
 const TELEGRAM_PAIRING_POLL_INTERVAL_MS = 3000;
@@ -205,13 +212,14 @@ function validateParams(raw: unknown): {
         slashCommandName:
           typeof cfg.slashCommandName === "string" ? cfg.slashCommandName : undefined,
         token: typeof cfg.token === "string" ? cfg.token : undefined,
-        threadReplyMode:
-          cfg.threadReplyMode === "summary-only" || cfg.threadReplyMode === "quiet"
-            ? cfg.threadReplyMode
-            : cfg.threadReplyMode === "full"
-              ? "full"
-              : undefined,
-        ackMessage: typeof cfg.ackMessage === "string" ? cfg.ackMessage : undefined,
+        replyToMode:
+          cfg.replyToMode === "off" || cfg.replyToMode === "first" || cfg.replyToMode === "all"
+            ? cfg.replyToMode
+            : undefined,
+        ackReaction:
+          typeof cfg.ackReaction === "string" && VALID_ACK_REACTIONS.has(cfg.ackReaction.trim())
+            ? cfg.ackReaction.trim()
+            : undefined,
       },
     },
   };
@@ -307,8 +315,8 @@ function applySlackConfig(
               // Always reply inside threads so the bot doesn't spam the channel.
               replyToMode: "all",
               ...(input.name ? { name: input.name } : {}),
-              ...(input.threadReplyMode ? { threadReplyMode: input.threadReplyMode } : {}),
-              ...(input.ackMessage?.trim() ? { ackMessage: input.ackMessage.trim() } : {}),
+              ...(input.replyToMode ? { replyToMode: input.replyToMode } : {}),
+              ...(input.ackReaction?.trim() ? { ackReaction: input.ackReaction.trim() } : {}),
               ...(slashCommandName
                 ? {
                     slashCommand: {
@@ -508,8 +516,8 @@ export function createPaziChannelsConfigureHandler(
               inputConfig.accessMode === "closed"
                 ? normalizeSlackAllowFrom(inputConfig.allowFrom)
                 : ["*"],
-            threadReplyMode: inputConfig.threadReplyMode ?? "full",
-            ackMessage: inputConfig.ackMessage?.trim() || "On it",
+            replyToMode: inputConfig.replyToMode ?? "all",
+            ackReaction: inputConfig.ackReaction?.trim() || "eyes",
           }
         : {}),
     };
