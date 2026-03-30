@@ -20,6 +20,7 @@ let lastProxyActivityAtMs: number | null = null;
 let persistencePath: string | null = null;
 let diskLoaded = false;
 let persistenceWarnLogger: ((message: string) => void) | null = null;
+let useDirectWrite = false; // sticky flag: skip atomic rename after EPERM
 
 function warnPersistence(message: string, err?: unknown): void {
   const formatErr = err instanceof Error ? err.message : String(err);
@@ -33,6 +34,15 @@ function warnPersistence(message: string, err?: unknown): void {
   console.warn(text);
 }
 
+function isEperm(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as NodeJS.ErrnoException).code === "EPERM"
+  );
+}
+
 /**
  * Configure the file path for persisting proxy context.
  * Called once from the pazi plugin's register() function.
@@ -43,11 +53,13 @@ export function configurePersistencePath(filePath: string): void {
   if (!normalized) {
     persistencePath = null;
     diskLoaded = false;
+    useDirectWrite = false;
     warnPersistence("disabled because configured path was empty");
     return;
   }
   persistencePath = normalized;
   diskLoaded = false;
+  useDirectWrite = false;
 }
 
 /**
@@ -114,19 +126,60 @@ export function setProxyContext(ctx: ProxyContext): void {
 }
 
 /**
- * Best-effort persist context to disk using atomic write-then-rename.
- * Writes to a temp file first, then renames — so a kill mid-write
- * can never leave a truncated proxy-context.json.
+ * Best-effort persist context to disk.
+ * Primary path: atomic write-then-rename (safe against kill mid-write).
+ * Fallback: direct write when rename fails with EPERM (overlay filesystem).
  */
 function persistToDisk(ctx: ProxyContext): void {
   if (!persistencePath) return;
+  const data = JSON.stringify(ctx, null, 2) + "\n";
+
+  // Fast path: overlay filesystem detected, skip atomic rename
+  if (useDirectWrite) {
+    try {
+      const dir = path.dirname(persistencePath);
+      fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+      fs.writeFileSync(persistencePath, data, "utf8");
+      fs.chmodSync(persistencePath, 0o600);
+    } catch (err) {
+      warnPersistence(`failed to persist context to ${persistencePath}`, err);
+    }
+    return;
+  }
+
+  // Atomic path: write to temp, then rename
+  const tmpPath = `${persistencePath}.${process.pid}.tmp`;
   try {
     const dir = path.dirname(persistencePath);
     fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
-    const tmpPath = `${persistencePath}.${process.pid}.tmp`;
-    fs.writeFileSync(tmpPath, JSON.stringify(ctx, null, 2) + "\n", "utf8");
+    fs.writeFileSync(tmpPath, data, "utf8");
     fs.chmodSync(tmpPath, 0o600);
-    fs.renameSync(tmpPath, persistencePath);
+
+    try {
+      fs.renameSync(tmpPath, persistencePath);
+    } catch (renameErr) {
+      // Clean up temp file best-effort
+      try {
+        fs.rmSync(tmpPath, { force: true });
+      } catch {
+        /* ignore */
+      }
+
+      if (!isEperm(renameErr)) {
+        throw renameErr; // re-throw non-EPERM to outer catch
+      }
+
+      // EPERM: overlay filesystem — switch to direct writes permanently
+      useDirectWrite = true;
+      warnPersistence(
+        `rename failed with EPERM for ${persistencePath}; falling back to direct writes`,
+        renameErr,
+      );
+
+      // Write directly this time
+      fs.writeFileSync(persistencePath, data, "utf8");
+      fs.chmodSync(persistencePath, 0o600);
+    }
   } catch (err) {
     // Best-effort: disk write failed, in-memory is still authoritative.
     warnPersistence(`failed to persist context to ${persistencePath}`, err);
@@ -181,4 +234,5 @@ export function _resetForTest(): void {
   persistencePath = null;
   diskLoaded = false;
   persistenceWarnLogger = null;
+  useDirectWrite = false;
 }
