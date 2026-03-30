@@ -93,6 +93,13 @@ interface ChannelConfigureDeps {
 }
 
 const VALID_CHANNELS: ReadonlySet<string> = new Set(["slack", "telegram", "whatsapp"]);
+const VALID_ACK_REACTIONS: ReadonlySet<string> = new Set([
+  "eyes",
+  "thumbsup",
+  "rocket",
+  "white_check_mark",
+  "hourglass_flowing_sand",
+]);
 const ERROR_INVALID_REQUEST = "INVALID_REQUEST";
 const ERROR_UNAVAILABLE = "UNAVAILABLE";
 const TELEGRAM_PAIRING_POLL_INTERVAL_MS = 3000;
@@ -209,7 +216,10 @@ function validateParams(raw: unknown): {
           cfg.replyToMode === "off" || cfg.replyToMode === "first" || cfg.replyToMode === "all"
             ? cfg.replyToMode
             : undefined,
-        ackReaction: typeof cfg.ackReaction === "string" ? cfg.ackReaction : undefined,
+        ackReaction:
+          typeof cfg.ackReaction === "string" && VALID_ACK_REACTIONS.has(cfg.ackReaction.trim())
+            ? cfg.ackReaction.trim()
+            : undefined,
       },
     },
   };
