@@ -265,11 +265,7 @@ export function createPaziFilesDelete(resolveWorkspace: ResolveWorkspace): Gatew
     const resolvedRoot = path.resolve(workspaceDir);
     const filePath = path.resolve(workspaceDir, name);
     if (!filePath.startsWith(resolvedRoot + path.sep) || filePath === resolvedRoot) {
-      respond(
-        false,
-        undefined,
-        errorShape(ErrorCodes.INVALID_REQUEST, `invalid file: "${name}"`),
-      );
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `invalid file: "${name}"`));
       return;
     }
 
@@ -277,11 +273,7 @@ export function createPaziFilesDelete(resolveWorkspace: ResolveWorkspace): Gatew
     try {
       const stat = await fs.lstat(filePath);
       if (!stat.isFile()) {
-        respond(
-          false,
-          undefined,
-          errorShape(ErrorCodes.INVALID_REQUEST, `not a file: "${name}"`),
-        );
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `not a file: "${name}"`));
         return;
       }
     } catch {
