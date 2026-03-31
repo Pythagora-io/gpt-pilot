@@ -242,3 +242,73 @@ export function createPaziFilesSet(resolveWorkspace: ResolveWorkspace): GatewayR
     });
   };
 }
+
+export function createPaziFilesDelete(resolveWorkspace: ResolveWorkspace): GatewayRequestHandler {
+  return async ({ params, respond }) => {
+    const resolved = resolveRequestWorkspace(params, resolveWorkspace);
+    if (!resolved) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "unknown agent id"));
+      return;
+    }
+    const { agentId, workspaceDir } = resolved;
+    const name = typeof params.name === "string" ? params.name.trim() : "";
+    if (!name || name.includes("\0")) {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.INVALID_REQUEST, `invalid file name "${name}"`),
+      );
+      return;
+    }
+
+    // Validate the resolved path stays within the workspace root
+    const resolvedRoot = path.resolve(workspaceDir);
+    const filePath = path.resolve(workspaceDir, name);
+    if (!filePath.startsWith(resolvedRoot + path.sep) || filePath === resolvedRoot) {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.INVALID_REQUEST, `invalid file: "${name}"`),
+      );
+      return;
+    }
+
+    // Verify it's a file (not a directory or symlink)
+    try {
+      const stat = await fs.lstat(filePath);
+      if (!stat.isFile()) {
+        respond(
+          false,
+          undefined,
+          errorShape(ErrorCodes.INVALID_REQUEST, `not a file: "${name}"`),
+        );
+        return;
+      }
+    } catch {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.INVALID_REQUEST, `file not found: "${name}"`),
+      );
+      return;
+    }
+
+    try {
+      await fs.unlink(filePath);
+    } catch (err: unknown) {
+      // ENOENT between stat and unlink — treat as success (idempotent)
+      if (err instanceof Error && "code" in err && err.code === "ENOENT") {
+        respond(true, { ok: true, agentId, workspace: workspaceDir });
+        return;
+      }
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, "delete_failed"));
+      return;
+    }
+
+    respond(true, {
+      ok: true,
+      agentId,
+      workspace: workspaceDir,
+    });
+  };
+}
