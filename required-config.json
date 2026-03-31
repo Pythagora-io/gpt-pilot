@@ -2,7 +2,10 @@
   "plugins": {
     "entries": {
       "pazi": {
-        "enabled": true
+        "enabled": true,
+        "config": {
+          "browserUseEnabled": true
+        }
       }
     }
   }
