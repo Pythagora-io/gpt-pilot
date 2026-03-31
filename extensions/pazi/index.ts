@@ -31,6 +31,7 @@ import {
 } from "./src/context.js";
 import { createCredentialTools } from "./src/credentials/index.js";
 import {
+  createPaziFilesDelete,
   createPaziFilesGet,
   createPaziFilesList,
   createPaziFilesSet,
@@ -134,6 +135,7 @@ export default {
     api.registerGatewayMethod("pazi.files.list", createPaziFilesList(resolveWorkspace));
     api.registerGatewayMethod("pazi.files.get", createPaziFilesGet(resolveWorkspace));
     api.registerGatewayMethod("pazi.files.set", createPaziFilesSet(resolveWorkspace));
+    api.registerGatewayMethod("pazi.files.delete", createPaziFilesDelete(resolveWorkspace));
     api.registerGatewayMethod("pazi.memory.get", createPaziMemoryGet(resolveWorkspace));
     api.registerGatewayMethod(
       "skills.create",
