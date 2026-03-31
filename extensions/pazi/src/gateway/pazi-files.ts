@@ -242,3 +242,64 @@ export function createPaziFilesSet(resolveWorkspace: ResolveWorkspace): GatewayR
     });
   };
 }
+
+export function createPaziFilesDelete(resolveWorkspace: ResolveWorkspace): GatewayRequestHandler {
+  return async ({ params, respond }) => {
+    const resolved = resolveRequestWorkspace(params, resolveWorkspace);
+    if (!resolved) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "unknown agent id"));
+      return;
+    }
+    const { agentId, workspaceDir } = resolved;
+    const name = typeof params.name === "string" ? params.name.trim() : "";
+    if (!name || name.includes("\0")) {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.INVALID_REQUEST, `invalid file name "${name}"`),
+      );
+      return;
+    }
+
+    // Use readFileWithinRoot to validate the path is safe (within root, no traversal)
+    try {
+      await readFileWithinRoot({
+        rootDir: workspaceDir,
+        relativePath: name,
+      });
+    } catch (err) {
+      if (err instanceof SafeOpenError) {
+        if (err.code === "not-found") {
+          respond(
+            false,
+            undefined,
+            errorShape(ErrorCodes.INVALID_REQUEST, `file not found: "${name}"`),
+          );
+          return;
+        }
+        respond(
+          false,
+          undefined,
+          errorShape(ErrorCodes.INVALID_REQUEST, `invalid file: ${err.message}`),
+        );
+        return;
+      }
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, "delete_failed"));
+      return;
+    }
+
+    const filePath = path.join(workspaceDir, name);
+    try {
+      await fs.unlink(filePath);
+    } catch {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, "delete_failed"));
+      return;
+    }
+
+    respond(true, {
+      ok: true,
+      agentId,
+      workspace: workspaceDir,
+    });
+  };
+}
