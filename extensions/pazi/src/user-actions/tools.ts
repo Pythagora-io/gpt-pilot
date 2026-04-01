@@ -122,7 +122,7 @@ export function createUserActionTools(deps: UserActionToolsDeps): AnyAgentTool[]
         "Prompt the user to enter credentials (API keys, passwords, tokens). " +
         "Opens a secure form in the user's dashboard. Waits for the user to submit " +
         "and returns the entered values. Works in all session types (text, voice, web, Slack). " +
-        "Use when you need credentials that cannot be obtained through Pipedream integrations.",
+        "Use when you need credentials for a third-party service.",
       parameters: Type.Object(
         {
           service: Type.String({ description: "Name of the service (e.g., 'GitHub', 'AWS')" }),

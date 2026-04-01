@@ -15,11 +15,9 @@ _Not yet configured. Connect monitoring tools during onboarding._
 
 <!-- List all monitoring tools with how to access them -->
 
-| Tool              | What it covers   | Access method                       |
-| ----------------- | ---------------- | ----------------------------------- |
-| _example: Sentry_ | _Runtime errors_ | _Pipedream integration / API token_ |
-
-**Prefer Pipedream integrations** over direct API calls where available. Use `pipedream_find_integrations` to check if a tool is supported.
+| Tool              | What it covers   | Access method                   |
+| ----------------- | ---------------- | ------------------------------- |
+| _example: Sentry_ | _Runtime errors_ | _API token in .credentials.env_ |
 
 ## What "Normal" Looks Like
 

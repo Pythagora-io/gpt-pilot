@@ -109,8 +109,6 @@ After connecting:
 - Ask the user to explain the high-level architecture
 - Update `infra-architecture` skill with service topology
 
-For Pipedream-supported git providers, prefer using Pipedream integrations.
-
 ### Phase 2: Monitoring & Logging
 
 **Next up: observability.** With monitoring access, the agent can proactively detect issues.
@@ -126,11 +124,10 @@ Ask what tools they use:
 For each tool:
 
 1. Ask for read-only API token or viewer access
-2. **Check if Pipedream has an integration** — use `pipedream_find_integrations` to search. If available, prefer Pipedream OAuth over raw API tokens.
-3. Test the connection (list projects, fetch recent events)
-4. Confirm: "✅ Connected to Sentry — I can see projects: api, frontend, worker"
-5. Store credentials in `.credentials.env`
-6. Update `infra-monitoring` skill with tool details, access patterns, and what "normal" looks like
+2. Test the connection (list projects, fetch recent events)
+3. Confirm: "✅ Connected to Sentry — I can see projects: api, frontend, worker"
+4. Store credentials in `.credentials.env`
+5. Update `infra-monitoring` skill with tool details, access patterns, and what "normal" looks like
 
 **After connecting each tool, audit their alerting setup and suggest improvements:**
 
@@ -185,12 +182,11 @@ Recommend connecting it: "When I find an issue — say a recurring error in Sent
 
 For supported tools:
 
-1. Check if Pipedream has an integration (`pipedream_find_integrations`)
-2. If yes, prefer Pipedream OAuth — it's the easiest setup
-3. Test: list projects/teams to confirm access
-4. Ask which project/board/team to file DevOps issues under
-5. Confirm: "✅ Connected to Linear — I'll create tickets in the DevOps project when I find issues"
-6. Update `infra-monitoring` skill with the project management setup (tool, project, defaults)
+1. Ask for an API token or use `ask_for_credentials`
+2. Test: list projects/teams to confirm access
+3. Ask which project/board/team to file DevOps issues under
+4. Confirm: "✅ Connected to Linear — I'll create tickets in the DevOps project when I find issues"
+5. Update `infra-monitoring` skill with the project management setup (tool, project, defaults)
 
 Write access is needed here — the whole point is creating tickets.
 

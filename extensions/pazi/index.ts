@@ -52,7 +52,6 @@ import { paziBootstrapActionsHook } from "./src/hooks/pazi-bootstrap-actions.js"
 import { paziBootstrapUserHook } from "./src/hooks/pazi-bootstrap-user.js";
 import { registerProxyAgentSyncHook } from "./src/hooks/pazi-proxy-agent-sync.js";
 import { registerToolResultPersistHook } from "./src/hooks/pazi-tool-result-persist.js";
-import { createPipedreamTools } from "./src/pipedream/tools.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
@@ -128,10 +127,6 @@ export default {
       logger: api.logger,
     });
 
-    api.registerGatewayMethod("pazi.integration.emit", ({ params, respond, context }) => {
-      context.broadcast("integration", params);
-      respond(true, { emitted: true });
-    });
     api.registerGatewayMethod("pazi.files.list", createPaziFilesList(resolveWorkspace));
     api.registerGatewayMethod("pazi.files.get", createPaziFilesGet(resolveWorkspace));
     api.registerGatewayMethod("pazi.files.set", createPaziFilesSet(resolveWorkspace));
@@ -257,13 +252,6 @@ export default {
 
     // PAZ-206: Slack thread reply mode — suppress intermediate messages
     registerSlackThreadReplyMode(api);
-
-    const tools = createPipedreamTools({
-      pluginConfig,
-    });
-    for (const tool of tools) {
-      api.registerTool(tool);
-    }
 
     const userActionTools = createUserActionTools({ pluginConfig });
     for (const tool of userActionTools) {

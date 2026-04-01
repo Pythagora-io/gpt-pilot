@@ -47,11 +47,11 @@ _Not yet configured._
 
 ## Access Paths
 
-<!-- How to reach each system — prefer Pipedream integrations where available -->
+<!-- How to reach each system -->
 
-| System    | How to access                                           |
-| --------- | ------------------------------------------------------- |
-| _example_ | _Pipedream integration / API token in .credentials.env_ |
+| System    | How to access                   |
+| --------- | ------------------------------- |
+| _example_ | _API token in .credentials.env_ |
 
 ## Data Dependencies
 
