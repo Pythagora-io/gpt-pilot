@@ -327,6 +327,10 @@ function applySlackConfig(
               blockStreaming: false,
               // Always reply inside threads so the bot doesn't spam the channel.
               replyToMode: "all",
+              // Enable bot-to-bot communication by default so multi-agent setups
+              // work out of the box. Safety is preserved by requireMention (agents
+              // only respond when explicitly @mentioned, not on every bot message).
+              allowBots: true,
               ...(input.name ? { name: input.name } : {}),
               ...(input.replyToMode ? { replyToMode: input.replyToMode } : {}),
               ...(input.ackReaction?.trim() ? { ackReaction: input.ackReaction.trim() } : {}),

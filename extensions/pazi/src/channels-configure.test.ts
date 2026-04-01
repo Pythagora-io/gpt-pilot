@@ -104,6 +104,21 @@ describe("createPaziChannelsConfigureHandler account config writes", () => {
     expect(harness.startChannel).toHaveBeenCalledWith("slack", "default");
   });
 
+  it("defaults allowBots to true for new Slack accounts", async () => {
+    const harness = createHarness();
+    await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-bots-test",
+        appToken: "xapp-bots-test",
+      },
+    });
+
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect((account as Record<string, unknown>)?.allowBots).toBe(true);
+  });
+
   it("writes Telegram default account to channels.telegram.accounts.default", async () => {
     const harness = createHarness();
     const response = await harness.invoke({
