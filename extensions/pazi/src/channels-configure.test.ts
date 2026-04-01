@@ -5,6 +5,7 @@ interface SlackAccountConfig {
   enabled?: boolean;
   botToken?: string;
   appToken?: string;
+  allowBots?: boolean;
   replyToMode?: "off" | "first" | "all";
   ackReaction?: string;
   threadReplyMode?: "full" | "summary-only" | "quiet";
@@ -102,6 +103,49 @@ describe("createPaziChannelsConfigureHandler account config writes", () => {
     expect(cfg.channels?.slack?.appToken).toBeUndefined();
     expect(harness.stopChannel).toHaveBeenCalledWith("slack", "default");
     expect(harness.startChannel).toHaveBeenCalledWith("slack", "default");
+  });
+
+  it("defaults allowBots to true for new Slack accounts", async () => {
+    const harness = createHarness();
+    await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-bots-test",
+        appToken: "xapp-bots-test",
+      },
+    });
+
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect((account as Record<string, unknown>)?.allowBots).toBe(true);
+  });
+
+  it("preserves explicit allowBots: false on reconfigure", async () => {
+    const harness = createHarness({
+      channels: {
+        slack: {
+          accounts: {
+            default: {
+              enabled: true,
+              botToken: "xoxb-old",
+              appToken: "xapp-old",
+              allowBots: false,
+            },
+          },
+        },
+      },
+    });
+    await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-new",
+        appToken: "xapp-new",
+      },
+    });
+
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect((account as Record<string, unknown>)?.allowBots).toBe(false);
   });
 
   it("writes Telegram default account to channels.telegram.accounts.default", async () => {
