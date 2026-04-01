@@ -330,7 +330,11 @@ function applySlackConfig(
               // Enable bot-to-bot communication by default so multi-agent setups
               // work out of the box. Safety is preserved by requireMention (agents
               // only respond when explicitly @mentioned, not on every bot message).
-              allowBots: true,
+              // Only set the default when the account doesn't already have an
+              // explicit value — avoids overriding a deliberate opt-out on reconfigure.
+              ...((existingAccount as Record<string, unknown>)?.allowBots === undefined
+                ? { allowBots: true }
+                : {}),
               ...(input.name ? { name: input.name } : {}),
               ...(input.replyToMode ? { replyToMode: input.replyToMode } : {}),
               ...(input.ackReaction?.trim() ? { ackReaction: input.ackReaction.trim() } : {}),
