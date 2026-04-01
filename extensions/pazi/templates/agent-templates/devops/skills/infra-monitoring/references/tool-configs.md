@@ -8,14 +8,14 @@ Detailed setup for each monitoring tool. **Never include actual tokens or creden
 
 - **Org:** _not configured_
 - **Projects:** _not configured_
-- **Access:** Pipedream integration or `SENTRY_AUTH_TOKEN` in `.credentials.env`
+- **Access:** `SENTRY_AUTH_TOKEN` in `.credentials.env`
 
 ### Useful queries:
 
 ```
-# Via Pipedream:
-# pipedream_use_integration sentry list-project-issues
-# pipedream_use_integration sentry list-project-events
+# Via Sentry API:
+# curl -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" https://sentry.io/api/0/projects/{org}/{project}/issues/
+# curl -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" https://sentry.io/api/0/projects/{org}/{project}/events/
 ```
 
 ## Better Stack / Logging Tool

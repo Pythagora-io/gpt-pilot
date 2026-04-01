@@ -22,7 +22,7 @@ Cloud browser sessions for web interaction, scraping, form filling, and screensh
 ## When to Use
 
 - **Use Browser Use** when you need to navigate a website, interact with a UI, scrape data, or the service has no API
-- **Use Pipedream** when you need a specific API action and the app is in Pipedream's catalog
+- **Use ask_for_credentials** when you need API keys, tokens, or passwords for a service
 - **Use ask_for_browser_login** when you need the USER to log in (not the agent)
 
 ## Lifecycle

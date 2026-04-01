@@ -4,12 +4,10 @@
 
 These tools work across all session types (text, voice, web, Slack):
 
-| Tool                            | Description                                                                                             |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `ask_for_credentials`           | Prompt user for credentials (API keys, passwords, tokens). Opens a secure form. Returns entered values. |
-| `ask_for_browser_login`         | Prompt user to complete a browser login. Shows link + confirmation. Returns when done.                  |
-| `pipedream_request_integration` | Request an OAuth integration connection via Pipedream.                                                  |
-| `pipedream_wait_for_connection` | Wait for Pipedream OAuth flow to complete.                                                              |
+| Tool                    | Description                                                                                             |
+| ----------------------- | ------------------------------------------------------------------------------------------------------- |
+| `ask_for_credentials`   | Prompt user for credentials (API keys, passwords, tokens). Opens a secure form. Returns entered values. |
+| `ask_for_browser_login` | Prompt user to complete a browser login. Shows link + confirmation. Returns when done.                  |
 
 ### Voice-Only Client Tools
 
@@ -40,7 +38,6 @@ Format: `PAZI_COMMAND:COMMAND_NAME:key=value:key=value`
 - **NEVER use PAZI_COMMAND for credentials or browser login** — use `ask_for_credentials` or `ask_for_browser_login` tools
 - Use `ask_for_credentials` for API keys, passwords, tokens
 - Use `ask_for_browser_login` when user must log into a site in their browser
-- Use Pipedream tools when an OAuth integration is available
 - Credential values are sensitive — do not echo them in chat messages
 - URL-encode values in text markers (spaces -> `%20`, colons -> `%3A`)
 - Only one `PAZI_COMMAND:` marker per message
