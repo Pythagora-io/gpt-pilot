@@ -1,3 +1,5 @@
+import type { SlackThreadReplyMode } from "./slack-thread-reply-mode.js";
+
 type ChannelType = "slack" | "telegram" | "whatsapp";
 
 type ReplyToMode = "off" | "first" | "all";
@@ -18,6 +20,8 @@ interface ChannelConfigureParams {
     token?: string;
     replyToMode?: ReplyToMode;
     ackReaction?: string;
+    threadReplyMode?: SlackThreadReplyMode;
+    ackMessage?: string;
   };
 }
 
@@ -61,6 +65,8 @@ interface ChannelConfigureResult {
   allowFrom?: string[];
   replyToMode?: ReplyToMode;
   ackReaction?: string;
+  threadReplyMode?: SlackThreadReplyMode;
+  ackMessage?: string;
   onboarding?: TelegramOnboardingResult | WhatsAppOnboardingResult;
 }
 
@@ -221,6 +227,16 @@ function validateParams(raw: unknown): {
           typeof cfg.ackReaction === "string" && VALID_ACK_REACTIONS.has(cfg.ackReaction.trim())
             ? cfg.ackReaction.trim()
             : undefined,
+        threadReplyMode:
+          cfg.threadReplyMode === "full" ||
+          cfg.threadReplyMode === "summary-only" ||
+          cfg.threadReplyMode === "quiet"
+            ? cfg.threadReplyMode
+            : undefined,
+        ackMessage:
+          typeof cfg.ackMessage === "string" && cfg.ackMessage.trim().length > 0
+            ? cfg.ackMessage.trim()
+            : undefined,
       },
     },
   };
@@ -234,15 +250,6 @@ function normalizeSlackAllowFrom(input: string[] | undefined): string[] {
 
 function normalizeBindingChannel(channel: string): string {
   return channel.trim().toLowerCase();
-}
-
-function removeLegacySlackReplySettings(account: unknown): Record<string, unknown> {
-  if (!account || typeof account !== "object") {
-    return {};
-  }
-  const raw = account as Record<string, unknown>;
-  const { threadReplyMode: _legacyThreadReplyMode, ackMessage: _legacyAckMessage, ...rest } = raw;
-  return rest;
 }
 
 function upsertChannelAgentBinding(
@@ -299,9 +306,10 @@ function applySlackConfig(
     input.slashCommandName !== undefined
       ? sanitizeSlashCommandName(input.slashCommandName)
       : undefined;
-  const existingAccount = removeLegacySlackReplySettings(
-    cfg.channels?.slack?.accounts?.[accountId],
-  );
+  const existingAccount = (cfg.channels?.slack?.accounts?.[accountId] ?? {}) as Record<
+    string,
+    unknown
+  >;
 
   return upsertChannelAgentBinding(
     {
@@ -338,6 +346,8 @@ function applySlackConfig(
               ...(input.name ? { name: input.name } : {}),
               ...(input.replyToMode ? { replyToMode: input.replyToMode } : {}),
               ...(input.ackReaction?.trim() ? { ackReaction: input.ackReaction.trim() } : {}),
+              ...(input.threadReplyMode ? { threadReplyMode: input.threadReplyMode } : {}),
+              ...(input.ackMessage?.trim() ? { ackMessage: input.ackMessage.trim() } : {}),
               ...(slashCommandName
                 ? {
                     slashCommand: {
@@ -539,6 +549,8 @@ export function createPaziChannelsConfigureHandler(
                 : ["*"],
             replyToMode: inputConfig.replyToMode ?? "all",
             ackReaction: inputConfig.ackReaction?.trim() || "eyes",
+            threadReplyMode: inputConfig.threadReplyMode ?? "full",
+            ackMessage: inputConfig.ackMessage?.trim() || undefined,
           }
         : {}),
     };
