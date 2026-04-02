@@ -56,6 +56,7 @@ import { registerBrowserGuardHook } from "./src/hooks/pazi-browser-guard.js";
 import { registerBrowserPromptHook } from "./src/hooks/pazi-browser-prompt.js";
 import { registerProxyAgentSyncHook } from "./src/hooks/pazi-proxy-agent-sync.js";
 import { registerToolResultPersistHook } from "./src/hooks/pazi-tool-result-persist.js";
+import { createPaziBrowserEnabledHandler } from "./src/proxy/pazi-browser-enabled.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
@@ -120,6 +121,11 @@ export default {
         ? api.config.gateway.auth.token
         : undefined;
     const contextHandler = createPaziContextHandler({
+      configToken: gatewayAuthToken,
+      env: process.env,
+      logger: api.logger,
+    });
+    const browserEnabledHandler = createPaziBrowserEnabledHandler({
       configToken: gatewayAuthToken,
       env: process.env,
       logger: api.logger,
@@ -300,6 +306,20 @@ export default {
           return;
         }
         await contextHandler(req, res);
+      },
+    });
+
+    api.registerHttpRoute({
+      path: "/pazi/browser-enabled",
+      auth: "gateway",
+      handler: async (req, res) => {
+        if (req.method !== "POST") {
+          res.statusCode = 404;
+          res.setHeader("Content-Type", "text/plain; charset=utf-8");
+          res.end("Not Found");
+          return;
+        }
+        await browserEnabledHandler(req, res);
       },
     });
 
