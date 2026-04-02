@@ -53,6 +53,7 @@ import { paziBootstrapUserHook } from "./src/hooks/pazi-bootstrap-user.js";
 import { registerProxyAgentSyncHook } from "./src/hooks/pazi-proxy-agent-sync.js";
 import { registerToolResultPersistHook } from "./src/hooks/pazi-tool-result-persist.js";
 import { registerWebchatFileSupportHook } from "./src/hooks/pazi-webchat-file-support.js";
+import { buildPaziImageGenerationProvider } from "./src/image-generation/provider.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
@@ -277,6 +278,11 @@ export default {
         api.registerTool(tool);
       }
     }
+
+    // PAZ-282: Register Pazi image generation provider
+    api.registerImageGenerationProvider(
+      buildPaziImageGenerationProvider({ pluginConfig, env: process.env }),
+    );
 
     api.registerHttpRoute({
       path: "/pazi/context",
