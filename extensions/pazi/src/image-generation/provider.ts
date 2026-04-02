@@ -175,6 +175,7 @@ export function buildPaziImageGenerationProvider(params?: {
         model: req.model || PAZI_IMAGE_MODEL,
         metadata: {
           imageId: data.imageId,
+          b64_json: data.b64_json,
           costUsd: data.costUsd,
           creditsDeducted: data.creditsDeducted,
         },
