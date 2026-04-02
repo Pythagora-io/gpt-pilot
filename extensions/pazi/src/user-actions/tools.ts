@@ -354,11 +354,8 @@ export function createUserActionTools(deps: UserActionToolsDeps): AnyAgentTool[]
           );
 
           // 4. If approved, update local context
-          const resultText = result.content[0]?.text ?? "";
-          if (
-            resultText.includes('"status":"completed"') ||
-            resultText.includes('"enabled":true')
-          ) {
+          const details = result.details as Record<string, unknown> | undefined;
+          if (details?.status === "completed" || details?.enabled === true) {
             await deps.onBrowserPermissionGranted?.();
           }
 
