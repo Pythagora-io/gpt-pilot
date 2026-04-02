@@ -175,6 +175,9 @@ export function buildPaziImageGenerationProvider(params?: {
         model: req.model || PAZI_IMAGE_MODEL,
         metadata: {
           imageId: data.imageId,
+          // TODO(PAZ-282): b64_json here is a temporary unblock for dev/QA — ~300KB+ over
+          // WebSocket per generation. Production path should rely on presigned S3 URLs via
+          // imageId + GET /images/:imageId/url. Remove b64_json once S3 storage is reliable.
           b64_json: data.b64_json,
           costUsd: data.costUsd,
           creditsDeducted: data.creditsDeducted,
