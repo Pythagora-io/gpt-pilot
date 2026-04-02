@@ -5,6 +5,7 @@ import { createUserAction, getUserAction } from "./api.js";
 
 export type UserActionToolsDeps = {
   pluginConfig: Record<string, unknown> | null;
+  onBrowserPermissionGranted?: () => Promise<void>;
 };
 
 type AgentToolResult = {
@@ -50,7 +51,7 @@ async function pollUntilResolved(
   pluginConfig: Record<string, unknown> | null,
   requestId: string,
   service: string,
-  kind: "credentials" | "browser_login",
+  kind: "credentials" | "browser_login" | "browser_permission",
   timeoutMs: number,
   pollIntervalMs: number,
   signal?: AbortSignal,
@@ -84,6 +85,14 @@ async function pollUntilResolved(
           ],
           details: { status: "completed", requestId, service, values },
         };
+      }
+      if (kind === "browser_permission") {
+        return json({
+          status: "completed",
+          requestId,
+          enabled: true,
+          message: "Browser permission granted. Browsing tools are now available.",
+        });
       }
       return json({
         status: "completed",
@@ -276,6 +285,84 @@ export function createUserActionTools(deps: UserActionToolsDeps): AnyAgentTool[]
             pollIntervalMs,
             signal,
           );
+        } catch (err) {
+          return json({ error: err instanceof Error ? err.message : String(err) });
+        }
+      },
+    },
+    {
+      name: "request_browser_permission",
+      label: "Request Browser Permission",
+      description:
+        "Ask the user to enable web browsing for this workspace. " +
+        "Use this when you need to use browser, web_search, web_fetch, or browser_use tools " +
+        "but they are currently disabled. Opens a permission dialog in the user's dashboard.",
+      parameters: Type.Object(
+        {
+          message: Type.Optional(
+            Type.String({ description: "Explain to the user why browsing is needed" }),
+          ),
+          timeoutMs: Type.Optional(
+            Type.Number({ description: "Max wait time in ms (default: 120000)" }),
+          ),
+          pollIntervalMs: Type.Optional(
+            Type.Number({ description: "Poll interval in ms (default: 3000)" }),
+          ),
+        },
+        { additionalProperties: false },
+      ),
+      // oxlint-disable-next-line typescript/no-explicit-any
+      async execute(_toolCallId: string, params: any, signal?: AbortSignal) {
+        try {
+          const message = typeof params.message === "string" ? params.message.trim() : undefined;
+          const timeoutMs =
+            typeof params.timeoutMs === "number" && params.timeoutMs > 0
+              ? params.timeoutMs
+              : 120_000;
+          const pollIntervalMs =
+            typeof params.pollIntervalMs === "number" && params.pollIntervalMs > 0
+              ? params.pollIntervalMs
+              : 3_000;
+
+          // 1. Create user action request
+          const created = await createUserAction(deps.pluginConfig, {
+            kind: "browser_permission",
+            service: "Web Browsing",
+            message: message || undefined,
+          });
+          if (!created.ok) {
+            return json({ error: created.error });
+          }
+          const requestId = created.data.request.requestId;
+
+          // 2. Emit event to frontend
+          emitIntegrationEvent({
+            action: "browser_permission_required",
+            requestId,
+            message: message || undefined,
+          });
+
+          // 3. Poll until resolved
+          const result = await pollUntilResolved(
+            deps.pluginConfig,
+            requestId,
+            "Web Browsing",
+            "browser_permission",
+            timeoutMs,
+            pollIntervalMs,
+            signal,
+          );
+
+          // 4. If approved, update local context
+          const resultText = result.content[0]?.text ?? "";
+          if (
+            resultText.includes('"status":"completed"') ||
+            resultText.includes('"enabled":true')
+          ) {
+            await deps.onBrowserPermissionGranted?.();
+          }
+
+          return result;
         } catch (err) {
           return json({ error: err instanceof Error ? err.message : String(err) });
         }
