@@ -549,6 +549,17 @@ export async function handleToolExecutionEnd(
     ctx.state.successfulCronAdds += 1;
   }
 
+  // PAZ-282: For image_generate results, extract metadata to a top-level field
+  // so it survives the gateway's verbose-level stripping of data.result.
+  // The frontend needs imageId/b64_json/creditsDeducted to render GeneratedImageCard.
+  const imageMetadata =
+    toolName === "image_generate" && !isToolError
+      ? (() => {
+          const res = sanitizedResult as { details?: { metadata?: Record<string, unknown> } };
+          return res?.details?.metadata ?? undefined;
+        })()
+      : undefined;
+
   emitAgentEvent({
     runId: ctx.params.runId,
     stream: "tool",
@@ -559,6 +570,7 @@ export async function handleToolExecutionEnd(
       meta,
       isError: isToolError,
       result: sanitizedResult,
+      ...(imageMetadata ? { imageMetadata } : {}),
     },
   });
   void ctx.params.onAgentEvent?.({
