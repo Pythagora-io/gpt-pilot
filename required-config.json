@@ -1,4 +1,7 @@
 {
+  "session": {
+    "dmScope": "per-channel-peer"
+  },
   "plugins": {
     "entries": {
       "pazi": {
