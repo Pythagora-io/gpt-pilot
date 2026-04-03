@@ -104,26 +104,4 @@ describe("slack socket reconnect helpers", () => {
       error: err,
     });
   });
-
-  it("disables socket-mode auto-reconnect when the Bolt receiver exposes it", () => {
-    const app = {
-      receiver: {
-        client: {
-          autoReconnectEnabled: true,
-        },
-      },
-    };
-
-    __testing.disableSlackSocketModeAutoReconnect(app, undefined);
-
-    expect(app.receiver.client.autoReconnectEnabled).toBe(false);
-  });
-
-  it("does not throw when the receiver shape is missing", () => {
-    expect(() => __testing.disableSlackSocketModeAutoReconnect({}, undefined)).not.toThrow();
-    expect(() => __testing.disableSlackSocketModeAutoReconnect(null, undefined)).not.toThrow();
-    expect(() =>
-      __testing.disableSlackSocketModeAutoReconnect({ receiver: { client: {} } }, undefined),
-    ).not.toThrow();
-  });
 });

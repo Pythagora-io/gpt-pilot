@@ -158,38 +158,6 @@ function publishSlackDisconnectedStatus(
   });
 }
 
-type SlackSocketModeReceiver = {
-  client?: {
-    autoReconnectEnabled?: unknown;
-  };
-};
-
-function disableSlackSocketModeAutoReconnect(
-  app: unknown,
-  runtime?: Pick<RuntimeEnv, "log">,
-): void {
-  const receiver =
-    app && typeof app === "object" ? (app as { receiver?: unknown }).receiver : undefined;
-  if (!receiver || typeof receiver !== "object") {
-    return;
-  }
-  const client = (receiver as SlackSocketModeReceiver).client;
-  if (!client || typeof client !== "object") {
-    return;
-  }
-
-  const autoReconnect = client.autoReconnectEnabled;
-  if (typeof autoReconnect !== "boolean" || autoReconnect === false) {
-    return;
-  }
-
-  // Bolt/socket-mode retries from a background timer can surface unhandled
-  // rejections on non-recoverable auth errors. Keep reconnect ownership in
-  // this provider's explicit loop instead.
-  client.autoReconnectEnabled = false;
-  runtime?.log?.("slack socket mode: disabled internal SocketMode auto-reconnect");
-}
-
 export async function monitorSlackProvider(opts: MonitorSlackOpts = {}) {
   const cfg = opts.config ?? loadConfig();
   const runtime: RuntimeEnv = opts.runtime ?? createNonExitingRuntime();
@@ -305,9 +273,6 @@ export async function monitorSlackProvider(opts: MonitorSlackOpts = {}) {
           clientOptions,
         },
   );
-  if (slackMode === "socket") {
-    disableSlackSocketModeAutoReconnect(app, runtime);
-  }
   const slackHttpHandler =
     slackMode === "http" && receiver
       ? async (req: IncomingMessage, res: ServerResponse) => {
@@ -614,7 +579,6 @@ export { isNonRecoverableSlackAuthError } from "./reconnect-policy.js";
 export const __testing = {
   publishSlackConnectedStatus,
   publishSlackDisconnectedStatus,
-  disableSlackSocketModeAutoReconnect,
   resolveSlackRuntimeGroupPolicy: resolveOpenProviderRuntimeGroupPolicy,
   resolveDefaultGroupPolicy,
   resolveSlackBoltInterop,
