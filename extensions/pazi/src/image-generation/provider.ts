@@ -6,17 +6,9 @@ import { getProxyContext, markProxyActivity } from "../context.js";
 
 const PAZI_IMAGE_MODEL = "gpt-image-1.5";
 const PAZI_PROVIDER_ID = "pazi";
+const DEFAULT_IMAGE_REQUEST_TIMEOUT_MS = 70_000;
 
 const SUPPORTED_SIZES = ["1024x1024", "1024x1536", "1536x1024"] as const;
-
-/** Quality mapping from standard levels to GPT Image 1.5 values */
-function mapQuality(raw: string | undefined): string {
-  const normalized = raw?.toLowerCase().trim();
-  if (normalized === "low" || normalized === "medium" || normalized === "high") {
-    return normalized;
-  }
-  return "medium";
-}
 
 /** Resolve the image size from request params */
 function mapSize(raw: string | undefined): string {
@@ -44,9 +36,26 @@ function postJson(
   url: URL,
   headers: Record<string, string>,
   body: string,
+  options?: { timeoutMs?: number },
 ): Promise<{ status: number; data: ApiResponse }> {
   const doRequest = url.protocol === "https:" ? https.request : http.request;
   return new Promise((resolve, reject) => {
+    const timeoutMs =
+      typeof options?.timeoutMs === "number" &&
+      Number.isFinite(options.timeoutMs) &&
+      options.timeoutMs > 0
+        ? Math.floor(options.timeoutMs)
+        : DEFAULT_IMAGE_REQUEST_TIMEOUT_MS;
+    let settled = false;
+    const finish = (cb: () => void) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timeout);
+      cb();
+    };
+
     const req = doRequest(
       url,
       {
@@ -63,14 +72,22 @@ function postJson(
           const raw = Buffer.concat(chunks).toString("utf8");
           try {
             const data = JSON.parse(raw) as ApiResponse;
-            resolve({ status: res.statusCode ?? 500, data });
+            finish(() => resolve({ status: res.statusCode ?? 500, data }));
           } catch {
-            resolve({ status: res.statusCode ?? 500, data: { error: raw } });
+            finish(() => resolve({ status: res.statusCode ?? 500, data: { error: raw } }));
           }
         });
       },
     );
-    req.on("error", reject);
+    const timeout = setTimeout(() => {
+      finish(() =>
+        reject(new Error(`Pazi image generation request timed out after ${timeoutMs}ms`)),
+      );
+      req.destroy();
+    }, timeoutMs);
+    req.on("error", (err) => {
+      finish(() => reject(err));
+    });
     req.write(body);
     req.end();
   });
@@ -120,7 +137,9 @@ export function buildPaziImageGenerationProvider(params?: {
         throw new Error("PAZI_API_URL not configured — cannot generate image");
       }
 
-      const quality = mapQuality(req.size?.includes("x") ? undefined : req.size);
+      // image_generate currently has no first-class quality field,
+      // so keep provider quality fixed to the API default.
+      const quality = "medium";
       const size = mapSize(req.size);
 
       const target = new URL("/images/generate", resolved.apiUrl);
@@ -139,6 +158,7 @@ export function buildPaziImageGenerationProvider(params?: {
           "X-Agent-Id": context.agentId,
         },
         body,
+        { timeoutMs: req.timeoutMs },
       );
 
       if (status === 402) {
