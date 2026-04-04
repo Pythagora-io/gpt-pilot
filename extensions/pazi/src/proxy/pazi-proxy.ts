@@ -109,20 +109,24 @@ export async function startPaziProxy(params: StartProxyParams): Promise<ProxySer
               const parsed = JSON.parse(responseBody);
               // Check if this is a Pazi insufficient_credits error
               if (parsed && parsed.error === "insufficient_credits") {
-                // Rewrite the response with Pazi-specific message
-                // Use Anthropic error format that the agent expects
+                // Rewrite the response with Pazi-specific message in Anthropic error format.
+                // Keep "insufficient_credits" in the error type so the web frontend's
+                // InsufficientCreditsDialog still detects it, while the message field
+                // carries the subscription-friendly copy that channels (Slack, etc.) display.
                 const paziResponse = {
                   type: "error",
                   error: {
-                    type: "invalid_request_error",
+                    type: "insufficient_credits",
                     message: PAZI_OUT_OF_CREDITS_MESSAGE,
                   },
                 };
 
+                const body = JSON.stringify(paziResponse);
                 res.writeHead(402, {
                   "Content-Type": "application/json; charset=utf-8",
+                  "Content-Length": Buffer.byteLength(body).toString(),
                 });
-                res.end(JSON.stringify(paziResponse));
+                res.end(body);
                 return;
               }
             } catch (e) {

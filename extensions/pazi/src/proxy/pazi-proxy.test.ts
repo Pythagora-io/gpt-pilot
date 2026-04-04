@@ -8,17 +8,18 @@ describe("pazi-proxy billing integration", () => {
     expect(PAZI_OUT_OF_CREDITS_MESSAGE.length).toBeGreaterThan(0);
   });
 
-  test("should create proper Anthropic error response format", () => {
+  test("should create proper Anthropic error response format with insufficient_credits marker", () => {
     const paziResponse = {
       type: "error",
       error: {
-        type: "invalid_request_error",
+        type: "insufficient_credits",
         message: PAZI_OUT_OF_CREDITS_MESSAGE,
       },
     };
 
     expect(paziResponse.type).toBe("error");
-    expect(paziResponse.error.type).toBe("invalid_request_error");
+    // Preserve insufficient_credits so web frontend InsufficientCreditsDialog still works
+    expect(paziResponse.error.type).toBe("insufficient_credits");
     expect(paziResponse.error.message).toBe(PAZI_OUT_OF_CREDITS_MESSAGE);
     expect(paziResponse.error.message).toContain("subscription");
     expect(paziResponse.error.message).not.toMatch(/api[- ]?key/i);
