@@ -629,10 +629,12 @@ export function formatAssistantErrorText(
   // PAZ-295: Pazi proxy rewrites billing errors with a subscription-specific
   // message containing the Pazi subscription URL. If it's already present,
   // extract the user-friendly portion and pass it through — don't overwrite
-  // with the generic "API key" copy.
+  // with the generic "API key" copy. Strip trailing JSON artifacts ("}} etc.)
+  // that leak when the raw error includes the full response body.
   if (raw.includes("pazi.ai/dashboard/account/subscription")) {
     const idx = raw.indexOf("⚠️");
-    return idx >= 0 ? raw.slice(idx) : raw;
+    const slice = idx >= 0 ? raw.slice(idx) : raw;
+    return slice.replace(/["}\]\s]+$/, "");
   }
 
   if (isBillingErrorMessage(raw)) {
@@ -681,7 +683,8 @@ export function sanitizeUserFacingText(text: string, opts?: { errorContext?: boo
     // PAZ-295: passthrough Pazi subscription-specific billing messages
     if (trimmed.includes("pazi.ai/dashboard/account/subscription")) {
       const idx = trimmed.indexOf("⚠️");
-      return idx >= 0 ? trimmed.slice(idx) : trimmed;
+      const slice = idx >= 0 ? trimmed.slice(idx) : trimmed;
+      return slice.replace(/["}\]\s]+$/, "");
     }
 
     if (isBillingErrorMessage(trimmed)) {

@@ -107,6 +107,17 @@ describe("formatAssistantErrorText", () => {
     expect(result).not.toContain("API provider");
     expect(result).not.toContain("API key");
   });
+  it("strips trailing JSON artifacts from Pazi billing message (PAZ-295)", () => {
+    // The raw error often wraps the Pazi message inside the full JSON body,
+    // leaving trailing "}} when sliced from the ⚠️ emoji.
+    const rawWithJson =
+      'HTTP 402 insufficient_credits: {"type":"error","error":{"type":"insufficient_credits","message":"⚠️ You\'ve run out of Pazi credits. Upgrade your subscription to continue: https://pazi.ai/dashboard/account/subscription"}}';
+    const msg = makeAssistantError(rawWithJson);
+    const result = formatAssistantErrorText(msg)!;
+    expect(result).toContain("pazi.ai/dashboard/account/subscription");
+    expect(result).not.toMatch(/["}]$/);
+    expect(result).not.toContain("API provider");
+  });
   it("includes provider and assistant model in billing message when provider is given", () => {
     const msg = makeAssistantError("insufficient credits");
     const result = formatAssistantErrorText(msg, { provider: "Anthropic" });
