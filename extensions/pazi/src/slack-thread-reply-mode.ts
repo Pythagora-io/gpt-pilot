@@ -1,5 +1,5 @@
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk/core";
-import { registerSlackReplySuppression, sendMessageSlack } from "openclaw/plugin-sdk/slack";
+import { sendMessageSlack } from "openclaw/plugin-sdk/slack";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -25,6 +25,34 @@ type SuppressedThread = {
 // ── Constants ──────────────────────────────────────────────────────────
 
 const DEFAULT_ACK_MESSAGE = "On it";
+
+/**
+ * Global suppression registry shared via globalThis.
+ *
+ * Why globalThis instead of module scope?
+ * ─────────────────────────────────────
+ * The pazi extension is loaded as TypeScript via jiti with tryNative=false,
+ * which creates a separate module graph from the gateway's native ESM modules.
+ * Module-scoped closures (like the `suppressionChecks[]` array inside
+ * `registerSlackReplySuppression`) are duplicated — the extension writes to
+ * jiti's copy while the gateway's `shouldSuppressSlackReply` reads from the
+ * native ESM copy, which is always empty.
+ *
+ * By storing the suppressed threads map on globalThis, all module instances
+ * (jiti and native ESM) share the same state. The `message_sending` hook
+ * (which runs in the gateway's own context) reads from the same map that
+ * the `message_received` hook writes to.
+ */
+const GLOBAL_KEY = "__openclawPaziSlackSuppressedThreads";
+
+function getGlobalSuppressedThreads(): Map<string, SuppressedThread> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const g = globalThis as any;
+  if (!g[GLOBAL_KEY]) {
+    g[GLOBAL_KEY] = new Map<string, SuppressedThread>();
+  }
+  return g[GLOBAL_KEY] as Map<string, SuppressedThread>;
+}
 
 // ── Config Resolution ──────────────────────────────────────────────────
 
@@ -107,27 +135,64 @@ export function buildFinalSummary(messages: unknown[], success: boolean, error?:
 // ── Registration ───────────────────────────────────────────────────────
 
 export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
-  /**
-   * In-memory map of suppressed threads.
-   * Key: `${accountId}:${channelId}:${threadTs}`
-   */
-  const suppressedThreads = new Map<string, SuppressedThread>();
+  const suppressedThreads = getGlobalSuppressedThreads();
 
-  // ── Register reply suppression callback with Slack extension ─────
+  // ── Suppression via message_sending hook ────────────────────────────
   //
-  // This callback runs synchronously in the Slack dispatch hot path.
-  // It must be fast (Map iteration only, no async).
+  // This hook runs in the gateway's own module context (not jiti's), so
+  // it reliably reads from the shared globalThis map. It replaces the
+  // previous `registerSlackReplySuppression` approach which was broken
+  // by the jiti dual-module-instance issue.
   //
-  registerSlackReplySuppression((params) => {
-    if (!params.threadTs) return false;
+  // The hook fires for every outbound message. We only cancel messages
+  // targeting a specific suppressed thread — NOT all messages for the
+  // entire account. This prevents swallowing unrelated DMs, channel
+  // messages, or other threads when one thread has active suppression.
+  //
+  api.on("message_sending", (event, ctx) => {
+    if (ctx.channelId !== "slack") return;
+    const accountId = ctx.accountId ?? "default";
 
-    // Check all suppressed threads for this accountId + threadTs combo
-    for (const thread of suppressedThreads.values()) {
-      if (thread.accountId === params.accountId && thread.threadTs === params.threadTs) {
-        return true;
+    // Extract thread timestamp from the outbound message metadata.
+    // The event payload carries the target thread info.
+    const threadTs =
+      typeof event?.metadata?.threadTs === "string"
+        ? event.metadata.threadTs
+        : typeof event?.metadata?.threadId === "string"
+          ? event.metadata.threadId
+          : undefined;
+
+    if (!threadTs) return; // No thread context → not a thread reply → don't suppress
+
+    // Extract target channel/user ID from the event
+    const targetId =
+      typeof event?.metadata?.targetId === "string"
+        ? event.metadata.targetId
+        : typeof ctx.conversationId === "string"
+          ? (extractSlackTargetId(ctx.conversationId) ?? undefined)
+          : undefined;
+
+    // Check if this specific thread is suppressed
+    if (targetId) {
+      const key = threadKey(accountId, targetId, threadTs);
+      if (suppressedThreads.has(key)) {
+        return { cancel: true };
       }
     }
-    return false;
+
+    // Fallback: check by accountId + threadTs (in case targetId isn't available).
+    // This path is less precise — if two channels somehow share the same threadTs
+    // (extremely unlikely with Slack's timestamp format), it could suppress the
+    // wrong channel. Log a warning so it's observable.
+    for (const thread of suppressedThreads.values()) {
+      if (thread.accountId === accountId && thread.threadTs === threadTs) {
+        api.logger.warn(
+          `pazi: message_sending suppression matched via fallback (no targetId). ` +
+            `accountId=${accountId} threadTs=${threadTs} — consider investigating why targetId was unavailable.`,
+        );
+        return { cancel: true };
+      }
+    }
   });
 
   // ── Hook: message_received ─────────────────────────────────────────
@@ -193,12 +258,34 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
   api.on("agent_end", async (event, ctx) => {
     if (ctx.channelId !== "slack") return;
 
-    // Find matching suppressed thread.
-    // Single-task per agent, so at most one entry matches.
+    // Resolve accountId from the session key.
+    //
+    // PluginHookAgentContext doesn't carry accountId directly, but the
+    // sessionKey encodes it. Format: "agent:<accountId>:slack:channel:<channelId>:thread:<ts>"
+    // We also extract channelId and threadTs to precisely match the suppressed thread
+    // (prevents cross-thread leaks on multi-account gateways).
+    const sessionKey = ctx.sessionKey ?? "";
+    const skMatch = sessionKey.match(
+      /^agent:([^:]+):slack:(?:channel|user):([^:]+)(?::thread:([^:]+))?/,
+    );
+    const accountId = skMatch?.[1] ?? "default";
+    const skThreadTs = skMatch?.[3];
+
+    // Find matching suppressed thread for THIS account and thread.
+    //
+    // Bug fix: previous implementation grabbed the first entry from the map
+    // regardless of which account/agent the run belonged to. On multi-agent
+    // gateways (multiple Slack bot accounts), agent A's completion could
+    // match agent B's suppressed thread entry, causing cross-thread leaks.
+    // Now we filter by accountId (and threadTs when available from session key)
+    // to ensure each agent only resolves its own suppressed threads.
     let matchedKey: string | undefined;
     let matchedThread: SuppressedThread | undefined;
 
     for (const [key, thread] of suppressedThreads) {
+      if (thread.accountId !== accountId) continue;
+      // If we have thread timestamp from session key, require exact match
+      if (skThreadTs && thread.threadTs !== skThreadTs) continue;
       matchedKey = key;
       matchedThread = thread;
       break;

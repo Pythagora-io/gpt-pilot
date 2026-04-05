@@ -337,6 +337,7 @@ export async function dispatchPreparedSlackMessage(prepared: PreparedSlackMessag
       const trimmedFinalText = reply.trimmedText;
       const canFinalizeViaPreviewEdit =
         previewStreamingEnabled &&
+        !isSuppressed &&
         streamMode !== "status_final" &&
         !reply.hasMedia &&
         !payload.isError &&
@@ -449,7 +450,7 @@ export async function dispatchPreparedSlackMessage(prepared: PreparedSlackMessag
     hasStreamedMessage = true;
   };
   const onDraftBoundary =
-    useStreaming || !previewStreamingEnabled
+    useStreaming || !previewStreamingEnabled || isSuppressed
       ? undefined
       : async () => {
           if (hasStreamedMessage) {
@@ -475,13 +476,14 @@ export async function dispatchPreparedSlackMessage(prepared: PreparedSlackMessag
           ? !account.config.blockStreaming
           : undefined,
       onModelSelected,
-      onPartialReply: useStreaming
-        ? undefined
-        : !previewStreamingEnabled
+      onPartialReply:
+        useStreaming || isSuppressed
           ? undefined
-          : async (payload) => {
-              updateDraftFromPartial(payload.text);
-            },
+          : !previewStreamingEnabled
+            ? undefined
+            : async (payload) => {
+                updateDraftFromPartial(payload.text);
+              },
       onAssistantMessageStart: onDraftBoundary,
       onReasoningEnd: onDraftBoundary,
     },
