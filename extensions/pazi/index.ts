@@ -48,7 +48,6 @@ import {
   createPaziTemplatesInstantiateHandler,
   createPaziTemplatesListHandler,
 } from "./src/gateway/templates-instantiate.js";
-import { applyHeartbeatDefaults } from "./src/heartbeat/heartbeat-defaults.js";
 import { paziBootstrapActionsHook } from "./src/hooks/pazi-bootstrap-actions.js";
 import { paziBootstrapUserHook } from "./src/hooks/pazi-bootstrap-user.js";
 import { registerProxyAgentSyncHook } from "./src/hooks/pazi-proxy-agent-sync.js";
@@ -296,20 +295,6 @@ export default {
           const patched = applyPaziImageConfig(currentConfig);
           await api.runtime.config.writeConfigFile(patched);
           api.logger.info("pazi: auto-configured imageGenerationModel → pazi/gpt-image-1.5");
-        }
-      },
-      stop: async () => {},
-    });
-
-    // PAZ-300: Seed cost-safe heartbeat defaults on gateway startup
-    api.registerService({
-      id: "pazi-heartbeat-defaults",
-      start: async () => {
-        const currentConfig = await api.runtime.config.loadConfig();
-        const patched = applyHeartbeatDefaults(currentConfig);
-        if (patched !== currentConfig) {
-          await api.runtime.config.writeConfigFile(patched);
-          api.logger.info("pazi: applied cost-safe heartbeat defaults");
         }
       },
       stop: async () => {},

@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { loadJsonFile } from "openclaw/plugin-sdk/json-store";
-import { clearCreditExhaustionCache } from "./proxy/credit-exhaustion-cache.js";
 
 type ProxyContext = {
   userId: string;
@@ -123,7 +122,6 @@ export function getProxyContext(): ProxyContext | null {
 export function setProxyContext(ctx: ProxyContext): void {
   currentContext = ctx;
   diskLoaded = true; // We have a known value, no need to load from disk
-  clearCreditExhaustionCache(); // PAZ-300: stale 402 must not carry over across context changes
   persistToDisk(ctx);
 }
 

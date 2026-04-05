@@ -2,7 +2,6 @@ import http from "node:http";
 import type { IncomingHttpHeaders } from "node:http";
 import https from "node:https";
 import { getProxyContext, markProxyActivity } from "../context.js";
-import { recordExhaustion, shouldBlockDueToExhaustion } from "./credit-exhaustion-cache.js";
 
 type ProxyLogger = {
   info: (message: string) => void;
@@ -71,12 +70,6 @@ export async function startPaziProxy(params: StartProxyParams): Promise<ProxySer
     }
     markProxyActivity();
 
-    // PAZ-300: Short-circuit if credits were recently exhausted
-    if (shouldBlockDueToExhaustion(context.userId)) {
-      writeJson(res, 402, { error: "credits_exhausted", message: "credits exhausted (cached)" });
-      return;
-    }
-
     const chunks: Buffer[] = [];
     for await (const chunk of req) {
       if (typeof chunk === "string") {
@@ -102,10 +95,6 @@ export async function startPaziProxy(params: StartProxyParams): Promise<ProxySer
         },
       },
       (proxyRes) => {
-        // PAZ-300: Cache 402 responses to avoid repeated requests when credits are exhausted
-        if (proxyRes.statusCode === 402) {
-          recordExhaustion(context.userId);
-        }
         res.writeHead(proxyRes.statusCode || 500, proxyRes.headers);
         proxyRes.pipe(res);
       },
