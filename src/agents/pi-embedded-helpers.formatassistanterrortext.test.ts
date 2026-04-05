@@ -97,6 +97,16 @@ describe("formatAssistantErrorText", () => {
     const result = formatAssistantErrorText(msg);
     expect(result).toBe(BILLING_ERROR_USER_MESSAGE);
   });
+  it("passes through Pazi subscription billing message without overwriting (PAZ-295)", () => {
+    const paziMessage =
+      "HTTP 402 insufficient_credits: ⚠️ You've run out of Pazi credits. Upgrade your subscription to continue: https://pazi.ai/dashboard/account/subscription";
+    const msg = makeAssistantError(paziMessage);
+    const result = formatAssistantErrorText(msg);
+    expect(result).toContain("pazi.ai/dashboard/account/subscription");
+    expect(result).toContain("Pazi credits");
+    expect(result).not.toContain("API provider");
+    expect(result).not.toContain("API key");
+  });
   it("includes provider and assistant model in billing message when provider is given", () => {
     const msg = makeAssistantError("insufficient credits");
     const result = formatAssistantErrorText(msg, { provider: "Anthropic" });
