@@ -155,15 +155,58 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
   // previous `registerSlackReplySuppression` approach which was broken
   // by the jiti dual-module-instance issue.
   //
-  // The hook fires for every outbound message. When an account has active
-  // thread suppression, we cancel intermediate messages. The final summary
-  // is sent explicitly via `sendMessageSlack` in the agent_end hook.
+  // The hook fires for every outbound message. We prefer exact matching by
+  // account + target + thread to avoid suppressing unrelated conversations.
+  // The final summary is sent explicitly via `sendMessageSlack` in agent_end.
   //
-  api.on("message_sending", (_event, ctx) => {
+  api.on("message_sending", (event, ctx) => {
     if (ctx.channelId !== "slack") return;
     const accountId = ctx.accountId ?? "default";
-    if (hasActiveSuppression(accountId)) {
-      return { cancel: true };
+
+    const threadTs =
+      typeof event?.metadata?.threadTs === "string"
+        ? event.metadata.threadTs
+        : typeof event?.metadata?.threadId === "string"
+          ? event.metadata.threadId
+          : undefined;
+
+    // If outbound metadata lacks thread info, fall back to account-level
+    // suppression to prevent leaking intermediate drafts.
+    if (!threadTs) {
+      if (hasActiveSuppression(accountId)) {
+        return { cancel: true };
+      }
+      return;
+    }
+
+    const targetCandidates = [
+      typeof event?.metadata?.targetId === "string" ? event.metadata.targetId : undefined,
+      typeof event?.metadata?.channelId === "string" ? event.metadata.channelId : undefined,
+      typeof event?.to === "string" ? event.to : undefined,
+      typeof ctx.conversationId === "string" ? ctx.conversationId : undefined,
+    ];
+
+    let targetId: string | undefined;
+    for (const candidate of targetCandidates) {
+      const parsed = candidate ? extractSlackTargetId(candidate) : null;
+      if (parsed) {
+        targetId = parsed;
+        break;
+      }
+    }
+
+    if (targetId) {
+      const key = threadKey(accountId, targetId, threadTs);
+      if (suppressedThreads.has(key)) {
+        return { cancel: true };
+      }
+    }
+
+    // Fallback when target cannot be derived but thread id is present.
+    for (const thread of suppressedThreads.values()) {
+      if (thread.accountId === accountId && thread.threadTs === threadTs) {
+        return { cancel: true };
+      }
     }
   });
 
@@ -230,25 +273,31 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
   api.on("agent_end", async (event, ctx) => {
     if (ctx.channelId !== "slack") return;
 
-    const accountId = ctx.accountId ?? "default";
+    // Resolve account from sessionKey because agent_end context does not
+    // include accountId.
+    const sessionKey = ctx.sessionKey ?? "";
+    const skMatch = sessionKey.match(
+      /^agent:([^:]+):slack:(?:channel|user):([^:]+)(?::thread:([^:]+))?/,
+    );
+    const resolvedAccountId = skMatch?.[1] ?? "default";
+    const skThreadTs = skMatch?.[3];
 
-    // Find matching suppressed thread for THIS account.
+    // Find matching suppressed thread for THIS account and thread.
     //
     // Bug fix: previous implementation grabbed the first entry from the map
     // regardless of which account/agent the run belonged to. On multi-agent
     // gateways (multiple Slack bot accounts), agent A's completion could
     // match agent B's suppressed thread entry, causing cross-thread leaks.
-    // Now we filter by accountId to ensure each agent only resolves its own
-    // suppressed threads.
+    // We also require thread match when sessionKey encodes it.
     let matchedKey: string | undefined;
     let matchedThread: SuppressedThread | undefined;
 
     for (const [key, thread] of suppressedThreads) {
-      if (thread.accountId === accountId) {
-        matchedKey = key;
-        matchedThread = thread;
-        break;
-      }
+      if (thread.accountId !== resolvedAccountId) continue;
+      if (skThreadTs && thread.threadTs !== skThreadTs) continue;
+      matchedKey = key;
+      matchedThread = thread;
+      break;
     }
 
     if (!matchedThread || !matchedKey) return;

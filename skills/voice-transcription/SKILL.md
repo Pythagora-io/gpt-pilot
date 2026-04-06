@@ -1,14 +1,7 @@
 ---
 name: voice-transcription
 description: Transcribe audio files to text via the Pazi API with automatic credit billing. Use when you receive audio/voice messages or need to transcribe audio files.
-metadata:
-  {
-    "openclaw":
-      {
-        "emoji": "🎙️",
-        "requires": { "bins": ["curl"] },
-      },
-  }
+metadata: { "openclaw": { "emoji": "🎙️", "requires": { "bins": ["curl"] } } }
 ---
 
 # Voice Transcription (Pazi API)
@@ -43,6 +36,7 @@ curl -X POST "$PAZI_API_URL/transcribe" \
 | `durationSeconds` | number | No | Audio duration in seconds. If omitted, estimated from file size |
 
 **Response (200):**
+
 ```json
 {
   "text": "Transcribed text content here...",
@@ -52,6 +46,7 @@ curl -X POST "$PAZI_API_URL/transcribe" \
 ```
 
 **Error responses:**
+
 - `400` — Missing audio file
 - `402` — Insufficient credits (returns `creditsRequired` and `creditsAvailable`)
 - `500` — Transcription failed (credits are automatically refunded)
@@ -73,6 +68,7 @@ curl -X POST "$PAZI_API_URL/transcribe/usage" \
 | `durationSeconds` | number | Yes | Audio duration in seconds (max 60) |
 
 **Response (200):**
+
 ```json
 {
   "creditsDeducted": 1,
@@ -82,11 +78,11 @@ curl -X POST "$PAZI_API_URL/transcribe/usage" \
 
 ## Credit Pricing
 
-| Duration | Credits | USD Cost |
-|----------|---------|----------|
-| ≤20s | 1 | ~$0.002 |
-| 30s | 2 | ~$0.003 |
-| 60s (max) | 3 | ~$0.006 |
+| Duration  | Credits | USD Cost |
+| --------- | ------- | -------- |
+| ≤20s      | 1       | ~$0.002  |
+| 30s       | 2       | ~$0.003  |
+| 60s (max) | 3       | ~$0.006  |
 
 - **Rate:** $0.006/minute (gpt-4o-transcribe)
 - **Conversion:** 500 credits = $1.00
@@ -100,6 +96,7 @@ webm, ogg, mp3, m4a, wav, mp4
 ## Automatic Channel Billing
 
 When audio arrives through messaging channels (Slack, Telegram, etc.), the `pazi-transcription-billing` extension hook automatically:
+
 1. Detects the `message:transcribed` event
 2. Determines audio duration via `ffprobe` (or estimates from file size)
 3. Posts usage to `POST /transcribe/usage` for credit deduction
