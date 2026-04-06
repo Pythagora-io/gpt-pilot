@@ -49,6 +49,11 @@ export async function assertLocalMediaAllowed(
     resolved = path.resolve(mediaPath);
   }
 
+  // Defense-in-depth: when no explicit roots are provided (localRoots === undefined),
+  // block paths under agent-specific workspace directories (workspace-*). This prevents
+  // accidental cross-agent access when callers forget to pass scoped roots.
+  // Callers using getAgentScopedMediaLocalRoots() always pass explicit roots, so this
+  // block is bypassed — those roots already include all configured agent workspaces.
   if (localRoots === undefined) {
     const workspaceRoot = roots.find((root) => path.basename(root) === "workspace");
     if (workspaceRoot) {
