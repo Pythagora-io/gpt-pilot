@@ -351,7 +351,7 @@ describe("createPaziChannelsConfigureHandler reply mode config", () => {
     expect((account as Record<string, unknown>)?.ackReaction).toBe("white_check_mark");
   });
 
-  it("removes legacy threadReplyMode and ackMessage when reconfiguring", async () => {
+  it("preserves threadReplyMode and ackMessage when reconfiguring", async () => {
     const harness = createHarness({
       channels: {
         slack: {
@@ -382,9 +382,50 @@ describe("createPaziChannelsConfigureHandler reply mode config", () => {
     expect(response.ok).toBe(true);
     const cfg = harness.getConfig();
     const account = cfg.channels?.slack?.accounts?.default;
-    expect((account as Record<string, unknown>)?.threadReplyMode).toBeUndefined();
-    expect((account as Record<string, unknown>)?.ackMessage).toBeUndefined();
+    expect((account as Record<string, unknown>)?.threadReplyMode).toBe("summary-only");
+    expect((account as Record<string, unknown>)?.ackMessage).toBe("Old ack");
     expect((account as Record<string, unknown>)?.replyToMode).toBe("first");
     expect((account as Record<string, unknown>)?.ackReaction).toBe("thumbsup");
+  });
+
+  it("stores reply placement and suppression settings together", async () => {
+    const harness = createHarness();
+
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-bot",
+        appToken: "xapp-app",
+        replyToMode: "all",
+        ackReaction: "rocket",
+        threadReplyMode: "summary-only",
+        ackMessage: "On it",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect((account as Record<string, unknown>)?.replyToMode).toBe("all");
+    expect((account as Record<string, unknown>)?.ackReaction).toBe("rocket");
+    expect((account as Record<string, unknown>)?.threadReplyMode).toBe("summary-only");
+    expect((account as Record<string, unknown>)?.ackMessage).toBe("On it");
+  });
+
+  it("returns threadReplyMode and ackMessage in response", async () => {
+    const harness = createHarness();
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-bot",
+        appToken: "xapp-app",
+        threadReplyMode: "quiet",
+        ackMessage: "Working",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const data = response.data as Record<string, unknown>;
+    expect(data.threadReplyMode).toBe("quiet");
   });
 });

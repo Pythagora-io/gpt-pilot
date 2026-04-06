@@ -43,3 +43,13 @@ Format: `PAZI_COMMAND:COMMAND_NAME:key=value:key=value`
 - Credential values are sensitive — do not echo them in chat messages
 - URL-encode values in text markers (spaces -> `%20`, colons -> `%3A`)
 - Only one `PAZI_COMMAND:` marker per message
+
+### Webchat File Support
+
+When running in the webchat channel, the dashboard supports file downloads and inline previews. To deliver a file to the user:
+
+1. Use the `write` tool to create the file in the workspace.
+2. The dashboard automatically renders a file card with download and preview buttons for each `write` call.
+3. Tell the user the file is ready — do not paste raw paths or dump contents into chat.
+
+Do **not** tell the user that webchat cannot handle file downloads. Do **not** use the `message` tool with `media` or `buffer` to send files — just use `write`.

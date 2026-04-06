@@ -56,6 +56,9 @@ import { registerBrowserGuardHook } from "./src/hooks/pazi-browser-guard.js";
 import { registerBrowserPromptHook } from "./src/hooks/pazi-browser-prompt.js";
 import { registerProxyAgentSyncHook } from "./src/hooks/pazi-proxy-agent-sync.js";
 import { registerToolResultPersistHook } from "./src/hooks/pazi-tool-result-persist.js";
+import { registerWebchatFileSupportHook } from "./src/hooks/pazi-webchat-file-support.js";
+import { applyPaziImageConfig } from "./src/image-generation/onboard.js";
+import { buildPaziImageGenerationProvider } from "./src/image-generation/provider.js";
 import { createPaziBrowserEnabledHandler } from "./src/proxy/pazi-browser-enabled.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
@@ -260,6 +263,9 @@ export default {
     registerToolResultPersistHook(api);
     registerProxyAgentSyncHook(api);
 
+    // PAZ-280: Inject webchat file download/preview guidance into system prompt
+    registerWebchatFileSupportHook(api);
+
     // PAZ-206: Slack thread reply mode — suppress intermediate messages
     registerSlackThreadReplyMode(api);
 
@@ -294,6 +300,26 @@ export default {
         api.registerTool(tool);
       }
     }
+
+    // PAZ-282: Register Pazi image generation provider
+    api.registerImageGenerationProvider(
+      buildPaziImageGenerationProvider({ pluginConfig, env: process.env }),
+    );
+
+    // PAZ-282: Auto-configure pazi as the default image generation provider
+    // if no imageGenerationModel is set yet
+    api.registerService({
+      id: "pazi-image-generation-onboard",
+      start: async () => {
+        const currentConfig = await api.runtime.config.loadConfig();
+        if (!currentConfig.agents?.defaults?.imageGenerationModel) {
+          const patched = applyPaziImageConfig(currentConfig);
+          await api.runtime.config.writeConfigFile(patched);
+          api.logger.info("pazi: auto-configured imageGenerationModel → pazi/gpt-image-1.5");
+        }
+      },
+      stop: async () => {},
+    });
 
     api.registerHttpRoute({
       path: "/pazi/context",

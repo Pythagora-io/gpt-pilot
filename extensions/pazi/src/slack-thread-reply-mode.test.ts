@@ -49,7 +49,7 @@ describe("resolveThreadReplyConfig", () => {
     expect(result).toEqual({ mode: "quiet", ackMessage: "On it" });
   });
 
-  it("ignores legacy threadReplyMode when replyToMode is configured", () => {
+  it("resolves threadReplyMode independently when replyToMode is also configured", () => {
     const cfg = {
       channels: {
         slack: {
@@ -57,7 +57,43 @@ describe("resolveThreadReplyConfig", () => {
             default: {
               replyToMode: "all",
               threadReplyMode: "summary-only",
-              ackMessage: "Legacy ack",
+              ackMessage: "Custom ack",
+            },
+          },
+        },
+      },
+    };
+    const result = resolveThreadReplyConfig(cfg, "default");
+    expect(result).toEqual({ mode: "summary-only", ackMessage: "Custom ack" });
+  });
+
+  it("supports quiet mode with replyToMode first", () => {
+    const cfg = {
+      channels: {
+        slack: {
+          accounts: {
+            default: {
+              replyToMode: "first",
+              threadReplyMode: "quiet",
+              ackMessage: "One sec",
+            },
+          },
+        },
+      },
+    };
+    expect(resolveThreadReplyConfig(cfg, "default")).toEqual({
+      mode: "quiet",
+      ackMessage: "One sec",
+    });
+  });
+
+  it("defaults to full when replyToMode is set but threadReplyMode is not", () => {
+    const cfg = {
+      channels: {
+        slack: {
+          accounts: {
+            default: {
+              replyToMode: "first",
             },
           },
         },
@@ -65,6 +101,24 @@ describe("resolveThreadReplyConfig", () => {
     };
     const result = resolveThreadReplyConfig(cfg, "default");
     expect(result).toEqual({ mode: "full", ackMessage: "On it" });
+  });
+
+  it("resolves quiet mode when replyToMode is off", () => {
+    const cfg = {
+      channels: {
+        slack: {
+          accounts: {
+            default: {
+              replyToMode: "off",
+              threadReplyMode: "quiet",
+              ackMessage: "Handled",
+            },
+          },
+        },
+      },
+    };
+    const result = resolveThreadReplyConfig(cfg, "default");
+    expect(result).toEqual({ mode: "quiet", ackMessage: "Handled" });
   });
 
   it("ignores invalid threadReplyMode values", () => {

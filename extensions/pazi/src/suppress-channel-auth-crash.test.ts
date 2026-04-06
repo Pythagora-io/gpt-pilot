@@ -59,6 +59,34 @@ describe("installChannelAuthCrashGuard", () => {
     expect(handler(new Error("account_inactive"))).toBe(true);
   });
 
+  it("suppresses wrapped auth errors from nested reason fields", () => {
+    const logger = createMockLogger();
+    installChannelAuthCrashGuard(logger as never);
+    const handler = getHandler();
+
+    expect(
+      handler({
+        reason: new Error("An API error occurred: account_inactive"),
+      }),
+    ).toBe(true);
+  });
+
+  it("suppresses Slack platform error object shapes", () => {
+    const logger = createMockLogger();
+    installChannelAuthCrashGuard(logger as never);
+    const handler = getHandler();
+
+    expect(
+      handler({
+        code: "slack_webapi_platform_error",
+        data: {
+          error: "account_inactive",
+          ok: false,
+        },
+      }),
+    ).toBe(true);
+  });
+
   it("does not suppress unrelated errors", () => {
     const logger = createMockLogger();
     installChannelAuthCrashGuard(logger as never);
@@ -85,5 +113,13 @@ describe("installChannelAuthCrashGuard", () => {
 
     expect(handler("invalid_auth")).toBe(true);
     expect(handler("some other string")).toBe(false);
+  });
+
+  it("does not suppress unrelated object payloads", () => {
+    const logger = createMockLogger();
+    installChannelAuthCrashGuard(logger as never);
+    const handler = getHandler();
+
+    expect(handler({ code: "ERR_UNKNOWN", data: { error: "not related" } })).toBe(false);
   });
 });

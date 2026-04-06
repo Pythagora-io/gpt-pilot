@@ -35,18 +35,15 @@ export function resolveThreadReplyConfig(
 ): ResolvedThreadReplyConfig {
   const account = cfg?.channels?.slack?.accounts?.[accountId];
   if (!account || typeof account !== "object") {
-    return { mode: "full", ackMessage: DEFAULT_ACK_MESSAGE };
+    return { mode: "quiet", ackMessage: DEFAULT_ACK_MESSAGE };
   }
   const raw = account as Record<string, unknown>;
-  // New Slack setup uses replyToMode/ackReaction. If replyToMode is configured,
-  // treat legacy threadReplyMode/ackMessage as inactive compatibility fields.
-  if (raw.replyToMode === "off" || raw.replyToMode === "first" || raw.replyToMode === "all") {
-    return { mode: "full", ackMessage: DEFAULT_ACK_MESSAGE };
-  }
   const mode: SlackThreadReplyMode =
     raw.threadReplyMode === "summary-only" || raw.threadReplyMode === "quiet"
       ? raw.threadReplyMode
-      : "full";
+      : raw.threadReplyMode === "full"
+        ? "full"
+        : "quiet";
   const ackMessage =
     typeof raw.ackMessage === "string" && raw.ackMessage.trim()
       ? raw.ackMessage.trim()
