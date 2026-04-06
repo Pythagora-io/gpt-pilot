@@ -549,7 +549,7 @@ export function createPaziChannelsConfigureHandler(
                 : ["*"],
             replyToMode: inputConfig.replyToMode ?? "all",
             ackReaction: inputConfig.ackReaction?.trim() || "eyes",
-            threadReplyMode: inputConfig.threadReplyMode ?? "full",
+            threadReplyMode: inputConfig.threadReplyMode ?? "quiet",
             ackMessage: inputConfig.ackMessage?.trim() || undefined,
           }
         : {}),
