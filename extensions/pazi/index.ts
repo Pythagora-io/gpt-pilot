@@ -26,8 +26,10 @@ import { resolvePaziBillingConfig } from "./src/config.js";
 import {
   configurePersistencePath,
   configurePersistenceWarnLogger,
+  getProxyContext,
   getProxyLastActivityAt,
   isProxyBusyForStatus,
+  setProxyContext,
 } from "./src/context.js";
 import { createCredentialTools } from "./src/credentials/index.js";
 import {
@@ -50,11 +52,14 @@ import {
 } from "./src/gateway/templates-instantiate.js";
 import { paziBootstrapActionsHook } from "./src/hooks/pazi-bootstrap-actions.js";
 import { paziBootstrapUserHook } from "./src/hooks/pazi-bootstrap-user.js";
+import { registerBrowserGuardHook } from "./src/hooks/pazi-browser-guard.js";
+import { registerBrowserPromptHook } from "./src/hooks/pazi-browser-prompt.js";
 import { registerProxyAgentSyncHook } from "./src/hooks/pazi-proxy-agent-sync.js";
 import { registerToolResultPersistHook } from "./src/hooks/pazi-tool-result-persist.js";
 import { registerWebchatFileSupportHook } from "./src/hooks/pazi-webchat-file-support.js";
 import { applyPaziImageConfig } from "./src/image-generation/onboard.js";
 import { buildPaziImageGenerationProvider } from "./src/image-generation/provider.js";
+import { createPaziBrowserEnabledHandler } from "./src/proxy/pazi-browser-enabled.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
@@ -119,6 +124,11 @@ export default {
         ? api.config.gateway.auth.token
         : undefined;
     const contextHandler = createPaziContextHandler({
+      configToken: gatewayAuthToken,
+      env: process.env,
+      logger: api.logger,
+    });
+    const browserEnabledHandler = createPaziBrowserEnabledHandler({
       configToken: gatewayAuthToken,
       env: process.env,
       logger: api.logger,
@@ -259,7 +269,18 @@ export default {
     // PAZ-206: Slack thread reply mode — suppress intermediate messages
     registerSlackThreadReplyMode(api);
 
-    const userActionTools = createUserActionTools({ pluginConfig });
+    // PAZ-256: Browser permission hooks
+    registerBrowserPromptHook(api);
+    registerBrowserGuardHook(api);
+
+    const userActionTools = createUserActionTools({
+      pluginConfig,
+      onBrowserPermissionGranted: async () => {
+        const ctx = getProxyContext();
+        if (!ctx) return;
+        setProxyContext({ ...ctx, browserEnabled: true });
+      },
+    });
     for (const tool of userActionTools) {
       api.registerTool(tool);
     }
@@ -311,6 +332,20 @@ export default {
           return;
         }
         await contextHandler(req, res);
+      },
+    });
+
+    api.registerHttpRoute({
+      path: "/pazi/browser-enabled",
+      auth: "gateway",
+      handler: async (req, res) => {
+        if (req.method !== "POST") {
+          res.statusCode = 404;
+          res.setHeader("Content-Type", "text/plain; charset=utf-8");
+          res.end("Not Found");
+          return;
+        }
+        await browserEnabledHandler(req, res);
       },
     });
 
