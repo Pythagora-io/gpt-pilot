@@ -32,6 +32,7 @@ import {
   setProxyContext,
 } from "./src/context.js";
 import { createCredentialTools } from "./src/credentials/index.js";
+import { createPaziCredentialsHandler } from "./src/gateway/pazi-credentials.js";
 import {
   createPaziFilesDelete,
   createPaziFilesGet,
@@ -396,6 +397,21 @@ export default {
           return;
         }
         await uploadHandler(req, res);
+      },
+    });
+
+    const credentialsHandler = createPaziCredentialsHandler();
+    api.registerHttpRoute({
+      path: "/pazi/credentials",
+      auth: "gateway",
+      handler: async (req, res) => {
+        if (req.method !== "POST") {
+          res.statusCode = 405;
+          res.setHeader("Content-Type", "text/plain; charset=utf-8");
+          res.end("Method Not Allowed");
+          return;
+        }
+        await credentialsHandler(req, res);
       },
     });
 
