@@ -56,6 +56,7 @@ import { registerBrowserGuardHook } from "./src/hooks/pazi-browser-guard.js";
 import { registerBrowserPromptHook } from "./src/hooks/pazi-browser-prompt.js";
 import { registerProxyAgentSyncHook } from "./src/hooks/pazi-proxy-agent-sync.js";
 import { registerToolResultPersistHook } from "./src/hooks/pazi-tool-result-persist.js";
+import { registerTranscriptionBillingHook } from "./src/hooks/pazi-transcription-billing.js";
 import { registerWebchatFileSupportHook } from "./src/hooks/pazi-webchat-file-support.js";
 import { applyPaziImageConfig } from "./src/image-generation/onboard.js";
 import { buildPaziImageGenerationProvider } from "./src/image-generation/provider.js";
@@ -265,6 +266,9 @@ export default {
 
     // PAZ-280: Inject webchat file download/preview guidance into system prompt
     registerWebchatFileSupportHook(api);
+
+    // PAZ-283: Deduct credits for channel audio transcription
+    registerTranscriptionBillingHook(api);
 
     // PAZ-206: Slack thread reply mode — suppress intermediate messages
     registerSlackThreadReplyMode(api);
