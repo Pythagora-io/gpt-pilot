@@ -50,7 +50,7 @@ async function parseResponse<T>(res: Response): Promise<UserActionApiResult<T>> 
 export interface UserActionResponse {
   request: {
     requestId: string;
-    kind: "credentials" | "browser_login";
+    kind: "credentials" | "browser_login" | "browser_permission";
     status: "pending" | "completed" | "cancelled" | "expired";
     service: string;
     fields?: string[];
@@ -66,7 +66,7 @@ export interface UserActionResponse {
 export async function createUserAction(
   pluginConfig: Record<string, unknown> | null,
   body: {
-    kind: "credentials" | "browser_login";
+    kind: "credentials" | "browser_login" | "browser_permission";
     service: string;
     fields?: string[];
     url?: string;

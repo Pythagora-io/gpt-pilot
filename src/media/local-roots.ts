@@ -1,5 +1,5 @@
 import path from "node:path";
-import { resolveAgentWorkspaceDir } from "../agents/agent-scope.js";
+import { listAgentIds, resolveAgentWorkspaceDir } from "../agents/agent-scope.js";
 import type { OpenClawConfig } from "../config/config.js";
 import { resolveStateDir } from "../config/paths.js";
 import { resolvePreferredOpenClawTmpDir } from "../infra/tmp-openclaw-dir.js";
@@ -37,19 +37,25 @@ export function getDefaultMediaLocalRoots(): readonly string[] {
 
 export function getAgentScopedMediaLocalRoots(
   cfg: OpenClawConfig,
-  agentId?: string,
+  _agentId?: string,
 ): readonly string[] {
   const roots = buildMediaLocalRoots(resolveStateDir());
-  if (!agentId?.trim()) {
-    return roots;
+  const seen = new Set(roots.map((r) => path.resolve(r)));
+
+  // Include workspace directories for ALL configured agents so that
+  // cross-agent media sharing works (e.g. Agent A generates a file that
+  // Agent B needs to deliver).
+  for (const id of listAgentIds(cfg)) {
+    const dir = resolveAgentWorkspaceDir(cfg, id);
+    if (!dir) {
+      continue;
+    }
+    const normalized = path.resolve(dir);
+    if (!seen.has(normalized)) {
+      seen.add(normalized);
+      roots.push(normalized);
+    }
   }
-  const workspaceDir = resolveAgentWorkspaceDir(cfg, agentId);
-  if (!workspaceDir) {
-    return roots;
-  }
-  const normalizedWorkspaceDir = path.resolve(workspaceDir);
-  if (!roots.includes(normalizedWorkspaceDir)) {
-    roots.push(normalizedWorkspaceDir);
-  }
+
   return roots;
 }

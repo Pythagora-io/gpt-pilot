@@ -98,6 +98,17 @@ function threadKey(accountId: string, targetId: string, threadTs: string): strin
   return `${accountId}:${targetId}:${threadTs}`;
 }
 
+/**
+ * Check whether a given Slack account has any active suppressed threads.
+ */
+function hasActiveSuppression(accountId: string): boolean {
+  const suppressedThreads = getGlobalSuppressedThreads();
+  for (const thread of suppressedThreads.values()) {
+    if (thread.accountId === accountId) return true;
+  }
+  return false;
+}
+
 // ── Final Summary Builder ──────────────────────────────────────────────
 
 export function buildFinalSummary(messages: unknown[], success: boolean, error?: string): string {
@@ -144,17 +155,14 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
   // previous `registerSlackReplySuppression` approach which was broken
   // by the jiti dual-module-instance issue.
   //
-  // The hook fires for every outbound message. We only cancel messages
-  // targeting a specific suppressed thread — NOT all messages for the
-  // entire account. This prevents swallowing unrelated DMs, channel
-  // messages, or other threads when one thread has active suppression.
+  // The hook fires for every outbound message. We prefer exact matching by
+  // account + target + thread to avoid suppressing unrelated conversations.
+  // The final summary is sent explicitly via `sendMessageSlack` in agent_end.
   //
   api.on("message_sending", (event, ctx) => {
     if (ctx.channelId !== "slack") return;
     const accountId = ctx.accountId ?? "default";
 
-    // Extract thread timestamp from the outbound message metadata.
-    // The event payload carries the target thread info.
     const threadTs =
       typeof event?.metadata?.threadTs === "string"
         ? event.metadata.threadTs
@@ -162,17 +170,31 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
           ? event.metadata.threadId
           : undefined;
 
-    if (!threadTs) return; // No thread context → not a thread reply → don't suppress
+    // If outbound metadata lacks thread info, fall back to account-level
+    // suppression to prevent leaking intermediate drafts.
+    if (!threadTs) {
+      if (hasActiveSuppression(accountId)) {
+        return { cancel: true };
+      }
+      return;
+    }
 
-    // Extract target channel/user ID from the event
-    const targetId =
-      typeof event?.metadata?.targetId === "string"
-        ? event.metadata.targetId
-        : typeof ctx.conversationId === "string"
-          ? (extractSlackTargetId(ctx.conversationId) ?? undefined)
-          : undefined;
+    const targetCandidates = [
+      typeof event?.metadata?.targetId === "string" ? event.metadata.targetId : undefined,
+      typeof event?.metadata?.channelId === "string" ? event.metadata.channelId : undefined,
+      typeof event?.to === "string" ? event.to : undefined,
+      typeof ctx.conversationId === "string" ? ctx.conversationId : undefined,
+    ];
 
-    // Check if this specific thread is suppressed
+    let targetId: string | undefined;
+    for (const candidate of targetCandidates) {
+      const parsed = candidate ? extractSlackTargetId(candidate) : null;
+      if (parsed) {
+        targetId = parsed;
+        break;
+      }
+    }
+
     if (targetId) {
       const key = threadKey(accountId, targetId, threadTs);
       if (suppressedThreads.has(key)) {
@@ -180,16 +202,9 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
       }
     }
 
-    // Fallback: check by accountId + threadTs (in case targetId isn't available).
-    // This path is less precise — if two channels somehow share the same threadTs
-    // (extremely unlikely with Slack's timestamp format), it could suppress the
-    // wrong channel. Log a warning so it's observable.
+    // Fallback when target cannot be derived but thread id is present.
     for (const thread of suppressedThreads.values()) {
       if (thread.accountId === accountId && thread.threadTs === threadTs) {
-        api.logger.warn(
-          `pazi: message_sending suppression matched via fallback (no targetId). ` +
-            `accountId=${accountId} threadTs=${threadTs} — consider investigating why targetId was unavailable.`,
-        );
         return { cancel: true };
       }
     }
@@ -258,17 +273,13 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
   api.on("agent_end", async (event, ctx) => {
     if (ctx.channelId !== "slack") return;
 
-    // Resolve accountId from the session key.
-    //
-    // PluginHookAgentContext doesn't carry accountId directly, but the
-    // sessionKey encodes it. Format: "agent:<accountId>:slack:channel:<channelId>:thread:<ts>"
-    // We also extract channelId and threadTs to precisely match the suppressed thread
-    // (prevents cross-thread leaks on multi-account gateways).
+    // Resolve account from sessionKey because agent_end context does not
+    // include accountId.
     const sessionKey = ctx.sessionKey ?? "";
     const skMatch = sessionKey.match(
       /^agent:([^:]+):slack:(?:channel|user):([^:]+)(?::thread:([^:]+))?/,
     );
-    const accountId = skMatch?.[1] ?? "default";
+    const resolvedAccountId = skMatch?.[1] ?? "default";
     const skThreadTs = skMatch?.[3];
 
     // Find matching suppressed thread for THIS account and thread.
@@ -277,14 +288,12 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
     // regardless of which account/agent the run belonged to. On multi-agent
     // gateways (multiple Slack bot accounts), agent A's completion could
     // match agent B's suppressed thread entry, causing cross-thread leaks.
-    // Now we filter by accountId (and threadTs when available from session key)
-    // to ensure each agent only resolves its own suppressed threads.
+    // We also require thread match when sessionKey encodes it.
     let matchedKey: string | undefined;
     let matchedThread: SuppressedThread | undefined;
 
     for (const [key, thread] of suppressedThreads) {
-      if (thread.accountId !== accountId) continue;
-      // If we have thread timestamp from session key, require exact match
+      if (thread.accountId !== resolvedAccountId) continue;
       if (skThreadTs && thread.threadTs !== skThreadTs) continue;
       matchedKey = key;
       matchedThread = thread;
