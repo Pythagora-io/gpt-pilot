@@ -94,10 +94,25 @@ describe("local media roots", () => {
       minLength: 3,
     },
     {
-      name: "adds the active agent workspace without re-opening broad agent state roots",
+      name: "adds configured agent workspaces without re-opening broad agent state roots",
       stateDir: path.join("/tmp", "openclaw-agent-media-roots-state"),
-      getRoots: () => getAgentScopedMediaLocalRoots({}, "ops"),
-      expectedContained: ["workspace-ops", "sandboxes"],
+      getRoots: () =>
+        getAgentScopedMediaLocalRoots({
+          agents: {
+            list: [
+              {
+                id: "main",
+                default: true,
+                workspace: path.join("/tmp", "openclaw-agent-media-roots-state", "workspace-main"),
+              },
+              {
+                id: "ops",
+                workspace: path.join("/tmp", "openclaw-agent-media-roots-state", "workspace-ops"),
+              },
+            ],
+          },
+        }),
+      expectedContained: ["workspace-main", "workspace-ops", "sandboxes"],
       expectedExcluded: ["agents"],
     },
   ] as const)("$name", ({ stateDir, getRoots, expectedContained, expectedExcluded, minLength }) => {
@@ -158,9 +173,15 @@ describe("local media roots", () => {
     const moviesDir =
       process.platform === "win32" ? "C:\\Users\\peter\\Movies" : "/Users/peter/Movies";
 
+    const cfg = {
+      agents: {
+        list: [{ id: "ops", workspace: path.join(stateDir, "workspace-ops") }],
+      },
+    };
+
     const roots = withStateDir(stateDir, () =>
       getAgentScopedMediaLocalRootsForSources({
-        cfg: {},
+        cfg,
         agentId: "ops",
         mediaSources: [
           path.join(picturesDir, "photo.png"),
@@ -193,5 +214,100 @@ describe("local media roots", () => {
       path.join(homeRoot, ".clawdbot", "sandboxes"),
       path.join(homeRoot, ".openclaw", "media"),
     ]);
+  });
+
+  it("includes all configured agents' workspace directories", () => {
+    const stateDir = path.join("/tmp", "openclaw-multi-agent-roots");
+    vi.stubEnv("OPENCLAW_STATE_DIR", stateDir);
+
+    const cfg = {
+      agents: {
+        list: [
+          { id: "alpha", workspace: path.join(stateDir, "workspace-alpha") },
+          { id: "beta" },
+          { id: "gamma" },
+        ],
+      },
+    };
+
+    const roots = getAgentScopedMediaLocalRoots(cfg, "alpha");
+    const normalizedRoots = roots.map(normalizeHostPath);
+
+    expect(normalizedRoots).toContain(normalizeHostPath(path.join(stateDir, "workspace-alpha")));
+    expect(normalizedRoots).toContain(normalizeHostPath(path.join(stateDir, "workspace-beta")));
+    expect(normalizedRoots).toContain(normalizeHostPath(path.join(stateDir, "workspace-gamma")));
+  });
+
+  it("deduplicates when two agents share the same workspace path", () => {
+    const stateDir = path.join("/tmp", "openclaw-dedup-roots");
+    vi.stubEnv("OPENCLAW_STATE_DIR", stateDir);
+
+    const sharedWorkspace = path.join("/tmp", "shared-workspace");
+    const cfg = {
+      agents: {
+        list: [
+          { id: "a", workspace: sharedWorkspace },
+          { id: "b", workspace: sharedWorkspace },
+        ],
+      },
+    };
+
+    const roots = getAgentScopedMediaLocalRoots(cfg, "a");
+    const normalizedRoots = roots.map(normalizeHostPath);
+    const sharedNormalized = normalizeHostPath(sharedWorkspace);
+    const count = normalizedRoots.filter((value) => value === sharedNormalized).length;
+    expect(count).toBe(1);
+  });
+
+  it("does not include unconfigured agent workspaces", () => {
+    const stateDir = path.join("/tmp", "openclaw-unconfigured-agent");
+    vi.stubEnv("OPENCLAW_STATE_DIR", stateDir);
+
+    const cfg = {
+      agents: {
+        list: [{ id: "configured", workspace: path.join(stateDir, "workspace-configured") }],
+      },
+    };
+
+    const roots = getAgentScopedMediaLocalRoots(cfg, "adhoc");
+    const normalizedRoots = roots.map(normalizeHostPath);
+
+    expect(normalizedRoots).toContain(
+      normalizeHostPath(path.join(stateDir, "workspace-configured")),
+    );
+    expect(normalizedRoots).not.toContain(
+      normalizeHostPath(path.join(stateDir, "workspace-adhoc")),
+    );
+  });
+
+  it("falls back to default agent workspace when config has no agents list", () => {
+    const stateDir = path.join("/tmp", "openclaw-no-agents-list");
+    vi.stubEnv("OPENCLAW_STATE_DIR", stateDir);
+
+    const baseRoots = getDefaultMediaLocalRoots();
+    const scopedRoots = getAgentScopedMediaLocalRoots({});
+    const normalizedScoped = scopedRoots.map(normalizeHostPath);
+
+    expect(scopedRoots.length).toBeGreaterThan(baseRoots.length);
+    expect(normalizedScoped).toContain(normalizeHostPath(path.join(stateDir, "media")));
+    expect(normalizedScoped).toContain(normalizeHostPath(path.join(stateDir, "workspace")));
+  });
+
+  it("includes custom workspace paths outside the state directory", () => {
+    const stateDir = path.join("/tmp", "openclaw-custom-ws");
+    vi.stubEnv("OPENCLAW_STATE_DIR", stateDir);
+
+    const customPath = "/tmp/my-custom-workspace";
+    const cfg = {
+      agents: {
+        list: [{ id: "custom", workspace: customPath }, { id: "standard" }],
+      },
+    };
+
+    const roots = getAgentScopedMediaLocalRoots(cfg, "custom");
+    const normalizedRoots = roots.map(normalizeHostPath);
+
+    expect(normalizedRoots).toContain(normalizeHostPath(customPath));
+    expect(normalizedRoots).toContain(normalizeHostPath(path.join(stateDir, "workspace-standard")));
   });
 });

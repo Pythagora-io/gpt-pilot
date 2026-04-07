@@ -1,4 +1,4 @@
-import type { PairingRequest } from "../../../src/pairing/pairing-store.js";
+import type { PairingRequest } from "openclaw/plugin-sdk/channel-pairing";
 
 type ChannelType = "telegram";
 type OpenClawConfig = Record<string, unknown>;

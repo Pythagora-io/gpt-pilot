@@ -1,0 +1,24 @@
+{
+  "session": {
+    "dmScope": "per-channel-peer"
+  },
+  "agents": {
+    "defaults": {
+      "heartbeat": {
+        "model": "anthropic/claude-haiku-4-5",
+        "lightContext": true,
+        "isolatedSession": true
+      }
+    }
+  },
+  "plugins": {
+    "entries": {
+      "pazi": {
+        "enabled": true,
+        "config": {
+          "browserUseEnabled": true
+        }
+      }
+    }
+  }
+}

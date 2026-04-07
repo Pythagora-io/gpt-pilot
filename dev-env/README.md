@@ -15,14 +15,14 @@ npm run gateway:dev
 
 ### Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `OPENCLAW_GATEWAY_PORT` | ✅ | Must match the API's `OPENCLAW_GATEWAY_PORT` |
-| `OPENCLAW_GATEWAY_TOKEN` | ✅ | Must match the API's `OPENCLAW_GATEWAY_TOKEN` |
-| `ANTHROPIC_API_KEY` | ✅ | Direct API key, or use with `ANTHROPIC_BASE_URL` for proxy |
-| `ANTHROPIC_BASE_URL` | ❌ | Set to `http://127.0.0.1:8765` if using the main gateway's proxy |
-| `OPENCLAW_SKIP_CHANNELS=1` | ❌ | Skip Slack/Telegram/etc. in dev (recommended) |
-| `PAZI_API_URL` | ❌ | Points to the Pazi API (default: uses env or config) |
+| Variable                   | Required | Description                                                      |
+| -------------------------- | -------- | ---------------------------------------------------------------- |
+| `OPENCLAW_GATEWAY_PORT`    | ✅       | Must match the API's `OPENCLAW_GATEWAY_PORT`                     |
+| `OPENCLAW_GATEWAY_TOKEN`   | ✅       | Must match the API's `OPENCLAW_GATEWAY_TOKEN`                    |
+| `ANTHROPIC_API_KEY`        | ✅       | Direct API key, or use with `ANTHROPIC_BASE_URL` for proxy       |
+| `ANTHROPIC_BASE_URL`       | ❌       | Set to `http://127.0.0.1:8765` if using the main gateway's proxy |
+| `OPENCLAW_SKIP_CHANNELS=1` | ❌       | Skip Slack/Telegram/etc. in dev (recommended)                    |
+| `PAZI_API_URL`             | ❌       | Points to the Pazi API (default: uses env or config)             |
 
 ### Gateway Config
 

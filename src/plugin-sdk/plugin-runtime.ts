@@ -7,5 +7,6 @@ export * from "../plugins/http-registry.js";
 export * from "../plugins/interactive-binding-helpers.js";
 export * from "../plugins/interactive.js";
 export * from "../plugins/lazy-service-module.js";
+export * from "../plugins/runtime/gateway-request-scope.js";
 export * from "../plugins/types.js";
 export type { RuntimeLogger } from "../plugins/runtime/types.js";

@@ -99,6 +99,43 @@ jobs:
           echo "**Environment:** ${{ steps.env.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
           echo "**S3 Tag:** ${{ steps.version_tag.outputs.VERSION_TAG }}" >> $GITHUB_STEP_SUMMARY
 
+      - name: Extract PR info
+        id: pr_info
+        if: always()
+        run: |
+          # Extract PR number and title from merge commit message
+          COMMIT_MSG=$(git log -1 --pretty=%s)
+          PR_NUM=$(echo "$COMMIT_MSG" | grep -oP '#\d+' | head -1 | tr -d '#')
+          if [ -n "$PR_NUM" ]; then
+            echo "pr_link=<https://github.com/${{ github.repository }}/pull/${PR_NUM}|#${PR_NUM}>" >> $GITHUB_OUTPUT
+            echo "pr_title=${COMMIT_MSG}" >> $GITHUB_OUTPUT
+          else
+            echo "pr_link=N/A (manual push)" >> $GITHUB_OUTPUT
+            echo "pr_title=${COMMIT_MSG}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Notify Slack - Success
+        if: success()
+        uses: slackapi/slack-github-action@v2.1.0
+        with:
+          webhook: ${{ secrets.SLACK_DEPLOY_WEBHOOK }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": ":rocket: *Agent* published to *${{ steps.env.outputs.environment }}*\n*Version:* ${{ steps.version_tag.outputs.VERSION_TAG }}\n*PR:* ${{ steps.pr_info.outputs.pr_link }}\n*Commit:* <https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n*Triggered by:* ${{ github.actor }}\n*Run:* <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View logs>"
+            }
+
+      - name: Notify Slack - Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v2.1.0
+        with:
+          webhook: ${{ secrets.SLACK_DEPLOY_WEBHOOK }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": ":x: *Agent* publish to *${{ steps.env.outputs.environment }}* FAILED\n*Commit:* <https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n*Triggered by:* ${{ github.actor }}\n*Run:* <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View logs>"
+            }
+
   push-version-tag:
     if: github.ref_name == 'main'
     runs-on: ubuntu-latest

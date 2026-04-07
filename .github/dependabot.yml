@@ -29,7 +29,7 @@ updates:
         update-types:
           - minor
           - patch
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 0
     registries:
       - npm-npmjs
 
@@ -47,7 +47,7 @@ updates:
         update-types:
           - minor
           - patch
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
 
   # Swift Package Manager - macOS app
   - package-ecosystem: swift
@@ -63,7 +63,7 @@ updates:
         update-types:
           - minor
           - patch
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
 
   # Swift Package Manager - shared MoltbotKit
   - package-ecosystem: swift
@@ -79,7 +79,7 @@ updates:
         update-types:
           - minor
           - patch
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
 
   # Swift Package Manager - Swabble
   - package-ecosystem: swift
@@ -95,7 +95,7 @@ updates:
         update-types:
           - minor
           - patch
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
 
   # Gradle - Android app
   - package-ecosystem: gradle
@@ -111,7 +111,7 @@ updates:
         update-types:
           - minor
           - patch
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
 
   # Docker base images
   - package-ecosystem: docker
@@ -124,4 +124,4 @@ updates:
       docker-images:
         patterns:
           - "*"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0

@@ -19,6 +19,13 @@ const threadParticipation = resolveGlobalDedupeCache(SLACK_THREAD_PARTICIPATION_
   maxSize: MAX_ENTRIES,
 });
 
+/**
+ * Parallel timestamp map for persistence support (hydrate/snapshot).
+ * DedupeCache doesn't expose iteration or direct set, so we keep a
+ * synchronized Map alongside it for the persistence layer.
+ */
+const persistenceTimestamps = new Map<string, number>();
+
 function makeKey(accountId: string, channelId: string, threadTs: string): string {
   return `${accountId}:${channelId}:${threadTs}`;
 }
@@ -31,7 +38,9 @@ export function recordSlackThreadParticipation(
   if (!accountId || !channelId || !threadTs) {
     return;
   }
-  threadParticipation.check(makeKey(accountId, channelId, threadTs));
+  const key = makeKey(accountId, channelId, threadTs);
+  threadParticipation.check(key);
+  persistenceTimestamps.set(key, Date.now());
 }
 
 export function hasSlackThreadParticipation(
@@ -53,13 +62,8 @@ export function hydrateSlackThreadParticipationCache(
   entries: Iterable<[key: string, timestamp: number]>,
 ): void {
   for (const [key, ts] of entries) {
-    threadParticipation.set(key, ts);
-  }
-  if (threadParticipation.size > MAX_ENTRIES) {
-    evictExpired();
-  }
-  while (threadParticipation.size > MAX_ENTRIES) {
-    evictOldest();
+    threadParticipation.check(key);
+    persistenceTimestamps.set(key, ts);
   }
 }
 
@@ -68,9 +72,10 @@ export function hydrateSlackThreadParticipationCache(
  * Returns a copy — mutations do not affect the live cache.
  */
 export function getSlackThreadParticipationEntriesSnapshot(): ReadonlyMap<string, number> {
-  return new Map(threadParticipation);
+  return new Map(persistenceTimestamps);
 }
 
 export function clearSlackThreadParticipationCache(): void {
   threadParticipation.clear();
+  persistenceTimestamps.clear();
 }

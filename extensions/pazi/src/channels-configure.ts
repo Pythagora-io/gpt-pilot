@@ -1,4 +1,8 @@
+import type { SlackThreadReplyMode } from "./slack-thread-reply-mode.js";
+
 type ChannelType = "slack" | "telegram" | "whatsapp";
+
+type ReplyToMode = "off" | "first" | "all";
 
 interface ChannelConfigureParams {
   channel: ChannelType;
@@ -14,6 +18,10 @@ interface ChannelConfigureParams {
     allowFrom?: string[];
     slashCommandName?: string;
     token?: string;
+    replyToMode?: ReplyToMode;
+    ackReaction?: string;
+    threadReplyMode?: SlackThreadReplyMode;
+    ackMessage?: string;
   };
 }
 
@@ -55,6 +63,10 @@ interface ChannelConfigureResult {
   dmPolicy?: "open" | "allowlist";
   groupPolicy?: "open" | "allowlist";
   allowFrom?: string[];
+  replyToMode?: ReplyToMode;
+  ackReaction?: string;
+  threadReplyMode?: SlackThreadReplyMode;
+  ackMessage?: string;
   onboarding?: TelegramOnboardingResult | WhatsAppOnboardingResult;
 }
 
@@ -84,9 +96,17 @@ interface ChannelConfigureDeps {
     timeoutMs: number,
     proxyUrl: string | undefined,
   ) => Promise<ProbeResult>;
+  onConfigured?: (result: ChannelConfigureResult) => Promise<void> | void;
 }
 
 const VALID_CHANNELS: ReadonlySet<string> = new Set(["slack", "telegram", "whatsapp"]);
+const VALID_ACK_REACTIONS: ReadonlySet<string> = new Set([
+  "eyes",
+  "thumbsup",
+  "rocket",
+  "white_check_mark",
+  "hourglass_flowing_sand",
+]);
 const ERROR_INVALID_REQUEST = "INVALID_REQUEST";
 const ERROR_UNAVAILABLE = "UNAVAILABLE";
 const TELEGRAM_PAIRING_POLL_INTERVAL_MS = 3000;
@@ -134,7 +154,10 @@ function validateParams(raw: unknown): {
   const p = raw as Record<string, unknown>;
 
   if (!isChannelType(p.channel)) {
-    return { ok: false, error: "channel must be 'slack', 'telegram', or 'whatsapp'" };
+    return {
+      ok: false,
+      error: "channel must be 'slack', 'telegram', or 'whatsapp'",
+    };
   }
 
   const config = p.config;
@@ -196,6 +219,24 @@ function validateParams(raw: unknown): {
         slashCommandName:
           typeof cfg.slashCommandName === "string" ? cfg.slashCommandName : undefined,
         token: typeof cfg.token === "string" ? cfg.token : undefined,
+        replyToMode:
+          cfg.replyToMode === "off" || cfg.replyToMode === "first" || cfg.replyToMode === "all"
+            ? cfg.replyToMode
+            : undefined,
+        ackReaction:
+          typeof cfg.ackReaction === "string" && VALID_ACK_REACTIONS.has(cfg.ackReaction.trim())
+            ? cfg.ackReaction.trim()
+            : undefined,
+        threadReplyMode:
+          cfg.threadReplyMode === "full" ||
+          cfg.threadReplyMode === "summary-only" ||
+          cfg.threadReplyMode === "quiet"
+            ? cfg.threadReplyMode
+            : undefined,
+        ackMessage:
+          typeof cfg.ackMessage === "string" && cfg.ackMessage.trim().length > 0
+            ? cfg.ackMessage.trim()
+            : undefined,
       },
     },
   };
@@ -265,6 +306,10 @@ function applySlackConfig(
     input.slashCommandName !== undefined
       ? sanitizeSlashCommandName(input.slashCommandName)
       : undefined;
+  const existingAccount = (cfg.channels?.slack?.accounts?.[accountId] ?? {}) as Record<
+    string,
+    unknown
+  >;
 
   return upsertChannelAgentBinding(
     {
@@ -277,7 +322,7 @@ function applySlackConfig(
           accounts: {
             ...cfg.channels?.slack?.accounts,
             [accountId]: {
-              ...cfg.channels?.slack?.accounts?.[accountId],
+              ...existingAccount,
               enabled: true,
               botToken,
               appToken,
@@ -290,7 +335,19 @@ function applySlackConfig(
               blockStreaming: false,
               // Always reply inside threads so the bot doesn't spam the channel.
               replyToMode: "all",
+              // Enable bot-to-bot communication by default so multi-agent setups
+              // work out of the box. Safety is preserved by requireMention (agents
+              // only respond when explicitly @mentioned, not on every bot message).
+              // Only set the default when the account doesn't already have an
+              // explicit value — avoids overriding a deliberate opt-out on reconfigure.
+              ...((existingAccount as Record<string, unknown>)?.allowBots === undefined
+                ? { allowBots: true }
+                : {}),
               ...(input.name ? { name: input.name } : {}),
+              ...(input.replyToMode ? { replyToMode: input.replyToMode } : {}),
+              ...(input.ackReaction?.trim() ? { ackReaction: input.ackReaction.trim() } : {}),
+              ...(input.threadReplyMode ? { threadReplyMode: input.threadReplyMode } : {}),
+              ...(input.ackMessage?.trim() ? { ackMessage: input.ackMessage.trim() } : {}),
               ...(slashCommandName
                 ? {
                     slashCommand: {
@@ -490,6 +547,10 @@ export function createPaziChannelsConfigureHandler(
               inputConfig.accessMode === "closed"
                 ? normalizeSlackAllowFrom(inputConfig.allowFrom)
                 : ["*"],
+            replyToMode: inputConfig.replyToMode ?? "all",
+            ackReaction: inputConfig.ackReaction?.trim() || "eyes",
+            threadReplyMode: inputConfig.threadReplyMode ?? "quiet",
+            ackMessage: inputConfig.ackMessage?.trim() || undefined,
           }
         : {}),
     };
@@ -514,6 +575,7 @@ export function createPaziChannelsConfigureHandler(
         method: "qr",
       };
     }
+    await deps.onConfigured?.(result);
     respond(true, result);
   };
 }

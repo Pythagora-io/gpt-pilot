@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk/core";
 import { resolveGatewayToken } from "../config.js";
 import { setProxyContext } from "../context.js";
 
@@ -8,6 +8,7 @@ type JsonBody = {
   agentId?: string;
   proxyToken?: string;
   dashboardBaseUrl?: string;
+  browserEnabled?: boolean;
 };
 
 type ContextHandlerDeps = {
@@ -65,7 +66,7 @@ export function createPaziContextHandler(deps: ContextHandlerDeps) {
       return;
     }
 
-    const { userId, agentId, proxyToken, dashboardBaseUrl } = body;
+    const { userId, agentId, proxyToken, dashboardBaseUrl, browserEnabled } = body;
     if (!userId || !agentId || !proxyToken) {
       writeJson(res, 400, { error: "missing userId, agentId, or proxyToken" });
       return;
@@ -76,7 +77,15 @@ export function createPaziContextHandler(deps: ContextHandlerDeps) {
         ? dashboardBaseUrl.trim()
         : undefined;
 
-    setProxyContext({ userId, agentId, proxyToken, dashboardBaseUrl: resolvedDashboardBaseUrl });
+    const resolvedBrowserEnabled = browserEnabled === true;
+
+    setProxyContext({
+      userId,
+      agentId,
+      proxyToken,
+      dashboardBaseUrl: resolvedDashboardBaseUrl,
+      browserEnabled: resolvedBrowserEnabled,
+    });
     writeJson(res, 200, { ok: true });
   };
 }

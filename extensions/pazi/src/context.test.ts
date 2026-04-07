@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { withTempDir } from "../../../src/test-utils/temp-dir.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { withTempDir } from "../../../test/helpers/extensions/temp-dir.js";
 import {
   _resetForTest,
   clearProxyContext,
@@ -33,25 +33,25 @@ describe("pazi context busy status", () => {
     expect(isProxyBusyForStatus(1_000_000)).toBe(false);
   });
 
-  it("returns busy when activity is within the 30-minute window", () => {
+  it("returns busy when activity is within the 20-minute window", () => {
     const nowMs = 1_000_000;
     setProxyContext({
       userId: "u1",
       agentId: "a1",
       proxyToken: "p1",
     });
-    markProxyActivity(nowMs - 29 * 60 * 1000);
+    markProxyActivity(nowMs - 19 * 60 * 1000);
     expect(isProxyBusyForStatus(nowMs)).toBe(true);
   });
 
-  it("returns not busy when activity is older than 30 minutes", () => {
+  it("returns not busy when activity is older than 20 minutes", () => {
     const nowMs = 1_000_000;
     setProxyContext({
       userId: "u1",
       agentId: "a1",
       proxyToken: "p1",
     });
-    markProxyActivity(nowMs - 31 * 60 * 1000);
+    markProxyActivity(nowMs - 21 * 60 * 1000);
     expect(isProxyBusyForStatus(nowMs)).toBe(false);
   });
 });
@@ -62,6 +62,7 @@ describe("pazi context persistence", () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     _resetForTest();
   });
 
@@ -254,5 +255,145 @@ describe("pazi context persistence", () => {
     expect(
       warnings.some((message) => message.includes("disabled because configured path was empty")),
     ).toBe(true);
+  });
+
+  it("persists atomically — file is valid even if stale temp exists from prior crash", async () => {
+    await withTempDir("pazi-ctx-", async (dir) => {
+      const filePath = path.join(dir, "pazi", "proxy-context.json");
+      configurePersistencePath(filePath);
+
+      // Simulate stale temp from a previous crash
+      const staleTemp = `${filePath}.99999.tmp`;
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(staleTemp, "corrupted partial write", "utf-8");
+
+      setProxyContext(sampleContext);
+
+      const raw = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      expect(raw).toEqual(sampleContext);
+
+      // Simulate restart: reset in-memory, reload from disk
+      _resetForTest();
+      configurePersistencePath(filePath);
+      expect(getProxyContext()).toEqual(sampleContext);
+    });
+  });
+
+  it("survives a truncated file gracefully (loads null, next set overwrites)", async () => {
+    await withTempDir("pazi-ctx-", async (dir) => {
+      const filePath = path.join(dir, "proxy-context.json");
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, '{"userId":"u1","age', "utf-8");
+      configurePersistencePath(filePath);
+
+      expect(getProxyContext()).toBeNull();
+
+      setProxyContext(sampleContext);
+      _resetForTest();
+      configurePersistencePath(filePath);
+      expect(getProxyContext()).toEqual(sampleContext);
+    });
+  });
+
+  it("prefers atomic rename when renameSync succeeds", async () => {
+    await withTempDir("pazi-ctx-", async (dir) => {
+      const filePath = path.join(dir, "pazi", "proxy-context.json");
+      configurePersistencePath(filePath);
+
+      const renameSpy = vi.spyOn(fs, "renameSync");
+
+      setProxyContext(sampleContext);
+
+      expect(renameSpy).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(fs.readFileSync(filePath, "utf-8"))).toEqual(sampleContext);
+    });
+  });
+
+  it("falls back to direct write when renameSync throws EPERM", async () => {
+    await withTempDir("pazi-ctx-", async (dir) => {
+      const filePath = path.join(dir, "pazi", "proxy-context.json");
+      configurePersistencePath(filePath);
+
+      vi.spyOn(fs, "renameSync").mockImplementation(() => {
+        const err: NodeJS.ErrnoException = new Error("EPERM: operation not permitted");
+        err.code = "EPERM";
+        throw err;
+      });
+
+      setProxyContext(sampleContext);
+
+      const raw = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      expect(raw).toEqual(sampleContext);
+
+      // Temp file should be cleaned up
+      const tmpPath = `${filePath}.${process.pid}.tmp`;
+      expect(fs.existsSync(tmpPath)).toBe(false);
+
+      // File permissions should still be 0o600
+      if (process.platform !== "win32") {
+        const mode = fs.statSync(filePath).mode & 0o777;
+        expect(mode).toBe(0o600);
+      }
+    });
+  });
+
+  it("warns once and skips rename on subsequent writes after EPERM fallback", async () => {
+    await withTempDir("pazi-ctx-", async (dir) => {
+      const filePath = path.join(dir, "proxy-context.json");
+      const warnings: string[] = [];
+      configurePersistenceWarnLogger((msg) => warnings.push(msg));
+      configurePersistencePath(filePath);
+
+      const renameSpy = vi.spyOn(fs, "renameSync").mockImplementation(() => {
+        const err: NodeJS.ErrnoException = new Error("EPERM: operation not permitted");
+        err.code = "EPERM";
+        throw err;
+      });
+
+      // First call triggers fallback + warning
+      setProxyContext(sampleContext);
+      expect(renameSpy).toHaveBeenCalledTimes(1);
+
+      // Second call should skip rename entirely
+      renameSpy.mockClear();
+      const ctx2 = { userId: "u2", agentId: "a2", proxyToken: "t2" };
+      setProxyContext(ctx2);
+      expect(renameSpy).not.toHaveBeenCalled();
+
+      // Fallback warning emitted exactly once
+      const fallbackWarnings = warnings.filter((m) => m.includes("falling back to direct writes"));
+      expect(fallbackWarnings).toHaveLength(1);
+
+      // Second context was persisted correctly
+      const raw = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      expect(raw).toEqual(ctx2);
+    });
+  });
+
+  it("re-enables atomic rename after configuring a new path", async () => {
+    await withTempDir("pazi-ctx-", async (dir) => {
+      const filePath1 = path.join(dir, "path1", "proxy-context.json");
+      configurePersistencePath(filePath1);
+
+      // Force EPERM on first path
+      const renameSpy = vi.spyOn(fs, "renameSync").mockImplementation(() => {
+        const err: NodeJS.ErrnoException = new Error("EPERM");
+        err.code = "EPERM";
+        throw err;
+      });
+      setProxyContext(sampleContext);
+
+      // Reconfigure to a new path — should reset fallback
+      renameSpy.mockRestore();
+      const filePath2 = path.join(dir, "path2", "proxy-context.json");
+      configurePersistencePath(filePath2);
+
+      const renameSpy2 = vi.spyOn(fs, "renameSync");
+      setProxyContext(sampleContext);
+
+      // Atomic rename should be attempted again on the new path
+      expect(renameSpy2).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(fs.readFileSync(filePath2, "utf-8"))).toEqual(sampleContext);
+    });
   });
 });

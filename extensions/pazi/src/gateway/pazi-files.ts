@@ -1,12 +1,15 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ErrorCodes, errorShape } from "../../../../src/gateway/protocol/index.js";
-import type { GatewayRequestHandler } from "../../../../src/gateway/server-methods/types.js";
+import {
+  ErrorCodes,
+  errorShape,
+  type GatewayRequestHandler,
+} from "openclaw/plugin-sdk/gateway-runtime";
 import {
   readFileWithinRoot,
   writeFileWithinRoot,
   SafeOpenError,
-} from "../../../../src/infra/fs-safe.js";
+} from "openclaw/plugin-sdk/infra-runtime";
 
 function isLikelyBinary(buffer: Buffer): boolean {
   const sampleLen = Math.min(buffer.length, 4096);
@@ -157,9 +160,7 @@ export function createPaziFilesGet(resolveWorkspace: ResolveWorkspace): GatewayR
           missing: false,
           size: result.stat.size,
           updatedAtMs: Math.floor(result.stat.mtimeMs),
-          content: binary
-            ? result.buffer.toString("base64")
-            : result.buffer.toString("utf-8"),
+          content: binary ? result.buffer.toString("base64") : result.buffer.toString("utf-8"),
           encoding: binary ? "base64" : "utf8",
         },
       });
@@ -238,6 +239,68 @@ export function createPaziFilesSet(resolveWorkspace: ResolveWorkspace): GatewayR
       agentId,
       workspace: workspaceDir,
       file: { name, path: filePath, missing: false, size, updatedAtMs, content },
+    });
+  };
+}
+
+export function createPaziFilesDelete(resolveWorkspace: ResolveWorkspace): GatewayRequestHandler {
+  return async ({ params, respond }) => {
+    const resolved = resolveRequestWorkspace(params, resolveWorkspace);
+    if (!resolved) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "unknown agent id"));
+      return;
+    }
+    const { agentId, workspaceDir } = resolved;
+    const name = typeof params.name === "string" ? params.name.trim() : "";
+    if (!name || name.includes("\0")) {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.INVALID_REQUEST, `invalid file name "${name}"`),
+      );
+      return;
+    }
+
+    // Validate the resolved path stays within the workspace root
+    const resolvedRoot = path.resolve(workspaceDir);
+    const filePath = path.resolve(workspaceDir, name);
+    if (!filePath.startsWith(resolvedRoot + path.sep) || filePath === resolvedRoot) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `invalid file: "${name}"`));
+      return;
+    }
+
+    // Verify it's a file (not a directory or symlink)
+    try {
+      const stat = await fs.lstat(filePath);
+      if (!stat.isFile()) {
+        respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, `not a file: "${name}"`));
+        return;
+      }
+    } catch {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.INVALID_REQUEST, `file not found: "${name}"`),
+      );
+      return;
+    }
+
+    try {
+      await fs.unlink(filePath);
+    } catch (err: unknown) {
+      // ENOENT between stat and unlink — treat as success (idempotent)
+      if (err instanceof Error && "code" in err && err.code === "ENOENT") {
+        respond(true, { ok: true, agentId, workspace: workspaceDir });
+        return;
+      }
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, "delete_failed"));
+      return;
+    }
+
+    respond(true, {
+      ok: true,
+      agentId,
+      workspace: workspaceDir,
     });
   };
 }

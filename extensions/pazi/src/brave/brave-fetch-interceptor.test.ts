@@ -30,8 +30,10 @@ describe("installBraveFetchInterceptor", () => {
   });
 
   it("rewrites Brave requests to the Pazi proxy with proxy auth headers", async () => {
-    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
-    globalThis.fetch = fetchMock as typeof globalThis.fetch;
+    const fetchMock = vi.fn<typeof globalThis.fetch>(
+      async () => new Response("{}", { status: 200 }),
+    );
+    globalThis.fetch = fetchMock;
 
     setProxyContext({
       userId: "user-1",
@@ -51,7 +53,7 @@ describe("installBraveFetchInterceptor", () => {
     const [url, init] = fetchMock.mock.calls[0]!;
     expect(url).toBe("https://api.pazi.ai/brave/res/v1/web/search?q=hello");
 
-    const headers = new Headers((init as RequestInit).headers);
+    const headers = new Headers((init as RequestInit | undefined)?.headers);
     expect(headers.get("accept")).toBe("application/json");
     expect(headers.get("x-proxy-token")).toBe("proxy-token-1");
     expect(headers.get("x-user-id")).toBe("user-1");
@@ -59,8 +61,10 @@ describe("installBraveFetchInterceptor", () => {
   });
 
   it("forwards request body for Brave requests", async () => {
-    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
-    globalThis.fetch = fetchMock as typeof globalThis.fetch;
+    const fetchMock = vi.fn<typeof globalThis.fetch>(
+      async () => new Response("{}", { status: 200 }),
+    );
+    globalThis.fetch = fetchMock;
 
     setProxyContext({
       userId: "user-2",
@@ -85,16 +89,18 @@ describe("installBraveFetchInterceptor", () => {
     await globalThis.fetch("https://api.search.brave.com/res/v1/llm/context", requestInit);
 
     const [, init] = fetchMock.mock.calls[0]!;
-    expect((init as RequestInit).method).toBe("POST");
-    expect((init as RequestInit).body).toBe(payload);
-    const headers = new Headers((init as RequestInit).headers);
+    expect((init as RequestInit | undefined)?.method).toBe("POST");
+    expect((init as RequestInit | undefined)?.body).toBe(payload);
+    const headers = new Headers((init as RequestInit | undefined)?.headers);
     expect(headers.get("content-type")).toBe("application/json");
     expect(init).not.toHaveProperty("dispatcher");
   });
 
   it("falls through to original Brave request when proxy context is missing", async () => {
-    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
-    globalThis.fetch = fetchMock as typeof globalThis.fetch;
+    const fetchMock = vi.fn<typeof globalThis.fetch>(
+      async () => new Response("{}", { status: 200 }),
+    );
+    globalThis.fetch = fetchMock;
     installBraveFetchInterceptor("https://api.pazi.ai");
 
     await globalThis.fetch("https://api.search.brave.com/res/v1/web/search?q=hello");
@@ -104,8 +110,10 @@ describe("installBraveFetchInterceptor", () => {
   });
 
   it("falls through for non-Brave URLs", async () => {
-    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
-    globalThis.fetch = fetchMock as typeof globalThis.fetch;
+    const fetchMock = vi.fn<typeof globalThis.fetch>(
+      async () => new Response("{}", { status: 200 }),
+    );
+    globalThis.fetch = fetchMock;
     installBraveFetchInterceptor("https://api.pazi.ai");
 
     await globalThis.fetch("https://example.com/health");
@@ -115,8 +123,10 @@ describe("installBraveFetchInterceptor", () => {
   });
 
   it("falls through for unsupported Brave paths", async () => {
-    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
-    globalThis.fetch = fetchMock as typeof globalThis.fetch;
+    const fetchMock = vi.fn<typeof globalThis.fetch>(
+      async () => new Response("{}", { status: 200 }),
+    );
+    globalThis.fetch = fetchMock;
     installBraveFetchInterceptor("https://api.pazi.ai");
 
     await globalThis.fetch("https://api.search.brave.com/res/v1/images/search?q=hello");
@@ -127,8 +137,10 @@ describe("installBraveFetchInterceptor", () => {
 
   it("does not rewrite when a real BRAVE_API_KEY is configured", async () => {
     process.env.BRAVE_API_KEY = "real-brave-key";
-    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
-    globalThis.fetch = fetchMock as typeof globalThis.fetch;
+    const fetchMock = vi.fn<typeof globalThis.fetch>(
+      async () => new Response("{}", { status: 200 }),
+    );
+    globalThis.fetch = fetchMock;
     setProxyContext({
       userId: "user-3",
       agentId: "agent-3",
@@ -143,8 +155,10 @@ describe("installBraveFetchInterceptor", () => {
   });
 
   it("updates proxy apiUrl when installed again", async () => {
-    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
-    globalThis.fetch = fetchMock as typeof globalThis.fetch;
+    const fetchMock = vi.fn<typeof globalThis.fetch>(
+      async () => new Response("{}", { status: 200 }),
+    );
+    globalThis.fetch = fetchMock;
     setProxyContext({
       userId: "user-4",
       agentId: "agent-4",
@@ -161,8 +175,10 @@ describe("installBraveFetchInterceptor", () => {
   });
 
   it("restores original fetch on uninstall", () => {
-    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
-    globalThis.fetch = fetchMock as typeof globalThis.fetch;
+    const fetchMock = vi.fn<typeof globalThis.fetch>(
+      async () => new Response("{}", { status: 200 }),
+    );
+    globalThis.fetch = fetchMock;
 
     installBraveFetchInterceptor("https://api.pazi.ai");
     const interceptedFetch = globalThis.fetch;

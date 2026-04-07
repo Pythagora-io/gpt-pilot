@@ -1,13 +1,14 @@
 import type { Server as HttpServer } from "node:http";
 import path from "node:path";
-import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
-import { resolveAgentWorkspaceDir, resolveDefaultAgentId } from "../../src/agents/agent-scope.js";
-import { notifyPairingApproved } from "../../src/channels/plugins/pairing.js";
+import { resolveAgentWorkspaceDir, resolveDefaultAgentId } from "openclaw/plugin-sdk/agent-runtime";
 import {
   approveChannelPairingCode,
   listChannelPairingRequests,
-} from "../../src/pairing/pairing-store.js";
-import { normalizeAgentId } from "../../src/routing/session-key.js";
+  notifyPairingApproved,
+} from "openclaw/plugin-sdk/channel-pairing";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk/core";
+import { normalizeAgentId } from "openclaw/plugin-sdk/routing";
+import { trackChannelConnected } from "./src/analytics.js";
 import { installBraveEnvDefaults, uninstallBraveEnvDefaults } from "./src/brave/brave-env.js";
 import {
   installBraveFetchInterceptor,
@@ -25,22 +26,49 @@ import { resolvePaziBillingConfig } from "./src/config.js";
 import {
   configurePersistencePath,
   configurePersistenceWarnLogger,
+  getProxyContext,
   getProxyLastActivityAt,
   isProxyBusyForStatus,
+  setProxyContext,
 } from "./src/context.js";
+import { createCredentialTools } from "./src/credentials/index.js";
+import { createPaziCredentialsHandler } from "./src/gateway/pazi-credentials.js";
 import {
+  createPaziFilesDelete,
   createPaziFilesGet,
   createPaziFilesList,
   createPaziFilesSet,
 } from "./src/gateway/pazi-files.js";
+import { createPaziMemoryGet } from "./src/gateway/pazi-memory.js";
+import {
+  createPaziSkillsCapabilities,
+  createPaziSkillsGet,
+  createPaziSkillsSet,
+} from "./src/gateway/pazi-skills.js";
 import { createPaziSkillsCreateHandler } from "./src/gateway/skills-create.js";
 import { createPaziSkillsDeleteHandler } from "./src/gateway/skills-delete.js";
-import { createPipedreamTools } from "./src/pipedream/tools.js";
+import {
+  createPaziTemplatesInstantiateHandler,
+  createPaziTemplatesListHandler,
+} from "./src/gateway/templates-instantiate.js";
 import { paziBootstrapActionsHook } from "./src/hooks/pazi-bootstrap-actions.js";
+import { paziBootstrapUserHook } from "./src/hooks/pazi-bootstrap-user.js";
+import { registerBrowserGuardHook } from "./src/hooks/pazi-browser-guard.js";
+import { registerBrowserPromptHook } from "./src/hooks/pazi-browser-prompt.js";
+import { registerProxyAgentSyncHook } from "./src/hooks/pazi-proxy-agent-sync.js";
+import { registerToolResultPersistHook } from "./src/hooks/pazi-tool-result-persist.js";
+import { registerTranscriptionBillingHook } from "./src/hooks/pazi-transcription-billing.js";
+import { registerWebchatFileSupportHook } from "./src/hooks/pazi-webchat-file-support.js";
+import { applyPaziImageConfig } from "./src/image-generation/onboard.js";
+import { buildPaziImageGenerationProvider } from "./src/image-generation/provider.js";
+import { createPaziBrowserEnabledHandler } from "./src/proxy/pazi-browser-enabled.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
 import { startSlackThreadCachePersistence } from "./src/slack-thread-cache-persistence.js";
+import { registerSlackThreadReplyMode } from "./src/slack-thread-reply-mode.js";
+import { installChannelAuthCrashGuard } from "./src/suppress-channel-auth-crash.js";
+import { createUserActionTools } from "./src/user-actions/tools.js";
 
 function normalizePluginConfig(
   value: OpenClawPluginApi["pluginConfig"],
@@ -67,6 +95,10 @@ export default {
   name: "Pazi Proxy",
   description: "Routes Anthropic calls through the Pazi API.",
   register(api: OpenClawPluginApi) {
+    // Suppress channel auth errors (e.g. expired Slack tokens) to prevent
+    // infinite restart loops — restarting won't fix invalid credentials.
+    installChannelAuthCrashGuard(api.logger);
+
     // PAZ-131: Persist proxy context to disk so it survives gateway restarts
     configurePersistenceWarnLogger((message) => {
       api.logger.warn(message);
@@ -98,6 +130,11 @@ export default {
       env: process.env,
       logger: api.logger,
     });
+    const browserEnabledHandler = createPaziBrowserEnabledHandler({
+      configToken: gatewayAuthToken,
+      env: process.env,
+      logger: api.logger,
+    });
 
     const uploadHandler = createPaziUploadHandler({
       configToken: gatewayAuthToken,
@@ -105,13 +142,11 @@ export default {
       logger: api.logger,
     });
 
-    api.registerGatewayMethod("pazi.integration.emit", ({ params, respond, context }) => {
-      context.broadcast("integration", params);
-      respond(true, { emitted: true });
-    });
     api.registerGatewayMethod("pazi.files.list", createPaziFilesList(resolveWorkspace));
     api.registerGatewayMethod("pazi.files.get", createPaziFilesGet(resolveWorkspace));
     api.registerGatewayMethod("pazi.files.set", createPaziFilesSet(resolveWorkspace));
+    api.registerGatewayMethod("pazi.files.delete", createPaziFilesDelete(resolveWorkspace));
+    api.registerGatewayMethod("pazi.memory.get", createPaziMemoryGet(resolveWorkspace));
     api.registerGatewayMethod(
       "skills.create",
       createPaziSkillsCreateHandler({
@@ -128,6 +163,23 @@ export default {
       }),
     );
 
+    const skillsDeps = {
+      resolveWorkspace,
+      loadConfig: () => api.runtime.config.loadConfig(),
+    };
+    api.registerGatewayMethod(
+      "pazi.skills.capabilities",
+      createPaziSkillsCapabilities({ loadConfig: () => api.runtime.config.loadConfig() }),
+    );
+    api.registerGatewayMethod("pazi.skills.get", createPaziSkillsGet(skillsDeps));
+    api.registerGatewayMethod("pazi.skills.set", createPaziSkillsSet(skillsDeps));
+
+    api.registerGatewayMethod(
+      "pazi.templates.instantiate",
+      createPaziTemplatesInstantiateHandler({ resolveWorkspace }),
+    );
+    api.registerGatewayMethod("pazi.templates.list", createPaziTemplatesListHandler());
+
     api.registerGatewayMethod(
       "pazi.channels.configure",
       createPaziChannelsConfigureHandler({
@@ -136,6 +188,9 @@ export default {
         probeSlack: (token, timeoutMs) => api.runtime.channel.slack.probeSlack(token, timeoutMs),
         probeTelegram: (token, timeoutMs, proxyUrl) =>
           api.runtime.channel.telegram.probeTelegram(token, timeoutMs, proxyUrl),
+        onConfigured: (result) => {
+          void trackChannelConnected(pluginConfig, result.channel, result.accountId);
+        },
       }),
     );
     api.registerGatewayMethod(
@@ -198,13 +253,45 @@ export default {
 
     api.registerHook("agent:bootstrap", paziBootstrapActionsHook, {
       name: "pazi-bootstrap-actions",
-      description: "Appends Pazi frontend-action docs (voice tools + PAZI_COMMAND markers) to AGENTS.md",
+      description: "Appends Pazi frontend-action docs to AGENTS.md",
     });
 
-    const tools = createPipedreamTools({
-      pluginConfig,
+    api.registerHook("agent:bootstrap", paziBootstrapUserHook, {
+      name: "pazi-bootstrap-user",
+      description: "Injects user name from .pazi/user-meta.json into USER.md bootstrap context",
     });
-    for (const tool of tools) {
+
+    // PAZ-211: Redact credential values from persisted tool results
+    registerToolResultPersistHook(api);
+    registerProxyAgentSyncHook(api);
+
+    // PAZ-280: Inject webchat file download/preview guidance into system prompt
+    registerWebchatFileSupportHook(api);
+
+    // PAZ-283: Deduct credits for channel audio transcription
+    registerTranscriptionBillingHook(api);
+
+    // PAZ-206: Slack thread reply mode — suppress intermediate messages
+    registerSlackThreadReplyMode(api);
+
+    // PAZ-256: Browser permission hooks
+    registerBrowserPromptHook(api);
+    registerBrowserGuardHook(api);
+
+    const userActionTools = createUserActionTools({
+      pluginConfig,
+      onBrowserPermissionGranted: async () => {
+        const ctx = getProxyContext();
+        if (!ctx) return;
+        setProxyContext({ ...ctx, browserEnabled: true });
+      },
+    });
+    for (const tool of userActionTools) {
+      api.registerTool(tool);
+    }
+
+    const credentialTools = createCredentialTools();
+    for (const tool of credentialTools) {
       api.registerTool(tool);
     }
 
@@ -219,6 +306,26 @@ export default {
       }
     }
 
+    // PAZ-282: Register Pazi image generation provider
+    api.registerImageGenerationProvider(
+      buildPaziImageGenerationProvider({ pluginConfig, env: process.env }),
+    );
+
+    // PAZ-282: Auto-configure pazi as the default image generation provider
+    // if no imageGenerationModel is set yet
+    api.registerService({
+      id: "pazi-image-generation-onboard",
+      start: async () => {
+        const currentConfig = await api.runtime.config.loadConfig();
+        if (!currentConfig.agents?.defaults?.imageGenerationModel) {
+          const patched = applyPaziImageConfig(currentConfig);
+          await api.runtime.config.writeConfigFile(patched);
+          api.logger.info("pazi: auto-configured imageGenerationModel → pazi/gpt-image-1.5");
+        }
+      },
+      stop: async () => {},
+    });
+
     api.registerHttpRoute({
       path: "/pazi/context",
       auth: "gateway",
@@ -230,6 +337,20 @@ export default {
           return;
         }
         await contextHandler(req, res);
+      },
+    });
+
+    api.registerHttpRoute({
+      path: "/pazi/browser-enabled",
+      auth: "gateway",
+      handler: async (req, res) => {
+        if (req.method !== "POST") {
+          res.statusCode = 404;
+          res.setHeader("Content-Type", "text/plain; charset=utf-8");
+          res.end("Not Found");
+          return;
+        }
+        await browserEnabledHandler(req, res);
       },
     });
 
@@ -276,6 +397,21 @@ export default {
           return;
         }
         await uploadHandler(req, res);
+      },
+    });
+
+    const credentialsHandler = createPaziCredentialsHandler();
+    api.registerHttpRoute({
+      path: "/pazi/credentials",
+      auth: "gateway",
+      handler: async (req, res) => {
+        if (req.method !== "POST") {
+          res.statusCode = 405;
+          res.setHeader("Content-Type", "text/plain; charset=utf-8");
+          res.end("Method Not Allowed");
+          return;
+        }
+        await credentialsHandler(req, res);
       },
     });
 

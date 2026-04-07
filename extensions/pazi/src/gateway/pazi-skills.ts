@@ -1,7 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ErrorCodes, errorShape } from "../../../../src/gateway/protocol/index.js";
-import type { GatewayRequestHandler } from "../../../../src/gateway/server-methods/types.js";
+import { listAgentIds, resolveAgentWorkspaceDir } from "openclaw/plugin-sdk/agent-runtime";
+import {
+  ErrorCodes,
+  errorShape,
+  type GatewayRequestHandler,
+} from "openclaw/plugin-sdk/gateway-runtime";
 
 type ResolvedWorkspace = {
   agentId: string;
@@ -15,6 +19,14 @@ interface PaziSkillsDeps {
   loadConfig: () => Record<string, unknown>;
 }
 
+type SkillsLoadConfig = {
+  skills?: {
+    load?: {
+      extraDirs?: unknown;
+    };
+  };
+};
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -26,6 +38,24 @@ function resolveRequestWorkspace(
   const agentId =
     params && typeof params === "object" ? (params as { agentId?: unknown }).agentId : undefined;
   return resolveWorkspace(agentId);
+}
+
+/**
+ * Strip a leading YAML frontmatter block from user-pasted content
+ * to prevent double-frontmatter in the written SKILL.md.
+ * Only strips if the block between `---` delimiters contains YAML-like
+ * key-value pairs (e.g. `name: value`) to avoid mangling legitimate
+ * markdown thematic breaks.
+ */
+function stripLeadingFrontmatter(text: string): string {
+  const normalized = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  if (!normalized.startsWith("---\n")) return normalized;
+  const endIndex = normalized.indexOf("\n---", 4);
+  if (endIndex === -1) return normalized;
+  const block = normalized.slice(4, endIndex);
+  // Only strip if it looks like YAML frontmatter (contains key: value lines)
+  if (!/^[a-zA-Z_][a-zA-Z0-9_-]*\s*:/m.test(block)) return normalized;
+  return normalized.slice(endIndex + 4).replace(/^\n+/, "");
 }
 
 /**
@@ -43,7 +73,7 @@ function splitSkillDocument(raw: string): { frontmatter: string | null; body: st
   }
   return {
     frontmatter: normalized.slice(4, endIndex),
-    body: normalized.slice(endIndex + 4).replace(/^\n/, ""),
+    body: normalized.slice(endIndex + 4).replace(/^\n+/, ""),
   };
 }
 
@@ -110,10 +140,29 @@ function slugify(name: string): string {
       .trim()
       .toLowerCase()
       .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "")
+      .replace(/[^a-z0-9_-]/g, "")
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "") || "skill"
   );
+}
+
+// ---------------------------------------------------------------------------
+// pazi.skills.capabilities
+// ---------------------------------------------------------------------------
+
+export function createPaziSkillsCapabilities(deps: {
+  loadConfig: () => Record<string, unknown>;
+}): GatewayRequestHandler {
+  return async ({ respond }) => {
+    const cfg = deps.loadConfig() as SkillsLoadConfig;
+    const extraDirs = cfg.skills?.load?.extraDirs;
+    const sharedDir =
+      Array.isArray(extraDirs) && typeof extraDirs[0] === "string" ? extraDirs[0].trim() : "";
+
+    respond(true, {
+      sharedScopeSupported: Boolean(sharedDir),
+    });
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -136,7 +185,7 @@ export function createPaziSkillsGet(deps: PaziSkillsDeps): GatewayRequestHandler
     }
 
     // Dynamic import to avoid circular dependency at module level
-    const { buildWorkspaceSkillStatus } = await import("../../../../src/agents/skills-status.js");
+    const { buildWorkspaceSkillStatus } = await import("openclaw/plugin-sdk/agent-runtime");
 
     const cfg = deps.loadConfig();
     const status = buildWorkspaceSkillStatus(resolved.workspaceDir, { config: cfg });
@@ -154,11 +203,16 @@ export function createPaziSkillsGet(deps: PaziSkillsDeps): GatewayRequestHandler
     try {
       const raw = await fs.readFile(entry.filePath, "utf-8");
       const { body } = splitSkillDocument(raw);
+      // Safety: strip any residual frontmatter from body (handles double-frontmatter files)
+      const cleanBody = stripLeadingFrontmatter(body);
       respond(true, {
         skillKey,
+        name: entry.name,
         source: entry.source,
-        content: body,
+        description: entry.description ?? "",
+        content: cleanBody,
         bundled: entry.source === "openclaw-bundled",
+        scope: entry.source === "openclaw-extra" ? "all" : "agent",
       });
     } catch {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, "failed to read skill file"));
@@ -183,6 +237,7 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
     const name = typeof p.name === "string" ? p.name.trim() : "";
     const description = typeof p.description === "string" ? p.description.trim() : "";
     const content = typeof p.content === "string" ? p.content : "";
+    const scope = typeof p.scope === "string" ? p.scope : undefined;
 
     if (!skillKey) {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing skillKey"));
@@ -192,8 +247,16 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing name"));
       return;
     }
+    if (!description) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing description"));
+      return;
+    }
+    if (!content.trim()) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "missing content"));
+      return;
+    }
 
-    const { buildWorkspaceSkillStatus } = await import("../../../../src/agents/skills-status.js");
+    const { buildWorkspaceSkillStatus } = await import("openclaw/plugin-sdk/agent-runtime");
 
     const cfg = deps.loadConfig();
     const status = buildWorkspaceSkillStatus(resolved.workspaceDir, { config: cfg });
@@ -216,28 +279,121 @@ export function createPaziSkillsSet(deps: PaziSkillsDeps): GatewayRequestHandler
       // File may not be readable; we'll build fresh frontmatter
     }
 
-    const finalContent = buildUpdatedDocument({ existingRaw, name, description, content });
+    // Strip any frontmatter from user-pasted content to prevent double-frontmatter.
+    const sanitizedContent = stripLeadingFrontmatter(content.trim());
+    const finalContent = buildUpdatedDocument({
+      existingRaw,
+      name,
+      description,
+      content: sanitizedContent,
+    });
+
+    // Determine if scope is changing
+    const currentIsShared = entry.source === "openclaw-extra";
+    const wantShared = scope === "all";
+    const wantAgent = scope === "agent";
+    const scopeChanging = (wantShared && !currentIsShared) || (wantAgent && currentIsShared);
 
     // Determine write path
     let writePath: string;
     let createdOverride = false;
+    let oldDirToRemove: string | undefined;
 
-    const isWorkspaceSkill =
-      entry.source === "openclaw-workspace" || entry.source === "agents-skills-project";
+    const resolveSharedSkillsDir = () => {
+      const extraDirs = (cfg as SkillsLoadConfig).skills?.load?.extraDirs;
+      return Array.isArray(extraDirs) && typeof extraDirs[0] === "string"
+        ? extraDirs[0].trim()
+        : "";
+    };
 
-    if (isWorkspaceSkill) {
-      writePath = entry.filePath;
+    // Check ALL loaded skills (bundled, workspace, shared, plugin) for name collision.
+    // Skip the current skill being edited.
+    const targetDirName = slugify(name);
+    const collision = status.skills.find(
+      (s: { filePath: string }) =>
+        path.basename(path.dirname(s.filePath)).toLowerCase() === targetDirName &&
+        path.resolve(s.filePath) !== path.resolve(entry.filePath),
+    );
+    if (collision) {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.INVALID_REQUEST, `skill "${targetDirName}" already exists`),
+      );
+      return;
+    }
+
+    // Cross-workspace check: iterate ALL agent workspaces to catch collisions
+    // that buildWorkspaceSkillStatus (scoped to one workspace) cannot see.
+    const allAgentIds = listAgentIds(cfg);
+    for (const agentIdEntry of allAgentIds) {
+      if (agentIdEntry === resolved.agentId) continue; // already checked above
+      const wsDir = resolveAgentWorkspaceDir(cfg, agentIdEntry);
+      try {
+        await fs.access(path.join(wsDir, "skills", targetDirName, "SKILL.md"));
+        // Allow if this IS the skill being edited (same file path)
+        const candidatePath = path.join(wsDir, "skills", targetDirName, "SKILL.md");
+        if (path.resolve(candidatePath) !== path.resolve(entry.filePath)) {
+          respond(
+            false,
+            undefined,
+            errorShape(ErrorCodes.INVALID_REQUEST, `skill "${targetDirName}" already exists`),
+          );
+          return;
+        }
+      } catch {
+        // No collision in this workspace — continue
+      }
+    }
+
+    if (scopeChanging && wantShared) {
+      // Move from agent workspace → shared dir
+      const sharedDir = resolveSharedSkillsDir();
+      if (!sharedDir) {
+        respond(
+          false,
+          undefined,
+          errorShape(
+            ErrorCodes.INVALID_REQUEST,
+            "no shared skills directory configured (skills.load.extraDirs)",
+          ),
+        );
+        return;
+      }
+      writePath = path.join(sharedDir, slugify(name), "SKILL.md");
+      oldDirToRemove = path.dirname(entry.filePath);
+    } else if (scopeChanging && wantAgent) {
+      // Move from shared dir → agent workspace
+      writePath = path.join(resolved.workspaceDir, "skills", slugify(name), "SKILL.md");
+      oldDirToRemove = path.dirname(entry.filePath);
     } else {
-      // Bundled/managed — create workspace override using skillKey for stable path
-      const dirName = slugify(entry.skillKey);
-      const overrideDir = path.join(resolved.workspaceDir, "skills", dirName);
-      writePath = path.join(overrideDir, "SKILL.md");
-      createdOverride = true;
+      const isWorkspaceSkill =
+        entry.source === "openclaw-workspace" || entry.source === "agents-skills-project";
+      const isExtraSkill = entry.source === "openclaw-extra";
+
+      if (isWorkspaceSkill || isExtraSkill) {
+        writePath = entry.filePath;
+      } else {
+        // Bundled/managed — create workspace override using skillKey for stable path
+        const dirName = slugify(entry.skillKey);
+        const overrideDir = path.join(resolved.workspaceDir, "skills", dirName);
+        writePath = path.join(overrideDir, "SKILL.md");
+        createdOverride = true;
+      }
     }
 
     try {
-      await fs.mkdir(path.dirname(writePath), { recursive: true });
-      await fs.writeFile(writePath, finalContent, "utf-8");
+      if (oldDirToRemove) {
+        // Scope change: copy entire skill directory first to preserve sibling assets,
+        // then overwrite SKILL.md with updated content, then remove old dir.
+        const newDir = path.dirname(writePath);
+        await fs.cp(oldDirToRemove, newDir, { recursive: true });
+        await fs.writeFile(writePath, finalContent, "utf-8");
+        await fs.rm(oldDirToRemove, { recursive: true }).catch(() => {});
+      } else {
+        await fs.mkdir(path.dirname(writePath), { recursive: true });
+        await fs.writeFile(writePath, finalContent, "utf-8");
+      }
     } catch {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, "failed to write skill file"));
       return;
