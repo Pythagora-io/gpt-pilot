@@ -1,17 +1,13 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk/core";
 import { resolveGatewayToken } from "../config.js";
-import { setProxyContext } from "../context.js";
+import { getProxyContext, setProxyContext } from "../context.js";
 
 type JsonBody = {
-  userId?: string;
-  agentId?: string;
-  proxyToken?: string;
-  dashboardBaseUrl?: string;
   browserEnabled?: boolean;
 };
 
-type ContextHandlerDeps = {
+type BrowserEnabledHandlerDeps = {
   configToken?: string;
   env?: NodeJS.ProcessEnv;
   logger: OpenClawPluginApi["logger"];
@@ -42,14 +38,14 @@ async function readJsonBody(req: IncomingMessage): Promise<JsonBody | null> {
   return null;
 }
 
-export function createPaziContextHandler(deps: ContextHandlerDeps) {
+export function createPaziBrowserEnabledHandler(deps: BrowserEnabledHandlerDeps) {
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     const gatewayToken = resolveGatewayToken({
       configToken: deps.configToken,
       env: deps.env,
     });
     if (!gatewayToken) {
-      deps.logger.warn("pazi context request rejected: gateway token missing");
+      deps.logger.warn("pazi browser-enabled request rejected: gateway token missing");
       writeJson(res, 500, { error: "gateway_token_missing" });
       return;
     }
@@ -66,26 +62,28 @@ export function createPaziContextHandler(deps: ContextHandlerDeps) {
       return;
     }
 
-    const { userId, agentId, proxyToken, dashboardBaseUrl, browserEnabled } = body;
-    if (!userId || !agentId || !proxyToken) {
-      writeJson(res, 400, { error: "missing userId, agentId, or proxyToken" });
+    const { browserEnabled } = body;
+    if (typeof browserEnabled !== "boolean") {
+      writeJson(res, 400, { error: "browserEnabled must be a boolean" });
       return;
     }
 
-    const resolvedDashboardBaseUrl =
-      typeof dashboardBaseUrl === "string" && dashboardBaseUrl.trim()
-        ? dashboardBaseUrl.trim()
-        : undefined;
+    // Get current context
+    const currentContext = getProxyContext();
+    if (!currentContext) {
+      deps.logger.warn("pazi browser-enabled request rejected: no current context");
+      writeJson(res, 500, { error: "no_current_context" });
+      return;
+    }
 
-    const resolvedBrowserEnabled = browserEnabled === true;
-
+    // Update context with new browserEnabled value
     setProxyContext({
-      userId,
-      agentId,
-      proxyToken,
-      dashboardBaseUrl: resolvedDashboardBaseUrl,
-      browserEnabled: resolvedBrowserEnabled,
+      ...currentContext,
+      browserEnabled,
     });
-    writeJson(res, 200, { ok: true });
+
+    deps.logger.info(`Browser enabled status updated: ${browserEnabled}`);
+
+    writeJson(res, 200, { ok: true, browserEnabled });
   };
 }

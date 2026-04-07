@@ -7,6 +7,7 @@ type ProxyContext = {
   agentId: string;
   proxyToken: string;
   dashboardBaseUrl?: string;
+  browserEnabled?: boolean;
 };
 
 export type { ProxyContext };
@@ -119,6 +120,14 @@ export function getProxyContext(): ProxyContext | null {
  * Set the proxy context. Updates both in-memory cache and disk persistence.
  * Disk write is best-effort — failures are silently caught.
  */
+/**
+ * Check if browser access is enabled for the current workspace.
+ * Returns false if context is missing or browserEnabled is not explicitly true.
+ */
+export function isBrowserEnabled(): boolean {
+  return getProxyContext()?.browserEnabled === true;
+}
+
 export function setProxyContext(ctx: ProxyContext): void {
   currentContext = ctx;
   diskLoaded = true; // We have a known value, no need to load from disk

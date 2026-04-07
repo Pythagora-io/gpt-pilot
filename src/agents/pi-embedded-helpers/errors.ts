@@ -626,6 +626,17 @@ export function formatAssistantErrorText(
     return "LLM request timed out.";
   }
 
+  // PAZ-295: Pazi proxy rewrites billing errors with a subscription-specific
+  // message containing the Pazi subscription URL. If it's already present,
+  // extract the user-friendly portion and pass it through — don't overwrite
+  // with the generic "API key" copy. Strip trailing JSON artifacts ("}} etc.)
+  // that leak when the raw error includes the full response body.
+  if (raw.includes("pazi.ai/dashboard/account/subscription")) {
+    const idx = raw.indexOf("⚠️");
+    const slice = idx >= 0 ? raw.slice(idx) : raw;
+    return slice.replace(/["}\]\s]+$/, "");
+  }
+
   if (isBillingErrorMessage(raw)) {
     return formatBillingErrorMessage(opts?.provider, opts?.model ?? msg.model);
   }
@@ -667,6 +678,13 @@ export function sanitizeUserFacingText(text: string, opts?: { errorContext?: boo
         "Context overflow: prompt too large for the model. " +
         "Try /reset (or /new) to start a fresh session, or use a larger-context model."
       );
+    }
+
+    // PAZ-295: passthrough Pazi subscription-specific billing messages
+    if (trimmed.includes("pazi.ai/dashboard/account/subscription")) {
+      const idx = trimmed.indexOf("⚠️");
+      const slice = idx >= 0 ? trimmed.slice(idx) : trimmed;
+      return slice.replace(/["}\]\s]+$/, "");
     }
 
     if (isBillingErrorMessage(trimmed)) {

@@ -1,6 +1,7 @@
 import http from "node:http";
 import type { IncomingHttpHeaders } from "node:http";
 import https from "node:https";
+import { PAZI_OUT_OF_CREDITS_MESSAGE } from "../billing/pazi-billing-message.js";
 import { getProxyContext, markProxyActivity } from "../context.js";
 
 type ProxyLogger = {
@@ -95,8 +96,58 @@ export async function startPaziProxy(params: StartProxyParams): Promise<ProxySer
         },
       },
       (proxyRes) => {
-        res.writeHead(proxyRes.statusCode || 500, proxyRes.headers);
-        proxyRes.pipe(res);
+        // PAZ-295: Intercept 402 responses to show Pazi-specific billing message
+        if (proxyRes.statusCode === 402) {
+          // Buffer the response body to check for insufficient_credits
+          const chunks: Buffer[] = [];
+          proxyRes.on("data", (chunk) => {
+            chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+          });
+          proxyRes.on("end", () => {
+            const responseBody = Buffer.concat(chunks).toString("utf8");
+            try {
+              const parsed = JSON.parse(responseBody);
+              // Check if this is a Pazi insufficient_credits error
+              if (parsed && parsed.error === "insufficient_credits") {
+                // Rewrite the response with Pazi-specific message in Anthropic error format.
+                // Keep "insufficient_credits" in the error type so the web frontend's
+                // InsufficientCreditsDialog still detects it, while the message field
+                // carries the subscription-friendly copy that channels (Slack, etc.) display.
+                const paziResponse = {
+                  type: "error",
+                  error: {
+                    type: "insufficient_credits",
+                    message: PAZI_OUT_OF_CREDITS_MESSAGE,
+                  },
+                };
+
+                const body = JSON.stringify(paziResponse);
+                res.writeHead(402, {
+                  "Content-Type": "application/json; charset=utf-8",
+                  "Content-Length": Buffer.byteLength(body).toString(),
+                });
+                res.end(body);
+                return;
+              }
+            } catch (e) {
+              // If JSON parsing fails, fall through to normal handling
+            }
+
+            // For any other 402 or unparseable responses, return as-is
+            res.writeHead(402, proxyRes.headers);
+            res.end(responseBody);
+          });
+          proxyRes.on("error", (err) => {
+            params.logger.warn(`pazi proxy 402 response error: ${String(err)}`);
+            if (!res.headersSent) {
+              writeJson(res, 502, { error: "proxy_error", message: err.message });
+            }
+          });
+        } else {
+          // For non-402 responses, pipe through normally
+          res.writeHead(proxyRes.statusCode || 500, proxyRes.headers);
+          proxyRes.pipe(res);
+        }
       },
     );
 
