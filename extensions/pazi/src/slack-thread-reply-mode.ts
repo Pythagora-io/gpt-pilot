@@ -302,27 +302,10 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
 
     if (!matchedThread || !matchedKey) return;
 
-    // Clean up immediately to unblock future messages
+    // Clear suppression so the normal reply pipeline's final delivery
+    // (which runs after agent_end) can go through. Do NOT send here —
+    // the pipeline already has the final reply queued and will deliver
+    // it once suppression is lifted.
     suppressedThreads.delete(matchedKey);
-
-    // Build and send final summary
-    const summary = buildFinalSummary(
-      Array.isArray(event.messages) ? event.messages : [],
-      event.success,
-      event.error,
-    );
-
-    try {
-      const cfg = api.runtime.config.loadConfig();
-      await sendMessageSlack(matchedThread.sendTarget, summary, {
-        cfg,
-        accountId: matchedThread.accountId,
-        threadTs: matchedThread.threadTs,
-      });
-    } catch (err) {
-      api.logger.warn(
-        `pazi: failed to send final Slack summary: ${err instanceof Error ? err.message : String(err)}`,
-      );
-    }
   });
 }
