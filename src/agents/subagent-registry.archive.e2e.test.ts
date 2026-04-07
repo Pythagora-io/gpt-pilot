@@ -1,3 +1,6 @@
+import { promises as fs } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const noop = () => {};
@@ -21,8 +24,8 @@ vi.mock("../infra/agent-events.js", () => ({
   onAgentEvent: vi.fn((_handler: unknown) => noop),
 }));
 
-vi.mock("../config/config.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../config/config.js")>();
+vi.mock("../config/config.js", async () => {
+  const actual = await vi.importActual<typeof import("../config/config.js")>("../config/config.js");
   return {
     ...actual,
     loadConfig: loadConfigMock,
@@ -165,6 +168,36 @@ describe("subagent registry archive behavior", () => {
       .listSubagentRunsForRequester("agent:main:main")
       .find((entry) => entry.runId === "run-delete-new");
     expect(run?.archiveAtMs).toBe(Date.now() + 60_000);
+  });
+
+  it("removes attachments for the replaced run after steer restart", async () => {
+    const attachmentsRootDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "openclaw-replace-attachments-"),
+    );
+    const attachmentsDir = path.join(attachmentsRootDir, "old");
+    await fs.mkdir(attachmentsDir, { recursive: true });
+    await fs.writeFile(path.join(attachmentsDir, "artifact.txt"), "artifact", "utf8");
+
+    mod.registerSubagentRun({
+      runId: "run-delete-attachments-old",
+      childSessionKey: "agent:main:subagent:delete-attachments-old",
+      requesterSessionKey: "agent:main:main",
+      requesterDisplayKey: "main",
+      task: "replace attachments",
+      cleanup: "delete",
+      attachmentsRootDir,
+      attachmentsDir,
+    });
+
+    const replaced = mod.replaceSubagentRunAfterSteer({
+      previousRunId: "run-delete-attachments-old",
+      nextRunId: "run-delete-attachments-new",
+    });
+
+    expect(replaced).toBe(true);
+    await vi.waitFor(async () => {
+      await expect(fs.access(attachmentsDir)).rejects.toMatchObject({ code: "ENOENT" });
+    });
   });
 
   it("treats archiveAfterMinutes=0 as never archive", () => {

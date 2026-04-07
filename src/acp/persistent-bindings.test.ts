@@ -1,11 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { parseFeishuConversationId } from "../../extensions/feishu/src/conversation-id.js";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveAgentWorkspaceDir } from "../agents/agent-scope.js";
 import type { ChannelConfiguredBindingProvider, ChannelPlugin } from "../channels/plugins/types.js";
 import type { OpenClawConfig } from "../config/config.js";
 import { setActivePluginRegistry } from "../plugins/runtime.js";
 import { createChannelTestPluginBase, createTestRegistry } from "../test-utils/channel-plugins.js";
-import { parseTelegramTopicConversation } from "./conversation-id.js";
 import { buildConfiguredAcpSessionKey } from "./persistent-bindings.types.js";
 const managerMocks = vi.hoisted(() => ({
   resolveSession: vi.fn(),
@@ -85,9 +83,44 @@ const discordBindings: ChannelConfiguredBindingProvider = {
   },
 };
 
+function parseTelegramTopicConversationForTest(params: {
+  conversationId: string;
+  parentConversationId?: string;
+}): {
+  canonicalConversationId: string;
+  chatId: string;
+  topicId?: string;
+} | null {
+  const conversationId = params.conversationId.trim();
+  const parentConversationId = params.parentConversationId?.trim() || undefined;
+  if (!conversationId) {
+    return null;
+  }
+  const canonicalTopicMatch = /^(-[^:]+):topic:([^:]+)$/.exec(conversationId);
+  if (canonicalTopicMatch) {
+    const [, chatId, topicId] = canonicalTopicMatch;
+    return {
+      canonicalConversationId: `${chatId}:topic:${topicId}`,
+      chatId,
+      topicId,
+    };
+  }
+  if (parentConversationId) {
+    return {
+      canonicalConversationId: `${parentConversationId}:topic:${conversationId}`,
+      chatId: parentConversationId,
+      topicId: conversationId,
+    };
+  }
+  return {
+    canonicalConversationId: conversationId,
+    chatId: conversationId,
+  };
+}
+
 const telegramBindings: ChannelConfiguredBindingProvider = {
   compileConfiguredBinding: ({ conversationId }) => {
-    const parsed = parseTelegramTopicConversation({ conversationId });
+    const parsed = parseTelegramTopicConversationForTest({ conversationId });
     if (!parsed || !parsed.chatId.startsWith("-")) {
       return null;
     }
@@ -97,7 +130,7 @@ const telegramBindings: ChannelConfiguredBindingProvider = {
     };
   },
   matchInboundConversation: ({ compiledBinding, conversationId, parentConversationId }) => {
-    const incoming = parseTelegramTopicConversation({
+    const incoming = parseTelegramTopicConversationForTest({
       conversationId,
       parentConversationId,
     });
@@ -126,9 +159,75 @@ function isSupportedFeishuDirectConversationId(conversationId: string): boolean 
   return true;
 }
 
+function parseFeishuConversationIdForTest(params: {
+  conversationId: string;
+  parentConversationId?: string;
+}): {
+  canonicalConversationId: string;
+  chatId: string;
+  topicId?: string;
+  senderOpenId?: string;
+  scope: "group" | "group_sender" | "group_topic" | "group_topic_sender";
+} | null {
+  const conversationId = params.conversationId.trim();
+  const parentConversationId = params.parentConversationId?.trim() || undefined;
+  if (!conversationId) {
+    return null;
+  }
+
+  const topicSenderMatch = /^(.+):topic:([^:]+):sender:([^:]+)$/.exec(conversationId);
+  if (topicSenderMatch) {
+    const [, chatId, topicId, senderOpenId] = topicSenderMatch;
+    return {
+      canonicalConversationId: `${chatId}:topic:${topicId}:sender:${senderOpenId}`,
+      chatId,
+      topicId,
+      senderOpenId,
+      scope: "group_topic_sender",
+    };
+  }
+
+  const topicMatch = /^(.+):topic:([^:]+)$/.exec(conversationId);
+  if (topicMatch) {
+    const [, chatId, topicId] = topicMatch;
+    return {
+      canonicalConversationId: `${chatId}:topic:${topicId}`,
+      chatId,
+      topicId,
+      scope: "group_topic",
+    };
+  }
+
+  const senderMatch = /^(.+):sender:([^:]+)$/.exec(conversationId);
+  if (senderMatch) {
+    const [, chatId, senderOpenId] = senderMatch;
+    return {
+      canonicalConversationId: `${chatId}:sender:${senderOpenId}`,
+      chatId,
+      senderOpenId,
+      scope: "group_sender",
+    };
+  }
+
+  if (parentConversationId) {
+    return {
+      canonicalConversationId: `${parentConversationId}:topic:${conversationId}`,
+      chatId: parentConversationId,
+      topicId: conversationId,
+      scope: "group_topic",
+    };
+  }
+
+  return {
+    canonicalConversationId: conversationId,
+    chatId: conversationId,
+    scope: "group",
+  };
+}
+
 const feishuBindings: ChannelConfiguredBindingProvider = {
   compileConfiguredBinding: ({ conversationId }) => {
-    const parsed = parseFeishuConversationId({ conversationId });
+    const parsed = parseFeishuConversationIdForTest({ conversationId });
     if (
       !parsed ||
       (parsed.scope !== "group_topic" &&
@@ -146,7 +245,7 @@ const feishuBindings: ChannelConfiguredBindingProvider = {
     };
   },
   matchInboundConversation: ({ compiledBinding, conversationId, parentConversationId }) => {
-    const incoming = parseFeishuConversationId({
+    const incoming = parseFeishuConversationIdForTest({
       conversationId,
       parentConversationId,
     });
@@ -311,8 +410,7 @@ function mockReadySession(params: {
   return sessionKey;
 }
 
-beforeEach(async () => {
-  vi.resetModules();
+beforeAll(async () => {
   persistentBindingsResolveModule = await import("./persistent-bindings.resolve.js");
   lifecycleBindingsModule = await import("./persistent-bindings.lifecycle.js");
   persistentBindings = {
@@ -323,6 +421,9 @@ beforeEach(async () => {
     ensureConfiguredAcpBindingSession: lifecycleBindingsModule.ensureConfiguredAcpBindingSession,
     resetAcpSessionInPlace: lifecycleBindingsModule.resetAcpSessionInPlace,
   };
+});
+
+beforeEach(() => {
   setActivePluginRegistry(
     createTestRegistry([
       {

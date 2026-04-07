@@ -1,9 +1,26 @@
+import { mergeAllowlist, summarizeMapping } from "openclaw/plugin-sdk/allow-from";
+import { resolveMentionGatingWithBypass } from "openclaw/plugin-sdk/channel-inbound";
+import { createChannelPairingController } from "openclaw/plugin-sdk/channel-pairing";
 import {
   DM_GROUP_ACCESS_REASON,
   resolveDmGroupAccessWithLists,
 } from "openclaw/plugin-sdk/channel-policy";
+import { createChannelReplyPipeline } from "openclaw/plugin-sdk/channel-reply-pipeline";
+import { resolveSenderCommandAuthorization } from "openclaw/plugin-sdk/command-auth";
+import {
+  isDangerousNameMatchingEnabled,
+  resolveDefaultGroupPolicy,
+  resolveOpenProviderRuntimeGroupPolicy,
+  type MarkdownTableMode,
+  type OpenClawConfig,
+  warnMissingProviderGroupPolicyFallbackOnce,
+} from "openclaw/plugin-sdk/config-runtime";
 import { KeyedAsyncQueue } from "openclaw/plugin-sdk/core";
 import { createDeferred } from "openclaw/plugin-sdk/extension-shared";
+import {
+  evaluateGroupRouteAccessForPolicy,
+  resolveSenderScopedGroupPolicy,
+} from "openclaw/plugin-sdk/group-access";
 import {
   DEFAULT_GROUP_HISTORY_LIMIT,
   type HistoryEntry,
@@ -11,28 +28,12 @@ import {
   clearHistoryEntriesIfEnabled,
   recordPendingHistoryEntryIfEnabled,
 } from "openclaw/plugin-sdk/reply-history";
-import type {
-  MarkdownTableMode,
-  OpenClawConfig,
-  OutboundReplyPayload,
-  RuntimeEnv,
-} from "../runtime-api.js";
 import {
-  createChannelPairingController,
-  createChannelReplyPipeline,
   deliverTextOrMediaReply,
-  evaluateGroupRouteAccessForPolicy,
-  isDangerousNameMatchingEnabled,
-  mergeAllowlist,
-  resolveMentionGatingWithBypass,
-  resolveOpenProviderRuntimeGroupPolicy,
   resolveSendableOutboundReplyParts,
-  resolveDefaultGroupPolicy,
-  resolveSenderCommandAuthorization,
-  resolveSenderScopedGroupPolicy,
-  summarizeMapping,
-  warnMissingProviderGroupPolicyFallbackOnce,
-} from "../runtime-api.js";
+  type OutboundReplyPayload,
+} from "openclaw/plugin-sdk/reply-payload";
+import type { RuntimeEnv } from "openclaw/plugin-sdk/runtime";
 import {
   buildZalouserGroupCandidates,
   findZalouserGroupEntry,
@@ -204,7 +205,7 @@ function isSenderAllowed(senderId: string | undefined, allowFrom: string[]): boo
 function resolveGroupRequireMention(params: {
   groupId: string;
   groupName?: string | null;
-  groups: Record<string, { allow?: boolean; enabled?: boolean; requireMention?: boolean }>;
+  groups: Record<string, { enabled?: boolean; requireMention?: boolean }>;
   allowNameMatching?: boolean;
 }): boolean {
   const entry = findZalouserGroupEntry(
@@ -311,6 +312,7 @@ async function processMessage(
   });
 
   const groups = account.config.groups ?? {};
+  const routeAllowlistConfigured = Object.keys(groups).length > 0;
   const allowNameMatching = isDangerousNameMatchingEnabled(account.config);
   if (isGroup) {
     const groupEntry = findZalouserGroupEntry(
@@ -325,7 +327,7 @@ async function processMessage(
     );
     const routeAccess = evaluateGroupRouteAccessForPolicy({
       groupPolicy,
-      routeAllowlistConfigured: Object.keys(groups).length > 0,
+      routeAllowlistConfigured,
       routeMatched: Boolean(groupEntry),
       routeEnabled: isZalouserGroupEntryAllowed(groupEntry),
     });
@@ -350,10 +352,13 @@ async function processMessage(
   const dmPolicy = account.config.dmPolicy ?? "pairing";
   const configAllowFrom = (account.config.allowFrom ?? []).map((v) => String(v));
   const configGroupAllowFrom = (account.config.groupAllowFrom ?? []).map((v) => String(v));
-  const senderGroupPolicy = resolveSenderScopedGroupPolicy({
-    groupPolicy,
-    groupAllowFrom: configGroupAllowFrom,
-  });
+  const senderGroupPolicy =
+    routeAllowlistConfigured && configGroupAllowFrom.length === 0
+      ? groupPolicy
+      : resolveSenderScopedGroupPolicy({
+          groupPolicy,
+          groupAllowFrom: configGroupAllowFrom,
+        });
   const shouldComputeCommandAuth = core.channel.commands.shouldComputeCommandAuthorized(
     commandBody,
     config,
