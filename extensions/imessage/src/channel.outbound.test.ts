@@ -1,23 +1,98 @@
 import { describe, expect, it, vi } from "vitest";
+import type { ResolvedIMessageAccount } from "./accounts.js";
 import { imessagePlugin } from "./channel.js";
+import type { IMessageRpcClient } from "./client.js";
+import { imessageOutbound } from "./outbound-adapter.js";
+import { sendMessageIMessage } from "./send.js";
 
-function requireIMessageSendText() {
-  const sendText = imessagePlugin.outbound?.sendText;
-  if (!sendText) {
-    throw new Error("imessage outbound.sendText unavailable");
+function requireIMessageChunker() {
+  const chunker = imessagePlugin.outbound?.chunker;
+  if (!chunker) {
+    throw new Error("imessage outbound.chunker unavailable");
   }
-  return sendText;
+  return chunker;
 }
 
-function requireIMessageSendMedia() {
-  const sendMedia = imessagePlugin.outbound?.sendMedia;
-  if (!sendMedia) {
-    throw new Error("imessage outbound.sendMedia unavailable");
-  }
-  return sendMedia;
+const requestMock = vi.fn();
+const stopMock = vi.fn();
+
+const defaultAccount: ResolvedIMessageAccount = {
+  accountId: "default",
+  enabled: true,
+  configured: false,
+  config: {},
+};
+
+function createClient(): IMessageRpcClient {
+  return {
+    request: (...args: unknown[]) => requestMock(...args),
+    stop: (...args: unknown[]) => stopMock(...args),
+  } as unknown as IMessageRpcClient;
+}
+
+async function sendWithDefaults(
+  to: string,
+  text: string,
+  opts: Parameters<typeof sendMessageIMessage>[2] = {},
+) {
+  return await sendMessageIMessage(to, text, {
+    account: defaultAccount,
+    config: {},
+    client: createClient(),
+    ...opts,
+  });
+}
+
+function getSentParams() {
+  return requestMock.mock.calls[0]?.[1] as Record<string, unknown>;
+}
+
+async function expectReplyToTextForwarding(params: {
+  invoke: () => Promise<{ channel: string; messageId: string }>;
+  sendIMessage: ReturnType<typeof vi.fn>;
+}) {
+  const result = await params.invoke();
+  expect(params.sendIMessage).toHaveBeenCalledWith(
+    "chat_id:12",
+    "hello",
+    expect.objectContaining({
+      accountId: "default",
+      replyToId: "reply-1",
+      maxBytes: 3 * 1024 * 1024,
+    }),
+  );
+  expect(result).toEqual({ channel: "imessage", messageId: "m-text" });
+}
+
+async function expectMediaLocalRootsForwarding(params: {
+  invoke: () => Promise<{ channel: string; messageId: string }>;
+  sendIMessage: ReturnType<typeof vi.fn>;
+}) {
+  const result = await params.invoke();
+  expect(params.sendIMessage).toHaveBeenCalledWith(
+    "chat_id:88",
+    "caption",
+    expect.objectContaining({
+      mediaUrl: "/tmp/workspace/pic.png",
+      mediaLocalRoots: ["/tmp/workspace"],
+      accountId: "acct-1",
+      replyToId: "reply-2",
+      maxBytes: 3 * 1024 * 1024,
+    }),
+  );
+  expect(result).toEqual({ channel: "imessage", messageId: "m-media-local" });
 }
 
 describe("imessagePlugin outbound", () => {
+  it("chunks outbound text without requiring iMessage runtime initialization", () => {
+    const chunker = requireIMessageChunker();
+
+    expect(() => chunker("hello world", 5)).not.toThrow();
+    expect(chunker("hello world", 5)).toEqual(["hello", "world"]);
+  });
+});
+
+describe("imessageOutbound", () => {
   const cfg = {
     channels: {
       imessage: {
@@ -26,83 +101,52 @@ describe("imessagePlugin outbound", () => {
     },
   };
 
-  it("forwards replyToId on direct sendText adapter path", async () => {
-    const sendIMessage = vi.fn().mockResolvedValue({ messageId: "m-text" });
-    const sendText = requireIMessageSendText();
+  it("forwards replyToId on direct text sends", async () => {
+    const sendIMessage = vi.fn().mockResolvedValueOnce({ messageId: "m-text" });
 
-    const result = await sendText({
-      cfg,
-      to: "chat_id:12",
-      text: "hello",
-      accountId: "default",
-      replyToId: "reply-1",
-      deps: { sendIMessage },
+    await expectReplyToTextForwarding({
+      invoke: async () =>
+        await imessageOutbound.sendText!({
+          cfg,
+          to: "chat_id:12",
+          text: "hello",
+          accountId: "default",
+          replyToId: "reply-1",
+          deps: { sendIMessage },
+        }),
+      sendIMessage,
     });
-
-    expect(sendIMessage).toHaveBeenCalledWith(
-      "chat_id:12",
-      "hello",
-      expect.objectContaining({
-        accountId: "default",
-        replyToId: "reply-1",
-        maxBytes: 3 * 1024 * 1024,
-      }),
-    );
-    expect(result).toEqual({ channel: "imessage", messageId: "m-text" });
   });
 
-  it("forwards replyToId on direct sendMedia adapter path", async () => {
-    const sendIMessage = vi.fn().mockResolvedValue({ messageId: "m-media" });
-    const sendMedia = requireIMessageSendMedia();
+  it("forwards mediaLocalRoots on direct media sends", async () => {
+    const sendIMessage = vi.fn().mockResolvedValueOnce({ messageId: "m-media-local" });
 
-    const result = await sendMedia({
-      cfg,
-      to: "chat_id:77",
-      text: "caption",
-      mediaUrl: "https://example.com/pic.png",
-      accountId: "acct-1",
-      replyToId: "reply-2",
-      deps: { sendIMessage },
+    await expectMediaLocalRootsForwarding({
+      invoke: async () =>
+        await imessageOutbound.sendMedia!({
+          cfg,
+          to: "chat_id:88",
+          text: "caption",
+          mediaUrl: "/tmp/workspace/pic.png",
+          mediaLocalRoots: ["/tmp/workspace"],
+          accountId: "acct-1",
+          replyToId: "reply-2",
+          deps: { sendIMessage },
+        }),
+      sendIMessage,
     });
-
-    expect(sendIMessage).toHaveBeenCalledWith(
-      "chat_id:77",
-      "caption",
-      expect.objectContaining({
-        mediaUrl: "https://example.com/pic.png",
-        accountId: "acct-1",
-        replyToId: "reply-2",
-        maxBytes: 3 * 1024 * 1024,
-      }),
-    );
-    expect(result).toEqual({ channel: "imessage", messageId: "m-media" });
   });
+});
 
-  it("forwards mediaLocalRoots on direct sendMedia adapter path", async () => {
-    const sendIMessage = vi.fn().mockResolvedValue({ messageId: "m-media-local" });
-    const sendMedia = requireIMessageSendMedia();
-    const mediaLocalRoots = ["/tmp/workspace"];
+describe("sendMessageIMessage", () => {
+  it("sends to chat_id targets", async () => {
+    requestMock.mockClear().mockResolvedValue({ ok: true });
+    stopMock.mockClear().mockResolvedValue(undefined);
 
-    const result = await sendMedia({
-      cfg,
-      to: "chat_id:88",
-      text: "caption",
-      mediaUrl: "/tmp/workspace/pic.png",
-      mediaLocalRoots,
-      accountId: "acct-1",
-      deps: { sendIMessage },
-    });
-
-    expect(sendIMessage).toHaveBeenCalledWith(
-      "chat_id:88",
-      "caption",
-      expect.objectContaining({
-        mediaUrl: "/tmp/workspace/pic.png",
-        mediaLocalRoots,
-        accountId: "acct-1",
-        maxBytes: 3 * 1024 * 1024,
-      }),
-    );
-    expect(result).toEqual({ channel: "imessage", messageId: "m-media-local" });
+    await sendWithDefaults("chat_id:123", "hi");
+    const params = getSentParams();
+    expect(requestMock).toHaveBeenCalledWith("send", expect.any(Object), expect.any(Object));
+    expect(params.chat_id).toBe(123);
+    expect(params.text).toBe("hi");
   });
 });

@@ -1,26 +1,35 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { CommanderError } from "commander";
+import type { OpenClawConfig } from "../config/config.js";
+import { resolveStateDir } from "../config/paths.js";
 import { normalizeEnv } from "../infra/env.js";
 import { formatUncaughtError } from "../infra/errors.js";
 import { isMainModule } from "../infra/is-main.js";
 import { ensureOpenClawCliOnPath } from "../infra/path-env.js";
 import { assertSupportedRuntime } from "../infra/runtime-guard.js";
 import { enableConsoleCapture } from "../logging.js";
+import { hasMemoryRuntime } from "../plugins/memory-state.js";
 import {
   getCommandPathWithRootOptions,
   getPrimaryCommand,
   hasHelpOrVersion,
   isRootHelpInvocation,
 } from "./argv.js";
-import { loadCliDotEnv } from "./dotenv.js";
+import { maybeRunCliInContainer, parseCliContainerArgs } from "./container-target.js";
 import { applyCliProfileEnv, parseCliProfileArgs } from "./profile.js";
 import { tryRouteCli } from "./route.js";
 import { normalizeWindowsArgv } from "./windows-argv.js";
 
 async function closeCliMemoryManagers(): Promise<void> {
+  if (!hasMemoryRuntime()) {
+    return;
+  }
   try {
-    const { closeAllMemorySearchManagers } = await import("../memory/search-manager.js");
-    await closeAllMemorySearchManagers();
+    const { closeActiveMemorySearchManagers } = await import("../plugins/memory-runtime.js");
+    await closeActiveMemorySearchManagers();
   } catch {
     // Best-effort teardown for short-lived CLI processes.
   }
@@ -79,18 +88,76 @@ export function shouldUseRootHelpFastPath(argv: string[]): boolean {
   return isRootHelpInvocation(argv);
 }
 
+export function resolveMissingPluginCommandMessage(
+  pluginId: string,
+  config?: OpenClawConfig,
+): string | null {
+  const normalizedPluginId = pluginId.trim().toLowerCase();
+  if (!normalizedPluginId) {
+    return null;
+  }
+  const allow =
+    Array.isArray(config?.plugins?.allow) && config.plugins.allow.length > 0
+      ? config.plugins.allow
+          .filter((entry): entry is string => typeof entry === "string")
+          .map((entry) => entry.trim().toLowerCase())
+      : [];
+  if (allow.length > 0 && !allow.includes(normalizedPluginId)) {
+    return (
+      `The \`openclaw ${normalizedPluginId}\` command is unavailable because ` +
+      `\`plugins.allow\` excludes "${normalizedPluginId}". Add "${normalizedPluginId}" to ` +
+      `\`plugins.allow\` if you want that bundled plugin CLI surface.`
+    );
+  }
+  if (config?.plugins?.entries?.[normalizedPluginId]?.enabled === false) {
+    return (
+      `The \`openclaw ${normalizedPluginId}\` command is unavailable because ` +
+      `\`plugins.entries.${normalizedPluginId}.enabled=false\`. Re-enable that entry if you want ` +
+      "the bundled plugin CLI surface."
+    );
+  }
+  return null;
+}
+
+function shouldLoadCliDotEnv(env: NodeJS.ProcessEnv = process.env): boolean {
+  if (existsSync(path.join(process.cwd(), ".env"))) {
+    return true;
+  }
+  return existsSync(path.join(resolveStateDir(env), ".env"));
+}
+
 export async function runCli(argv: string[] = process.argv) {
-  let normalizedArgv = normalizeWindowsArgv(argv);
-  const parsedProfile = parseCliProfileArgs(normalizedArgv);
+  const originalArgv = normalizeWindowsArgv(argv);
+  const parsedContainer = parseCliContainerArgs(originalArgv);
+  if (!parsedContainer.ok) {
+    throw new Error(parsedContainer.error);
+  }
+  const parsedProfile = parseCliProfileArgs(parsedContainer.argv);
   if (!parsedProfile.ok) {
     throw new Error(parsedProfile.error);
   }
   if (parsedProfile.profile) {
     applyCliProfileEnv({ profile: parsedProfile.profile });
   }
-  normalizedArgv = parsedProfile.argv;
+  const containerTargetName =
+    parsedContainer.container ?? process.env.OPENCLAW_CONTAINER?.trim() ?? null;
+  if (containerTargetName && parsedProfile.profile) {
+    throw new Error("--container cannot be combined with --profile/--dev");
+  }
 
-  loadCliDotEnv({ quiet: true });
+  const containerTarget = maybeRunCliInContainer(originalArgv);
+  if (containerTarget.handled) {
+    if (containerTarget.exitCode !== 0) {
+      process.exitCode = containerTarget.exitCode;
+    }
+    return;
+  }
+  let normalizedArgv = parsedProfile.argv;
+
+  if (shouldLoadCliDotEnv()) {
+    const { loadCliDotEnv } = await import("./dotenv.js");
+    loadCliDotEnv({ quiet: true });
+  }
   normalizeEnv();
   if (shouldEnsureCliPath(normalizedArgv)) {
     ensureOpenClawCliOnPath();
@@ -101,8 +168,11 @@ export async function runCli(argv: string[] = process.argv) {
 
   try {
     if (shouldUseRootHelpFastPath(normalizedArgv)) {
-      const { outputRootHelp } = await import("./program/root-help.js");
-      outputRootHelp();
+      const { outputPrecomputedRootHelpText } = await import("./root-help-metadata.js");
+      if (!outputPrecomputedRootHelpText()) {
+        const { outputRootHelp } = await import("./program/root-help.js");
+        await outputRootHelp();
+      }
       return;
     }
 
@@ -155,11 +225,27 @@ export async function runCli(argv: string[] = process.argv) {
         await import("./program/register.subclis.js");
       const config = await loadValidatedConfigForPluginRegistration();
       if (config) {
-        registerPluginCliCommands(program, config);
+        await registerPluginCliCommands(program, config, undefined, undefined, {
+          mode: "lazy",
+          primary,
+        });
+        if (primary && !program.commands.some((command) => command.name() === primary)) {
+          const missingPluginCommandMessage = resolveMissingPluginCommandMessage(primary, config);
+          if (missingPluginCommandMessage) {
+            throw new Error(missingPluginCommandMessage);
+          }
+        }
       }
     }
 
-    await program.parseAsync(parseArgv);
+    try {
+      await program.parseAsync(parseArgv);
+    } catch (error) {
+      if (!(error instanceof CommanderError)) {
+        throw error;
+      }
+      process.exitCode = error.exitCode;
+    }
   } finally {
     await closeCliMemoryManagers();
   }
