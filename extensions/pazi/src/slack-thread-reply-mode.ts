@@ -109,40 +109,6 @@ function hasActiveSuppression(accountId: string): boolean {
   return false;
 }
 
-// ── Final Summary Builder ──────────────────────────────────────────────
-
-export function buildFinalSummary(messages: unknown[], success: boolean, error?: string): string {
-  // Scan from end to find last assistant message with text content
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const msg = messages[i];
-    if (!msg || typeof msg !== "object") continue;
-    const record = msg as Record<string, unknown>;
-    if (record.role !== "assistant") continue;
-
-    // String content
-    if (typeof record.content === "string" && record.content.trim()) {
-      return record.content.trim();
-    }
-
-    // Array content (Claude API format: [{type:"text", text:"..."}])
-    if (Array.isArray(record.content)) {
-      const textParts: string[] = [];
-      for (const part of record.content) {
-        if (part && typeof part === "object" && (part as Record<string, unknown>).type === "text") {
-          const text = (part as Record<string, unknown>).text;
-          if (typeof text === "string" && text.trim()) {
-            textParts.push(text.trim());
-          }
-        }
-      }
-      if (textParts.length > 0) return textParts.join("\n\n");
-    }
-  }
-
-  if (error?.trim()) return `I ran into an error: ${error.trim()}`;
-  return "Done.";
-}
-
 // ── Registration ───────────────────────────────────────────────────────
 
 export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
@@ -157,7 +123,8 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
   //
   // The hook fires for every outbound message. We prefer exact matching by
   // account + target + thread to avoid suppressing unrelated conversations.
-  // The final summary is sent explicitly via `sendMessageSlack` in agent_end.
+  // The final reply is delivered by the normal pipeline after agent_end
+  // clears suppression.
   //
   api.on("message_sending", (event, ctx) => {
     if (ctx.channelId !== "slack") return;
@@ -268,7 +235,8 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
 
   // ── Hook: agent_end ────────────────────────────────────────────────
   //
-  // Fires after agent run completes. Sends final summary and cleans up.
+  // Fires after agent run completes. Clears suppression so the normal
+  // reply pipeline can deliver the final reply.
   //
   api.on("agent_end", async (event, ctx) => {
     if (ctx.channelId !== "slack") return;
@@ -302,27 +270,10 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
 
     if (!matchedThread || !matchedKey) return;
 
-    // Clean up immediately to unblock future messages
+    // Clear suppression so the normal reply pipeline's final delivery
+    // (which runs after agent_end) can go through. Do NOT send here —
+    // the pipeline already has the final reply queued and will deliver
+    // it once suppression is lifted.
     suppressedThreads.delete(matchedKey);
-
-    // Build and send final summary
-    const summary = buildFinalSummary(
-      Array.isArray(event.messages) ? event.messages : [],
-      event.success,
-      event.error,
-    );
-
-    try {
-      const cfg = api.runtime.config.loadConfig();
-      await sendMessageSlack(matchedThread.sendTarget, summary, {
-        cfg,
-        accountId: matchedThread.accountId,
-        threadTs: matchedThread.threadTs,
-      });
-    } catch (err) {
-      api.logger.warn(
-        `pazi: failed to send final Slack summary: ${err instanceof Error ? err.message : String(err)}`,
-      );
-    }
   });
 }
