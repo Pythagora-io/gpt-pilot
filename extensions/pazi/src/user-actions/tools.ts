@@ -7,6 +7,11 @@ import { createUserAction, getUserAction } from "./api.js";
 
 export type UserActionToolsDeps = {
   pluginConfig: Record<string, unknown> | null;
+  /**
+   * @deprecated No longer called since request_browser_permission is non-blocking.
+   * Browser context is updated via gateway push from syncBrowserEnabled.
+   * Kept for backward compatibility — callers that wire this up won't break.
+   */
   onBrowserPermissionGranted?: () => Promise<void>;
 };
 
