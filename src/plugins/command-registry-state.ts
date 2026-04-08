@@ -1,3 +1,4 @@
+import { getChannelPlugin } from "../channels/plugins/index.js";
 import { resolveGlobalSingleton } from "../shared/global-singleton.js";
 import type { OpenClawPluginCommandDefinition } from "./types.js";
 
@@ -14,19 +15,27 @@ type PluginCommandState = {
 
 const PLUGIN_COMMAND_STATE_KEY = Symbol.for("openclaw.pluginCommandsState");
 
-const state = resolveGlobalSingleton<PluginCommandState>(PLUGIN_COMMAND_STATE_KEY, () => ({
-  pluginCommands: new Map<string, RegisteredPluginCommand>(),
-  registryLocked: false,
-}));
+const getState = () =>
+  resolveGlobalSingleton<PluginCommandState>(PLUGIN_COMMAND_STATE_KEY, () => ({
+    pluginCommands: new Map<string, RegisteredPluginCommand>(),
+    registryLocked: false,
+  }));
 
-export const pluginCommands = state.pluginCommands;
+const getPluginCommandMap = () => getState().pluginCommands;
+
+export const pluginCommands = new Proxy(new Map<string, RegisteredPluginCommand>(), {
+  get(_target, property) {
+    const value = Reflect.get(getPluginCommandMap(), property, getPluginCommandMap());
+    return typeof value === "function" ? value.bind(getPluginCommandMap()) : value;
+  },
+});
 
 export function isPluginCommandRegistryLocked(): boolean {
-  return state.registryLocked;
+  return getState().registryLocked;
 }
 
 export function setPluginCommandRegistryLocked(locked: boolean): void {
-  state.registryLocked = locked;
+  getState().registryLocked = locked;
 }
 
 export function clearPluginCommands(): void {
@@ -63,7 +72,10 @@ export function getPluginCommandSpecs(provider?: string): Array<{
   acceptsArgs: boolean;
 }> {
   const providerName = provider?.trim().toLowerCase();
-  if (providerName && providerName !== "telegram" && providerName !== "discord") {
+  if (
+    providerName &&
+    getChannelPlugin(providerName)?.commands?.nativeCommandsAutoEnabled !== true
+  ) {
     return [];
   }
   return Array.from(pluginCommands.values()).map((cmd) => ({

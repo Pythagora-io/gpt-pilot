@@ -3,8 +3,8 @@ import fs from "node:fs";
 import fsp from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { loadOutboundMediaFromUrl } from "openclaw/plugin-sdk/outbound-media";
 import { resolveStateDir as resolvePluginStateDir } from "openclaw/plugin-sdk/state-paths";
-import { loadOutboundMediaFromUrl } from "../runtime-api.js";
 import { normalizeZaloReactionIcon } from "./reaction.js";
 import type {
   ZaloAuthStatus,
@@ -26,7 +26,7 @@ import {
   type LoginQRCallbackEvent,
   type Message,
   type User,
-  Zalo,
+  createZalo,
 } from "./zca-client.js";
 import { LoginQRCallbackEventType, ThreadType } from "./zca-constants.js";
 
@@ -619,7 +619,7 @@ async function ensureApi(
     if (!stored) {
       throw new Error(`No saved Zalo session for profile \"${profile}\"`);
     }
-    const zalo = new Zalo({
+    const zalo = await createZalo({
       logging: false,
       selfListen: false,
     });
@@ -1043,6 +1043,7 @@ export async function sendZaloTextMessage(
     if (options.mediaUrl?.trim()) {
       const media = await loadOutboundMediaFromUrl(options.mediaUrl.trim(), {
         mediaLocalRoots: options.mediaLocalRoots,
+        mediaReadFile: options.mediaReadFile,
       });
       const fileName = resolveMediaFileName({
         mediaUrl: options.mediaUrl,
@@ -1293,7 +1294,7 @@ export async function startZaloQrLogin(params: {
       let capturedCredentials: Omit<StoredZaloCredentials, "createdAt" | "lastUsedAt"> | null =
         null;
       try {
-        const zalo = new Zalo({ logging: false, selfListen: false });
+        const zalo = await createZalo({ logging: false, selfListen: false });
         const api = await zalo.loginQR(undefined, (event: LoginQRCallbackEvent) => {
           const current = activeQrLogins.get(profile);
           if (!current || current.id !== login.id) {

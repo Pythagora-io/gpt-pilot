@@ -2,6 +2,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { resolveDefaultAgentId } from "../agents/agent-scope.js";
+import { listBundledChannelPluginIds } from "../channels/plugins/bundled-ids.js";
+import { hasBundledChannelPersistedAuthState } from "../channels/plugins/persisted-auth-state.js";
 import { formatCliCommand } from "../cli/command-format.js";
 import type { OpenClawConfig } from "../config/config.js";
 import { resolveOAuthDir, resolveStateDir } from "../config/paths.js";
@@ -16,15 +18,13 @@ import {
   resolveStorePath,
 } from "../config/sessions.js";
 import { resolveRequiredHomeDir } from "../infra/home-dir.js";
+import { resolveMemoryBackendConfig } from "../memory-host-sdk/engine-storage.js";
 import { parseAgentSessionKey } from "../sessions/session-key-utils.js";
 import { note } from "../terminal/note.js";
 import { shortenHomePath } from "../utils.js";
 
 type DoctorPrompterLike = {
-  confirmSkipInNonInteractive: (params: {
-    message: string;
-    initialValue?: boolean;
-  }) => Promise<boolean>;
+  confirmRuntimeRepair: (params: { message: string; initialValue?: boolean }) => Promise<boolean>;
 };
 
 function countLabel(count: number, singular: string, plural = `${singular}s`): string {
@@ -464,9 +464,10 @@ function shouldRequireOAuthDir(cfg: OpenClawConfig, env: NodeJS.ProcessEnv): boo
   if (!isRecord(channels)) {
     return false;
   }
-  // WhatsApp auth always uses the credentials tree.
-  if (isRecord(channels.whatsapp)) {
-    return true;
+  for (const channelId of listBundledChannelPluginIds()) {
+    if (hasBundledChannelPersistedAuthState({ channelId, cfg, env })) {
+      return true;
+    }
   }
   // Pairing allowlists are persisted under credentials/<channel>-allowFrom.json.
   for (const [channelId, channelCfg] of Object.entries(channels)) {
@@ -478,6 +479,11 @@ function shouldRequireOAuthDir(cfg: OpenClawConfig, env: NodeJS.ProcessEnv): boo
     }
   }
   return false;
+}
+
+function shouldSuppressOrphanTranscriptWarning(cfg: OpenClawConfig, agentId: string): boolean {
+  const backendConfig = resolveMemoryBackendConfig({ cfg, agentId });
+  return backendConfig?.backend === "qmd" && backendConfig.qmd?.sessions.enabled === true;
 }
 
 export async function noteStateIntegrity(
@@ -505,6 +511,7 @@ export async function noteStateIntegrity(
   const requireOAuthDir = shouldRequireOAuthDir(cfg, env);
   const cloudSyncedStateDir = detectMacCloudSyncedStateDir(stateDir);
   const linuxSdBackedStateDir = detectLinuxSdBackedStateDir(stateDir);
+  const suppressOrphanTranscriptWarning = shouldSuppressOrphanTranscriptWarning(cfg, agentId);
 
   if (cloudSyncedStateDir) {
     warnings.push(
@@ -530,7 +537,7 @@ export async function noteStateIntegrity(
         "- Gateway is in remote mode; run doctor on the remote host where the gateway runs.",
       );
     }
-    const create = await prompter.confirmSkipInNonInteractive({
+    const create = await prompter.confirmRuntimeRepair({
       message: `Create ${displayStateDir} now?`,
       initialValue: false,
     });
@@ -551,7 +558,7 @@ export async function noteStateIntegrity(
     if (hint) {
       warnings.push(`  ${hint}`);
     }
-    const repair = await prompter.confirmSkipInNonInteractive({
+    const repair = await prompter.confirmRuntimeRepair({
       message: `Repair permissions on ${displayStateDir}?`,
       initialValue: true,
     });
@@ -580,7 +587,7 @@ export async function noteStateIntegrity(
         warnings.push(
           `- State directory permissions are too open (${displayStateDir}). Recommend chmod 700.`,
         );
-        const tighten = await prompter.confirmSkipInNonInteractive({
+        const tighten = await prompter.confirmRuntimeRepair({
           message: `Tighten permissions on ${displayStateDir} to 700?`,
           initialValue: true,
         });
@@ -607,7 +614,7 @@ export async function noteStateIntegrity(
         warnings.push(
           `- Config file is group/world readable (${displayConfigPath ?? configPath}). Recommend chmod 600.`,
         );
-        const tighten = await prompter.confirmSkipInNonInteractive({
+        const tighten = await prompter.confirmRuntimeRepair({
           message: `Tighten permissions on ${displayConfigPath ?? configPath} to 600?`,
           initialValue: true,
         });
@@ -651,7 +658,7 @@ export async function noteStateIntegrity(
       const displayDir = displayDirFor(dir);
       if (!existsDir(dir)) {
         warnings.push(`- CRITICAL: ${label} missing (${displayDir}).`);
-        const create = await prompter.confirmSkipInNonInteractive({
+        const create = await prompter.confirmRuntimeRepair({
           message: `Create ${label} at ${displayDir}?`,
           initialValue: true,
         });
@@ -671,7 +678,7 @@ export async function noteStateIntegrity(
         if (hint) {
           warnings.push(`  ${hint}`);
         }
-        const repair = await prompter.confirmSkipInNonInteractive({
+        const repair = await prompter.confirmRuntimeRepair({
           message: `Repair permissions on ${label}?`,
           initialValue: true,
         });
@@ -782,7 +789,7 @@ export async function noteStateIntegrity(
       .filter((entry) => entry.isFile() && isPrimarySessionTranscriptFileName(entry.name))
       .map((entry) => path.resolve(path.join(sessionsDir, entry.name)))
       .filter((filePath) => !referencedTranscriptPaths.has(filePath));
-    if (orphanTranscriptPaths.length > 0) {
+    if (orphanTranscriptPaths.length > 0 && !suppressOrphanTranscriptWarning) {
       const orphanCount = countLabel(orphanTranscriptPaths.length, "orphan transcript file");
       const orphanPreview = formatFilePreview(orphanTranscriptPaths);
       warnings.push(
@@ -793,7 +800,7 @@ export async function noteStateIntegrity(
           `  Examples: ${orphanPreview}`,
         ].join("\n"),
       );
-      const archiveOrphans = await prompter.confirmSkipInNonInteractive({
+      const archiveOrphans = await prompter.confirmRuntimeRepair({
         message: `Archive ${orphanCount} in ${displaySessionsDir}? This only renames them to *.deleted.<timestamp>.`,
         initialValue: false,
       });
