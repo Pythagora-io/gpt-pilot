@@ -68,6 +68,8 @@ import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
 import { startSlackThreadCachePersistence } from "./src/slack-thread-cache-persistence.js";
 import { registerSlackThreadReplyMode } from "./src/slack-thread-reply-mode.js";
 import { installChannelAuthCrashGuard } from "./src/suppress-channel-auth-crash.js";
+import { createReactionEventHandler } from "./src/reactions/reaction-event.js";
+import { createReactToMessageTool } from "./src/reactions/react-tool.js";
 import { createUserActionTools } from "./src/user-actions/tools.js";
 
 function normalizePluginConfig(
@@ -295,6 +297,10 @@ export default {
       api.registerTool(tool);
     }
 
+    // PAZ-310: Register react_to_message tool
+    const reactTool = createReactToMessageTool({ pluginConfig });
+    api.registerTool(reactTool);
+
     const browserUseConfig = resolveBrowserUseConfig({
       pluginConfig,
       env: process.env,
@@ -412,6 +418,25 @@ export default {
           return;
         }
         await credentialsHandler(req, res);
+      },
+    });
+
+    // PAZ-310: HTTP route for reaction events from the Pazi API
+    const reactionEventHandler = createReactionEventHandler({
+      configToken: gatewayAuthToken,
+      logger: api.logger,
+    });
+    api.registerHttpRoute({
+      path: "/pazi/reactions/event",
+      auth: "gateway",
+      handler: async (req, res) => {
+        if (req.method !== "POST") {
+          res.statusCode = 405;
+          res.setHeader("Content-Type", "text/plain; charset=utf-8");
+          res.end("Method Not Allowed");
+          return;
+        }
+        await reactionEventHandler(req, res);
       },
     });
 

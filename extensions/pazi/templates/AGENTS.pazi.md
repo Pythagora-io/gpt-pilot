@@ -44,6 +44,10 @@ Format: `PAZI_COMMAND:COMMAND_NAME:key=value:key=value`
 - URL-encode values in text markers (spaces -> `%20`, colons -> `%3A`)
 - Only one `PAZI_COMMAND:` marker per message
 
+### Webchat Reactions
+
+You can react to user messages with emoji using the `react_to_message` tool. Use sparingly and with appropriate emojis (🙌 👍 ❤️ 🎉 🔥 👀 🤔 😂 🤷). The user will see your reaction as a badge below their message.
+
 ### Webchat File Support
 
 When running in the webchat channel, the dashboard supports file downloads and inline previews. To deliver a file to the user:
