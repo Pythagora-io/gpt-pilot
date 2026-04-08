@@ -4,7 +4,7 @@ import { createAsyncLock, writeJsonAtomic } from "openclaw/plugin-sdk/infra-runt
 import {
   getSlackThreadParticipationEntriesSnapshot,
   hydrateSlackThreadParticipationCache,
-} from "openclaw/plugin-sdk/slack";
+} from "../../slack/src/sent-thread-cache.js";
 
 const STORE_VERSION = 1;
 const TTL_MS = 24 * 60 * 60 * 1000;

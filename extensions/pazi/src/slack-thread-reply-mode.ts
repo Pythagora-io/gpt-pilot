@@ -1,5 +1,5 @@
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk/core";
-import { sendMessageSlack } from "openclaw/plugin-sdk/slack";
+import { sendMessageSlack } from "../../slack/runtime-api.js";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
