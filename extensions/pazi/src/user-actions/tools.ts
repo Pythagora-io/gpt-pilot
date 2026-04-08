@@ -1,6 +1,8 @@
 import { Type } from "@sinclair/typebox";
 import type { AnyAgentTool } from "openclaw/plugin-sdk/core";
 import { getPluginRuntimeGatewayRequestScope } from "openclaw/plugin-sdk/plugin-runtime";
+import { getProxyContext } from "../context.js";
+import { buildBrowserPermissionUrl } from "../dashboard-url.js";
 import { createUserAction, getUserAction } from "./api.js";
 
 export type UserActionToolsDeps = {
@@ -296,33 +298,20 @@ export function createUserActionTools(deps: UserActionToolsDeps): AnyAgentTool[]
       description:
         "Ask the user to enable web browsing for this workspace. " +
         "Use this when you need to use browser, web_search, web_fetch, or browser_use tools " +
-        "but they are currently disabled. Opens a permission dialog in the user's dashboard.",
+        "but they are currently disabled. Opens a permission dialog in the user's dashboard. " +
+        "Returns immediately with a dashboard URL — share it with the user so they can enable browsing from any device or channel.",
       parameters: Type.Object(
         {
           message: Type.Optional(
             Type.String({ description: "Explain to the user why browsing is needed" }),
           ),
-          timeoutMs: Type.Optional(
-            Type.Number({ description: "Max wait time in ms (default: 120000)" }),
-          ),
-          pollIntervalMs: Type.Optional(
-            Type.Number({ description: "Poll interval in ms (default: 3000)" }),
-          ),
         },
         { additionalProperties: false },
       ),
       // oxlint-disable-next-line typescript/no-explicit-any
-      async execute(_toolCallId: string, params: any, signal?: AbortSignal) {
+      async execute(_toolCallId: string, params: any) {
         try {
           const message = typeof params.message === "string" ? params.message.trim() : undefined;
-          const timeoutMs =
-            typeof params.timeoutMs === "number" && params.timeoutMs > 0
-              ? params.timeoutMs
-              : 120_000;
-          const pollIntervalMs =
-            typeof params.pollIntervalMs === "number" && params.pollIntervalMs > 0
-              ? params.pollIntervalMs
-              : 3_000;
 
           // 1. Create user action request
           const created = await createUserAction(deps.pluginConfig, {
@@ -335,31 +324,30 @@ export function createUserActionTools(deps: UserActionToolsDeps): AnyAgentTool[]
           }
           const requestId = created.data.request.requestId;
 
-          // 2. Emit event to frontend
+          // 2. Emit event to frontend (shows dialog for web dashboard users)
           emitIntegrationEvent({
             action: "browser_permission_required",
             requestId,
             message: message || undefined,
           });
 
-          // 3. Poll until resolved
-          const result = await pollUntilResolved(
-            deps.pluginConfig,
-            requestId,
-            "Web Browsing",
-            "browser_permission",
-            timeoutMs,
-            pollIntervalMs,
-            signal,
-          );
+          // 3. Build dashboard URL for non-web sessions (e.g. Slack)
+          const ctx = getProxyContext();
+          const dashboardUrl = buildBrowserPermissionUrl(ctx?.dashboardBaseUrl, requestId);
 
-          // 4. If approved, update local context
-          const details = result.details as Record<string, unknown> | undefined;
-          if (details?.status === "completed" || details?.enabled === true) {
-            await deps.onBrowserPermissionGranted?.();
-          }
+          // 4. Return immediately (non-blocking) — the agent can share the URL
+          const contentText = dashboardUrl
+            ? `Browser permission requested. If the user is not on the web dashboard, share this link: ${dashboardUrl}`
+            : "Browser permission requested. The user has been prompted on the web dashboard.";
 
-          return result;
+          return {
+            content: [{ type: "text" as const, text: contentText }],
+            details: {
+              status: "pending",
+              requestId,
+              dashboardUrl,
+            },
+          };
         } catch (err) {
           return json({ error: err instanceof Error ? err.message : String(err) });
         }

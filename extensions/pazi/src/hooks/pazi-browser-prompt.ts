@@ -5,6 +5,7 @@ const BROWSER_DISABLED_GUIDANCE = [
   "## Browser Access",
   "Browser tools (`browser`, `web_search`, `web_fetch`, `browser_use`) are currently DISABLED for this workspace.",
   "If you need to browse the web, use the `request_browser_permission` tool to ask the user to enable it.",
+  "The tool will return a dashboard URL — share it with the user so they can enable browsing from any device or channel.",
   "Do NOT attempt to call browser tools directly — they will be blocked.",
 ].join("\n");
 
