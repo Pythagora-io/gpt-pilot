@@ -1,8 +1,9 @@
 import path from "node:path";
-import { listAgentIds, resolveAgentWorkspaceDir } from "../agents/agent-scope.js";
+import { resolveAgentWorkspaceDir } from "../agents/agent-scope.js";
 import type { OpenClawConfig } from "../config/config.js";
 import { resolveStateDir } from "../config/paths.js";
 import { resolvePreferredOpenClawTmpDir } from "../infra/tmp-openclaw-dir.js";
+import { normalizeOptionalString } from "../shared/string-coerce.js";
 import { resolveConfigDir } from "../utils.js";
 
 type BuildMediaLocalRootsOptions = {
@@ -47,21 +48,19 @@ export function getDefaultMediaLocalRoots(): readonly string[] {
 
 export function getAgentScopedMediaLocalRoots(
   cfg: OpenClawConfig,
-  _agentId?: string,
+  agentId?: string,
 ): readonly string[] {
   const roots = buildMediaLocalRoots(resolveStateDir(), resolveConfigDir());
-
-  const seen = new Set(roots.map((root) => path.resolve(root)));
-  for (const id of listAgentIds(cfg)) {
-    const workspaceDir = resolveAgentWorkspaceDir(cfg, id);
-    if (!workspaceDir) {
-      continue;
-    }
-    const normalizedWorkspaceDir = path.resolve(workspaceDir);
-    if (seen.has(normalizedWorkspaceDir)) {
-      continue;
-    }
-    seen.add(normalizedWorkspaceDir);
+  const normalizedAgentId = normalizeOptionalString(agentId);
+  if (!normalizedAgentId) {
+    return roots;
+  }
+  const workspaceDir = resolveAgentWorkspaceDir(cfg, normalizedAgentId);
+  if (!workspaceDir) {
+    return roots;
+  }
+  const normalizedWorkspaceDir = path.resolve(workspaceDir);
+  if (!roots.includes(normalizedWorkspaceDir)) {
     roots.push(normalizedWorkspaceDir);
   }
   return roots;
