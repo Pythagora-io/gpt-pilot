@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { resetGenerationRuntimeMocks } from "../../test/helpers/media-generation/runtime-test-mocks.js";
 import type { OpenClawConfig } from "../config/config.js";
 import { generateVideo, listRuntimeVideoGenerationProviders } from "./runtime.js";
 import type { VideoGenerationProvider } from "./types.js";
@@ -9,6 +10,7 @@ const mocks = vi.hoisted(() => {
     createSubsystemLogger: vi.fn(() => ({ debug })),
     describeFailoverError: vi.fn(),
     getProviderEnvVars: vi.fn<(providerId: string) => string[]>(() => []),
+    resolveProviderAuthEnvVarCandidates: vi.fn(() => ({})),
     getVideoGenerationProvider: vi.fn<
       (providerId: string, config?: OpenClawConfig) => VideoGenerationProvider | undefined
     >(() => undefined),
@@ -49,9 +51,14 @@ vi.mock("../config/model-input.js", () => ({
 vi.mock("../logging/subsystem.js", () => ({
   createSubsystemLogger: mocks.createSubsystemLogger,
 }));
-vi.mock("../secrets/provider-env-vars.js", () => ({
-  getProviderEnvVars: mocks.getProviderEnvVars,
-}));
+vi.mock("../secrets/provider-env-vars.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../secrets/provider-env-vars.js")>();
+  return {
+    ...actual,
+    getProviderEnvVars: mocks.getProviderEnvVars,
+    resolveProviderAuthEnvVarCandidates: mocks.resolveProviderAuthEnvVarCandidates,
+  };
+});
 vi.mock("./model-ref.js", () => ({
   parseVideoGenerationModelRef: mocks.parseVideoGenerationModelRef,
 }));
@@ -62,21 +69,12 @@ vi.mock("./provider-registry.js", () => ({
 
 describe("video-generation runtime", () => {
   beforeEach(() => {
-    mocks.createSubsystemLogger.mockClear();
-    mocks.describeFailoverError.mockReset();
-    mocks.getProviderEnvVars.mockReset();
-    mocks.getProviderEnvVars.mockReturnValue([]);
-    mocks.getVideoGenerationProvider.mockReset();
-    mocks.isFailoverError.mockReset();
-    mocks.isFailoverError.mockReturnValue(false);
-    mocks.listVideoGenerationProviders.mockReset();
-    mocks.listVideoGenerationProviders.mockReturnValue([]);
-    mocks.parseVideoGenerationModelRef.mockClear();
-    mocks.resolveAgentModelFallbackValues.mockReset();
-    mocks.resolveAgentModelFallbackValues.mockReturnValue([]);
-    mocks.resolveAgentModelPrimaryValue.mockReset();
-    mocks.resolveAgentModelPrimaryValue.mockReturnValue(undefined);
-    mocks.debug.mockReset();
+    resetGenerationRuntimeMocks({
+      ...mocks,
+      getProvider: mocks.getVideoGenerationProvider,
+      listProviders: mocks.listVideoGenerationProviders,
+      parseModelRef: mocks.parseVideoGenerationModelRef,
+    });
   });
 
   it("generates videos through the active video-generation provider", async () => {
@@ -129,6 +127,68 @@ describe("video-generation runtime", () => {
     ]);
   });
 
+  it("auto-detects and falls through to another configured video-generation provider by default", async () => {
+    mocks.getVideoGenerationProvider.mockImplementation((providerId: string) => {
+      if (providerId === "openai") {
+        return {
+          id: "openai",
+          defaultModel: "sora-2",
+          capabilities: {},
+          isConfigured: () => true,
+          async generateVideo() {
+            throw new Error("Your request was blocked by our moderation system.");
+          },
+        };
+      }
+      if (providerId === "runway") {
+        return {
+          id: "runway",
+          defaultModel: "gen4.5",
+          capabilities: {},
+          isConfigured: () => true,
+          async generateVideo() {
+            return {
+              videos: [{ buffer: Buffer.from("mp4-bytes"), mimeType: "video/mp4" }],
+              model: "gen4.5",
+            };
+          },
+        };
+      }
+      return undefined;
+    });
+    mocks.listVideoGenerationProviders.mockReturnValue([
+      {
+        id: "openai",
+        defaultModel: "sora-2",
+        capabilities: {},
+        isConfigured: () => true,
+        generateVideo: async () => ({ videos: [] }),
+      },
+      {
+        id: "runway",
+        defaultModel: "gen4.5",
+        capabilities: {},
+        isConfigured: () => true,
+        generateVideo: async () => ({ videos: [] }),
+      },
+    ]);
+
+    const result = await generateVideo({
+      cfg: {} as OpenClawConfig,
+      prompt: "animate a cat",
+    });
+
+    expect(result.provider).toBe("runway");
+    expect(result.model).toBe("gen4.5");
+    expect(result.attempts).toEqual([
+      {
+        provider: "openai",
+        model: "sora-2",
+        error: "Your request was blocked by our moderation system.",
+      },
+    ]);
+  });
+
   it("lists runtime video-generation providers through the provider registry", () => {
     const providers: VideoGenerationProvider[] = [
       {
@@ -136,7 +196,9 @@ describe("video-generation runtime", () => {
         defaultModel: "vid-v1",
         models: ["vid-v1"],
         capabilities: {
-          supportsAudio: true,
+          generate: {
+            supportsAudio: true,
+          },
         },
         generateVideo: async () => ({
           videos: [{ buffer: Buffer.from("mp4-bytes"), mimeType: "video/mp4" }],
@@ -157,7 +219,9 @@ describe("video-generation runtime", () => {
     mocks.getVideoGenerationProvider.mockReturnValue({
       id: "video-plugin",
       capabilities: {
-        supportedDurationSeconds: [4, 6, 8],
+        generate: {
+          supportedDurationSeconds: [4, 6, 8],
+        },
       },
       generateVideo: async (req) => {
         seenDurationSeconds = req.durationSeconds;
@@ -181,6 +245,13 @@ describe("video-generation runtime", () => {
     });
 
     expect(seenDurationSeconds).toBe(6);
+    expect(result.normalization).toMatchObject({
+      durationSeconds: {
+        requested: 5,
+        applied: 6,
+        supportedValues: [4, 6, 8],
+      },
+    });
     expect(result.metadata).toMatchObject({
       requestedDurationSeconds: 5,
       normalizedDurationSeconds: 6,
@@ -203,7 +274,9 @@ describe("video-generation runtime", () => {
     mocks.getVideoGenerationProvider.mockReturnValue({
       id: "openai",
       capabilities: {
-        supportsSize: true,
+        generate: {
+          supportsSize: true,
+        },
       },
       generateVideo: async (req) => {
         seenRequest = {
@@ -249,6 +322,74 @@ describe("video-generation runtime", () => {
       { key: "audio", value: false },
       { key: "watermark", value: false },
     ]);
+  });
+
+  it("uses mode-specific capabilities for image-to-video requests", async () => {
+    let seenRequest:
+      | {
+          size?: string;
+          aspectRatio?: string;
+          resolution?: string;
+        }
+      | undefined;
+    mocks.resolveAgentModelPrimaryValue.mockReturnValue("runway/gen4.5");
+    mocks.getVideoGenerationProvider.mockReturnValue({
+      id: "runway",
+      capabilities: {
+        generate: {
+          supportsSize: true,
+          supportsAspectRatio: false,
+        },
+        imageToVideo: {
+          enabled: true,
+          maxInputImages: 1,
+          supportsSize: false,
+          supportsAspectRatio: true,
+        },
+      },
+      generateVideo: async (req) => {
+        seenRequest = {
+          size: req.size,
+          aspectRatio: req.aspectRatio,
+          resolution: req.resolution,
+        };
+        return {
+          videos: [{ buffer: Buffer.from("mp4-bytes"), mimeType: "video/mp4" }],
+          model: "gen4.5",
+        };
+      },
+    });
+
+    const result = await generateVideo({
+      cfg: {
+        agents: {
+          defaults: {
+            videoGenerationModel: { primary: "runway/gen4.5" },
+          },
+        },
+      } as OpenClawConfig,
+      prompt: "animate a lobster",
+      size: "1280x720",
+      inputImages: [{ buffer: Buffer.from("png"), mimeType: "image/png" }],
+    });
+
+    expect(seenRequest).toEqual({
+      size: undefined,
+      aspectRatio: "16:9",
+      resolution: undefined,
+    });
+    expect(result.ignoredOverrides).toEqual([]);
+    expect(result.normalization).toMatchObject({
+      aspectRatio: {
+        applied: "16:9",
+        derivedFrom: "size",
+      },
+    });
+    expect(result.metadata).toMatchObject({
+      requestedSize: "1280x720",
+      normalizedAspectRatio: "16:9",
+      aspectRatioDerivedFromSize: "16:9",
+    });
   });
 
   it("builds a generic config hint without hardcoded provider ids", async () => {

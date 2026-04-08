@@ -42,7 +42,7 @@ These phases are internal implementation details, not separate user-configured
 Light phase ingests recent daily memory signals and recall traces, dedupes them,
 and stages candidate lines.
 
-- Reads from short-term recall state and recent daily memory files.
+- Reads from short-term recall state, recent daily memory files, and redacted session transcripts when available.
 - Writes a managed `## Light Sleep` block when storage includes inline output.
 - Records reinforcement signals for later deep ranking.
 - Never writes to `MEMORY.md`.
@@ -65,6 +65,13 @@ REM phase extracts patterns and reflective signals.
 - Writes a managed `## REM Sleep` block when storage includes inline output.
 - Records REM reinforcement signals used by deep ranking.
 - Never writes to `MEMORY.md`.
+
+## Session transcript ingestion
+
+Dreaming can ingest redacted session transcripts into the dreaming corpus. When
+transcripts are available, they are fed into the light phase alongside daily
+memory signals and recall traces. Personal and sensitive content is redacted
+before ingestion.
 
 ## Dream Diary
 
@@ -163,6 +170,21 @@ openclaw memory status --deep
 
 Manual `memory promote` uses deep-phase thresholds by default unless overridden
 with CLI flags.
+
+Explain why a specific candidate would or would not promote:
+
+```bash
+openclaw memory promote-explain "router vlan"
+openclaw memory promote-explain "router vlan" --json
+```
+
+Preview REM reflections, candidate truths, and deep promotion output without
+writing anything:
+
+```bash
+openclaw memory rem-harness
+openclaw memory rem-harness --json
+```
 
 ## Key defaults
 

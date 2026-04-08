@@ -9,4 +9,4 @@ export * from "../plugins/interactive.js";
 export * from "../plugins/lazy-service-module.js";
 export * from "../plugins/runtime/gateway-request-scope.js";
 export * from "../plugins/types.js";
-export type { RuntimeLogger } from "../plugins/runtime/types.js";
+export type { PluginRuntime, RuntimeLogger } from "../plugins/runtime/types.js";
