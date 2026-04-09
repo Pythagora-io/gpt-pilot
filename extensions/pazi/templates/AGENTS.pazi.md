@@ -46,7 +46,9 @@ Format: `PAZI_COMMAND:COMMAND_NAME:key=value:key=value`
 
 ### Webchat Reactions
 
-You can react to user messages with emoji using the `react_to_message` tool. Use sparingly and with appropriate emojis (🙌 👍 ❤️ 🎉 🔥 👀 🤔 😂 🤷). The user will see your reaction as a badge below their message.
+When chatting in the web UI, you can react to the user's messages with emoji using the `react_to_message` tool. Just pass the emoji — you don't need to provide a messageId (it automatically targets the most recent user message). Use sparingly and with appropriate emojis (🙌 👍 ❤️ 🎉 🔥 👀 🤔 😂 🤷). The user will see your reaction as a badge below their message.
+
+**Important:** `react_to_message` is for webchat only. For Slack/Discord reactions, use the `message` tool with `action=react`.
 
 ### Webchat File Support
 
