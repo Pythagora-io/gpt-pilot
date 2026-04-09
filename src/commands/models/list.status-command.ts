@@ -19,6 +19,7 @@ import { resolveProviderEnvApiKeyCandidates } from "../../agents/model-auth-env-
 import { resolveEnvApiKey } from "../../agents/model-auth.js";
 import {
   buildModelAliasIndex,
+  isCliProvider,
   normalizeProviderId,
   parseModelRef,
   resolveConfiguredModelRef,
@@ -39,6 +40,7 @@ import {
 } from "../../infra/provider-usage.js";
 import { getShellEnvAppliedKeys, shouldEnableShellEnvFallback } from "../../infra/shell-env.js";
 import { type RuntimeEnv, writeRuntimeJson } from "../../runtime.js";
+import { normalizeOptionalString } from "../../shared/string-coerce.js";
 import { getTerminalTableWidth, renderTable } from "../../terminal/table.js";
 import { colorize, theme } from "../../terminal/theme.js";
 import { shortenHomePath } from "../../utils.js";
@@ -105,7 +107,7 @@ export async function modelsStatusCommand(
   const imageFallbacks = resolveAgentModelFallbackValues(cfg.agents?.defaults?.imageModel);
   const aliases = Object.entries(cfg.agents?.defaults?.models ?? {}).reduce<Record<string, string>>(
     (acc, [key, entry]) => {
-      const alias = typeof entry?.alias === "string" ? entry.alias.trim() : undefined;
+      const alias = normalizeOptionalString(entry?.alias);
       if (alias) {
         acc[alias] = key;
       }
@@ -160,7 +162,7 @@ export async function modelsStatusCommand(
       ...providersFromEnv,
     ]),
   )
-    .map((p) => (typeof p === "string" ? p.trim() : ""))
+    .map((p) => normalizeOptionalString(p) ?? "")
     .filter(Boolean)
     .toSorted((a, b) => a.localeCompare(b));
 
@@ -177,6 +179,7 @@ export async function modelsStatusCommand(
   const providerAuthMap = new Map(providerAuth.map((entry) => [entry.provider, entry]));
   const missingProvidersInUse = Array.from(providersInUse)
     .filter((provider) => !providerAuthMap.has(provider))
+    .filter((provider) => !isCliProvider(provider, cfg))
     .toSorted((a, b) => a.localeCompare(b));
 
   const probeProfileIds = (() => {

@@ -154,13 +154,12 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           RELEASE_TAG="${{ needs.version-and-publish.outputs.version }}"
-          # Force-update tag to current commit so S3 and tag always match.
-          # When the upstream version hasn't changed between deploys, the tag
-          # already exists from a previous run pointing at older code. Without
-          # force-update, S3 advertises a version whose tag points to stale code
-          # and workspaces clone the wrong commit.
-          git tag -f "${RELEASE_TAG}"
-          git push origin "${RELEASE_TAG}" --force
+          if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" >/dev/null; then
+            echo "Tag ${RELEASE_TAG} already exists on origin; skipping tag creation."
+          else
+            git tag "${RELEASE_TAG}"
+            git push origin "${RELEASE_TAG}"
+          fi
 
           CURRENT=$(node -p "require('./package.json').version")
           # Version format: UPSTREAM-PAZI_PATCH (e.g. 2026.3.13-2)

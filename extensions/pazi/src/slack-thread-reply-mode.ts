@@ -104,7 +104,9 @@ function threadKey(accountId: string, targetId: string, threadTs: string): strin
 function hasActiveSuppression(accountId: string): boolean {
   const suppressedThreads = getGlobalSuppressedThreads();
   for (const thread of suppressedThreads.values()) {
-    if (thread.accountId === accountId) return true;
+    if (thread.accountId === accountId) {
+      return true;
+    }
   }
   return false;
 }
@@ -127,7 +129,9 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
   // clears suppression.
   //
   api.on("message_sending", (event, ctx) => {
-    if (ctx.channelId !== "slack") return;
+    if (ctx.channelId !== "slack") {
+      return;
+    }
     const accountId = ctx.accountId ?? "default";
 
     const threadTs =
@@ -167,6 +171,14 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
       if (suppressedThreads.has(key)) {
         return { cancel: true };
       }
+      // message_received uses user-scoped conversation IDs for DMs (`user:U...`),
+      // while live replies now route via the concrete DM channel (`channel:D...`).
+      // Check wildcard thread suppression to keep DM suppression stable across
+      // this target-id shape shift.
+      const wildcardKey = threadKey(accountId, "", threadTs);
+      if (suppressedThreads.has(wildcardKey)) {
+        return { cancel: true };
+      }
     }
 
     // Fallback when target cannot be derived but thread id is present.
@@ -183,26 +195,40 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
   // Detects Slack messages, checks config, registers suppression, sends ack.
   //
   api.on("message_received", async (event, ctx) => {
-    if (ctx.channelId !== "slack") return;
+    if (ctx.channelId !== "slack") {
+      return;
+    }
 
     const accountId = ctx.accountId ?? "default";
     const threadTs =
       typeof event.metadata?.threadId === "string" ? event.metadata.threadId : undefined;
-    if (!threadTs?.trim()) return;
+    if (!threadTs?.trim()) {
+      return;
+    }
 
     const cfg = api.runtime.config.loadConfig();
     const config = resolveThreadReplyConfig(cfg, accountId);
-    if (config.mode === "full") return;
+    if (config.mode === "full") {
+      return;
+    }
 
     // Resolve Slack target — conversationId has the proper format (channel:C123 or user:U123)
     const sendTarget = (ctx.conversationId ?? "").trim();
-    const targetId = extractSlackTargetId(sendTarget) ?? extractSlackTargetId(event.from ?? "");
-    if (!targetId || !sendTarget) return;
+    const rawTargetId = extractSlackTargetId(sendTarget) ?? extractSlackTargetId(event.from ?? "");
+    // DM inbound conversationId is usually `user:U...`, but downstream live
+    // reply target is `channel:D...`; persist with wildcard target to suppress
+    // both forms for the same account+thread.
+    const targetId = sendTarget.startsWith("user:") ? "" : rawTargetId;
+    if (targetId == null || !sendTarget) {
+      return;
+    }
 
     const key = threadKey(accountId, targetId, threadTs);
 
     // Deduplicate — don't re-register for the same thread
-    if (suppressedThreads.has(key)) return;
+    if (suppressedThreads.has(key)) {
+      return;
+    }
 
     const thread: SuppressedThread = {
       accountId,
@@ -239,7 +265,9 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
   // reply pipeline can deliver the final reply.
   //
   api.on("agent_end", async (event, ctx) => {
-    if (ctx.channelId !== "slack") return;
+    if (ctx.channelId !== "slack") {
+      return;
+    }
 
     // Resolve account from sessionKey because agent_end context does not
     // include accountId.
@@ -261,14 +289,20 @@ export function registerSlackThreadReplyMode(api: OpenClawPluginApi): void {
     let matchedThread: SuppressedThread | undefined;
 
     for (const [key, thread] of suppressedThreads) {
-      if (thread.accountId !== resolvedAccountId) continue;
-      if (skThreadTs && thread.threadTs !== skThreadTs) continue;
+      if (thread.accountId !== resolvedAccountId) {
+        continue;
+      }
+      if (skThreadTs && thread.threadTs !== skThreadTs) {
+        continue;
+      }
       matchedKey = key;
       matchedThread = thread;
       break;
     }
 
-    if (!matchedThread || !matchedKey) return;
+    if (!matchedThread || !matchedKey) {
+      return;
+    }
 
     // Clear suppression so the normal reply pipeline's final delivery
     // (which runs after agent_end) can go through. Do NOT send here —

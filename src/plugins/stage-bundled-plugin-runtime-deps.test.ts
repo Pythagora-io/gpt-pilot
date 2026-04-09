@@ -1,9 +1,18 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { cleanupTrackedTempDirs, makeTrackedTempDir } from "./test-helpers/fs-fixtures.js";
 
-type StageBundledPluginRuntimeDeps = (params?: { cwd?: string; repoRoot?: string }) => void;
+type StageRuntimeDepsInstallParams = {
+  packageJson: Record<string, unknown>;
+};
+
+type StageBundledPluginRuntimeDeps = (params?: {
+  cwd?: string;
+  repoRoot?: string;
+  installAttempts?: number;
+  installPluginRuntimeDepsImpl?: (params: StageRuntimeDepsInstallParams) => void;
+}) => void;
 
 async function loadStageBundledPluginRuntimeDeps(): Promise<StageBundledPluginRuntimeDeps> {
   const moduleUrl = new URL("../../scripts/stage-bundled-plugin-runtime-deps.mjs", import.meta.url);
@@ -16,9 +25,7 @@ async function loadStageBundledPluginRuntimeDeps(): Promise<StageBundledPluginRu
 const tempDirs: string[] = [];
 
 function makeRepoRoot(prefix: string): string {
-  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-  tempDirs.push(repoRoot);
-  return repoRoot;
+  return makeTrackedTempDir(prefix, tempDirs);
 }
 
 function writeRepoFile(repoRoot: string, relativePath: string, value: string) {
@@ -28,9 +35,7 @@ function writeRepoFile(repoRoot: string, relativePath: string, value: string) {
 }
 
 afterEach(() => {
-  for (const dir of tempDirs.splice(0, tempDirs.length)) {
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
+  cleanupTrackedTempDirs(tempDirs);
 });
 
 describe("stageBundledPluginRuntimeDeps", () => {
@@ -43,7 +48,7 @@ describe("stageBundledPluginRuntimeDeps", () => {
       JSON.stringify(
         {
           name: "@openclaw/feishu",
-          version: "2026.4.5",
+          version: "2026.4.9",
           dependencies: {
             "@larksuiteoapi/node-sdk": "^1.60.0",
           },
@@ -105,5 +110,58 @@ describe("stageBundledPluginRuntimeDeps", () => {
       expect(fs.existsSync(path.join(stagedRoot, "es", "index.js"))).toBe(true);
       expect(fs.existsSync(path.join(stagedRoot, "types"))).toBe(false);
     });
+  });
+
+  it("strips non-runtime dependency sections before temp npm staging", async () => {
+    const repoRoot = makeRepoRoot("openclaw-stage-bundled-runtime-manifest-");
+    writeRepoFile(
+      repoRoot,
+      "dist/extensions/amazon-bedrock/package.json",
+      JSON.stringify(
+        {
+          name: "@openclaw/amazon-bedrock-provider",
+          version: "2026.4.9",
+          dependencies: {
+            "@aws-sdk/client-bedrock": "3.1024.0",
+          },
+          devDependencies: {
+            "@openclaw/plugin-sdk": "workspace:*",
+          },
+          peerDependencies: {
+            openclaw: "^0.0.0",
+          },
+          peerDependenciesMeta: {
+            openclaw: {
+              optional: true,
+            },
+          },
+          openclaw: {
+            bundle: {
+              stageRuntimeDependencies: true,
+            },
+          },
+        },
+        null,
+        2,
+      ),
+    );
+
+    const stageBundledPluginRuntimeDeps = await loadStageBundledPluginRuntimeDeps();
+    const installs: Array<Record<string, unknown>> = [];
+    stageBundledPluginRuntimeDeps({
+      repoRoot,
+      installAttempts: 1,
+      installPluginRuntimeDepsImpl(params: { packageJson: Record<string, unknown> }) {
+        installs.push(params.packageJson);
+      },
+    });
+
+    expect(installs).toHaveLength(1);
+    expect(installs[0]?.dependencies).toEqual({
+      "@aws-sdk/client-bedrock": "3.1024.0",
+    });
+    expect(installs[0]?.devDependencies).toBeUndefined();
+    expect(installs[0]?.peerDependencies).toBeUndefined();
+    expect(installs[0]?.peerDependenciesMeta).toBeUndefined();
   });
 });
