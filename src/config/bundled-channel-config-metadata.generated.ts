@@ -10846,6 +10846,10 @@ export const GENERATED_BUNDLED_CHANNEL_CONFIG_METADATA = [
           },
           additionalProperties: false,
         },
+        threadReplyMode: {
+          type: "string",
+          enum: ["full", "summary-only", "quiet"],
+        },
         actions: {
           type: "object",
           properties: {
@@ -11101,6 +11105,9 @@ export const GENERATED_BUNDLED_CHANNEL_CONFIG_METADATA = [
           type: "string",
         },
         ackReaction: {
+          type: "string",
+        },
+        ackMessage: {
           type: "string",
         },
         typingReaction: {
@@ -11755,6 +11762,10 @@ export const GENERATED_BUNDLED_CHANNEL_CONFIG_METADATA = [
                 },
                 additionalProperties: false,
               },
+              threadReplyMode: {
+                type: "string",
+                enum: ["full", "summary-only", "quiet"],
+              },
               actions: {
                 type: "object",
                 properties: {
@@ -12010,6 +12021,9 @@ export const GENERATED_BUNDLED_CHANNEL_CONFIG_METADATA = [
                 type: "string",
               },
               ackReaction: {
+                type: "string",
+              },
+              ackMessage: {
                 type: "string",
               },
               typingReaction: {

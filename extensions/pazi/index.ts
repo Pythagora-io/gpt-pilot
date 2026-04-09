@@ -8,6 +8,8 @@ import {
 } from "openclaw/plugin-sdk/channel-pairing";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk/core";
 import { normalizeAgentId } from "openclaw/plugin-sdk/routing";
+import { probeSlack } from "../slack/runtime-api.js";
+import { probeTelegram } from "../telegram/runtime-api.js";
 import { trackChannelConnected } from "./src/analytics.js";
 import { installBraveEnvDefaults, uninstallBraveEnvDefaults } from "./src/brave/brave-env.js";
 import {
@@ -65,11 +67,11 @@ import { createPaziBrowserEnabledHandler } from "./src/proxy/pazi-browser-enable
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
+import { createReactToMessageTool } from "./src/reactions/react-tool.js";
+import { createReactionEventHandler } from "./src/reactions/reaction-event.js";
 import { startSlackThreadCachePersistence } from "./src/slack-thread-cache-persistence.js";
 import { registerSlackThreadReplyMode } from "./src/slack-thread-reply-mode.js";
 import { installChannelAuthCrashGuard } from "./src/suppress-channel-auth-crash.js";
-import { createReactionEventHandler } from "./src/reactions/reaction-event.js";
-import { createReactToMessageTool } from "./src/reactions/react-tool.js";
 import { createUserActionTools } from "./src/user-actions/tools.js";
 
 function normalizePluginConfig(
@@ -78,7 +80,7 @@ function normalizePluginConfig(
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return null;
   }
-  return value as Record<string, unknown>;
+  return value;
 }
 
 async function stopServer(server: HttpServer, logger: OpenClawPluginApi["logger"]) {
@@ -187,9 +189,8 @@ export default {
       createPaziChannelsConfigureHandler({
         loadConfig: () => api.runtime.config.loadConfig(),
         writeConfigFile: (cfg) => api.runtime.config.writeConfigFile(cfg),
-        probeSlack: (token, timeoutMs) => api.runtime.channel.slack.probeSlack(token, timeoutMs),
-        probeTelegram: (token, timeoutMs, proxyUrl) =>
-          api.runtime.channel.telegram.probeTelegram(token, timeoutMs, proxyUrl),
+        probeSlack: (token, timeoutMs) => probeSlack(token, timeoutMs),
+        probeTelegram: (token, timeoutMs, proxyUrl) => probeTelegram(token, timeoutMs, proxyUrl),
         onConfigured: (result) => {
           void trackChannelConnected(pluginConfig, result.channel, result.accountId);
         },
@@ -284,7 +285,9 @@ export default {
       pluginConfig,
       onBrowserPermissionGranted: async () => {
         const ctx = getProxyContext();
-        if (!ctx) return;
+        if (!ctx) {
+          return;
+        }
         setProxyContext({ ...ctx, browserEnabled: true });
       },
     });
@@ -322,7 +325,7 @@ export default {
     api.registerService({
       id: "pazi-image-generation-onboard",
       start: async () => {
-        const currentConfig = await api.runtime.config.loadConfig();
+        const currentConfig = api.runtime.config.loadConfig();
         if (!currentConfig.agents?.defaults?.imageGenerationModel) {
           const patched = applyPaziImageConfig(currentConfig);
           await api.runtime.config.writeConfigFile(patched);

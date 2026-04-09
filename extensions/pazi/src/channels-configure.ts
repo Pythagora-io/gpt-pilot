@@ -291,7 +291,7 @@ function applySlackConfig(
   cfg: OpenClawConfig,
   accountId: string,
   input: ChannelConfigureParams["config"],
-  probe: ProbeResult,
+  _probe: ProbeResult,
 ): OpenClawConfig {
   const botToken = input.botToken?.trim() ?? "";
   const appToken = input.appToken?.trim() ?? "";
@@ -306,10 +306,19 @@ function applySlackConfig(
     input.slashCommandName !== undefined
       ? sanitizeSlashCommandName(input.slashCommandName)
       : undefined;
-  const existingAccount = (cfg.channels?.slack?.accounts?.[accountId] ?? {}) as Record<
-    string,
-    unknown
-  >;
+  const {
+    streamMode: _legacyStreamMode,
+    streaming: _rawStreaming,
+    chunkMode: _legacyChunkMode,
+    blockStreaming: _legacyBlockStreaming,
+    blockStreamingCoalesce: _legacyBlockStreamingCoalesce,
+    nativeStreaming: _legacyNativeStreaming,
+    ...existingAccount
+  } = (cfg.channels?.slack?.accounts?.[accountId] ?? {}) as Record<string, unknown>;
+  // Preserve streaming only when it's already the new object shape; drop scalar legacy values.
+  if (_rawStreaming && typeof _rawStreaming === "object" && !Array.isArray(_rawStreaming)) {
+    existingAccount.streaming = _rawStreaming;
+  }
 
   return upsertChannelAgentBinding(
     {
@@ -332,7 +341,12 @@ function applySlackConfig(
               dm,
               // Disable block streaming so tool execution traces and intermediate
               // steps are not posted to Slack — only the final response is sent.
-              blockStreaming: false,
+              streaming: {
+                ...(existingAccount.streaming && typeof existingAccount.streaming === "object"
+                  ? (existingAccount.streaming as Record<string, unknown>)
+                  : {}),
+                block: { enabled: false },
+              },
               // Always reply inside threads so the bot doesn't spam the channel.
               replyToMode: "all",
               // Enable bot-to-bot communication by default so multi-agent setups
@@ -496,7 +510,7 @@ export function createPaziChannelsConfigureHandler(
         cfg = applyWhatsAppConfig(cfg, accountId, inputConfig);
       } else {
         const unsupportedChannel: never = channel;
-        throw new Error(`unsupported channel: ${unsupportedChannel}`);
+        throw new Error(`unsupported channel: ${String(unsupportedChannel)}`);
       }
       await deps.writeConfigFile(cfg);
     } catch (err) {
