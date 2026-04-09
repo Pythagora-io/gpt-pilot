@@ -14,6 +14,7 @@
     "target": "es2022",
     "module": "esnext",
     "lib": ["es2023", "DOM", "DOM.Iterable"],
+    "types": ["node"],
     "skipLibCheck": true,
     "useDefineForClassFields": false,
     "rootDir": ".",
