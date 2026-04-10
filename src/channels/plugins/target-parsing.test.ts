@@ -89,6 +89,45 @@ function setMinimalTargetParsingRegistry(): void {
           },
         },
       },
+      {
+        pluginId: "case-route",
+        source: "test",
+        plugin: {
+          id: "case-route",
+          meta: {
+            id: "case-route",
+            label: "Case Route",
+            selectionLabel: "Case Route",
+            docsPath: "/channels/case-route",
+            blurb: "test stub",
+          },
+          capabilities: { chatTypes: ["channel"] },
+          config: {
+            listAccountIds: () => [],
+            resolveAccount: () => ({}),
+          },
+          messaging: {
+            parseExplicitTarget: ({ raw }: { raw: string }) => {
+              const trimmed = raw.trim();
+              return {
+                to: trimmed.replace(/^channel:/i, ""),
+                chatType: "channel" as const,
+              };
+            },
+            normalizeTarget: (raw: string) => {
+              const trimmed = raw.trim();
+              if (!trimmed) {
+                return undefined;
+              }
+              const withoutPrefix = trimmed.replace(/^channel:/i, "").trim();
+              if (!withoutPrefix) {
+                return undefined;
+              }
+              return `channel:${withoutPrefix.toLowerCase()}`;
+            },
+          },
+        },
+      },
     ]),
   );
 }
@@ -151,6 +190,26 @@ describe("parseExplicitTargetForChannel", () => {
       comparableChannelTargetsShareRoute({
         left: topicTarget,
         right: bareTarget,
+      }),
+    ).toBe(true);
+  });
+
+  it("shares routes when plugin normalization collapses equivalent target forms", () => {
+    const prefixedUpper = resolveComparableTargetForChannel({
+      channel: "case-route",
+      rawTarget: "channel:C0AL5NV8BRC",
+    });
+    const bareLower = resolveComparableTargetForChannel({
+      channel: "case-route",
+      rawTarget: "c0al5nv8brc",
+    });
+
+    expect(prefixedUpper?.to).toBe("channel:c0al5nv8brc");
+    expect(bareLower?.to).toBe("channel:c0al5nv8brc");
+    expect(
+      comparableChannelTargetsShareRoute({
+        left: prefixedUpper,
+        right: bareLower,
       }),
     ).toBe(true);
   });

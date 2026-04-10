@@ -55,10 +55,16 @@ export function resolveComparableTargetForChannel(params: {
     return null;
   }
   const parsed = parseExplicitTargetForChannel(params.channel, rawTo);
+  const channel = normalizeChatChannelId(params.channel) ?? normalizeChannelId(params.channel);
+  const plugin = channel ? getChannelPlugin(channel) : undefined;
+  const normalizedTo = normalizeOptionalString(
+    (parsed?.to ? plugin?.messaging?.normalizeTarget?.(parsed.to) : undefined) ??
+      plugin?.messaging?.normalizeTarget?.(rawTo),
+  );
   const fallbackThreadId = normalizeOptionalThreadValue(params.fallbackThreadId);
   return {
     rawTo,
-    to: parsed?.to ?? rawTo,
+    to: normalizedTo ?? parsed?.to ?? rawTo,
     threadId: normalizeOptionalThreadValue(parsed?.threadId ?? fallbackThreadId),
     chatType: parsed?.chatType,
   };
@@ -74,10 +80,16 @@ export function resolveComparableTargetForLoadedChannel(params: {
     return null;
   }
   const parsed = parseExplicitTargetForLoadedChannel(params.channel, rawTo);
+  const channel = normalizeChatChannelId(params.channel) ?? normalizeChannelId(params.channel);
+  const plugin = channel ? getLoadedChannelPlugin(channel) : undefined;
+  const normalizedTo = normalizeOptionalString(
+    (parsed?.to ? plugin?.messaging?.normalizeTarget?.(parsed.to) : undefined) ??
+      plugin?.messaging?.normalizeTarget?.(rawTo),
+  );
   const fallbackThreadId = normalizeOptionalThreadValue(params.fallbackThreadId);
   return {
     rawTo,
-    to: parsed?.to ?? rawTo,
+    to: normalizedTo ?? parsed?.to ?? rawTo,
     threadId: normalizeOptionalThreadValue(parsed?.threadId ?? fallbackThreadId),
     chatType: parsed?.chatType,
   };

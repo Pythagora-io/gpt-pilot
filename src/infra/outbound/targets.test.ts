@@ -13,6 +13,7 @@ import {
   runResolveOutboundTargetCoreTests,
 } from "./targets.shared-test.js";
 import {
+  createTestChannelPlugin,
   createNoopOutboundChannelPlugin,
   createTargetsTestRegistry,
   createTelegramTestPlugin,
@@ -48,7 +49,27 @@ beforeEach(() => {
     createTargetsTestRegistry([
       createNoopOutboundChannelPlugin("discord"),
       createNoopOutboundChannelPlugin("imessage"),
-      createNoopOutboundChannelPlugin("slack"),
+      createTestChannelPlugin({
+        id: "slack",
+        label: "Slack",
+        outbound: {
+          deliveryMode: "direct",
+          sendText: async () => ({ channel: "slack", messageId: "slack-msg" }),
+        },
+        messaging: {
+          normalizeTarget: (raw) => {
+            const trimmed = raw.trim();
+            if (!trimmed) {
+              return undefined;
+            }
+            const withoutPrefix = trimmed.replace(/^channel:/i, "").trim();
+            if (!withoutPrefix) {
+              return undefined;
+            }
+            return `channel:${withoutPrefix.toLowerCase()}`;
+          },
+        },
+      }),
       createTelegramTestPlugin(),
       createWhatsAppTestPlugin(),
     ]),
@@ -772,6 +793,25 @@ describe("resolveSessionDeliveryTarget — cross-channel reply guard (#24152)", 
     expect(resolved.channel).toBe("telegram");
     expect(resolved.to).toBe("-1001234567890");
     expect(resolved.threadId).toBe(1122);
+  });
+
+  it("keeps session thread routing when same-channel targets differ only by plugin-normalized form", () => {
+    const resolved = resolveSessionDeliveryTarget({
+      entry: {
+        sessionId: "sess-slack-normalized-route",
+        updatedAt: 1,
+        lastChannel: "slack",
+        lastTo: "channel:C0AL5NV8BRC",
+        lastThreadId: "1775784591.706979",
+      },
+      requestedChannel: "last",
+      turnSourceChannel: "slack",
+      turnSourceTo: "c0al5nv8brc",
+    });
+
+    expect(resolved.channel).toBe("slack");
+    expect(resolved.to).toBe("c0al5nv8brc");
+    expect(resolved.threadId).toBe("1775784591.706979");
   });
 
   it("keeps Telegram topic thread routing when turnSourceTo uses the plugin-owned topic target", () => {
