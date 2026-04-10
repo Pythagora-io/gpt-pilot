@@ -69,6 +69,16 @@ export async function startPaziProxy(params: StartProxyParams): Promise<ProxySer
       writeJson(res, 503, { error: "no billing context set" });
       return;
     }
+
+    // If workspace is being migrated, reject new LLM requests gracefully
+    if (context.migrationNotice) {
+      writeJson(res, 503, {
+        error: "workspace_migrating",
+        message: `Your workspace is being migrated to a new instance type (plan: ${context.migrationNotice.newPlan}). Please wait for the migration to complete.`,
+      });
+      return;
+    }
+
     markProxyActivity();
 
     const chunks: Buffer[] = [];

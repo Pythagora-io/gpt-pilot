@@ -8,6 +8,12 @@ type ProxyContext = {
   proxyToken: string;
   dashboardBaseUrl?: string;
   browserEnabled?: boolean;
+  /** Set when a workspace migration is in progress. Agent should finish current work and stop. */
+  migrationNotice?: {
+    migrationId: string;
+    newPlan: string;
+    startedAt: string;
+  };
 };
 
 export type { ProxyContext };
@@ -76,7 +82,7 @@ export function configurePersistenceWarnLogger(logger: ((message: string) => voi
  * All fields must be non-empty strings.
  */
 function isValidProxyContext(value: unknown): value is ProxyContext {
-  if (!value || typeof value !== "object") return false;
+  if (!value || typeof value !== "object") {return false;}
   const obj = value as Record<string, unknown>;
   return (
     typeof obj.userId === "string" &&
@@ -140,7 +146,7 @@ export function setProxyContext(ctx: ProxyContext): void {
  * Fallback: direct write when rename fails with EPERM (overlay filesystem).
  */
 function persistToDisk(ctx: ProxyContext): void {
-  if (!persistencePath) return;
+  if (!persistencePath) {return;}
   const data = JSON.stringify(ctx, null, 2) + "\n";
 
   // Fast path: overlay filesystem detected, skip atomic rename
@@ -222,7 +228,7 @@ export function clearProxyContext(): void {
 }
 
 function clearPersistedContext(): void {
-  if (!persistencePath) return;
+  if (!persistencePath) {return;}
   try {
     fs.rmSync(persistencePath, { force: true });
   } catch (err) {

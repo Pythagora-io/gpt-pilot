@@ -65,6 +65,7 @@ import { applyPaziImageConfig } from "./src/image-generation/onboard.js";
 import { buildPaziImageGenerationProvider } from "./src/image-generation/provider.js";
 import { createPaziBrowserEnabledHandler } from "./src/proxy/pazi-browser-enabled.js";
 import { createPaziContextHandler } from "./src/proxy/pazi-context.js";
+import { createPaziMigrationNoticeHandler } from "./src/proxy/pazi-migration-notice.js";
 import { startPaziProxy } from "./src/proxy/pazi-proxy.js";
 import { createPaziUploadHandler } from "./src/proxy/pazi-upload.js";
 import { createReactToMessageTool } from "./src/reactions/react-tool.js";
@@ -135,6 +136,12 @@ export default {
       logger: api.logger,
     });
     const browserEnabledHandler = createPaziBrowserEnabledHandler({
+      configToken: gatewayAuthToken,
+      env: process.env,
+      logger: api.logger,
+    });
+
+    const migrationNoticeHandler = createPaziMigrationNoticeHandler({
       configToken: gatewayAuthToken,
       env: process.env,
       logger: api.logger,
@@ -360,6 +367,20 @@ export default {
           return;
         }
         await browserEnabledHandler(req, res);
+      },
+    });
+
+    api.registerHttpRoute({
+      path: "/pazi/migration-notice",
+      auth: "gateway",
+      handler: async (req, res) => {
+        if (req.method !== "POST") {
+          res.statusCode = 404;
+          res.setHeader("Content-Type", "text/plain; charset=utf-8");
+          res.end("Not Found");
+          return;
+        }
+        await migrationNoticeHandler(req, res);
       },
     });
 
