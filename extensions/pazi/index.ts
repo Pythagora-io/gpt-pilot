@@ -53,6 +53,7 @@ import {
   createPaziTemplatesInstantiateHandler,
   createPaziTemplatesListHandler,
 } from "./src/gateway/templates-instantiate.js";
+import { createSetGoalTool } from "./src/goals/set-goal-tool.js";
 import { paziBootstrapActionsHook } from "./src/hooks/pazi-bootstrap-actions.js";
 import { paziBootstrapUserHook } from "./src/hooks/pazi-bootstrap-user.js";
 import { registerBrowserGuardHook } from "./src/hooks/pazi-browser-guard.js";
@@ -303,6 +304,10 @@ export default {
     // PAZ-310: Register react_to_message tool
     const reactTool = createReactToMessageTool({ pluginConfig });
     api.registerTool(reactTool);
+
+    // PAZ-325: Register set_goal tool
+    const setGoalTool = createSetGoalTool({ pluginConfig });
+    api.registerTool(setGoalTool);
 
     const browserUseConfig = resolveBrowserUseConfig({
       pluginConfig,

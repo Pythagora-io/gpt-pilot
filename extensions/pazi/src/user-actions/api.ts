@@ -66,11 +66,12 @@ export interface UserActionResponse {
 export async function createUserAction(
   pluginConfig: Record<string, unknown> | null,
   body: {
-    kind: "credentials" | "browser_login" | "browser_permission";
+    kind: "credentials" | "browser_login" | "browser_permission" | "goal_confirmation";
     service: string;
     fields?: string[];
     url?: string;
     message?: string;
+    proposal?: Record<string, unknown>;
   },
 ): Promise<UserActionApiResult<UserActionResponse>> {
   try {
