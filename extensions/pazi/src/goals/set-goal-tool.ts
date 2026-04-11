@@ -128,7 +128,7 @@ export function createSetGoalTool(deps: SetGoalToolDeps): AnyAgentTool {
         emitIntegrationEvent({
           action: "goal_proposed",
           requestId,
-          proposal,
+          ...proposal,
         });
 
         // 3. Poll until resolved
