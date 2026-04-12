@@ -1,7 +1,8 @@
 import { Type } from "@sinclair/typebox";
 import type { AnyAgentTool } from "openclaw/plugin-sdk/core";
 import { getPluginRuntimeGatewayRequestScope } from "openclaw/plugin-sdk/plugin-runtime";
-import { createUserAction, getUserAction } from "../user-actions/api.js";
+import { resolvePaziBillingConfig } from "../config.js";
+import { getProxyContext } from "../context.js";
 
 export type SetGoalToolDeps = {
   pluginConfig: Record<string, unknown> | null;
@@ -19,25 +20,6 @@ function json(payload: unknown): AgentToolResult {
   };
 }
 
-async function sleep(ms: number, signal?: AbortSignal): Promise<"ok" | "aborted"> {
-  if (signal?.aborted) {
-    return "aborted";
-  }
-  return await new Promise<"ok" | "aborted">((resolve) => {
-    const timer = setTimeout(() => {
-      resolve("ok");
-    }, ms);
-    if (!signal) {
-      return;
-    }
-    const onAbort = () => {
-      clearTimeout(timer);
-      resolve("aborted");
-    };
-    signal.addEventListener("abort", onAbort, { once: true });
-  });
-}
-
 function emitIntegrationEvent(payload: Record<string, unknown>): void {
   const scope = getPluginRuntimeGatewayRequestScope();
   if (!scope?.context) {
@@ -46,13 +28,68 @@ function emitIntegrationEvent(payload: Record<string, unknown>): void {
   scope.context.broadcast("integration", payload);
 }
 
+interface GoalApiResult {
+  ok: true;
+  data: { goal: { id: string; [key: string]: unknown } };
+}
+
+interface GoalApiError {
+  ok: false;
+  error: string;
+}
+
+async function createGoalViaApi(
+  pluginConfig: Record<string, unknown> | null,
+  body: Record<string, unknown>,
+): Promise<GoalApiResult | GoalApiError> {
+  const context = getProxyContext();
+  if (!context) {
+    return { ok: false, error: "No billing context set — workspace may not be initialized yet" };
+  }
+
+  const resolved = resolvePaziBillingConfig({ pluginConfig, env: process.env });
+  const apiUrl = resolved.apiUrl?.trim();
+  if (!apiUrl) {
+    return { ok: false, error: "PAZI_API_URL not configured" };
+  }
+
+  let baseUrl: URL;
+  try {
+    baseUrl = new URL(apiUrl);
+  } catch {
+    return { ok: false, error: `Invalid PAZI_API_URL: ${apiUrl}` };
+  }
+
+  const url = new URL("/goals", baseUrl);
+  const headers = new Headers();
+  headers.set("x-proxy-token", context.proxyToken);
+  headers.set("Content-Type", "application/json");
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  const text = await res.text();
+  const payload = text.trim() ? (JSON.parse(text) as Record<string, unknown>) : null;
+
+  if (res.ok && payload) {
+    return { ok: true, data: payload as GoalApiResult["data"] };
+  }
+
+  const record = payload as { error?: string; message?: string } | null;
+  const errMsg = record?.error ?? record?.message ?? res.statusText ?? "Request failed";
+  return { ok: false, error: `Pazi API error (${res.status}): ${errMsg}` };
+}
+
 export function createSetGoalTool(deps: SetGoalToolDeps): AnyAgentTool {
   return {
     name: "set_goal",
     label: "Set Goal",
     description:
-      "Propose a goal for the user with a tracking plan. Opens a confirmation card in the user's dashboard " +
-      "showing the goal details and scheduled check-ins. The user can confirm or reject. " +
+      "Create a goal for the user with a tracking plan. The goal is created immediately and a display card " +
+      "appears in the user's dashboard showing the goal details and scheduled check-ins. " +
       "Use this when the user asks you to set, create, or track a goal. " +
       "IMPORTANT: Before calling this tool, ask the user questions to understand the goal deeply — " +
       "what metrics to track, what integrations they use (Twitter, Google Analytics, etc.), " +
@@ -60,7 +97,7 @@ export function createSetGoalTool(deps: SetGoalToolDeps): AnyAgentTool {
       "with specific scheduled tasks that will proactively track progress and determine next steps. " +
       "Each scheduled check-in should be actionable — not just 'check progress' but 'analyze metrics, " +
       "compare to target, and suggest specific actions to stay on track'. " +
-      "Returns the created goal ID on confirmation.",
+      "Returns the created goal ID and details.",
     parameters: Type.Object(
       {
         title: Type.String({ description: "Short goal title (max 500 chars)" }),
@@ -69,6 +106,15 @@ export function createSetGoalTool(deps: SetGoalToolDeps): AnyAgentTool {
         ),
         targetDate: Type.Optional(
           Type.String({ description: "Target completion date (ISO 8601, e.g. '2026-05-01')" }),
+        ),
+        startingValue: Type.Optional(
+          Type.Number({ description: "Starting metric value (e.g. 0, 100)" }),
+        ),
+        targetValue: Type.Optional(
+          Type.Number({ description: "Target metric value (e.g. 1000, 50)" }),
+        ),
+        metricLabel: Type.Optional(
+          Type.String({ description: "Metric label (e.g. 'followers', 'users', 'posts')" }),
         ),
         scheduledCheckIns: Type.Optional(
           Type.Array(
@@ -80,110 +126,74 @@ export function createSetGoalTool(deps: SetGoalToolDeps): AnyAgentTool {
             { description: "Proposed scheduled check-ins for tracking this goal" },
           ),
         ),
-        timeoutMs: Type.Optional(
-          Type.Number({ description: "Max wait time in ms (default: 300000)" }),
-        ),
-        pollIntervalMs: Type.Optional(
-          Type.Number({ description: "Poll interval in ms (default: 3000)" }),
-        ),
       },
       { additionalProperties: false },
     ),
     // oxlint-disable-next-line typescript/no-explicit-any
-    async execute(_toolCallId: string, params: any, signal?: AbortSignal) {
+    async execute(_toolCallId: string, params: any, _signal?: AbortSignal) {
       try {
         const title = typeof params.title === "string" ? params.title.trim() : "";
         const description =
           typeof params.description === "string" ? params.description.trim() : undefined;
         const targetDate =
           typeof params.targetDate === "string" ? params.targetDate.trim() : undefined;
+        const startingValue =
+          typeof params.startingValue === "number" ? params.startingValue : undefined;
+        const targetValue = typeof params.targetValue === "number" ? params.targetValue : undefined;
+        const metricLabel =
+          typeof params.metricLabel === "string" ? params.metricLabel.trim() : undefined;
         const scheduledCheckIns = Array.isArray(params.scheduledCheckIns)
           ? params.scheduledCheckIns
           : undefined;
-        const timeoutMs =
-          typeof params.timeoutMs === "number" && params.timeoutMs > 0 ? params.timeoutMs : 300_000;
-        const pollIntervalMs =
-          typeof params.pollIntervalMs === "number" && params.pollIntervalMs > 0
-            ? params.pollIntervalMs
-            : 3_000;
 
         if (!title) {
           throw new Error("title is required");
         }
 
-        const proposal = {
+        const context = getProxyContext();
+        if (!context) {
+          throw new Error("No proxy context available — workspace may not be initialized yet");
+        }
+
+        // Create the goal directly via Pazi API — no user confirmation needed
+        const result = await createGoalViaApi(deps.pluginConfig, {
+          agentId: context.agentId,
           title,
           description: description || undefined,
           targetDate: targetDate || undefined,
-          scheduledCheckIns: scheduledCheckIns || undefined,
-        };
-
-        // 1. Create user action request
-        const created = await createUserAction(deps.pluginConfig, {
-          kind: "goal_confirmation",
-          service: "Goals",
-          message: `Goal proposal: ${title}`,
-          proposal,
+          startingValue,
+          targetValue,
+          currentValue: startingValue, // Start at the starting value
+          metricLabel: metricLabel || undefined,
+          scheduledTaskIds: [], // Frontend creates cron jobs and updates this
         });
-        if (!created.ok) {
-          return json({ error: created.error });
-        }
-        const requestId = created.data.request.requestId;
 
-        // 2. Emit integration event to frontend
+        if (!result.ok) {
+          return json({ error: result.error });
+        }
+
+        const goal = result.data.goal;
+
+        // Emit integration event so frontend shows the goal card and creates cron jobs
         emitIntegrationEvent({
-          action: "goal_proposed",
-          requestId,
-          ...proposal,
+          action: "goal_created",
+          goalId: goal.id,
+          title,
+          description: description || undefined,
+          targetDate: targetDate || undefined,
+          startingValue,
+          targetValue,
+          currentValue: startingValue,
+          metricLabel: metricLabel || undefined,
+          scheduledCheckIns: scheduledCheckIns || undefined,
         });
 
-        // 3. Poll until resolved
-        const deadline = Date.now() + timeoutMs;
-        while (true) {
-          if (signal?.aborted) {
-            return json({ status: "aborted", requestId });
-          }
-
-          const result = await getUserAction(deps.pluginConfig, requestId);
-          if (!result.ok) {
-            return json({ error: result.error });
-          }
-
-          const { status } = result.data.request;
-          if (status === "completed") {
-            const goalId = (result.data.request as Record<string, unknown>).result as
-              | { goalId?: string }
-              | undefined;
-            return json({
-              status: "completed",
-              requestId,
-              goalId: goalId?.goalId,
-              message: `Goal "${title}" has been confirmed and created.`,
-            });
-          }
-          if (status === "cancelled") {
-            return json({
-              status: "cancelled",
-              requestId,
-              message: `Goal "${title}" was rejected by the user.`,
-            });
-          }
-          if (status === "expired") {
-            return json({ status: "expired", requestId });
-          }
-
-          if (Date.now() >= deadline) {
-            return json({ status: "timeout", requestId });
-          }
-
-          const waitMs = Math.min(pollIntervalMs, deadline - Date.now());
-          if (waitMs > 0) {
-            const slept = await sleep(waitMs, signal);
-            if (slept === "aborted") {
-              return json({ status: "aborted", requestId });
-            }
-          }
-        }
+        return json({
+          status: "created",
+          goalId: goal.id,
+          title,
+          message: `Goal "${title}" has been created successfully.`,
+        });
       } catch (err) {
         return json({ error: err instanceof Error ? err.message : String(err) });
       }

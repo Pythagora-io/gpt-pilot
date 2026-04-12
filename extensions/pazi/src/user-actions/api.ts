@@ -66,7 +66,7 @@ export interface UserActionResponse {
 export async function createUserAction(
   pluginConfig: Record<string, unknown> | null,
   body: {
-    kind: "credentials" | "browser_login" | "browser_permission" | "goal_confirmation";
+    kind: "credentials" | "browser_login" | "browser_permission";
     service: string;
     fields?: string[];
     url?: string;
