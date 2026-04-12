@@ -51,9 +51,15 @@ export function createSetGoalTool(deps: SetGoalToolDeps): AnyAgentTool {
     name: "set_goal",
     label: "Set Goal",
     description:
-      "Propose a goal for the user. Opens a confirmation card in the user's dashboard " +
-      "showing the goal details. The user can confirm or reject. " +
+      "Propose a goal for the user with a tracking plan. Opens a confirmation card in the user's dashboard " +
+      "showing the goal details and scheduled check-ins. The user can confirm or reject. " +
       "Use this when the user asks you to set, create, or track a goal. " +
+      "IMPORTANT: Before calling this tool, ask the user questions to understand the goal deeply — " +
+      "what metrics to track, what integrations they use (Twitter, Google Analytics, etc.), " +
+      "how often they want check-ins (daily, weekly, monthly). Then create a comprehensive plan " +
+      "with specific scheduled tasks that will proactively track progress and determine next steps. " +
+      "Each scheduled check-in should be actionable — not just 'check progress' but 'analyze metrics, " +
+      "compare to target, and suggest specific actions to stay on track'. " +
       "Returns the created goal ID on confirmation.",
     parameters: Type.Object(
       {
