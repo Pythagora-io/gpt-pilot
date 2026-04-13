@@ -241,8 +241,24 @@ Once DMs are working, you can set up your Discord server as a full workspace whe
 
   </Step>
 
-  <Step title="Memory in guild channels">
-    Long-term memory (`MEMORY.md`) auto-loads in every session, including guild channels. Keep stable instructions in `AGENTS.md` or `USER.md`, durable facts in `MEMORY.md`, and never store credentials or human-personal information in `MEMORY.md` (use the appropriate dedicated locations instead).
+  <Step title="Plan for memory in guild channels">
+    By default, long-term memory (MEMORY.md) only loads in DM sessions. Guild channels do not auto-load MEMORY.md.
+
+    <Tabs>
+      <Tab title="Ask your agent">
+        > "When I ask questions in Discord channels, use memory_search or memory_get if you need long-term context from MEMORY.md."
+      </Tab>
+      <Tab title="Manual">
+        If you need shared context in every channel, put the stable instructions in `AGENTS.md` or `USER.md` (they are injected for every session). Keep long-term notes in `MEMORY.md` and access them on demand with memory tools.
+      </Tab>
+    </Tabs>
+
+    > **Update:** behavior changed slightly — `MEMORY.md` now auto-loads in
+    > **every** session, including guild channels. The tabs above are kept
+    > as background; you no longer need the workaround to get memory in
+    > shared channels. Never store credentials or human-personal information
+    > in `MEMORY.md`; keep those in the appropriate dedicated locations.
+
   </Step>
 </Steps>
 
