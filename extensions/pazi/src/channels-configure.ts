@@ -346,7 +346,49 @@ function applySlackConfig(
     existingAccount.streaming = _rawStreaming;
   }
 
+  const rootSlackForDefaultAccount =
+    accountId === "default" &&
+    cfg.channels?.slack &&
+    typeof cfg.channels.slack === "object" &&
+    !Array.isArray(cfg.channels.slack)
+      ? (cfg.channels.slack as Record<string, unknown>)
+      : undefined;
+  const rootDmForDefaultAccount =
+    rootSlackForDefaultAccount?.dm &&
+    typeof rootSlackForDefaultAccount.dm === "object" &&
+    !Array.isArray(rootSlackForDefaultAccount.dm)
+      ? (rootSlackForDefaultAccount.dm as Record<string, unknown>)
+      : undefined;
+
+  const legacyDefaultDmPolicy =
+    typeof rootSlackForDefaultAccount?.dmPolicy === "string"
+      ? rootSlackForDefaultAccount.dmPolicy
+      : typeof rootDmForDefaultAccount?.policy === "string"
+        ? rootDmForDefaultAccount.policy
+        : undefined;
+  const legacyDefaultAllowFrom = Array.isArray(rootSlackForDefaultAccount?.allowFrom)
+    ? rootSlackForDefaultAccount.allowFrom.filter(
+        (entry): entry is string => typeof entry === "string",
+      )
+    : Array.isArray(rootDmForDefaultAccount?.allowFrom)
+      ? rootDmForDefaultAccount.allowFrom.filter(
+          (entry): entry is string => typeof entry === "string",
+        )
+      : undefined;
+  const legacyDefaultGroupPolicy =
+    typeof rootSlackForDefaultAccount?.groupPolicy === "string"
+      ? rootSlackForDefaultAccount.groupPolicy
+      : undefined;
+
   const hasExistingAccount = Object.keys(existingAccount).length > 0;
+  const hasLegacyDefaultSlackConfig =
+    accountId === "default" &&
+    !!rootSlackForDefaultAccount &&
+    (typeof rootSlackForDefaultAccount.botToken === "string" ||
+      typeof rootSlackForDefaultAccount.appToken === "string" ||
+      legacyDefaultDmPolicy !== undefined ||
+      legacyDefaultAllowFrom !== undefined ||
+      legacyDefaultGroupPolicy !== undefined);
   const shouldWriteDmAccess =
     input.accessMode !== undefined ||
     input.allowFrom !== undefined ||
@@ -354,10 +396,21 @@ function applySlackConfig(
     !hasExistingAccount;
   const shouldWriteGroupAccess = input.groupAccessMode !== undefined || !hasExistingAccount;
 
-  const existingDmPolicy = (existingAccount.dmPolicy as string | undefined) ?? undefined;
+  const existingDmPolicyRaw =
+    (existingAccount.dmPolicy as string | undefined) ?? legacyDefaultDmPolicy;
+  const existingDmPolicy =
+    existingDmPolicyRaw === "open" || existingDmPolicyRaw === "allowlist"
+      ? existingDmPolicyRaw
+      : undefined;
   const existingAllowFrom = Array.isArray(existingAccount.allowFrom)
     ? existingAccount.allowFrom.filter((entry): entry is string => typeof entry === "string")
-    : undefined;
+    : legacyDefaultAllowFrom;
+  const existingGroupPolicyRaw =
+    (existingAccount.groupPolicy as string | undefined) ?? legacyDefaultGroupPolicy;
+  const existingGroupPolicy =
+    existingGroupPolicyRaw === "open" || existingGroupPolicyRaw === "allowlist"
+      ? existingGroupPolicyRaw
+      : undefined;
   const existingCreator =
     typeof existingAccount.creatorSlackUserId === "string"
       ? existingAccount.creatorSlackUserId.trim().toUpperCase()
@@ -376,7 +429,11 @@ function applySlackConfig(
           : "closed"
         : existingDmPolicy === "open"
           ? "open"
-          : "closed";
+          : existingDmPolicy === "allowlist"
+            ? "closed"
+            : hasExistingAccount || hasLegacyDefaultSlackConfig
+              ? "open"
+              : "closed";
 
     if (accessMode === "open") {
       allowFrom = ["*"];
@@ -409,7 +466,7 @@ function applySlackConfig(
         ? "open"
         : input.groupAccessMode === "closed"
           ? "closed"
-          : existingAccount.groupPolicy === "allowlist"
+          : existingGroupPolicy === "allowlist"
             ? "closed"
             : "open";
     groupPolicy = groupAccessMode === "open" ? "open" : "allowlist";

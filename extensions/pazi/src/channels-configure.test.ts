@@ -37,6 +37,9 @@ interface TestConfig {
       enabled?: boolean;
       botToken?: string;
       appToken?: string;
+      dmPolicy?: "open" | "allowlist";
+      groupPolicy?: "open" | "allowlist";
+      allowFrom?: string[];
       accounts?: Record<string, SlackAccountConfig>;
     };
     telegram?: {
@@ -764,5 +767,66 @@ describe("createPaziChannelsConfigureHandler backward-compat reconfiguration", (
     expect(account?.groupPolicy).toBe("open");
     expect(account?.dmPolicy).toBe("allowlist");
     expect(account?.allowFrom).toEqual(["U_OWNER"]);
+  });
+
+  it("allows token-only reconfigure for legacy default Slack config stored at top-level", async () => {
+    const harness = createHarness({
+      channels: {
+        slack: {
+          enabled: true,
+          botToken: "xoxb-legacy",
+          appToken: "xapp-legacy",
+        },
+      },
+    });
+
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-new",
+        appToken: "xapp-new",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const data = response.data as Record<string, unknown>;
+    expect(data.dmPolicy).toBe("open");
+    expect(data.allowFrom).toEqual(["*"]);
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect(account?.botToken).toBe("xoxb-new");
+    expect(account?.appToken).toBe("xapp-new");
+    expect(account?.dmPolicy).toBe("open");
+    expect(account?.allowFrom).toEqual(["*"]);
+  });
+
+  it("preserves legacy top-level allowlist policy on token-only reconfigure", async () => {
+    const harness = createHarness({
+      channels: {
+        slack: {
+          enabled: true,
+          botToken: "xoxb-legacy",
+          appToken: "xapp-legacy",
+          dmPolicy: "allowlist",
+          allowFrom: ["U_OWNER"],
+          groupPolicy: "allowlist",
+        },
+      },
+    });
+
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-new",
+        appToken: "xapp-new",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect(account?.dmPolicy).toBe("allowlist");
+    expect(account?.allowFrom).toEqual(["U_OWNER"]);
+    expect(account?.groupPolicy).toBe("allowlist");
   });
 });
