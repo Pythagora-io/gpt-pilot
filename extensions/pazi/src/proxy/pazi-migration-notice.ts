@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { getProxyContext, setProxyContext } from "../context.js";
 import { resolveGatewayToken } from "../config.js";
+import { getProxyContext, setProxyContext } from "../context.js";
 
 type MigrationNoticeBody = {
   migrationId?: string;
@@ -47,18 +47,19 @@ async function readJsonBody(req: IncomingMessage): Promise<MigrationNoticeBody |
  */
 export function createPaziMigrationNoticeHandler(deps: MigrationNoticeHandlerDeps) {
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
+    const context = getProxyContext();
     const gatewayToken = resolveGatewayToken({
       configToken: deps.configToken,
       env: deps.env,
     });
-    if (!gatewayToken) {
-      deps.logger.warn("pazi migration-notice rejected: gateway token missing");
-      writeJson(res, 500, { error: "gateway_token_missing" });
-      return;
-    }
-
     const authHeader = req.headers.authorization;
-    if (authHeader !== `Bearer ${gatewayToken}`) {
+    const proxyTokenHeaderRaw = req.headers["x-proxy-token"];
+    const proxyTokenHeader =
+      typeof proxyTokenHeaderRaw === "string" ? proxyTokenHeaderRaw : proxyTokenHeaderRaw?.[0];
+    const gatewayAuthorized = Boolean(gatewayToken) && authHeader === `Bearer ${gatewayToken}`;
+    const proxyAuthorized =
+      Boolean(context?.proxyToken) && proxyTokenHeader === context?.proxyToken;
+    if (!gatewayAuthorized && !proxyAuthorized) {
       writeJson(res, 401, { error: "unauthorized" });
       return;
     }
@@ -69,7 +70,6 @@ export function createPaziMigrationNoticeHandler(deps: MigrationNoticeHandlerDep
       return;
     }
 
-    const context = getProxyContext();
     if (!context) {
       writeJson(res, 503, { error: "no proxy context set" });
       return;
