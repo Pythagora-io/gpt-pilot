@@ -5,6 +5,7 @@ import { getProxyContext, setProxyContext } from "../context.js";
 type MigrationNoticeBody = {
   migrationId?: string;
   newPlan?: string;
+  clear?: boolean;
 };
 
 type MigrationNoticeHandlerDeps = {
@@ -65,7 +66,24 @@ export function createPaziMigrationNoticeHandler(deps: MigrationNoticeHandlerDep
     }
 
     const body = await readJsonBody(req);
-    if (!body?.migrationId || !body.newPlan) {
+    if (!body) {
+      writeJson(res, 400, { error: "invalid JSON" });
+      return;
+    }
+
+    if (body.clear === true) {
+      if (context) {
+        const { migrationNotice: _migrationNotice, ...nextContext } = context;
+        setProxyContext(nextContext);
+      }
+      deps.logger.info(
+        `pazi migration notice cleared: migrationId=${body.migrationId ?? "unknown"}`,
+      );
+      writeJson(res, 200, { ok: true, cleared: true });
+      return;
+    }
+
+    if (!body.migrationId || !body.newPlan) {
       writeJson(res, 400, { error: "missing migrationId or newPlan" });
       return;
     }
