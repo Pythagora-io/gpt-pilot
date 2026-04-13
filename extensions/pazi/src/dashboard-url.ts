@@ -7,7 +7,9 @@ export function buildDashboardConversationUrl(params: {
 }): string | null {
   const base = params.dashboardBaseUrl?.trim();
   const sessionKey = params.sessionKey?.trim();
-  if (!base || !sessionKey) return null;
+  if (!base || !sessionKey) {
+    return null;
+  }
 
   const cleanBase = base.replace(/\/+$/, "");
 
@@ -22,4 +24,22 @@ export function buildDashboardConversationUrl(params: {
   }
 
   return null;
+}
+
+/**
+ * Build a dashboard URL that deep-links to the browser permission dialog.
+ * The frontend reads the `enableBrowser` query param and shows
+ * `BrowserPermissionRequestDialog` for the given request ID.
+ */
+export function buildBrowserPermissionUrl(
+  dashboardBaseUrl: string | undefined,
+  requestId: string,
+): string | null {
+  const base = dashboardBaseUrl?.trim();
+  if (!base || !requestId) {
+    return null;
+  }
+
+  const cleanBase = base.replace(/\/+$/, "");
+  return `${cleanBase}/dashboard?enableBrowser=${encodeURIComponent(requestId)}`;
 }
