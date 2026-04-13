@@ -17,7 +17,7 @@ hidden state.
 Your agent has three memory-related files:
 
 - **`MEMORY.md`** -- long-term memory. Durable facts, preferences, and
-  decisions. Loaded at the start of every DM session.
+  decisions. Loaded at the start of every session.
 - **`memory/YYYY-MM-DD.md`** -- daily notes. Running context and observations.
   Today and yesterday's notes are loaded automatically.
 - **`DREAMS.md`** (experimental, optional) -- Dream Diary and dreaming sweep
