@@ -1,0 +1,157 @@
+[
+  {
+    "id": "CHAT-001",
+    "name": "Send message and receive response with timestamps",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "chat",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Open chat with agent",
+      "Send 'Hello, what can you do?'",
+      "Wait for response",
+      "Verify timestamps visible on messages"
+    ],
+    "expected": "Agent responds with relevant message, timestamps shown on both user and agent messages",
+    "tags": []
+  },
+  {
+    "id": "CHAT-002",
+    "name": "File upload via chat",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "chat",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Open chat with agent",
+      "Upload a small text file via the upload button",
+      "Wait for agent acknowledgment"
+    ],
+    "expected": "File uploaded successfully, agent acknowledges receiving the file with correct workspace path",
+    "tags": []
+  },
+  {
+    "id": "CHAT-003",
+    "name": "Multi-paragraph response renders correctly",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "chat",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Ask agent: 'Write a response with 3 separate paragraphs'",
+      "Wait for response",
+      "Verify paragraph breaks are visible"
+    ],
+    "expected": "Response shows visible paragraph breaks between sections, not a wall of text",
+    "tags": []
+  },
+  {
+    "id": "CHAT-004",
+    "name": "Rename chat session",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "chat",
+    "preconditions": ["At least 1 chat session exists"],
+    "steps": [
+      "Find a chat session in the sidebar",
+      "Right-click or find the rename option",
+      "Rename to 'QA Test Session'",
+      "Verify the new name persists after page refresh"
+    ],
+    "expected": "Session renamed successfully, name persists after page refresh",
+    "tags": []
+  },
+  {
+    "id": "CHAT-005",
+    "name": "Delete chat session",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "chat",
+    "preconditions": ["At least 2 chat sessions exist"],
+    "steps": [
+      "Find a chat session in the sidebar",
+      "Delete it",
+      "Verify it's removed from sidebar",
+      "Refresh page and verify it's still gone"
+    ],
+    "expected": "Session deleted, removed from sidebar, deletion persists after refresh",
+    "tags": []
+  },
+  {
+    "id": "CHAT-006",
+    "name": "Page refresh preserves session and messages",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "chat",
+    "preconditions": ["Active chat session with messages"],
+    "steps": [
+      "Note the current session and last few messages",
+      "Refresh the page",
+      "Verify same session loads with messages intact"
+    ],
+    "expected": "Same chat session loads after refresh, all messages preserved",
+    "tags": []
+  },
+  {
+    "id": "CHAT-007",
+    "name": "Switch agents → last conversation resumes",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "chat",
+    "preconditions": ["At least 2 agents exist"],
+    "steps": [
+      "Chat with Agent A, note the conversation",
+      "Switch to Agent B",
+      "Switch back to Agent A",
+      "Verify the previous conversation with Agent A resumes"
+    ],
+    "expected": "Switching back to Agent A shows the last conversation, not a new/empty chat",
+    "tags": []
+  },
+  {
+    "id": "CHAT-008",
+    "name": "Emoji reactions on messages",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "chat",
+    "preconditions": ["Chat session with messages"],
+    "steps": [
+      "Hover over a message",
+      "Click the reaction action bar",
+      "Add an emoji reaction",
+      "Verify reaction badge appears",
+      "Refresh page and verify reaction persists"
+    ],
+    "expected": "Emoji reaction added to message, badge shows, persists after refresh",
+    "tags": []
+  },
+  {
+    "id": "CHAT-009",
+    "name": "Model picker shows gateway default",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "chat",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Open chat",
+      "Check the model picker dropdown",
+      "Verify it shows the gateway default model (not a hardcoded value)"
+    ],
+    "expected": "Model picker displays the gateway's configured default model",
+    "tags": []
+  },
+  {
+    "id": "CHAT-010",
+    "name": "Rapid agent switching — no ghost sessions",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "chat",
+    "preconditions": ["At least 2 agents exist"],
+    "steps": [
+      "Rapidly switch between agents 5+ times",
+      "Check sidebar for duplicate/ghost sessions"
+    ],
+    "expected": "No ghost or duplicate sessions appear in sidebar from rapid switching",
+    "tags": ["race-condition"]
+  }
+]

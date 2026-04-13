@@ -1,0 +1,145 @@
+#!/usr/bin/env node
+// =============================================================================
+// local-environment-setup-test — Validate a feature environment end-to-end
+// =============================================================================
+// Usage:
+//   local-environment-setup-test <feature>
+//   local-environment-setup-test --all
+//
+// This is a template test script. Customize the test steps for your project.
+//
+// The script reads port-assignments.json to find the feature's ports,
+// then runs a series of checks to verify the environment is working.
+//
+// TODO: Implement these test steps for your project:
+//
+//   1. API health check
+//      - Hit GET /health (or your health endpoint) on the API port
+//      - Expect HTTP 200
+//
+//   2. Frontend serves HTML
+//      - Hit GET / on the SSL port (or frontend port)
+//      - Expect HTML response with your app's root element (e.g. <div id="root">)
+//
+//   3. Login / Auth check (if applicable)
+//      - POST to your login endpoint with test credentials
+//      - Expect a session cookie or auth token in response
+//      - Use env vars TEST_EMAIL and TEST_PASSWORD for credentials
+//
+//   4. Authenticated API call
+//      - Use the session/token from step 3 to call a protected endpoint
+//      - Verify it returns data (not 401/403)
+//
+//   5. WebSocket / real-time check (if applicable)
+//      - Connect to your WebSocket endpoint
+//      - Verify the handshake completes
+//      - Optionally send a test message and verify a response
+//
+//   6. Database connectivity (if applicable)
+//      - Verify the API can read/write to the isolated database
+//      - Could be implicit from steps 3-4 if login requires DB access
+//
+// Configuration via environment variables:
+//   FEATURES_DIR    — Path to features directory (default: ~/features)
+//   PROJECT_HOSTNAME — Hostname for HTTPS requests (default: localhost)
+//   TEST_EMAIL      — Test user email (default: test@example.dev)
+//   TEST_PASSWORD   — Test user password (default: TestUser2026!)
+//
+// =============================================================================
+
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+
+const FEATURES_DIR = process.env.FEATURES_DIR || path.join(os.homedir(), 'features');
+const PORT_FILE = path.join(FEATURES_DIR, 'port-assignments.json');
+const HOSTNAME = process.env.PROJECT_HOSTNAME || 'localhost';
+
+// ---------------------------------------------------------------------------
+// Read port assignments
+// ---------------------------------------------------------------------------
+function loadFeatures() {
+    if (!fs.existsSync(PORT_FILE)) {
+        console.error(`Port file not found: ${PORT_FILE}`);
+        process.exit(1);
+    }
+    return JSON.parse(fs.readFileSync(PORT_FILE, 'utf8')).features || {};
+}
+
+// ---------------------------------------------------------------------------
+// Test runner skeleton
+// ---------------------------------------------------------------------------
+async function testFeature(name, config) {
+    console.log(`\n${'='.repeat(50)}`);
+    console.log(` Testing: ${name}`);
+    console.log(` SSL: ${config.sslPort} | API: ${config.apiPort} | FE: ${config.fePort} | Agent: ${config.agentPort}`);
+    console.log('='.repeat(50));
+
+    // TODO: Implement your test steps here.
+    // Each step should print PASS/FAIL and return early on critical failures.
+    //
+    // Example structure:
+    //
+    // // Step 1: API health
+    // try {
+    //     const res = await fetch(`http://localhost:${config.apiPort}/health`);
+    //     if (res.ok) console.log('  ✅ API health check passed');
+    //     else throw new Error(`HTTP ${res.status}`);
+    // } catch (e) {
+    //     console.log(`  ❌ API health check failed: ${e.message}`);
+    //     return false;
+    // }
+    //
+    // // Step 2: Frontend HTML
+    // try {
+    //     const res = await fetch(`https://${HOSTNAME}:${config.sslPort}/`, {
+    //         agent: new https.Agent({ rejectUnauthorized: false })
+    //     });
+    //     const html = await res.text();
+    //     if (html.includes('<div id="root">')) console.log('  ✅ Frontend serves HTML');
+    //     else throw new Error('Root element not found');
+    // } catch (e) {
+    //     console.log(`  ❌ Frontend check failed: ${e.message}`);
+    // }
+    //
+    // // Step 3: Login
+    // // Step 4: Authenticated API call
+    // // Step 5: WebSocket check
+    // // Step 6: Database check
+
+    console.log('\n  ⚠️  No tests implemented yet — customize this script for your project.');
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
+async function main() {
+    const arg = process.argv[2];
+
+    if (!arg || arg === '--help' || arg === '-h') {
+        console.log('Usage: local-environment-setup-test <feature> | --all');
+        process.exit(0);
+    }
+
+    const features = loadFeatures();
+
+    if (arg === '--all') {
+        const names = Object.keys(features).sort();
+        if (names.length === 0) {
+            console.log('No features registered.');
+            return;
+        }
+        for (const name of names) {
+            await testFeature(name, features[name]);
+        }
+    } else {
+        if (!features[arg]) {
+            console.error(`Feature '${arg}' not found in ${PORT_FILE}`);
+            process.exit(1);
+        }
+        await testFeature(arg, features[arg]);
+    }
+}
+
+main().catch(e => { console.error(e); process.exit(1); });

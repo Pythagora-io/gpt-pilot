@@ -1,0 +1,127 @@
+[
+  {
+    "id": "BILL-001",
+    "name": "Subscription page loads with current plan",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "billing",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Navigate to User menu → Subscription (or /dashboard/account/subscription)",
+      "Verify billing page loads showing current plan and available plans"
+    ],
+    "expected": "Subscription page loads showing current plan, credit balance, and upgrade/downgrade options",
+    "tags": []
+  },
+  {
+    "id": "BILL-002",
+    "name": "Upgrade from Free to Starter plan",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "billing",
+    "preconditions": ["Account on Free plan", "Stripe webhook active"],
+    "steps": [
+      "Navigate to Subscription page",
+      "Click upgrade to Starter plan",
+      "Complete Stripe checkout with test card (4242 4242 4242 4242)",
+      "Verify plan updates to Starter",
+      "Verify credits added"
+    ],
+    "expected": "Stripe checkout completes, plan updates to the selected tier, credits balance increases by the new plan allocation. Note: Requires active Stripe webhook (stripe listen --forward-to)",
+    "tags": ["stripe", "requires-webhook"]
+  },
+  {
+    "id": "BILL-003",
+    "name": "Downgrade plan (scheduled for period end)",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "billing",
+    "preconditions": ["Account on paid plan"],
+    "steps": [
+      "Navigate to Subscription page",
+      "Click downgrade to a lower plan",
+      "Verify downgrade is scheduled (not immediate)",
+      "Check that current plan stays active until period end"
+    ],
+    "expected": "Downgrade scheduled for end of billing period, current plan remains active, UI shows pending downgrade",
+    "tags": ["stripe"]
+  },
+  {
+    "id": "BILL-004",
+    "name": "Cancel subscription",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "billing",
+    "preconditions": ["Account on paid plan"],
+    "steps": [
+      "Navigate to Subscription page",
+      "Click cancel subscription",
+      "Confirm cancellation",
+      "Verify cancellation is scheduled for period end",
+      "Verify credits are kept"
+    ],
+    "expected": "Cancellation scheduled for period end, credits preserved, UI shows pending cancellation",
+    "tags": ["stripe"]
+  },
+  {
+    "id": "BILL-005",
+    "name": "Billing portal accessible",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "billing",
+    "preconditions": ["Account on paid plan"],
+    "steps": [
+      "Navigate to Subscription page",
+      "Click 'Manage billing' or billing portal link",
+      "Verify Stripe billing portal opens"
+    ],
+    "expected": "Stripe billing portal opens showing payment methods, invoices, and subscription details",
+    "tags": ["stripe"]
+  },
+  {
+    "id": "BILL-006",
+    "name": "Credit balance displays correctly",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "billing",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Check credit balance in the UI (dashboard or subscription page)",
+      "Compare with MongoDB customers collection credits field"
+    ],
+    "expected": "UI credit balance matches the database value for credits",
+    "tags": []
+  },
+  {
+    "id": "BILL-007",
+    "name": "Monthly/Yearly toggle behavior",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "billing",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Navigate to Subscription page",
+      "Check if Monthly/Yearly toggle is available",
+      "If on paid plan: verify toggle is locked to current interval",
+      "If on free plan: verify both intervals are selectable"
+    ],
+    "expected": "Monthly/Yearly toggle locked for paid subscribers (can't change interval mid-subscription), available for free users",
+    "tags": []
+  },
+  {
+    "id": "BILL-008",
+    "name": "All billing endpoints require authentication",
+    "priority": "HIGH",
+    "type": "api",
+    "area": "billing",
+    "preconditions": [],
+    "steps": [
+      "Call billing API endpoints without auth cookie:",
+      "GET /api/billing/subscription",
+      "POST /api/billing/change-plan",
+      "GET /api/billing/payment-method"
+    ],
+    "expected": "All endpoints return 401 Unauthorized when called without authentication",
+    "tags": ["security"]
+  }
+]

@@ -1,0 +1,40 @@
+[
+  {
+    "id": "WA-001",
+    "name": "WhatsApp setup form loads in dashboard",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "whatsapp",
+    "preconditions": ["Logged into dashboard"],
+    "steps": ["Navigate to Channels settings", "Find WhatsApp section", "Verify setup form loads"],
+    "expected": "WhatsApp setup form loads with QR code or connection options",
+    "tags": ["stub"]
+  },
+  {
+    "id": "WA-002",
+    "name": "WhatsApp QR code flow",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "whatsapp",
+    "preconditions": ["WhatsApp section expanded"],
+    "steps": [
+      "Initiate WhatsApp connection",
+      "Verify QR code appears",
+      "Scan QR code with WhatsApp on phone",
+      "Verify connection establishes"
+    ],
+    "expected": "QR code displayed, scanning connects WhatsApp",
+    "tags": ["stub", "needs-phone"]
+  },
+  {
+    "id": "WA-003",
+    "name": "Send and receive messages via WhatsApp",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "whatsapp",
+    "preconditions": ["WhatsApp connected"],
+    "steps": ["Send message to bot via WhatsApp", "Wait for response"],
+    "expected": "Bot responds to WhatsApp messages with correct formatting",
+    "tags": ["stub", "needs-phone"]
+  }
+]

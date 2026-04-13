@@ -1,0 +1,39 @@
+[
+  {
+    "id": "FILE-001",
+    "name": "Files page loads",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "files",
+    "preconditions": ["Logged into dashboard"],
+    "steps": ["Click 'Files' in sidebar", "Verify files page loads showing workspace files"],
+    "expected": "Files page loads displaying workspace file tree",
+    "tags": []
+  },
+  {
+    "id": "FILE-002",
+    "name": "Upload file via chat and see in files page",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "files",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Upload a file in chat",
+      "Navigate to Files page",
+      "Verify uploaded file appears in workspace"
+    ],
+    "expected": "Uploaded file visible in the Files page file tree",
+    "tags": []
+  },
+  {
+    "id": "FILE-003",
+    "name": "View file contents",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "files",
+    "preconditions": ["At least 1 file in workspace"],
+    "steps": ["Navigate to Files page", "Click on a file to view its contents"],
+    "expected": "File contents displayed in a viewer/editor pane",
+    "tags": []
+  }
+]

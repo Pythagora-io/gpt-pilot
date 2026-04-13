@@ -1,0 +1,87 @@
+[
+  {
+    "id": "SET-001",
+    "name": "Agent settings page loads",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "settings",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Click Agent setup (gear icon) in sidebar",
+      "Verify settings page loads with agent configuration options"
+    ],
+    "expected": "Settings page loads showing agent name, model, voice, and other configuration",
+    "tags": []
+  },
+  {
+    "id": "SET-002",
+    "name": "Gateway restart button works",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "settings",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Navigate to Agent setup",
+      "Find and click 'Restart Gateway' button",
+      "Wait for restart to complete",
+      "Verify agent reconnects and responds to messages"
+    ],
+    "expected": "Gateway restarts, agent reconnects within 15-30 seconds, can send/receive messages after restart",
+    "tags": ["infrastructure"]
+  },
+  {
+    "id": "SET-003",
+    "name": "Agent recovery dialog on disconnect",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "settings",
+    "preconditions": ["Logged into dashboard with active agent"],
+    "steps": [
+      "Simulate disconnect (restart gateway or kill agent process)",
+      "Check if recovery dialog/banner appears in dashboard"
+    ],
+    "expected": "Recovery dialog or banner appears indicating agent is disconnected, with option to reconnect",
+    "tags": ["infrastructure"]
+  },
+  {
+    "id": "SET-004",
+    "name": "Config sync on agent update",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "settings",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Change agent name or model in settings",
+      "Save",
+      "Verify the change takes effect (agent uses new model, name updates)"
+    ],
+    "expected": "Configuration changes sync to the running agent without manual restart",
+    "tags": []
+  },
+  {
+    "id": "SET-005",
+    "name": "Channels settings page loads",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "settings",
+    "preconditions": ["Logged into dashboard"],
+    "steps": ["Navigate to Agent setup → Channels", "Verify channel configuration section loads"],
+    "expected": "Channels settings page loads showing available integrations (Slack, Discord, Telegram, WhatsApp)",
+    "tags": []
+  },
+  {
+    "id": "SET-006",
+    "name": "User settings page loads",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "settings",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Click user menu (avatar/profile icon)",
+      "Navigate to Settings",
+      "Verify user settings load"
+    ],
+    "expected": "User settings page loads at /dashboard/settings with account options",
+    "tags": []
+  }
+]

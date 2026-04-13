@@ -1,0 +1,78 @@
+[
+  {
+    "id": "AGT-001",
+    "name": "Create agent from dashboard",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "agents",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Find the create agent button/option",
+      "Fill in agent name, description",
+      "Configure model and voice",
+      "Create the agent",
+      "Verify it appears in agent list"
+    ],
+    "expected": "Agent created successfully, appears in sidebar/agent list, chat opens with new agent",
+    "tags": []
+  },
+  {
+    "id": "AGT-002",
+    "name": "Create agent from template",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "agents",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Create new agent",
+      "Select a template (e.g. DevOps)",
+      "Complete creation",
+      "Verify template files/skills are loaded in workspace"
+    ],
+    "expected": "Agent created with template configuration, workspace contains template files",
+    "tags": []
+  },
+  {
+    "id": "AGT-003",
+    "name": "Switch between agents",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "agents",
+    "preconditions": ["At least 2 agents exist"],
+    "steps": [
+      "Click on Agent A in sidebar",
+      "Send a message to Agent A",
+      "Switch to Agent B",
+      "Verify Agent B's chat loads",
+      "Switch back to Agent A",
+      "Verify Agent A's previous conversation is shown"
+    ],
+    "expected": "Agents switch cleanly, each maintains separate chat context",
+    "tags": []
+  },
+  {
+    "id": "AGT-004",
+    "name": "Agent creation form — two-panel layout on desktop",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "agents",
+    "preconditions": ["Logged into dashboard, viewport ≥ 1024px"],
+    "steps": [
+      "Open agent creation form at desktop width",
+      "Verify two-panel layout (config on left, preview on right or similar)"
+    ],
+    "expected": "Agent creation form shows two-panel layout on desktop viewports",
+    "tags": []
+  },
+  {
+    "id": "AGT-005",
+    "name": "Agent creation form — mobile layout",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "agents",
+    "preconditions": ["Logged into dashboard, viewport 375px"],
+    "steps": ["Resize to 375px", "Open agent creation form", "Verify form is usable on mobile"],
+    "expected": "Agent creation form adapts to single-column layout on mobile, all fields accessible",
+    "tags": ["mobile"]
+  }
+]

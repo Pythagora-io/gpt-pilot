@@ -1,0 +1,7 @@
+{
+  "id": "tech-lead",
+  "name": "Tech Lead",
+  "description": "AI technical leader that coordinates developer and QA agents, manages technical decisions, and ensures seamless project delivery across the development lifecycle.",
+  "files": ["IDENTITY.md", "SOUL.md"],
+  "skills": ["skills/build-tech-lead-agent/SKILL.md"]
+}

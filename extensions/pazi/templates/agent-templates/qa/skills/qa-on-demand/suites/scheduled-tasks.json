@@ -1,0 +1,96 @@
+[
+  {
+    "id": "TASK-001",
+    "name": "Create scheduled task with valid cron",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "scheduled-tasks",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Navigate to Scheduled Tasks page",
+      "Click create task",
+      "Enter name, set cron expression (e.g. '0 * * * *' for hourly)",
+      "Select agent and session",
+      "Save"
+    ],
+    "expected": "Task created successfully, appears in task list with correct schedule",
+    "tags": []
+  },
+  {
+    "id": "TASK-002",
+    "name": "Edit scheduled task",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "scheduled-tasks",
+    "preconditions": ["At least 1 scheduled task exists"],
+    "steps": [
+      "Find existing task",
+      "Edit the cron expression or name",
+      "Save",
+      "Verify changes persisted"
+    ],
+    "expected": "Task updated successfully, changes persist",
+    "tags": []
+  },
+  {
+    "id": "TASK-003",
+    "name": "Delete scheduled task",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "scheduled-tasks",
+    "preconditions": ["At least 1 scheduled task exists"],
+    "steps": [
+      "Find a task",
+      "Delete it (with confirmation if prompted)",
+      "Verify removed from list"
+    ],
+    "expected": "Task deleted with confirmation dialog, removed from task list",
+    "tags": []
+  },
+  {
+    "id": "TASK-004",
+    "name": "Run Now button executes task immediately",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "scheduled-tasks",
+    "preconditions": ["At least 1 scheduled task exists"],
+    "steps": [
+      "Find a task",
+      "Click 'Run Now'",
+      "Wait for execution",
+      "Verify task ran (check chat for output or execution log)"
+    ],
+    "expected": "Task executes immediately, output visible in associated chat session",
+    "tags": []
+  },
+  {
+    "id": "TASK-005",
+    "name": "Agent/session dropdowns populate correctly",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "scheduled-tasks",
+    "preconditions": ["At least 1 agent exists"],
+    "steps": [
+      "Open create/edit task form",
+      "Check agent dropdown — verify it lists available agents",
+      "Select an agent, check session dropdown populates"
+    ],
+    "expected": "Agent dropdown shows all agents, session dropdown populates based on selected agent",
+    "tags": []
+  },
+  {
+    "id": "TASK-006",
+    "name": "Scheduled tasks page mobile layout",
+    "priority": "LOW",
+    "type": "browser",
+    "area": "scheduled-tasks",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Resize viewport to 375px width",
+      "Navigate to Scheduled Tasks",
+      "Verify layout is usable on mobile"
+    ],
+    "expected": "Task list and forms are usable on mobile viewport",
+    "tags": ["mobile"]
+  }
+]

@@ -1,0 +1,27 @@
+# Frontend Dockerfile for QA environment
+# Passes VITE_API_URL and VITE_WEB_APP_URL as build args so the frontend
+# talks to the QA API instead of production
+
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+COPY tsconfig.base.json ./
+COPY shared/ ./shared/
+COPY frontend/ ./frontend/
+RUN npm ci
+WORKDIR /app/shared
+RUN npm run build
+ARG BUILD_MODE=production
+ARG VITE_API_URL
+ARG VITE_WEB_APP_URL
+WORKDIR /app/frontend
+RUN VITE_API_URL=${VITE_API_URL} VITE_WEB_APP_URL=${VITE_WEB_APP_URL} npx tsc -b && \
+    VITE_API_URL=${VITE_API_URL} VITE_WEB_APP_URL=${VITE_WEB_APP_URL} npx vite build --mode ${BUILD_MODE}
+
+FROM nginx:alpine AS runtime
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/frontend/dist /usr/share/nginx/html
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+CMD ["nginx", "-g", "daemon off;"]

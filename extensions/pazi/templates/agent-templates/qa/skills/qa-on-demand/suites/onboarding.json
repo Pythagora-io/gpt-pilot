@@ -1,0 +1,98 @@
+[
+  {
+    "id": "ONB-001",
+    "name": "Fresh signup → onboarding form → agent creation → dashboard",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "onboarding",
+    "preconditions": ["Fresh account (not yet onboarded)"],
+    "steps": [
+      "Navigate to /login",
+      "Sign up with a new test email",
+      "Verify onboarding form appears",
+      "Fill in agent name, avatar, voice",
+      "Click Continue",
+      "Verify dashboard loads with the new agent"
+    ],
+    "expected": "Full onboarding flow completes: signup → form → agent created → dashboard with greeting",
+    "tags": []
+  },
+  {
+    "id": "ONB-002",
+    "name": "Login page loads at /login",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "onboarding",
+    "preconditions": [],
+    "steps": ["Navigate to /login", "Verify login form is visible with email and OAuth options"],
+    "expected": "Login page loads with 'Continue with Email' and OAuth buttons",
+    "tags": []
+  },
+  {
+    "id": "ONB-003",
+    "name": "/dashboard/login redirects to /login",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "onboarding",
+    "preconditions": ["Not logged in"],
+    "steps": [
+      "Navigate to /dashboard/login",
+      "Verify redirect to /login with query params preserved"
+    ],
+    "expected": "Redirects to /login, any query parameters are preserved",
+    "tags": []
+  },
+  {
+    "id": "ONB-004",
+    "name": "Unauthenticated dashboard access redirects to login",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "onboarding",
+    "preconditions": ["Not logged in"],
+    "steps": ["Navigate to /dashboard directly without being logged in"],
+    "expected": "Redirects to /login page",
+    "tags": []
+  },
+  {
+    "id": "ONB-005",
+    "name": "OnboardingGuard doesn't block returning users",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "onboarding",
+    "preconditions": ["Logged in as existing user with completed onboarding"],
+    "steps": [
+      "Login with {TEST_ACCOUNT_EMAIL}",
+      "Verify dashboard loads directly without showing onboarding form"
+    ],
+    "expected": "Dashboard loads directly, no onboarding form shown for existing users",
+    "tags": []
+  },
+  {
+    "id": "ONB-006",
+    "name": "Agent greeting fires after onboarding",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "onboarding",
+    "preconditions": ["Fresh account completing onboarding"],
+    "steps": [
+      "Complete onboarding flow",
+      "Verify agent sends an automatic greeting message in chat"
+    ],
+    "expected": "Agent greeting appears automatically in the chat after onboarding completes",
+    "tags": []
+  },
+  {
+    "id": "ONB-007",
+    "name": "No dead call modals during onboarding",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "onboarding",
+    "preconditions": [],
+    "steps": [
+      "Go through entire onboarding flow",
+      "Watch for any unexpected modals or dialogs appearing"
+    ],
+    "expected": "No unexpected modals, call dialogs, or error popups appear during onboarding",
+    "tags": []
+  }
+]
