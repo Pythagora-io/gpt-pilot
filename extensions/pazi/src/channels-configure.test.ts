@@ -5,6 +5,14 @@ interface SlackAccountConfig {
   enabled?: boolean;
   botToken?: string;
   appToken?: string;
+  dmPolicy?: "open" | "allowlist";
+  groupPolicy?: "open" | "allowlist";
+  allowFrom?: string[];
+  creatorSlackUserId?: string;
+  dm?: {
+    policy?: "open" | "allowlist";
+    allowFrom?: string[];
+  };
   allowBots?: boolean;
   replyToMode?: "off" | "first" | "all";
   ackReaction?: string;
@@ -29,6 +37,9 @@ interface TestConfig {
       enabled?: boolean;
       botToken?: string;
       appToken?: string;
+      dmPolicy?: "open" | "allowlist";
+      groupPolicy?: "open" | "allowlist";
+      allowFrom?: string[];
       accounts?: Record<string, SlackAccountConfig>;
     };
     telegram?: {
@@ -78,7 +89,7 @@ function createHarness(initialConfig: TestConfig = {}) {
       context: { stopChannel, startChannel },
     });
     expect(responses).toHaveLength(1);
-    return responses[0]!;
+    return responses[0];
   }
 
   return { invoke, getConfig: () => cfg, stopChannel, startChannel };
@@ -92,6 +103,7 @@ describe("createPaziChannelsConfigureHandler account config writes", () => {
       config: {
         botToken: "xoxb-default-bot",
         appToken: "xapp-default-app",
+        accessMode: "open",
       },
     });
 
@@ -112,6 +124,7 @@ describe("createPaziChannelsConfigureHandler account config writes", () => {
       config: {
         botToken: "xoxb-bots-test",
         appToken: "xapp-bots-test",
+        accessMode: "open",
       },
     });
 
@@ -140,6 +153,7 @@ describe("createPaziChannelsConfigureHandler account config writes", () => {
       config: {
         botToken: "xoxb-new",
         appToken: "xapp-new",
+        accessMode: "open",
       },
     });
 
@@ -175,6 +189,7 @@ describe("createPaziChannelsConfigureHandler slash command config", () => {
       config: {
         botToken: "xoxb-bot",
         appToken: "xapp-app",
+        accessMode: "open",
         slashCommandName: "My Agent",
       },
     });
@@ -195,6 +210,7 @@ describe("createPaziChannelsConfigureHandler slash command config", () => {
       config: {
         botToken: "xoxb-bot",
         appToken: "xapp-app",
+        accessMode: "open",
         slashCommandName: "!!! QA Bot !!!",
       },
     });
@@ -231,6 +247,7 @@ describe("createPaziChannelsConfigureHandler slash command config", () => {
       config: {
         botToken: "xoxb-new",
         appToken: "xapp-new",
+        accessMode: "open",
         slashCommandName: "new-name",
       },
     });
@@ -252,6 +269,7 @@ describe("createPaziChannelsConfigureHandler slash command config", () => {
       config: {
         botToken: "xoxb-bot",
         appToken: "xapp-app",
+        accessMode: "open",
       },
     });
 
@@ -268,6 +286,7 @@ describe("createPaziChannelsConfigureHandler slash command config", () => {
       config: {
         botToken: "xoxb-bot",
         appToken: "xapp-app",
+        accessMode: "open",
         slashCommandName: `${"a".repeat(30)}-b`,
       },
     });
@@ -288,6 +307,7 @@ describe("createPaziChannelsConfigureHandler reply mode config", () => {
       config: {
         botToken: "xoxb-bot",
         appToken: "xapp-app",
+        accessMode: "open",
         replyToMode: "first",
         ackReaction: "rocket",
       },
@@ -307,6 +327,7 @@ describe("createPaziChannelsConfigureHandler reply mode config", () => {
       config: {
         botToken: "xoxb-bot",
         appToken: "xapp-app",
+        accessMode: "open",
         replyToMode: "off",
       },
     });
@@ -324,6 +345,7 @@ describe("createPaziChannelsConfigureHandler reply mode config", () => {
       config: {
         botToken: "xoxb-bot",
         appToken: "xapp-app",
+        accessMode: "open",
       },
     });
 
@@ -340,6 +362,7 @@ describe("createPaziChannelsConfigureHandler reply mode config", () => {
       config: {
         botToken: "xoxb-bot",
         appToken: "xapp-app",
+        accessMode: "open",
         replyToMode: "all",
         ackReaction: "  white_check_mark  ",
       },
@@ -374,6 +397,7 @@ describe("createPaziChannelsConfigureHandler reply mode config", () => {
       config: {
         botToken: "xoxb-new",
         appToken: "xapp-new",
+        accessMode: "open",
         replyToMode: "first",
         ackReaction: "thumbsup",
       },
@@ -396,6 +420,7 @@ describe("createPaziChannelsConfigureHandler reply mode config", () => {
       config: {
         botToken: "xoxb-bot",
         appToken: "xapp-app",
+        accessMode: "open",
         replyToMode: "all",
         ackReaction: "rocket",
         threadReplyMode: "summary-only",
@@ -419,6 +444,7 @@ describe("createPaziChannelsConfigureHandler reply mode config", () => {
       config: {
         botToken: "xoxb-bot",
         appToken: "xapp-app",
+        accessMode: "open",
         threadReplyMode: "quiet",
         ackMessage: "Working",
       },
@@ -427,5 +453,380 @@ describe("createPaziChannelsConfigureHandler reply mode config", () => {
     expect(response.ok).toBe(true);
     const data = response.data as Record<string, unknown>;
     expect(data.threadReplyMode).toBe("quiet");
+  });
+});
+
+describe("createPaziChannelsConfigureHandler access control defaults", () => {
+  it("defaults new Slack connection to closed (allowlist) mode", async () => {
+    const harness = createHarness();
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-bot",
+        appToken: "xapp-app",
+        creatorSlackUserId: "U12345ABCD",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const data = response.data as Record<string, unknown>;
+    expect(data.dmPolicy).toBe("allowlist");
+    expect(data.allowFrom).toEqual(["U12345ABCD"]);
+    expect(data.creatorSlackUserId).toBe("U12345ABCD");
+  });
+
+  it("stores creatorSlackUserId in account config", async () => {
+    const harness = createHarness();
+    await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-bot",
+        appToken: "xapp-app",
+        creatorSlackUserId: "U12345ABCD",
+      },
+    });
+
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect((account as Record<string, unknown>)?.creatorSlackUserId).toBe("U12345ABCD");
+    expect((account as Record<string, unknown>)?.dmPolicy).toBe("allowlist");
+    expect((account as Record<string, unknown>)?.allowFrom).toEqual(["U12345ABCD"]);
+  });
+
+  it("ensures creator is always in allowFrom when closed mode with explicit list", async () => {
+    const harness = createHarness();
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-bot",
+        appToken: "xapp-app",
+        creatorSlackUserId: "U12345ABCD",
+        accessMode: "closed",
+        allowFrom: ["UOTHER12345"],
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const data = response.data as Record<string, unknown>;
+    const allowFrom = data.allowFrom as string[];
+    expect(allowFrom).toContain("U12345ABCD");
+    expect(allowFrom).toContain("UOTHER12345");
+  });
+
+  it("allows explicit open mode to override closed default", async () => {
+    const harness = createHarness();
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-bot",
+        appToken: "xapp-app",
+        accessMode: "open",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const data = response.data as Record<string, unknown>;
+    expect(data.dmPolicy).toBe("open");
+    expect(data.allowFrom).toEqual(["*"]);
+  });
+
+  it("rejects invalid creatorSlackUserId format", async () => {
+    const harness = createHarness();
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-bot",
+        appToken: "xapp-app",
+        creatorSlackUserId: "invalid-id",
+      },
+    });
+
+    expect(response.ok).toBe(false);
+    expect(response.error?.message).toContain("Invalid Slack user ID format");
+  });
+
+  it("rejects explicit closed mode with no allowFrom and no creatorSlackUserId", async () => {
+    const harness = createHarness();
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-bot",
+        appToken: "xapp-app",
+        accessMode: "closed",
+      },
+    });
+
+    expect(response.ok).toBe(false);
+    expect(response.error?.message).toContain("at least one allowed Slack user ID");
+  });
+
+  it("preserves existing dmPolicy when reconfiguring with tokens only", async () => {
+    const harness = createHarness({
+      channels: {
+        slack: {
+          enabled: true,
+          accounts: {
+            default: {
+              enabled: true,
+              botToken: "xoxb-old",
+              appToken: "xapp-old",
+            },
+          },
+        },
+      },
+    });
+
+    // Reconfigure with open mode explicitly
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-new",
+        appToken: "xapp-new",
+        accessMode: "open",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect((account as Record<string, unknown>)?.dmPolicy).toBe("open");
+  });
+
+  it("normalizes creatorSlackUserId to uppercase", async () => {
+    const harness = createHarness();
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-bot",
+        appToken: "xapp-app",
+        creatorSlackUserId: "u12345abcd",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const data = response.data as Record<string, unknown>;
+    expect(data.creatorSlackUserId).toBe("U12345ABCD");
+  });
+
+  it("does not include creatorSlackUserId when not provided", async () => {
+    const harness = createHarness();
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-bot",
+        appToken: "xapp-app",
+        accessMode: "open",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const data = response.data as Record<string, unknown>;
+    expect(data.creatorSlackUserId).toBeUndefined();
+  });
+});
+
+describe("createPaziChannelsConfigureHandler backward-compat reconfiguration", () => {
+  it("succeeds with token-only reconfiguration when accessMode is omitted", async () => {
+    const harness = createHarness({
+      channels: {
+        slack: {
+          enabled: true,
+          accounts: {
+            default: {
+              enabled: true,
+              botToken: "xoxb-old",
+              appToken: "xapp-old",
+            },
+          },
+        },
+      },
+    });
+
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-new",
+        appToken: "xapp-new",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect(account?.botToken).toBe("xoxb-new");
+    expect(account?.appToken).toBe("xapp-new");
+  });
+
+  it("preserves open dmPolicy on token-only reconfiguration without accessMode", async () => {
+    const harness = createHarness({
+      channels: {
+        slack: {
+          enabled: true,
+          accounts: {
+            default: {
+              enabled: true,
+              botToken: "xoxb-old",
+              appToken: "xapp-old",
+            },
+          },
+        },
+      },
+    });
+
+    // First configure with open mode
+    await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-old",
+        appToken: "xapp-old",
+        accessMode: "open",
+      },
+    });
+
+    // Reconfigure with only tokens — no accessMode
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-new",
+        appToken: "xapp-new",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const data = response.data as Record<string, unknown>;
+    expect(data.dmPolicy).toBe("open");
+    expect(data.allowFrom).toEqual(["*"]);
+  });
+
+  it("preserves existing groupPolicy on token-only reconfiguration without groupAccessMode", async () => {
+    const harness = createHarness({
+      channels: {
+        slack: {
+          enabled: true,
+          accounts: {
+            default: {
+              enabled: true,
+              botToken: "xoxb-old",
+              appToken: "xapp-old",
+              dmPolicy: "allowlist",
+              allowFrom: ["U_OWNER"],
+              groupPolicy: "allowlist",
+            },
+          },
+        },
+      },
+    });
+
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-new",
+        appToken: "xapp-new",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect(account?.groupPolicy).toBe("allowlist");
+    expect(account?.dmPolicy).toBe("allowlist");
+    expect(account?.allowFrom).toEqual(["U_OWNER"]);
+  });
+
+  it("updates group policy without rewriting DM access when only groupAccessMode is provided", async () => {
+    const harness = createHarness({
+      channels: {
+        slack: {
+          enabled: true,
+          accounts: {
+            default: {
+              enabled: true,
+              botToken: "xoxb-old",
+              appToken: "xapp-old",
+              dmPolicy: "allowlist",
+              allowFrom: ["U_OWNER"],
+              groupPolicy: "allowlist",
+            },
+          },
+        },
+      },
+    });
+
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-new",
+        appToken: "xapp-new",
+        groupAccessMode: "open",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect(account?.groupPolicy).toBe("open");
+    expect(account?.dmPolicy).toBe("allowlist");
+    expect(account?.allowFrom).toEqual(["U_OWNER"]);
+  });
+
+  it("allows token-only reconfigure for legacy default Slack config stored at top-level", async () => {
+    const harness = createHarness({
+      channels: {
+        slack: {
+          enabled: true,
+          botToken: "xoxb-legacy",
+          appToken: "xapp-legacy",
+        },
+      },
+    });
+
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-new",
+        appToken: "xapp-new",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const data = response.data as Record<string, unknown>;
+    expect(data.dmPolicy).toBe("open");
+    expect(data.allowFrom).toEqual(["*"]);
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect(account?.botToken).toBe("xoxb-new");
+    expect(account?.appToken).toBe("xapp-new");
+    expect(account?.dmPolicy).toBe("open");
+    expect(account?.allowFrom).toEqual(["*"]);
+  });
+
+  it("preserves legacy top-level allowlist policy on token-only reconfigure", async () => {
+    const harness = createHarness({
+      channels: {
+        slack: {
+          enabled: true,
+          botToken: "xoxb-legacy",
+          appToken: "xapp-legacy",
+          dmPolicy: "allowlist",
+          allowFrom: ["U_OWNER"],
+          groupPolicy: "allowlist",
+        },
+      },
+    });
+
+    const response = await harness.invoke({
+      channel: "slack",
+      config: {
+        botToken: "xoxb-new",
+        appToken: "xapp-new",
+      },
+    });
+
+    expect(response.ok).toBe(true);
+    const cfg = harness.getConfig();
+    const account = cfg.channels?.slack?.accounts?.default;
+    expect(account?.dmPolicy).toBe("allowlist");
+    expect(account?.allowFrom).toEqual(["U_OWNER"]);
+    expect(account?.groupPolicy).toBe("allowlist");
   });
 });
