@@ -297,6 +297,51 @@ function handleComplete(res: ServerResponse, body: Record<string, unknown>): voi
   writeJson(res, 200, { ok: true });
 }
 
+function handlePushCredentials(res: ServerResponse, body: Record<string, unknown>): void {
+  const { accessToken, refreshToken, expiresAt, email } = body;
+
+  if (typeof accessToken !== "string" || !accessToken) {
+    writeJson(res, 400, { ok: false, error: "invalid_params: accessToken required" });
+    return;
+  }
+
+  try {
+    // Cancel any in-progress interactive session
+    cancelActiveSession();
+
+    const identity = resolveCodexAuthIdentity({
+      accessToken,
+      email: typeof email === "string" ? email : undefined,
+    });
+
+    const store = loadAuthProfileStoreForSecretsRuntime();
+    const profileId = `${PROVIDER_ID}:${identity.email ?? identity.profileName ?? "default"}`;
+
+    store.profiles[profileId] = {
+      type: "oauth",
+      provider: PROVIDER_ID,
+      access: accessToken,
+      refresh: typeof refreshToken === "string" ? refreshToken : undefined,
+      expires: typeof expiresAt === "number" ? expiresAt : undefined,
+      email: identity.email,
+    };
+
+    // Update provider order
+    if (!store.order) {
+      store.order = {};
+    }
+    const orderList = store.order[PROVIDER_ID] ?? [];
+    if (!orderList.includes(profileId)) {
+      store.order[PROVIDER_ID] = [...orderList, profileId];
+    }
+
+    saveAuthProfileStore(store);
+    writeJson(res, 200, { ok: true, email: identity.email });
+  } catch (err) {
+    writeJson(res, 500, { ok: false, error: "push_credentials_failed", message: String(err) });
+  }
+}
+
 function handleDisconnect(res: ServerResponse): void {
   try {
     const store = loadAuthProfileStoreForSecretsRuntime();
@@ -373,6 +418,9 @@ export function createPaziCodexOAuthHandler(): (
         return;
       case "complete":
         handleComplete(res, body);
+        return;
+      case "push-credentials":
+        handlePushCredentials(res, body);
         return;
       case "disconnect":
         handleDisconnect(res);
