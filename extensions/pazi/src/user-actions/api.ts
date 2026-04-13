@@ -71,6 +71,7 @@ export async function createUserAction(
     fields?: string[];
     url?: string;
     message?: string;
+    proposal?: Record<string, unknown>;
   },
 ): Promise<UserActionApiResult<UserActionResponse>> {
   try {
