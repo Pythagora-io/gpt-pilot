@@ -29,6 +29,19 @@ let diskLoaded = false;
 let persistenceWarnLogger: ((message: string) => void) | null = null;
 let useDirectWrite = false; // sticky flag: skip atomic rename after EPERM
 
+/**
+ * Migration notice is runtime-only orchestration state.
+ * Never persist it to disk, otherwise VM snapshots can carry stale "migrating"
+ * state into the replacement instance.
+ */
+function stripTransientProxyContextFields(ctx: ProxyContext): ProxyContext {
+  if (!ctx.migrationNotice) {
+    return ctx;
+  }
+  const { migrationNotice: _migrationNotice, ...persistable } = ctx;
+  return persistable;
+}
+
 function warnPersistence(message: string, err?: unknown): void {
   const formatErr = err instanceof Error ? err.message : String(err);
   const suffix = err === undefined ? "" : ` (${formatErr})`;
@@ -82,7 +95,9 @@ export function configurePersistenceWarnLogger(logger: ((message: string) => voi
  * All fields must be non-empty strings.
  */
 function isValidProxyContext(value: unknown): value is ProxyContext {
-  if (!value || typeof value !== "object") {return false;}
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   const obj = value as Record<string, unknown>;
   return (
     typeof obj.userId === "string" &&
@@ -110,7 +125,7 @@ export function getProxyContext(): ProxyContext | null {
     try {
       const loaded = loadJsonFile(persistencePath);
       if (isValidProxyContext(loaded)) {
-        currentContext = loaded;
+        currentContext = stripTransientProxyContextFields(loaded);
       } else if (loaded !== undefined && loaded !== null) {
         warnPersistence(`ignored invalid persisted context at ${persistencePath}`);
       }
@@ -137,7 +152,7 @@ export function isBrowserEnabled(): boolean {
 export function setProxyContext(ctx: ProxyContext): void {
   currentContext = ctx;
   diskLoaded = true; // We have a known value, no need to load from disk
-  persistToDisk(ctx);
+  persistToDisk(stripTransientProxyContextFields(ctx));
 }
 
 /**
@@ -146,7 +161,9 @@ export function setProxyContext(ctx: ProxyContext): void {
  * Fallback: direct write when rename fails with EPERM (overlay filesystem).
  */
 function persistToDisk(ctx: ProxyContext): void {
-  if (!persistencePath) {return;}
+  if (!persistencePath) {
+    return;
+  }
   const data = JSON.stringify(ctx, null, 2) + "\n";
 
   // Fast path: overlay filesystem detected, skip atomic rename
@@ -228,7 +245,9 @@ export function clearProxyContext(): void {
 }
 
 function clearPersistedContext(): void {
-  if (!persistencePath) {return;}
+  if (!persistencePath) {
+    return;
+  }
   try {
     fs.rmSync(persistencePath, { force: true });
   } catch (err) {
