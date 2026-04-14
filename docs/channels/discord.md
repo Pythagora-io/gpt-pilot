@@ -253,12 +253,6 @@ Once DMs are working, you can set up your Discord server as a full workspace whe
       </Tab>
     </Tabs>
 
-    > **Update:** behavior changed slightly — `MEMORY.md` now auto-loads in
-    > **every** session, including guild channels. The tabs above are kept
-    > as background; you no longer need the workaround to get memory in
-    > shared channels. Never store credentials or human-personal information
-    > in `MEMORY.md`; keep those in the appropriate dedicated locations.
-
   </Step>
 </Steps>
 

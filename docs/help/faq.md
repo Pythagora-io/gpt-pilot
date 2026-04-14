@@ -1316,11 +1316,6 @@ for usage/billing and raise limits as needed.
     - Daily notes in `memory/YYYY-MM-DD.md`
     - Curated long-term notes in `MEMORY.md` (main/private sessions only)
 
-    > **Update:** behavior changed slightly — `MEMORY.md` now auto-loads in
-    > **every** session, including shared channels (Slack/Discord guilds, etc.).
-    > Never store credentials or human-personal information in `MEMORY.md`;
-    > keep those in the appropriate dedicated locations.
-
     OpenClaw also runs a **silent pre-compaction memory flush** to remind the model
     to write durable notes before auto-compaction. This only runs when the workspace
     is writable (read-only sandboxes skip it). See [Memory](/concepts/memory).

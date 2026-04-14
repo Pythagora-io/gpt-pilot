@@ -18,13 +18,6 @@ Your agent has three memory-related files:
 
 - **`MEMORY.md`** -- long-term memory. Durable facts, preferences, and
   decisions. Loaded at the start of every DM session.
-
-  > **Update:** behavior changed slightly — `MEMORY.md` now auto-loads in
-  > **every** session (including Slack/Discord channels and other shared
-  > surfaces), not just DMs. Never store credentials or human-personal
-  > information in `MEMORY.md`; keep those in the appropriate dedicated
-  > locations (secrets store, `USER.md`, etc.).
-
 - **`memory/YYYY-MM-DD.md`** -- daily notes. Running context and observations.
   Today and yesterday's notes are loaded automatically.
 - **`DREAMS.md`** (experimental, optional) -- Dream Diary and dreaming sweep
