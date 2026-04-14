@@ -79,6 +79,11 @@ export function configurePersistencePath(filePath: string): void {
     persistencePath = null;
     diskLoaded = false;
     useDirectWrite = false;
+    activityDirty = false;
+    if (flushIntervalHandle !== null) {
+      clearInterval(flushIntervalHandle);
+      flushIntervalHandle = null;
+    }
     warnPersistence("disabled because configured path was empty");
     return;
   }
@@ -285,6 +290,7 @@ export function getProxyLastActivityAt(): number | null {
 }
 
 export function isProxyBusyForStatus(nowMs = Date.now()): boolean {
+  ensureDiskLoaded();
   if (!currentContext || lastProxyActivityAtMs === null) {
     return false;
   }

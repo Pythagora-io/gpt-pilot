@@ -443,6 +443,25 @@ describe("pazi activity persistence", () => {
     });
   });
 
+  it("isProxyBusyForStatus lazy-loads persisted activity without prior getter call", async () => {
+    await withTempDir("pazi-act-", async (dir) => {
+      const filePath = path.join(dir, "pazi", "proxy-context.json");
+      configurePersistencePath(filePath);
+
+      setProxyContext(sampleContext);
+      const activityMs = Date.now();
+      markProxyActivity(activityMs);
+      stopActivityPersistence();
+
+      // Simulate restart — call isProxyBusyForStatus FIRST (before getProxyLastActivityAt)
+      _resetForTest();
+      configurePersistencePath(filePath);
+
+      // This must return true even without calling getProxyLastActivityAt() first
+      expect(isProxyBusyForStatus(activityMs + 5 * 60 * 1000)).toBe(true);
+    });
+  });
+
   it("backward compatibility: file without lastActivityAtMs loads context fine", async () => {
     await withTempDir("pazi-act-", async (dir) => {
       const filePath = path.join(dir, "proxy-context.json");
