@@ -1,5 +1,4 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { loginOpenAICodex } from "@mariozechner/pi-ai/oauth";
 import {
   loadAuthProfileStoreForSecretsRuntime,
   saveAuthProfileStore,
@@ -9,8 +8,6 @@ import { resolveCodexAuthIdentity } from "../../../openai/openai-codex-auth-iden
 // ── Constants ────────────────────────────────────────────────────
 
 const PROVIDER_ID = "openai-codex";
-const SESSION_TTL_MS = 5 * 60 * 1000; // 5 minutes
-const AUTH_URL_TIMEOUT_MS = 15_000; // 15 seconds to get auth URL
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -37,40 +34,6 @@ async function readJsonBody(req: IncomingMessage): Promise<Record<string, unknow
     return null;
   }
   return null;
-}
-
-function generateSessionId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
-}
-
-// ── Session State ────────────────────────────────────────────────
-
-interface OAuthSession {
-  id: string;
-  status: "pending" | "have_url" | "waiting_for_code" | "completed" | "failed";
-  authUrl?: string;
-  email?: string;
-  error?: string;
-  createdAt: number;
-  resolveCode?: (code: string) => void;
-  rejectCode?: (err: Error) => void;
-  timeoutId?: ReturnType<typeof setTimeout>;
-}
-
-let activeSession: OAuthSession | null = null;
-
-function cancelActiveSession(): void {
-  if (!activeSession) {
-    return;
-  }
-  if (activeSession.timeoutId) {
-    clearTimeout(activeSession.timeoutId);
-  }
-  // Reject any pending code promise to unblock loginOpenAICodex
-  if (activeSession.rejectCode) {
-    activeSession.rejectCode(new Error("session_cancelled"));
-  }
-  activeSession = null;
 }
 
 // ── Helpers for auth profile inspection ──────────────────────────
@@ -104,197 +67,52 @@ function handleStatus(res: ServerResponse): void {
     if (profile?.email) {
       result.email = profile.email;
     }
-    if (activeSession) {
-      result.sessionStatus = activeSession.status;
-      result.sessionId = activeSession.id;
-    }
     writeJson(res, 200, result);
   } catch (err) {
     writeJson(res, 500, { ok: false, error: "status_failed", message: String(err) });
   }
 }
 
-async function handleInitiate(res: ServerResponse): Promise<void> {
-  // Cancel any existing session
-  cancelActiveSession();
+function handlePushCredentials(res: ServerResponse, body: Record<string, unknown>): void {
+  const { accessToken, refreshToken, expiresAt, email } = body;
 
-  const sessionId = generateSessionId();
-  const session: OAuthSession = {
-    id: sessionId,
-    status: "pending",
-    createdAt: Date.now(),
-  };
-  activeSession = session;
+  if (typeof accessToken !== "string" || !accessToken) {
+    writeJson(res, 400, { ok: false, error: "invalid_params: accessToken required" });
+    return;
+  }
 
-  // TTL: auto-fail after SESSION_TTL_MS
-  session.timeoutId = setTimeout(() => {
-    if (activeSession?.id === sessionId) {
-      activeSession.status = "failed";
-      activeSession.error = "session_timeout";
-      // Reject pending code promise
-      if (activeSession.rejectCode) {
-        activeSession.rejectCode(new Error("session_timeout"));
-      }
-      // Clean up after 30s
-      setTimeout(() => {
-        if (activeSession?.id === sessionId) {
-          activeSession = null;
-        }
-      }, 30_000);
-    }
-  }, SESSION_TTL_MS);
-
-  // Promise for auth URL (resolved by onAuth callback)
-  let authUrlResolve!: (url: string) => void;
-  let authUrlReject!: (err: Error) => void;
-  const authUrlPromise = new Promise<string>((resolve, reject) => {
-    authUrlResolve = resolve;
-    authUrlReject = reject;
-  });
-
-  // Promise for manual code input (resolved by "complete" action).
-  // The promise is never awaited directly here — its resolve/reject callbacks
-  // are stored on the session so the "complete" action can trigger them.
-  let codeResolve!: (code: string) => void;
-  let codeReject!: (err: Error) => void;
-  void new Promise<string>((resolve, reject) => {
-    codeResolve = resolve;
-    codeReject = reject;
-  });
-  session.resolveCode = codeResolve;
-  session.rejectCode = codeReject;
-
-  // Start the OAuth flow in the background
-  loginOpenAICodex({
-    onAuth: (info: { url: string }) => {
-      if (activeSession?.id !== sessionId) {
-        return;
-      }
-      session.authUrl = info.url;
-      session.status = "have_url";
-      authUrlResolve(info.url);
-    },
-    onPrompt: async () => {
-      // Called if the library needs manual input — wait for "complete" action
-      if (activeSession?.id === sessionId) {
-        session.status = "waiting_for_code";
-      }
-      return new Promise<string>((resolve, reject) => {
-        if (activeSession?.id === sessionId) {
-          session.resolveCode = resolve;
-          session.rejectCode = reject;
-        } else {
-          reject(new Error("session_cancelled"));
-        }
-      });
-    },
-    onManualCodeInput: async () => {
-      // Called when auto-callback doesn't arrive — wait for "complete" action
-      if (activeSession?.id === sessionId) {
-        session.status = "waiting_for_code";
-      }
-      return new Promise<string>((resolve, reject) => {
-        if (activeSession?.id === sessionId) {
-          session.resolveCode = resolve;
-          session.rejectCode = reject;
-        } else {
-          reject(new Error("session_cancelled"));
-        }
-      });
-    },
-    onProgress: () => {
-      // Ignore progress in gateway mode
-    },
-  })
-    .then((creds) => {
-      if (!creds || activeSession?.id !== sessionId) {
-        return;
-      }
-
-      try {
-        const identity = resolveCodexAuthIdentity({
-          accessToken: creds.access,
-          email: typeof creds.email === "string" ? creds.email : undefined,
-        });
-
-        const store = loadAuthProfileStoreForSecretsRuntime();
-        const profileId = `${PROVIDER_ID}:${identity.email ?? identity.profileName ?? "default"}`;
-
-        store.profiles[profileId] = {
-          type: "oauth",
-          provider: PROVIDER_ID,
-          access: creds.access,
-          refresh: creds.refresh,
-          expires: creds.expires,
-          email: identity.email,
-        };
-
-        // Update provider order
-        if (!store.order) {
-          store.order = {};
-        }
-        const orderList = store.order[PROVIDER_ID] ?? [];
-        if (!orderList.includes(profileId)) {
-          store.order[PROVIDER_ID] = [...orderList, profileId];
-        }
-
-        saveAuthProfileStore(store);
-
-        session.status = "completed";
-        session.email = identity.email;
-      } catch (err) {
-        session.status = "failed";
-        session.error = String(err);
-      }
-    })
-    .catch((err: unknown) => {
-      if (activeSession?.id === sessionId) {
-        session.status = "failed";
-        session.error = String(err);
-      }
+  try {
+    const identity = resolveCodexAuthIdentity({
+      accessToken,
+      email: typeof email === "string" ? email : undefined,
     });
 
-  // Wait for auth URL with timeout
-  const authUrlTimeout = new Promise<null>((resolve) =>
-    setTimeout(() => resolve(null), AUTH_URL_TIMEOUT_MS),
-  );
-  const authUrl = await Promise.race([authUrlPromise, authUrlTimeout]).catch(() => null);
+    const store = loadAuthProfileStoreForSecretsRuntime();
+    const profileId = `${PROVIDER_ID}:${identity.email ?? identity.profileName ?? "default"}`;
 
-  if (!authUrl) {
-    // onAuth never fired — clean up and report
-    if (activeSession?.id === sessionId && activeSession.status === "pending") {
-      activeSession.status = "failed";
-      activeSession.error = "auth_url_timeout";
+    store.profiles[profileId] = {
+      type: "oauth",
+      provider: PROVIDER_ID,
+      access: accessToken,
+      refresh: typeof refreshToken === "string" ? refreshToken : undefined,
+      expires: typeof expiresAt === "number" ? expiresAt : undefined,
+      email: identity.email,
+    } as (typeof store.profiles)[string];
+
+    // Update provider order
+    if (!store.order) {
+      store.order = {};
     }
-    authUrlReject(new Error("auth_url_timeout"));
-    writeJson(res, 500, { ok: false, error: "auth_url_timeout" });
-    return;
+    const orderList = store.order[PROVIDER_ID] ?? [];
+    if (!orderList.includes(profileId)) {
+      store.order[PROVIDER_ID] = [...orderList, profileId];
+    }
+
+    saveAuthProfileStore(store);
+    writeJson(res, 200, { ok: true, email: identity.email });
+  } catch (err) {
+    writeJson(res, 500, { ok: false, error: "push_credentials_failed", message: String(err) });
   }
-
-  writeJson(res, 200, { ok: true, sessionId, authUrl });
-}
-
-function handleComplete(res: ServerResponse, body: Record<string, unknown>): void {
-  const { sessionId, codeOrUrl } = body;
-
-  if (typeof sessionId !== "string" || typeof codeOrUrl !== "string" || !codeOrUrl.trim()) {
-    writeJson(res, 400, { ok: false, error: "invalid_params" });
-    return;
-  }
-
-  if (!activeSession || activeSession.id !== sessionId) {
-    writeJson(res, 404, { ok: false, error: "session_not_found" });
-    return;
-  }
-
-  if (!activeSession.resolveCode) {
-    writeJson(res, 409, { ok: false, error: "session_not_waiting_for_code" });
-    return;
-  }
-
-  // Resolve the pending code promise — loginOpenAICodex will proceed
-  activeSession.resolveCode(codeOrUrl.trim());
-  writeJson(res, 200, { ok: true });
 }
 
 function handlePushCredentials(res: ServerResponse, body: Record<string, unknown>): void {
@@ -413,11 +231,8 @@ export function createPaziCodexOAuthHandler(): (
       case "status":
         handleStatus(res);
         return;
-      case "initiate":
-        await handleInitiate(res);
-        return;
-      case "complete":
-        handleComplete(res, body);
+      case "push-credentials":
+        handlePushCredentials(res, body);
         return;
       case "push-credentials":
         handlePushCredentials(res, body);
