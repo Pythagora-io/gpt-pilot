@@ -29,6 +29,11 @@ let diskLoaded = false;
 let persistenceWarnLogger: ((message: string) => void) | null = null;
 let useDirectWrite = false; // sticky flag: skip atomic rename after EPERM
 
+// Activity persistence debounce state
+let activityDirty = false;
+let flushIntervalHandle: ReturnType<typeof setInterval> | null = null;
+const FLUSH_INTERVAL_MS = 30_000;
+
 /**
  * Migration notice is runtime-only orchestration state.
  * Never persist it to disk, otherwise VM snapshots can carry stale "migrating"
@@ -74,12 +79,24 @@ export function configurePersistencePath(filePath: string): void {
     persistencePath = null;
     diskLoaded = false;
     useDirectWrite = false;
+    activityDirty = false;
+    if (flushIntervalHandle !== null) {
+      clearInterval(flushIntervalHandle);
+      flushIntervalHandle = null;
+    }
     warnPersistence("disabled because configured path was empty");
     return;
   }
   persistencePath = normalized;
   diskLoaded = false;
   useDirectWrite = false;
+  activityDirty = false;
+
+  // Start (or restart) the debounce flush interval
+  if (flushIntervalHandle !== null) {
+    clearInterval(flushIntervalHandle);
+  }
+  flushIntervalHandle = setInterval(flushActivityToDisk, FLUSH_INTERVAL_MS);
 }
 
 /**
@@ -111,6 +128,34 @@ function isValidProxyContext(value: unknown): value is ProxyContext {
 }
 
 /**
+ * Lazy-load persisted state from disk on first access.
+ * Hydrates both currentContext and lastProxyActivityAtMs.
+ */
+function ensureDiskLoaded(): void {
+  if (diskLoaded || !persistencePath) {
+    return;
+  }
+  diskLoaded = true;
+  try {
+    const loaded = loadJsonFile(persistencePath);
+    if (isValidProxyContext(loaded)) {
+      // Hydrate persisted activity timestamp if present and valid
+      const parsed = loaded as Record<string, unknown>;
+      if (typeof parsed.lastActivityAtMs === "number" && Number.isFinite(parsed.lastActivityAtMs)) {
+        lastProxyActivityAtMs = parsed.lastActivityAtMs;
+      }
+      // Strip non-context fields before caching
+      const { lastActivityAtMs: _activity, ...contextFields } = parsed;
+      currentContext = stripTransientProxyContextFields(contextFields as ProxyContext);
+    } else if (loaded !== undefined && loaded !== null) {
+      warnPersistence(`ignored invalid persisted context at ${persistencePath}`);
+    }
+  } catch (err) {
+    warnPersistence(`failed to load persisted context from ${persistencePath}`, err);
+  }
+}
+
+/**
  * Get the current proxy context. Returns the in-memory cached value if set.
  * On first call after startup (when in-memory is null), lazy-loads from disk.
  */
@@ -118,22 +163,7 @@ export function getProxyContext(): ProxyContext | null {
   if (currentContext) {
     return currentContext;
   }
-
-  // Lazy load from disk on first access when no in-memory context
-  if (!diskLoaded && persistencePath) {
-    diskLoaded = true;
-    try {
-      const loaded = loadJsonFile(persistencePath);
-      if (isValidProxyContext(loaded)) {
-        currentContext = stripTransientProxyContextFields(loaded);
-      } else if (loaded !== undefined && loaded !== null) {
-        warnPersistence(`ignored invalid persisted context at ${persistencePath}`);
-      }
-    } catch (err) {
-      warnPersistence(`failed to load persisted context from ${persistencePath}`, err);
-    }
-  }
-
+  ensureDiskLoaded();
   return currentContext;
 }
 
@@ -150,6 +180,8 @@ export function isBrowserEnabled(): boolean {
 }
 
 export function setProxyContext(ctx: ProxyContext): void {
+  // Hydrate persisted lastActivityAtMs before overwriting the file
+  ensureDiskLoaded();
   currentContext = ctx;
   diskLoaded = true; // We have a known value, no need to load from disk
   persistToDisk(stripTransientProxyContextFields(ctx));
@@ -164,7 +196,12 @@ function persistToDisk(ctx: ProxyContext): void {
   if (!persistencePath) {
     return;
   }
-  const data = JSON.stringify(ctx, null, 2) + "\n";
+  // Include lastActivityAtMs alongside context fields
+  const payload: Record<string, unknown> = { ...ctx };
+  if (lastProxyActivityAtMs !== null) {
+    payload.lastActivityAtMs = lastProxyActivityAtMs;
+  }
+  const data = JSON.stringify(payload, null, 2) + "\n";
 
   // Fast path: overlay filesystem detected, skip atomic rename
   if (useDirectWrite) {
@@ -173,6 +210,7 @@ function persistToDisk(ctx: ProxyContext): void {
       fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
       fs.writeFileSync(persistencePath, data, "utf8");
       fs.chmodSync(persistencePath, 0o600);
+      activityDirty = false;
     } catch (err) {
       warnPersistence(`failed to persist context to ${persistencePath}`, err);
     }
@@ -189,6 +227,7 @@ function persistToDisk(ctx: ProxyContext): void {
 
     try {
       fs.renameSync(tmpPath, persistencePath);
+      activityDirty = false;
     } catch (renameErr) {
       // Clean up temp file best-effort
       try {
@@ -211,6 +250,7 @@ function persistToDisk(ctx: ProxyContext): void {
       // Write directly this time
       fs.writeFileSync(persistencePath, data, "utf8");
       fs.chmodSync(persistencePath, 0o600);
+      activityDirty = false;
     }
   } catch (err) {
     // Best-effort: disk write failed, in-memory is still authoritative.
@@ -218,15 +258,41 @@ function persistToDisk(ctx: ProxyContext): void {
   }
 }
 
+/**
+ * Flush dirty activity state to disk if context exists.
+ * Called by the debounce interval and on shutdown.
+ */
+function flushActivityToDisk(): void {
+  if (!activityDirty || !currentContext || !persistencePath) {
+    return;
+  }
+  persistToDisk(stripTransientProxyContextFields(currentContext));
+}
+
+/**
+ * Stop the activity persistence interval and do a final flush.
+ * Called from the pazi-activity-persistence service stop callback.
+ */
+export function stopActivityPersistence(): void {
+  if (flushIntervalHandle !== null) {
+    clearInterval(flushIntervalHandle);
+    flushIntervalHandle = null;
+  }
+  flushActivityToDisk();
+}
+
 export function markProxyActivity(atMs = Date.now()): void {
   lastProxyActivityAtMs = atMs;
+  activityDirty = true;
 }
 
 export function getProxyLastActivityAt(): number | null {
+  ensureDiskLoaded();
   return lastProxyActivityAtMs;
 }
 
 export function isProxyBusyForStatus(nowMs = Date.now()): boolean {
+  ensureDiskLoaded();
   if (!currentContext || lastProxyActivityAtMs === null) {
     return false;
   }
@@ -240,6 +306,7 @@ export function isProxyBusyForStatus(nowMs = Date.now()): boolean {
 export function clearProxyContext(): void {
   currentContext = null;
   lastProxyActivityAtMs = null;
+  activityDirty = false;
   diskLoaded = true; // Prevent re-loading cleared context from disk
   clearPersistedContext();
 }
@@ -263,10 +330,15 @@ function clearPersistedContext(): void {
  * @internal
  */
 export function _resetForTest(): void {
+  if (flushIntervalHandle !== null) {
+    clearInterval(flushIntervalHandle);
+    flushIntervalHandle = null;
+  }
   currentContext = null;
   lastProxyActivityAtMs = null;
   persistencePath = null;
   diskLoaded = false;
   persistenceWarnLogger = null;
   useDirectWrite = false;
+  activityDirty = false;
 }

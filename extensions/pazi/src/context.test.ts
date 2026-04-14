@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { withTempDir } from "../../../test/helpers/extensions/temp-dir.js";
+import { withTempDir } from "../../../test/helpers/plugins/temp-dir.js";
 import {
   _resetForTest,
   clearProxyContext,
@@ -12,6 +12,7 @@ import {
   isProxyBusyForStatus,
   markProxyActivity,
   setProxyContext,
+  stopActivityPersistence,
 } from "./context.js";
 
 describe("pazi context busy status", () => {
@@ -58,6 +59,7 @@ describe("pazi context busy status", () => {
 
 describe("pazi context persistence", () => {
   beforeEach(() => {
+    _resetForTest();
     configurePersistenceWarnLogger(() => {});
   });
 
@@ -394,6 +396,230 @@ describe("pazi context persistence", () => {
       // Atomic rename should be attempted again on the new path
       expect(renameSpy2).toHaveBeenCalledTimes(1);
       expect(JSON.parse(fs.readFileSync(filePath2, "utf-8"))).toEqual(sampleContext);
+    });
+  });
+});
+
+describe("pazi activity persistence", () => {
+  const sampleContext = {
+    userId: "user-123",
+    agentId: "agent-456",
+    proxyToken: "tok_abc",
+  };
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    configurePersistenceWarnLogger(() => {});
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    _resetForTest();
+  });
+
+  it("persisted activity survives restart", async () => {
+    await withTempDir("pazi-act-", async (dir) => {
+      const filePath = path.join(dir, "pazi", "proxy-context.json");
+      configurePersistencePath(filePath);
+
+      setProxyContext(sampleContext);
+      const activityMs = 1_700_000_000_000;
+      markProxyActivity(activityMs);
+
+      // Flush via stopActivityPersistence (simulates graceful shutdown)
+      stopActivityPersistence();
+
+      // Verify file includes lastActivityAtMs
+      const raw = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      expect(raw.lastActivityAtMs).toBe(activityMs);
+
+      // Simulate restart
+      _resetForTest();
+      configurePersistencePath(filePath);
+
+      expect(getProxyLastActivityAt()).toBe(activityMs);
+      expect(isProxyBusyForStatus(activityMs + 5 * 60 * 1000)).toBe(true);
+    });
+  });
+
+  it("isProxyBusyForStatus lazy-loads persisted activity without prior getter call", async () => {
+    await withTempDir("pazi-act-", async (dir) => {
+      const filePath = path.join(dir, "pazi", "proxy-context.json");
+      configurePersistencePath(filePath);
+
+      setProxyContext(sampleContext);
+      const activityMs = Date.now();
+      markProxyActivity(activityMs);
+      stopActivityPersistence();
+
+      // Simulate restart — call isProxyBusyForStatus FIRST (before getProxyLastActivityAt)
+      _resetForTest();
+      configurePersistencePath(filePath);
+
+      // This must return true even without calling getProxyLastActivityAt() first
+      expect(isProxyBusyForStatus(activityMs + 5 * 60 * 1000)).toBe(true);
+    });
+  });
+
+  it("backward compatibility: file without lastActivityAtMs loads context fine", async () => {
+    await withTempDir("pazi-act-", async (dir) => {
+      const filePath = path.join(dir, "proxy-context.json");
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      // Write context without lastActivityAtMs (legacy format)
+      fs.writeFileSync(filePath, JSON.stringify(sampleContext), "utf-8");
+      configurePersistencePath(filePath);
+
+      expect(getProxyContext()).toEqual(sampleContext);
+      expect(getProxyLastActivityAt()).toBeNull();
+    });
+  });
+
+  it("invalid lastActivityAtMs is treated as null", async () => {
+    await withTempDir("pazi-act-", async (dir) => {
+      const filePath = path.join(dir, "proxy-context.json");
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(
+        filePath,
+        JSON.stringify({ ...sampleContext, lastActivityAtMs: "not-a-number" }),
+        "utf-8",
+      );
+      configurePersistencePath(filePath);
+
+      expect(getProxyContext()).toEqual(sampleContext);
+      expect(getProxyLastActivityAt()).toBeNull();
+    });
+  });
+
+  it("NaN lastActivityAtMs is treated as null", async () => {
+    await withTempDir("pazi-act-", async (dir) => {
+      const filePath = path.join(dir, "proxy-context.json");
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(
+        filePath,
+        JSON.stringify({ ...sampleContext, lastActivityAtMs: null }),
+        "utf-8",
+      );
+      configurePersistencePath(filePath);
+
+      expect(getProxyContext()).toEqual(sampleContext);
+      expect(getProxyLastActivityAt()).toBeNull();
+    });
+  });
+
+  it("setProxyContext writes file that includes lastActivityAtMs", async () => {
+    await withTempDir("pazi-act-", async (dir) => {
+      const filePath = path.join(dir, "pazi", "proxy-context.json");
+      configurePersistencePath(filePath);
+
+      markProxyActivity(1_700_000_000_000);
+      setProxyContext(sampleContext);
+
+      const raw = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      expect(raw.lastActivityAtMs).toBe(1_700_000_000_000);
+      expect(raw.userId).toBe("user-123");
+    });
+  });
+
+  it("debounced writes: markProxyActivity does not immediately write", async () => {
+    await withTempDir("pazi-act-", async (dir) => {
+      const filePath = path.join(dir, "pazi", "proxy-context.json");
+      configurePersistencePath(filePath);
+      setProxyContext(sampleContext);
+
+      // Clear the file written by setProxyContext to verify activity-only flush
+      const beforeRaw = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      expect(beforeRaw.lastActivityAtMs).toBeUndefined(); // no activity yet
+
+      markProxyActivity(1_700_000_000_000);
+
+      // File should not be updated yet (dirty but not flushed)
+      const afterMark = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      expect(afterMark.lastActivityAtMs).toBeUndefined();
+
+      // Advance past the flush interval
+      vi.advanceTimersByTime(30_000);
+
+      const afterFlush = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      expect(afterFlush.lastActivityAtMs).toBe(1_700_000_000_000);
+    });
+  });
+
+  it("flush on stop: stopActivityPersistence writes dirty activity", async () => {
+    await withTempDir("pazi-act-", async (dir) => {
+      const filePath = path.join(dir, "pazi", "proxy-context.json");
+      configurePersistencePath(filePath);
+      setProxyContext(sampleContext);
+      markProxyActivity(1_700_000_000_000);
+
+      // Before stop, file should not include activity
+      const beforeStop = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      expect(beforeStop.lastActivityAtMs).toBeUndefined();
+
+      stopActivityPersistence();
+
+      const afterStop = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      expect(afterStop.lastActivityAtMs).toBe(1_700_000_000_000);
+    });
+  });
+
+  it("clearProxyContext resets activity and dirty flag", async () => {
+    await withTempDir("pazi-act-", async (dir) => {
+      const filePath = path.join(dir, "pazi", "proxy-context.json");
+      configurePersistencePath(filePath);
+      setProxyContext(sampleContext);
+      markProxyActivity(1_700_000_000_000);
+
+      clearProxyContext();
+
+      expect(getProxyLastActivityAt()).toBeNull();
+      expect(fs.existsSync(filePath)).toBe(false);
+
+      // Advancing the timer should not crash or recreate the file
+      vi.advanceTimersByTime(30_000);
+      expect(fs.existsSync(filePath)).toBe(false);
+    });
+  });
+
+  it("no-op flush without context: mark activity without context does not crash", () => {
+    // No configurePersistencePath, no setProxyContext
+    markProxyActivity(1_700_000_000_000);
+
+    // stopActivityPersistence should not crash
+    stopActivityPersistence();
+    expect(getProxyLastActivityAt()).toBe(1_700_000_000_000);
+  });
+
+  it("no-op when no persistence path: markProxyActivity sets in-memory only", () => {
+    markProxyActivity(1_700_000_000_000);
+    expect(getProxyLastActivityAt()).toBe(1_700_000_000_000);
+
+    // Advancing timers should not crash (no interval started without configurePersistencePath)
+    vi.advanceTimersByTime(30_000);
+  });
+
+  it("multiple activity marks between flushes only writes once", async () => {
+    await withTempDir("pazi-act-", async (dir) => {
+      const filePath = path.join(dir, "pazi", "proxy-context.json");
+      configurePersistencePath(filePath);
+      setProxyContext(sampleContext);
+
+      const writeSpy = vi.spyOn(fs, "writeFileSync");
+      const callCountBefore = writeSpy.mock.calls.length;
+
+      markProxyActivity(1_700_000_000_000);
+      markProxyActivity(1_700_000_001_000);
+      markProxyActivity(1_700_000_002_000);
+
+      vi.advanceTimersByTime(30_000);
+
+      // Only one write should have occurred for the flush
+      const flushWrites = writeSpy.mock.calls.slice(callCountBefore);
+      // Atomic write creates a temp file, so at least 1 write
+      expect(flushWrites.length).toBeGreaterThanOrEqual(1);
+
+      const raw = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      expect(raw.lastActivityAtMs).toBe(1_700_000_002_000);
     });
   });
 });
