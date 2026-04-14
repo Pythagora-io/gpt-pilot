@@ -1,0 +1,101 @@
+[
+  {
+    "id": "SKILL-001",
+    "name": "Skills page loads",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "skills",
+    "preconditions": ["Logged into dashboard"],
+    "steps": ["Click 'Skills' in sidebar", "Verify skills page loads with skill list"],
+    "expected": "Skills page loads showing available skills",
+    "tags": []
+  },
+  {
+    "id": "SKILL-002",
+    "name": "Create skill (agent scope)",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "skills",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Go to Skills page",
+      "Click create/add skill button",
+      "Enter name: 'QA Test Skill Agent'",
+      "Set scope to agent-only",
+      "Enter content/description",
+      "Save"
+    ],
+    "expected": "Skill created, appears in skill list, visible only for current agent",
+    "tags": []
+  },
+  {
+    "id": "SKILL-003",
+    "name": "Create skill (all scope)",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "skills",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Go to Skills page",
+      "Click create skill button",
+      "Enter name: 'QA Test Skill All'",
+      "Set scope to all agents",
+      "Save"
+    ],
+    "expected": "Skill created with 'all' scope, visible when switching to different agents",
+    "tags": []
+  },
+  {
+    "id": "SKILL-004",
+    "name": "Edit skill content",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "skills",
+    "preconditions": ["At least 1 skill exists"],
+    "steps": [
+      "Click on a skill to open it",
+      "Edit the content",
+      "Save",
+      "Reopen and verify changes persisted"
+    ],
+    "expected": "Skill content updated and persists after reopening",
+    "tags": []
+  },
+  {
+    "id": "SKILL-005",
+    "name": "Delete skill",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "skills",
+    "preconditions": ["At least 1 skill exists"],
+    "steps": ["Find a test skill", "Delete it", "Verify removed from list"],
+    "expected": "Skill deleted, no longer appears in skill list",
+    "tags": []
+  },
+  {
+    "id": "SKILL-006",
+    "name": "Duplicate skill name rejected",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "skills",
+    "preconditions": ["At least 1 skill exists"],
+    "steps": ["Try to create a skill with the same name as an existing one", "Attempt to save"],
+    "expected": "Duplicate name rejected with clear error message",
+    "tags": []
+  },
+  {
+    "id": "SKILL-007",
+    "name": "Skill sidebar preview renders markdown",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "skills",
+    "preconditions": ["At least 1 skill with markdown content"],
+    "steps": [
+      "Click on a skill in the list",
+      "Check the sidebar preview",
+      "Verify markdown (headers, bold, code blocks, lists) renders correctly"
+    ],
+    "expected": "Sidebar preview renders markdown formatting correctly",
+    "tags": []
+  }
+]

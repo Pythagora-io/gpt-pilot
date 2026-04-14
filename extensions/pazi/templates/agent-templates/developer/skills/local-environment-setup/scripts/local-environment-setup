@@ -1,0 +1,384 @@
+#!/usr/bin/env bash
+# =============================================================================
+# local-environment-setup — Feature environment lifecycle manager
+# =============================================================================
+# Usage:
+#   local-environment-setup create <feature> [--port <ssl-port>]
+#   local-environment-setup destroy <feature>
+#   local-environment-setup start <feature>
+#   local-environment-setup stop <feature>
+#   local-environment-setup status [feature]
+#   local-environment-setup verify [feature]
+#
+# This is a template script. Customize the TODOs for your project's stack.
+# =============================================================================
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Constants — customize these for your project
+# ---------------------------------------------------------------------------
+PRIMARY_REPO="${PRIMARY_REPO:-/home/$USER/primary-repo}"
+SECONDARY_REPO="${SECONDARY_REPO:-/home/$USER/secondary-repo}"  # Optional
+FEATURES_DIR="${FEATURES_DIR:-/home/$USER/features}"
+HOSTNAME="${PROJECT_HOSTNAME:-localhost}"
+PORT_FILE="$FEATURES_DIR/port-assignments.json"
+LOCK_FILE="$FEATURES_DIR/.port-assignments.lock"
+PORT_BASE=5300
+PORT_STEP=5
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+die()  { echo "❌ $*" >&2; exit 1; }
+info() { echo "→ $*"; }
+ok()   { echo "  ✅ $*"; }
+warn() { echo "  ⚠️  $*"; }
+
+ensure_port_file() {
+    mkdir -p "$FEATURES_DIR"
+    [[ -f "$PORT_FILE" ]] || echo '{"features":{}}' > "$PORT_FILE"
+}
+
+# ---------------------------------------------------------------------------
+# Port derivation
+# ---------------------------------------------------------------------------
+# Derive all ports needed for the system from a single SSL port.
+# Add or remove ports here based on your project's services.
+#
+# Current scheme:
+#   SSL/nginx (public HTTPS):  PORT
+#   Frontend (dev server):     PORT - 1
+#   API (backend server):      PORT + 800
+#   Agent (OpenClaw gateway):  PORT + 10800
+#
+# The agent gateway also uses gateway_port+2 (browser control) and
+# gateway_port+3 (internal service), so features must be spaced at
+# least PORT_STEP (5) apart to avoid collisions.
+#
+# TODO: Add any additional ports your system needs (e.g. WebSocket server,
+#       worker process, database proxy, etc.)
+derive_ports() {
+    local ssl_port="$1"
+    PORT_SSL=$ssl_port
+    PORT_FE=$((ssl_port - 1))
+    PORT_API=$((ssl_port + 800))
+    PORT_AGENT=$((ssl_port + 10800))
+    # TODO: Add more derived ports as needed, e.g.:
+    # PORT_WORKER=$((ssl_port + 900))
+    # PORT_WS=$((ssl_port + 1000))
+}
+
+auto_assign_port() {
+    python3 -c "
+import json
+data = json.load(open('$PORT_FILE'))
+ports = [f.get('sslPort', 0) for f in data['features'].values()]
+print(max(ports) + $PORT_STEP if ports else $PORT_BASE)
+"
+}
+
+slug() { echo "$1" | tr '[:upper:]' '[:lower:]' | tr '-' '_'; }
+
+feature_exists() {
+    python3 -c "
+import json, sys
+data = json.load(open('$PORT_FILE'))
+sys.exit(0 if '$1' in data['features'] else 1)
+" 2>/dev/null
+}
+
+read_port_from_json() {
+    python3 -c "
+import json, sys
+data = json.load(open('$PORT_FILE'))
+print(data['features']['$1']['$2'])
+" 2>/dev/null
+}
+
+get_secret() {
+    local key="$1" env_file="$2"
+    grep "^${key}=" "$env_file" 2>/dev/null | head -1 | cut -d= -f2-
+}
+
+# ---------------------------------------------------------------------------
+# create
+# ---------------------------------------------------------------------------
+cmd_create() {
+    local feature="" ssl_port="" branch="staging"
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --port)    ssl_port="$2"; shift 2 ;;
+            --branch)  branch="$2"; shift 2 ;;
+            -*)        die "Unknown option: $1" ;;
+            *)         [[ -z "$feature" ]] && feature="$1" && shift || die "Unexpected: $1" ;;
+        esac
+    done
+
+    [[ -n "$feature" ]] || die "Usage: local-environment-setup create <feature> [--port <ssl-port>]"
+
+    ensure_port_file
+    exec 9>"$LOCK_FILE"
+    flock -w 30 9 || die "Could not acquire port lock"
+
+    [[ -z "$ssl_port" ]] && ssl_port=$(auto_assign_port) && echo "Auto-assigned SSL port: $ssl_port"
+
+    feature_exists "$feature" && die "Feature '$feature' already exists. Use 'destroy' first."
+
+    derive_ports "$ssl_port"
+    local feature_dir="$FEATURES_DIR/$feature"
+    local gateway_token
+    gateway_token=$(openssl rand -hex 32)
+
+    echo "============================================"
+    echo " Creating feature: $feature"
+    echo " SSL: $PORT_SSL | FE: $PORT_FE | API: $PORT_API | Agent: $PORT_AGENT"
+    echo "============================================"
+
+    # --- 1. Register feature in port-assignments.json ---
+    info "Registering feature"
+    python3 -c "
+import json
+data = json.load(open('$PORT_FILE'))
+data['features']['$feature'] = {
+    'sslPort': $PORT_SSL, 'fePort': $PORT_FE,
+    'apiPort': $PORT_API, 'agentPort': $PORT_AGENT,
+    'gatewayToken': '$gateway_token'
+}
+json.dump(data, open('$PORT_FILE', 'w'), indent=2)
+"
+    ok "Saved to $PORT_FILE"
+
+    # --- 2. Pull latest + create worktrees ---
+    info "Pulling latest changes"
+    cd "$PRIMARY_REPO" && git fetch origin && git pull origin "$branch" 2>&1 | tail -3
+    ok "Primary repo updated"
+
+    if [[ -d "$SECONDARY_REPO/.git" ]]; then
+        cd "$SECONDARY_REPO" && git fetch origin && git pull origin "$branch" 2>&1 | tail -3
+        ok "Secondary repo updated"
+    fi
+
+    info "Creating git worktrees"
+    mkdir -p "$feature_dir/plans"
+    cd "$PRIMARY_REPO"
+    git worktree add "$feature_dir/primary" -b "feature/${feature}" "$branch"
+    ok "Primary worktree created"
+
+    if [[ -d "$SECONDARY_REPO/.git" ]]; then
+        cd "$SECONDARY_REPO"
+        git worktree add "$feature_dir/secondary" -b "feature/${feature}" "$branch"
+        ok "Secondary worktree created"
+    fi
+
+    # --- 3. Read secrets from base repo .env and generate feature .env files ---
+    # TODO: Customize this for your project.
+    # Read secrets from your base repo's .env file and generate isolated
+    # .env files for this feature with the correct ports, database name,
+    # gateway token, etc.
+    #
+    # Example:
+    #   cp "$PRIMARY_REPO/.env" "$feature_dir/primary/.env"
+    #   # Then sed/replace PORT, DATABASE_URL, etc. with feature-specific values
+    #
+    # If your project has a frontend that needs to know the API URL:
+    #   echo "VITE_API_URL=https://$HOSTNAME:$PORT_SSL/api" > "$feature_dir/primary/frontend/.env"
+    info "TODO: Generate .env files for this feature (copy from base + override ports/DB)"
+
+    # --- 4. Install dependencies and build ---
+    # TODO: Run whatever install/build commands your project needs.
+    #
+    # Examples:
+    #   cd "$feature_dir/primary" && npm install && npm run build
+    #   cd "$feature_dir/primary" && pip install -r requirements.txt
+    #   cd "$feature_dir/secondary" && pnpm install && pnpm run build
+    info "TODO: Install dependencies and build the project"
+
+    # --- 5. Set up reverse proxy (nginx, caddy, etc.) ---
+    # TODO: If your project is a web app, configure a reverse proxy so the
+    # feature is accessible via HTTPS on the assigned port.
+    #
+    # Example nginx config:
+    #   - Listen on $PORT_SSL with SSL
+    #   - Proxy / to frontend on $PORT_FE
+    #   - Proxy /api/ to backend on $PORT_API
+    #   - Proxy WebSocket paths to gateway on $PORT_AGENT
+    #   - Write to /etc/nginx/conf.d/feature-<name>.conf and reload
+    info "TODO: Set up reverse proxy (nginx/caddy) for port $PORT_SSL"
+
+    # --- 6. Start services ---
+    # TODO: Start your project's services. Options include:
+    #   - tmux sessions (one per service)
+    #   - Docker containers
+    #   - docker-compose
+    #   - systemd units
+    #   - PM2 or similar process managers
+    #
+    # IMPORTANT: If the host runs an OpenClaw agent via supervisor, env vars
+    # like OPENCLAW_GATEWAY_PORT will leak into child processes. Override them
+    # explicitly when starting services. See references/manual-setup-and-troubleshooting.md.
+    #
+    # Example with tmux:
+    #   tmux new-session -d -s "${feature}-api" \
+    #       "cd $feature_dir/primary && NODE_ENV=development npm run dev"
+    #   tmux new-session -d -s "${feature}-fe" \
+    #       "cd $feature_dir/primary/frontend && npx vite --port $PORT_FE"
+    info "TODO: Start services (API, frontend, agent, etc.)"
+
+    echo ""
+    echo "✅ Feature $feature created."
+    echo "   Worktree: $feature_dir"
+    echo "   Ports: SSL=$PORT_SSL FE=$PORT_FE API=$PORT_API Agent=$PORT_AGENT"
+}
+
+# ---------------------------------------------------------------------------
+# stop — Stop all services for a feature
+# ---------------------------------------------------------------------------
+# TODO: Implement service shutdown for your project.
+# Kill tmux sessions, stop Docker containers, etc.
+#
+# Example:
+#   tmux kill-session -t "${feature}-api" 2>/dev/null
+#   tmux kill-session -t "${feature}-fe" 2>/dev/null
+#   docker stop "agent-$feature" 2>/dev/null
+cmd_stop() {
+    local feature="${1:-}"
+    [[ -n "$feature" ]] || die "Usage: local-environment-setup stop <feature>"
+    info "TODO: Stop services for $feature"
+}
+
+# ---------------------------------------------------------------------------
+# start — Resume services for an existing feature
+# ---------------------------------------------------------------------------
+# TODO: Implement service startup for your project.
+# Read ports from the registry, then start services with correct env vars.
+#
+# Example:
+#   local api_port=$(read_port_from_json "$feature" "apiPort")
+#   tmux new-session -d -s "${feature}-api" "cd ... && npm run dev"
+cmd_start() {
+    local feature="${1:-}"
+    [[ -n "$feature" ]] || die "Usage: local-environment-setup start <feature>"
+    info "TODO: Start services for $feature"
+}
+
+# ---------------------------------------------------------------------------
+# destroy — Full teardown of a feature environment
+# ---------------------------------------------------------------------------
+# TODO: Implement full cleanup for your project:
+#   1. Stop all services (call cmd_stop)
+#   2. Remove reverse proxy config and reload
+#   3. Remove git worktrees and delete feature branches
+#   4. Drop database / flush cache if applicable
+#   5. Remove from port-assignments.json
+#   6. Delete the feature directory
+cmd_destroy() {
+    local feature="${1:-}"
+    [[ -n "$feature" ]] || die "Usage: local-environment-setup destroy <feature>"
+
+    local feature_dir="$FEATURES_DIR/$feature"
+
+    info "Stopping services"
+    cmd_stop "$feature" 2>/dev/null || true
+
+    # TODO: Remove reverse proxy config
+    # sudo rm -f "/etc/nginx/conf.d/feature-$(echo $feature | tr '[:upper:]' '[:lower:]').conf"
+    # sudo nginx -t && sudo nginx -s reload
+
+    info "Removing worktrees"
+    cd "$PRIMARY_REPO"
+    git worktree remove "$feature_dir/primary" --force 2>/dev/null || true
+    git branch -D "feature/${feature}" 2>/dev/null || true
+
+    if [[ -d "$SECONDARY_REPO/.git" ]]; then
+        cd "$SECONDARY_REPO"
+        git worktree remove "$feature_dir/secondary" --force 2>/dev/null || true
+        git branch -D "feature/${feature}" 2>/dev/null || true
+    fi
+
+    # TODO: Drop database, flush Redis, etc.
+    # mongosh "db_$(slug $feature)" --eval "db.dropDatabase()"
+
+    info "Cleaning up registry"
+    python3 -c "
+import json
+data = json.load(open('$PORT_FILE'))
+data['features'].pop('$feature', None)
+json.dump(data, open('$PORT_FILE', 'w'), indent=2)
+" 2>/dev/null || true
+
+    rm -rf "$feature_dir"
+    ok "Feature $feature destroyed."
+}
+
+# ---------------------------------------------------------------------------
+# status — Show registered features and their service status
+# ---------------------------------------------------------------------------
+# TODO: Implement status checking for your project.
+# List all features from port-assignments.json with their ports and
+# whether each service is running (check tmux sessions, Docker, etc.)
+cmd_status() {
+    ensure_port_file
+    python3 -c "
+import json
+data = json.load(open('$PORT_FILE'))
+if not data['features']:
+    print('No features registered.')
+else:
+    print(f\"{'FEATURE':<20} {'SSL':<6} {'FE':<6} {'API':<6} {'AGENT':<6}\")
+    print('-' * 50)
+    for name, f in sorted(data['features'].items()):
+        print(f\"{name:<20} {f.get('sslPort','?'):<6} {f.get('fePort','?'):<6} {f.get('apiPort','?'):<6} {f.get('agentPort','?'):<6}\")
+"
+}
+
+# ---------------------------------------------------------------------------
+# verify — Check that running services have correct env isolation
+# ---------------------------------------------------------------------------
+# TODO: Implement verification for your project.
+# Find running processes for each feature and check that critical env vars
+# are set correctly (not leaked from a parent supervisor process).
+#
+# Key things to verify:
+#   - Correct ports (not the main/production ports)
+#   - Correct API keys (not proxy dummies)
+#   - Correct NODE_ENV (development, not production)
+#   - Correct database connection (isolated DB, not production)
+cmd_verify() {
+    local feature="${1:-}"
+    info "TODO: Verify env isolation for ${feature:-all features}"
+}
+
+# ---------------------------------------------------------------------------
+# Main dispatch
+# ---------------------------------------------------------------------------
+usage() {
+    cat <<EOF
+Usage: local-environment-setup <command> [args]
+
+Commands:
+  create <feature> [--port <ssl-port>]  Create worktrees + configs + start everything
+  destroy <feature>                     Full teardown
+  start <feature>                       Resume services for existing feature
+  stop <feature>                        Stop services without destroying
+  status [feature]                      Show all features and their status
+  verify [feature]                      Check env isolation for running services
+
+Ports are auto-assigned (base $PORT_BASE, step $PORT_STEP).
+EOF
+    exit 0
+}
+
+cmd="${1:-}"
+shift || true
+
+case "$cmd" in
+    create)  cmd_create "$@" ;;
+    destroy) cmd_destroy "$@" ;;
+    start)   cmd_start "$@" ;;
+    stop)    cmd_stop "$@" ;;
+    status)  cmd_status "$@" ;;
+    verify)  cmd_verify "$@" ;;
+    -h|--help|help|"") usage ;;
+    *)       die "Unknown command: $cmd" ;;
+esac

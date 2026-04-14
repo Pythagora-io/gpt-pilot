@@ -1,0 +1,66 @@
+[
+  {
+    "id": "XC-001",
+    "name": "Mobile responsive — dashboard at 375px",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "cross-cutting",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Resize viewport to 375px width",
+      "Navigate through: Chat, Skills, Scheduled Tasks, Settings",
+      "Verify each page is usable"
+    ],
+    "expected": "All key pages render correctly and are usable at 375px mobile width",
+    "tags": ["mobile"]
+  },
+  {
+    "id": "XC-002",
+    "name": "Error handling — empty form submissions",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "cross-cutting",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Try to create a skill with empty name",
+      "Try to create a scheduled task with empty fields",
+      "Try to save settings with invalid values"
+    ],
+    "expected": "Clear validation error messages shown, forms don't crash or submit invalid data",
+    "tags": []
+  },
+  {
+    "id": "XC-003",
+    "name": "Credential prompt — trigger, fill, submit",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "cross-cutting",
+    "preconditions": ["Logged into dashboard, agent that triggers ask_for_credentials"],
+    "steps": [
+      "Trigger an action that requires credentials (e.g. ask agent to use a service)",
+      "Credential form appears in dashboard",
+      "Fill in credentials",
+      "Submit",
+      "Verify agent continues with the provided credentials"
+    ],
+    "expected": "Credential prompt appears, accepts input, agent resumes task after submission",
+    "tags": []
+  },
+  {
+    "id": "XC-004",
+    "name": "Browser login prompt flow",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "cross-cutting",
+    "preconditions": ["Logged into dashboard, agent that triggers ask_for_browser_login"],
+    "steps": [
+      "Trigger an action requiring browser login",
+      "Login card appears with link",
+      "Click link and login to the service",
+      "Click 'Done' to confirm",
+      "Verify agent continues"
+    ],
+    "expected": "Browser login prompt appears, user can complete login and confirm, agent resumes",
+    "tags": []
+  }
+]

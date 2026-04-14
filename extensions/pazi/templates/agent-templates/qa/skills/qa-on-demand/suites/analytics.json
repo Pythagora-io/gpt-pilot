@@ -1,0 +1,53 @@
+[
+  {
+    "id": "ANL-001",
+    "name": "registration_completed event fires on signup",
+    "priority": "NORMAL",
+    "type": "api",
+    "area": "analytics",
+    "preconditions": ["PostHog access or API log access"],
+    "steps": ["Create a new account", "Check PostHog/logs for 'registration_completed' event"],
+    "expected": "PostHog receives 'registration_completed' event with user properties",
+    "tags": ["analytics"]
+  },
+  {
+    "id": "ANL-002",
+    "name": "agent_created event fires on agent creation",
+    "priority": "NORMAL",
+    "type": "api",
+    "area": "analytics",
+    "preconditions": ["PostHog access or API log access"],
+    "steps": ["Create a new agent", "Check PostHog/logs for 'agent_created' event"],
+    "expected": "PostHog receives 'agent_created' event with agent properties",
+    "tags": ["analytics"]
+  },
+  {
+    "id": "ANL-003",
+    "name": "agent_connected_to_channel event fires",
+    "priority": "NORMAL",
+    "type": "api",
+    "area": "analytics",
+    "preconditions": ["PostHog access or API log access"],
+    "steps": [
+      "Connect a channel (Slack, Discord, etc.)",
+      "Check PostHog/logs for 'agent_connected_to_channel' event"
+    ],
+    "expected": "PostHog receives 'agent_connected_to_channel' event with channel type",
+    "tags": ["analytics"]
+  },
+  {
+    "id": "ANL-004",
+    "name": "Message events fire during chat",
+    "priority": "NORMAL",
+    "type": "api",
+    "area": "analytics",
+    "preconditions": ["PostHog access or API log access"],
+    "steps": [
+      "Send a message to agent in dashboard",
+      "Wait for response",
+      "Check PostHog/logs for 'message_sent_to_agent' and 'agent_response_delivered'"
+    ],
+    "expected": "Both 'message_sent_to_agent' and 'agent_response_delivered' events fire with correct properties",
+    "tags": ["analytics"]
+  }
+]

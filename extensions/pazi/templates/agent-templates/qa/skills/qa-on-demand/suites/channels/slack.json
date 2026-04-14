@@ -1,0 +1,706 @@
+[
+  {
+    "id": "SLACK-001",
+    "name": "Slack setup form loads in dashboard",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-setup",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Navigate to dashboard",
+      "Click Agent setup (gear icon) in sidebar",
+      "Click 'Channels' in the settings sidebar",
+      "Verify Slack section is visible",
+      "Expand the Slack section"
+    ],
+    "expected": "Slack setup form loads with App Token and Bot Token input fields, manifest copy button, and Connect button",
+    "tags": []
+  },
+  {
+    "id": "SLACK-002",
+    "name": "Copy Slack manifest from dashboard",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-setup",
+    "preconditions": ["SLACK-001"],
+    "steps": [
+      "In the Slack setup section, find the 'Copy the manifest' button",
+      "Click it",
+      "Verify clipboard contains valid JSON with bot scopes and socket mode config"
+    ],
+    "expected": "Manifest JSON copied to clipboard containing display_information, oauth_config with bot scopes, settings with socket_mode enabled, and event_subscriptions",
+    "tags": []
+  },
+  {
+    "id": "SLACK-003",
+    "name": "Create Slack app from manifest on api.slack.com",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-setup",
+    "preconditions": ["SLACK-002"],
+    "steps": [
+      "Navigate to https://api.slack.com/apps",
+      "Click 'Create an App'",
+      "Select 'From a manifest'",
+      "Select your Slack workspace",
+      "Paste the manifest JSON",
+      "Click Next",
+      "Review permissions and click Create"
+    ],
+    "expected": "Slack app created successfully, lands on app Basic Information page",
+    "tags": ["external-service"]
+  },
+  {
+    "id": "SLACK-004",
+    "name": "Generate App-Level Token",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-setup",
+    "preconditions": ["SLACK-003"],
+    "steps": [
+      "On the Slack app page, go to Basic Information",
+      "Scroll to 'App-Level Tokens' section",
+      "Click 'Generate Token and Scopes'",
+      "Enter a name (e.g. 'qa-test')",
+      "Add scope: connections:write",
+      "Click Generate",
+      "Copy the xapp-... token"
+    ],
+    "expected": "App token generated starting with xapp-1-..., token is copyable",
+    "tags": ["external-service"]
+  },
+  {
+    "id": "SLACK-005",
+    "name": "Install app to workspace and get Bot Token",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-setup",
+    "preconditions": ["SLACK-004"],
+    "steps": [
+      "Navigate to 'Install App' in the Slack app sidebar",
+      "Click 'Install to <workspace>'",
+      "Review permissions and click Allow",
+      "Copy the Bot User OAuth Token (xoxb-...)"
+    ],
+    "expected": "App installed to workspace, bot token generated starting with xoxb-...",
+    "tags": ["external-service"]
+  },
+  {
+    "id": "SLACK-006",
+    "name": "Connect Slack bot via dashboard form",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-setup",
+    "preconditions": ["SLACK-004", "SLACK-005"],
+    "steps": [
+      "Navigate back to the dashboard → Channels → Slack",
+      "Paste the App Token (xapp-...) into the App Token field",
+      "Paste the Bot Token (xoxb-...) into the Bot Token field",
+      "Click 'Connect Slack'"
+    ],
+    "expected": "Slack connection succeeds, status shows connected, no error messages",
+    "tags": []
+  },
+  {
+    "id": "SLACK-007",
+    "name": "Connect Slack bot via chat trigger",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-setup",
+    "preconditions": ["SLACK-004", "SLACK-005", "No existing Slack connection"],
+    "steps": [
+      "Navigate to dashboard chat",
+      "Type 'connect slack' in the message input",
+      "Send the message",
+      "Wait for the Slack setup card to appear inline",
+      "Fill in App Token and Bot Token",
+      "Click 'Connect Slack'"
+    ],
+    "expected": "Slack setup card appears inline in chat, connection succeeds after filling tokens",
+    "tags": []
+  },
+  {
+    "id": "SLACK-008",
+    "name": "Verify bot appears online in Slack workspace",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-connection",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "Open your Slack workspace",
+      "Press Ctrl+K to open quick switcher",
+      "Search for the bot name",
+      "Open the bot's DM",
+      "Check if the bot shows as online (green dot) or shows 'Waiting for X to start a conversation' banner"
+    ],
+    "expected": "Bot appears in Slack, does NOT show 'Waiting for X to start a conversation' banner (which means disconnected)",
+    "tags": []
+  },
+  {
+    "id": "SLACK-009",
+    "name": "Send message to bot in DM and receive response",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-messaging",
+    "preconditions": ["SLACK-008"],
+    "steps": [
+      "In the bot's DM in Slack",
+      "Type 'Hello, are you connected?' and send",
+      "Wait up to 30 seconds for a response"
+    ],
+    "expected": "Bot responds with a relevant message within 30 seconds",
+    "tags": []
+  },
+  {
+    "id": "SLACK-010",
+    "name": "Send message to bot in channel and receive response",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-messaging",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "Navigate to your test channel",
+      "Type '@BotName what time is it?' and send",
+      "Wait up to 30 seconds for a response"
+    ],
+    "expected": "Bot responds in the channel with a relevant message",
+    "tags": []
+  },
+  {
+    "id": "SLACK-011",
+    "name": "Bot creates thread reply in channel",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-threading",
+    "preconditions": ["SLACK-010"],
+    "steps": [
+      "In the test channel, send a message mentioning the bot",
+      "Wait for bot response",
+      "Verify the response appears as a thread reply (not a top-level message)"
+    ],
+    "expected": "Bot's response is in a thread under the user's message, not as a separate top-level message",
+    "tags": []
+  },
+  {
+    "id": "SLACK-012",
+    "name": "Thread context preserved across messages",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-threading",
+    "preconditions": ["SLACK-011"],
+    "steps": [
+      "Open the thread from SLACK-011",
+      "Send a follow-up message in the thread: 'What did I just ask you?'",
+      "Wait for bot response"
+    ],
+    "expected": "Bot's response references the previous message, demonstrating thread context is maintained",
+    "tags": []
+  },
+  {
+    "id": "SLACK-013",
+    "name": "Thread context survives agent restart",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-threading",
+    "preconditions": ["SLACK-012"],
+    "steps": [
+      "Note the current thread conversation",
+      "Go to the dashboard → Agent setup → click 'Restart Gateway'",
+      "Wait 15 seconds for agent to restart",
+      "Go back to the Slack thread",
+      "Send another message: 'Do you still remember our conversation?'",
+      "Wait for response"
+    ],
+    "expected": "Bot responds with awareness of previous thread context (thread cache persisted to disk and survived restart)",
+    "tags": ["infrastructure"]
+  },
+  {
+    "id": "SLACK-014",
+    "name": "Thread reply mode defaults to 'quiet' for new connections",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-config",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Navigate to Channels → Slack setup form",
+      "Check the Thread Reply Mode dropdown",
+      "Verify the default selected value"
+    ],
+    "expected": "Thread Reply Mode defaults to 'quiet' (not 'full'). Note: the 'full' option may still incorrectly say '(default)' — this is a known UI label bug",
+    "tags": ["known-issue"]
+  },
+  {
+    "id": "SLACK-015",
+    "name": "Intermediate messages suppressed in threads",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-threading",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "In the test channel, send a complex request that requires multi-step work",
+      "e.g. '@BotName search the web for the current weather in New York and summarize it'",
+      "Watch the thread for intermediate status/thinking messages"
+    ],
+    "expected": "Bot does NOT show intermediate 'thinking' or status messages in the thread — only the final response appears",
+    "tags": []
+  },
+  {
+    "id": "SLACK-016",
+    "name": "Connect with invalid App Token",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-error-handling",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Navigate to Channels → Slack",
+      "Enter an invalid App Token: 'xapp-invalid-token-12345'",
+      "Enter a valid Bot Token (or any xoxb- string)",
+      "Click Connect Slack"
+    ],
+    "expected": "Connection fails with a clear error message about invalid App Token. No crash, no infinite loop, form remains usable",
+    "tags": []
+  },
+  {
+    "id": "SLACK-017",
+    "name": "Connect with invalid Bot Token",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-error-handling",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Navigate to Channels → Slack",
+      "Enter a valid App Token",
+      "Enter an invalid Bot Token: 'xoxb-invalid-token-12345'",
+      "Click Connect Slack"
+    ],
+    "expected": "Connection fails with a clear error message about invalid Bot Token. No crash, no infinite loop, form remains usable",
+    "tags": []
+  },
+  {
+    "id": "SLACK-018",
+    "name": "Connect with empty tokens",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-error-handling",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Navigate to Channels → Slack",
+      "Leave both App Token and Bot Token empty",
+      "Click Connect Slack"
+    ],
+    "expected": "Form validation prevents submission, or clear error message displayed. No crash",
+    "tags": []
+  },
+  {
+    "id": "SLACK-019",
+    "name": "Disconnect Slack integration",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-connection",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "Navigate to Channels → Slack",
+      "Find and click the disconnect/remove button",
+      "Confirm disconnection if prompted"
+    ],
+    "expected": "Slack disconnected, status shows disconnected, form resets to allow new connection",
+    "tags": []
+  },
+  {
+    "id": "SLACK-020",
+    "name": "Reconnect after disconnect",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-connection",
+    "preconditions": ["SLACK-019"],
+    "steps": [
+      "After disconnecting, re-enter the App Token and Bot Token",
+      "Click Connect Slack",
+      "Verify connection succeeds",
+      "Go to Slack and verify bot responds to messages"
+    ],
+    "expected": "Reconnection succeeds cleanly, bot responds to messages in Slack",
+    "tags": []
+  },
+  {
+    "id": "SLACK-021",
+    "name": "Bot handles message formatting — bold, italic, code",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-messaging",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "In the test channel, ask the bot to respond with formatted text",
+      "e.g. '@BotName respond with a bold word, an italic word, and a code block'",
+      "Wait for response",
+      "Verify formatting renders correctly in Slack"
+    ],
+    "expected": "Bot's response shows proper Slack mrkdwn formatting: *bold*, _italic_, `code`",
+    "tags": []
+  },
+  {
+    "id": "SLACK-022",
+    "name": "Bot handles long messages",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-messaging",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "Ask the bot for a very long response",
+      "e.g. '@BotName write a 2000 word essay about testing'",
+      "Wait for response",
+      "Verify the full message is delivered (Slack has a 40000 char limit per message)"
+    ],
+    "expected": "Full response delivered without truncation or errors. If response exceeds Slack's limit, it should be split into multiple messages gracefully",
+    "tags": []
+  },
+  {
+    "id": "SLACK-023",
+    "name": "Bot handles emoji and special characters",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-messaging",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "Send: '@BotName respond with some emoji: 🎉 🚀 ✅ and special chars: <>&\"'",
+      "Wait for response"
+    ],
+    "expected": "Bot processes the message without errors and responds. Special characters don't break the message or cause HTML encoding issues",
+    "tags": []
+  },
+  {
+    "id": "SLACK-024",
+    "name": "Multiple rapid messages to bot",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-messaging",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "In DM with bot, send 3 messages rapidly (within 2 seconds):",
+      "Message 1: 'First message'",
+      "Message 2: 'Second message'",
+      "Message 3: 'Third message'",
+      "Wait for responses"
+    ],
+    "expected": "Bot handles all messages without crashing or losing messages. May batch-process or respond to each individually",
+    "tags": ["race-condition"]
+  },
+  {
+    "id": "SLACK-025",
+    "name": "AckReaction configuration",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-config",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "Navigate to Channels → Slack settings",
+      "Find the AckReaction configuration",
+      "Set a valid emoji (e.g. 'eyes' or '👀')",
+      "Save configuration",
+      "Send a message to the bot in Slack",
+      "Check if the bot reacts with the configured emoji before responding"
+    ],
+    "expected": "Bot reacts with the configured emoji on the user's message as an acknowledgment before sending its response",
+    "tags": []
+  },
+  {
+    "id": "SLACK-026",
+    "name": "AckReaction with invalid emoji rejected",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-config",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Navigate to Channels → Slack settings",
+      "Try to set an invalid value for AckReaction (e.g. 'not_a_real_emoji_xyz')",
+      "Try to save"
+    ],
+    "expected": "Invalid emoji value is rejected, either on form validation or with a clear error message after save attempt",
+    "tags": []
+  },
+  {
+    "id": "SLACK-027",
+    "name": "Reply mode configuration — set to 'full'",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-config",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "Navigate to Channels → Slack settings",
+      "Change Thread Reply Mode to 'full'",
+      "Save",
+      "Go to Slack, start a new thread mentioning the bot",
+      "Verify bot responds to all messages in the thread (not just mentions)"
+    ],
+    "expected": "With 'full' mode, bot responds to every message in a thread it's part of, not just direct mentions",
+    "tags": []
+  },
+  {
+    "id": "SLACK-028",
+    "name": "Reply mode configuration — set to 'quiet'",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-config",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "Navigate to Channels → Slack settings",
+      "Change Thread Reply Mode to 'quiet'",
+      "Save",
+      "Go to Slack, in an active thread send a message WITHOUT mentioning the bot",
+      "Verify bot stays silent",
+      "Then send a message WITH @mention",
+      "Verify bot responds"
+    ],
+    "expected": "With 'quiet' mode, bot only responds to direct mentions in threads, stays silent on non-mention messages",
+    "tags": []
+  },
+  {
+    "id": "SLACK-029",
+    "name": "Slack connection status indicator in dashboard",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-connection",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "Navigate to Channels → Slack",
+      "Check for a connection status indicator",
+      "Verify it shows 'connected' or similar"
+    ],
+    "expected": "Dashboard shows Slack connection status (connected/disconnected) clearly",
+    "tags": []
+  },
+  {
+    "id": "SLACK-030",
+    "name": "Bot handles being removed from channel gracefully",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-error-handling",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "In Slack, remove the bot from the test channel",
+      "Try to send a message mentioning the bot",
+      "Re-add the bot to the channel",
+      "Send another message mentioning the bot"
+    ],
+    "expected": "Bot handles removal gracefully (no crash). After being re-added, bot resumes responding to messages",
+    "tags": []
+  },
+  {
+    "id": "SLACK-031",
+    "name": "Dashboard shows Slack channel info after connection",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-connection",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "Navigate to Channels → Slack",
+      "Check what information is displayed about the connected Slack workspace"
+    ],
+    "expected": "Dashboard shows relevant info: workspace name, bot name, connection status, possibly connected channels",
+    "tags": []
+  },
+  {
+    "id": "SLACK-032",
+    "name": "Auth failure does not cause crash loop",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-error-handling",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Connect Slack with a previously valid but now revoked/expired token",
+      "Or: connect, then revoke the bot token from api.slack.com",
+      "Check API logs for crash loop behavior",
+      "Check if the agent remains functional (dashboard still works, can chat)"
+    ],
+    "expected": "Agent does NOT enter an infinite restart/crash loop. Auth failure is handled gracefully. Agent remains functional for other tasks",
+    "tags": ["infrastructure"]
+  },
+  {
+    "id": "SLACK-033",
+    "name": "Concurrent thread messages don't corrupt cache",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-threading",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "Open two browser tabs with different Slack users (or use API)",
+      "In the same thread, have both users send messages simultaneously",
+      "Wait for bot responses to both",
+      "Verify thread context is intact for subsequent messages"
+    ],
+    "expected": "Both messages handled without thread cache corruption. Bot can still follow thread context after concurrent messages",
+    "tags": ["race-condition"]
+  },
+  {
+    "id": "SLACK-034",
+    "name": "Bot responds to DM without channel membership",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-messaging",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "Open Slack, press Ctrl+K",
+      "Search for the bot by name",
+      "Open DM with the bot",
+      "Send a message"
+    ],
+    "expected": "Bot responds to DMs regardless of which channels it's added to",
+    "tags": []
+  },
+  {
+    "id": "SLACK-035",
+    "name": "Verify analytics event fires on Slack connect",
+    "priority": "NORMAL",
+    "type": "api",
+    "area": "slack-setup",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "After connecting Slack, check PostHog or API logs",
+      "Look for 'agent_connected_to_channel' event with channel=slack"
+    ],
+    "expected": "PostHog event 'agent_connected_to_channel' fires with correct properties including channel type 'slack'",
+    "tags": ["analytics"]
+  },
+  {
+    "id": "SLACK-036",
+    "name": "Slack setup form on mobile viewport",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-setup",
+    "preconditions": ["Logged into dashboard"],
+    "steps": [
+      "Resize browser to 375px width (mobile)",
+      "Navigate to Channels → Slack",
+      "Verify the setup form is usable at mobile width"
+    ],
+    "expected": "Slack setup form is accessible and usable on mobile viewport — fields don't overflow, buttons are tappable",
+    "tags": ["mobile"]
+  },
+  {
+    "id": "SLACK-037",
+    "name": "Delete Slack app and verify cleanup",
+    "priority": "LOW",
+    "type": "browser",
+    "area": "slack-cleanup",
+    "preconditions": ["SLACK-003"],
+    "steps": [
+      "Navigate to api.slack.com/apps",
+      "Find the test app created in SLACK-003",
+      "Delete the app",
+      "Verify it no longer appears in the app list"
+    ],
+    "expected": "Slack app deleted cleanly from api.slack.com. Note: the dashboard connection may still show as 'connected' until next auth attempt — verify this behavior",
+    "tags": ["cleanup", "external-service"]
+  },
+  {
+    "id": "SLACK-038",
+    "name": "Existing Slack app — use pre-existing tokens",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "slack-setup",
+    "preconditions": ["An existing Slack app already created for this project"],
+    "steps": [
+      "Navigate to api.slack.com/apps and open the existing app",
+      "Get the App Token from Basic Information → App-Level Tokens",
+      "Get the Bot Token from OAuth & Permissions",
+      "Use these in the dashboard to connect"
+    ],
+    "expected": "Can connect using pre-existing app tokens without creating a new app. Useful for quick reconnection testing",
+    "tags": []
+  },
+  {
+    "id": "SLACK-039",
+    "name": "Bot handles file/image shared in channel",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-messaging",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "In the test channel, upload a small image or file",
+      "Mention the bot: '@BotName what is this file?'",
+      "Wait for response"
+    ],
+    "expected": "Bot either processes the file (if file handling is supported) or responds gracefully indicating it received a file. No crash or error",
+    "tags": []
+  },
+  {
+    "id": "SLACK-040",
+    "name": "Bot handles edited messages",
+    "priority": "LOW",
+    "type": "browser",
+    "area": "slack-messaging",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "In DM with bot, send a message: 'What is 2+2?'",
+      "Wait for response",
+      "Edit the original message to: 'What is 3+3?'",
+      "Check if bot responds to the edit or ignores it"
+    ],
+    "expected": "Bot either responds to the edit or ignores it gracefully. No crash or duplicate response",
+    "tags": []
+  },
+  {
+    "id": "SLACK-041",
+    "name": "Bot handles deleted messages",
+    "priority": "LOW",
+    "type": "browser",
+    "area": "slack-messaging",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "In DM with bot, send a message",
+      "Quickly delete the message before bot responds (or after)",
+      "Verify bot doesn't crash or enter error state"
+    ],
+    "expected": "Bot handles message deletion event gracefully. No crash, no error in logs",
+    "tags": []
+  },
+  {
+    "id": "SLACK-042",
+    "name": "Slack replyToMode defaults to 'all'",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-config",
+    "preconditions": ["Fresh Slack connection"],
+    "steps": [
+      "Navigate to Channels → Slack settings",
+      "Check the replyToMode setting",
+      "Verify default value"
+    ],
+    "expected": "replyToMode defaults to 'all' for new Slack connections",
+    "tags": []
+  },
+  {
+    "id": "SLACK-043",
+    "name": "Multiple agents sharing same Slack workspace",
+    "priority": "LOW",
+    "type": "browser",
+    "area": "slack-advanced",
+    "preconditions": ["Two agents configured in dashboard"],
+    "steps": [
+      "Connect first agent to Slack",
+      "Create a second agent in dashboard",
+      "Connect second agent to Slack with different app/bot tokens",
+      "Send messages to each bot in Slack",
+      "Verify each responds independently"
+    ],
+    "expected": "Both agents function independently on the same Slack workspace without interference",
+    "tags": ["advanced"]
+  },
+  {
+    "id": "SLACK-044",
+    "name": "Websocket reconnection after network interruption",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "slack-connection",
+    "preconditions": ["SLACK-006"],
+    "steps": [
+      "Verify bot is connected and responding in Slack",
+      "SSH to API server and restart the container",
+      "Wait 30 seconds for reconnection",
+      "Send a message to the bot in Slack",
+      "Check if bot responds"
+    ],
+    "expected": "Bot reconnects to Slack after API restart and resumes handling messages. May take up to 30s",
+    "tags": ["infrastructure"]
+  }
+]

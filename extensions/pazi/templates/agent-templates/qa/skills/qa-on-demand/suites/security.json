@@ -1,0 +1,58 @@
+[
+  {
+    "id": "SEC-001",
+    "name": "Unauthenticated API access returns 401",
+    "priority": "HIGH",
+    "type": "api",
+    "area": "security",
+    "preconditions": [],
+    "steps": [
+      "Call protected API endpoints without auth cookie:",
+      "GET /api/user/me",
+      "GET /api/agents",
+      "GET /api/billing/subscription"
+    ],
+    "expected": "All protected endpoints return 401 Unauthorized",
+    "tags": []
+  },
+  {
+    "id": "SEC-002",
+    "name": "Canvas routes require authentication",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "security",
+    "preconditions": ["Not logged in"],
+    "steps": ["Try to access canvas/workspace routes without authentication"],
+    "expected": "Canvas routes redirect to login or return 401",
+    "tags": []
+  },
+  {
+    "id": "SEC-003",
+    "name": "Dashboard routes redirect to login when unauthenticated",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "security",
+    "preconditions": ["Not logged in"],
+    "steps": [
+      "Navigate to /dashboard",
+      "Navigate to /dashboard/settings",
+      "Navigate to /dashboard/account/subscription"
+    ],
+    "expected": "All dashboard routes redirect to /login when not authenticated",
+    "tags": []
+  },
+  {
+    "id": "SEC-004",
+    "name": "Cross-user data isolation",
+    "priority": "HIGH",
+    "type": "api",
+    "area": "security",
+    "preconditions": ["Two different user accounts"],
+    "steps": [
+      "Login as User A, get their agent IDs",
+      "Login as User B, try to access User A's agents via API"
+    ],
+    "expected": "User B cannot access User A's agents, sessions, or data. Returns 403 or 404",
+    "tags": []
+  }
+]

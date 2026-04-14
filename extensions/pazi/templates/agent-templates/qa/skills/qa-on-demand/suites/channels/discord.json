@@ -1,0 +1,55 @@
+[
+  {
+    "id": "DISC-001",
+    "name": "Discord setup form loads in dashboard",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "discord",
+    "preconditions": ["Logged into dashboard"],
+    "steps": ["Navigate to Channels settings", "Find Discord section", "Verify setup form loads"],
+    "expected": "Discord setup form loads with bot token input field",
+    "tags": ["stub"]
+  },
+  {
+    "id": "DISC-002",
+    "name": "Connect Discord bot",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "discord",
+    "preconditions": ["Discord bot created on discord.com/developers"],
+    "steps": [
+      "Enter bot token in Discord setup form",
+      "Click Connect",
+      "Verify connection succeeds"
+    ],
+    "expected": "Discord bot connects successfully",
+    "tags": ["stub", "needs-bot-token"]
+  },
+  {
+    "id": "DISC-003",
+    "name": "Send and receive messages via Discord",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "discord",
+    "preconditions": ["Discord bot connected"],
+    "steps": ["Send message to bot in Discord server", "Wait for response"],
+    "expected": "Bot responds to messages in Discord",
+    "tags": ["stub", "needs-bot-token"]
+  },
+  {
+    "id": "DISC-004",
+    "name": "Interactive buttons render and work",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "discord",
+    "preconditions": ["Discord bot connected, agent sends interactive messages"],
+    "steps": [
+      "Trigger agent to send a message with buttons",
+      "Verify buttons render in Discord",
+      "Click a button",
+      "Verify callback handled (agent responds within 3s ACK window)"
+    ],
+    "expected": "Interactive buttons render correctly, clicks trigger callbacks, agent responds within Discord's 3-second ACK requirement",
+    "tags": ["stub", "needs-bot-token"]
+  }
+]

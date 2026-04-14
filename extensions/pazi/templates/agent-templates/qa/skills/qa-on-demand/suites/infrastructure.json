@@ -1,0 +1,88 @@
+[
+  {
+    "id": "INFRA-001",
+    "name": "API health endpoint responds",
+    "priority": "HIGH",
+    "type": "api",
+    "area": "infrastructure",
+    "preconditions": [],
+    "steps": ["curl -sf {API_URL}/health"],
+    "expected": "Returns 200 OK with health status",
+    "tags": []
+  },
+  {
+    "id": "INFRA-002",
+    "name": "Frontend loads",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "infrastructure",
+    "preconditions": [],
+    "steps": ["Navigate to {APP_URL}", "Verify page loads without errors"],
+    "expected": "Landing page or login page loads, no 502/503/blank screen",
+    "tags": []
+  },
+  {
+    "id": "INFRA-003",
+    "name": "Workspace controller status",
+    "priority": "HIGH",
+    "type": "api",
+    "area": "infrastructure",
+    "preconditions": [],
+    "steps": ["curl -sf {WORKSPACE_CONTROLLER_URL}/api/workspace/status"],
+    "expected": "Returns workspace pool status with available/pending counts",
+    "tags": []
+  },
+  {
+    "id": "INFRA-004",
+    "name": "Gateway restart and reconnection",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "infrastructure",
+    "preconditions": ["Logged into dashboard with active agent"],
+    "steps": [
+      "Click Restart Gateway in agent settings",
+      "Wait for restart",
+      "Send a message to agent",
+      "Verify response received"
+    ],
+    "expected": "Gateway restarts, agent reconnects automatically, messages work post-restart",
+    "tags": []
+  },
+  {
+    "id": "INFRA-005",
+    "name": "Workspace provisioning",
+    "priority": "NORMAL",
+    "type": "api",
+    "area": "infrastructure",
+    "preconditions": ["Pool size ≥ 1"],
+    "steps": [
+      "Check workspace pool has available instances",
+      "Create a new agent or trigger workspace provisioning",
+      "Verify workspace comes online"
+    ],
+    "expected": "New workspace provisioned from pool, agent boots and becomes responsive",
+    "tags": []
+  },
+  {
+    "id": "INFRA-006",
+    "name": "TLS certificates valid",
+    "priority": "HIGH",
+    "type": "api",
+    "area": "infrastructure",
+    "preconditions": [],
+    "steps": ["Check TLS cert validity for {APP_URL}, {API_URL}, {WORKSPACE_CONTROLLER_URL}"],
+    "expected": "All TLS certs are valid and not expiring within 7 days",
+    "tags": []
+  },
+  {
+    "id": "INFRA-007",
+    "name": "Dashboard loads in under 3 seconds",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "infrastructure",
+    "preconditions": ["Logged into dashboard"],
+    "steps": ["Navigate to dashboard", "Measure time from navigation to interactive state"],
+    "expected": "Dashboard fully interactive within 3 seconds",
+    "tags": ["performance"]
+  }
+]

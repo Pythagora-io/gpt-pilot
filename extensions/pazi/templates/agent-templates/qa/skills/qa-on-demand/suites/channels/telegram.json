@@ -1,0 +1,35 @@
+[
+  {
+    "id": "TG-001",
+    "name": "Telegram setup form loads in dashboard",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "telegram",
+    "preconditions": ["Logged into dashboard"],
+    "steps": ["Navigate to Channels settings", "Find Telegram section", "Verify setup form loads"],
+    "expected": "Telegram setup form loads with bot token input",
+    "tags": ["stub"]
+  },
+  {
+    "id": "TG-002",
+    "name": "Connect Telegram bot",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "telegram",
+    "preconditions": ["Telegram bot created via BotFather"],
+    "steps": ["Enter bot token from BotFather", "Click Connect", "Verify connection succeeds"],
+    "expected": "Telegram bot connects successfully",
+    "tags": ["stub", "needs-bot-token"]
+  },
+  {
+    "id": "TG-003",
+    "name": "Send and receive messages via Telegram",
+    "priority": "HIGH",
+    "type": "browser",
+    "area": "telegram",
+    "preconditions": ["Telegram bot connected"],
+    "steps": ["Send message to bot in Telegram", "Wait for response"],
+    "expected": "Bot responds to messages in Telegram",
+    "tags": ["stub", "needs-bot-token"]
+  }
+]

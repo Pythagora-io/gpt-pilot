@@ -1,0 +1,31 @@
+{
+  "id": "developer",
+  "name": "Developer",
+  "description": "AI software engineer that turns Linear tickets into fully implemented features with clean code, comprehensive testing, and seamless GitHub PRs.",
+  "files": ["IDENTITY.md", "SOUL.md"],
+  "skills": [
+    "skills/build-developer-agent/SKILL.md",
+    "skills/cross-review/SKILL.md",
+    "skills/cross-review/scripts/build_report.py",
+    "skills/environment-setup/SKILL.md",
+    "skills/figma/SKILL.md",
+    "skills/figma/scripts/figma-api.sh",
+    "skills/frontend-design/SKILL.md",
+    "skills/generate-report/SKILL.md",
+    "skills/linear/SKILL.md",
+    "skills/linear/scripts/linear_api.py",
+    "skills/linear-ticket-cleanup/SKILL.md",
+    "skills/linear-ticket-workflow/SKILL.md",
+    "skills/local-environment-setup/SKILL.md",
+    "skills/local-environment-setup/references/manual-setup-and-troubleshooting.md",
+    "skills/local-environment-setup/scripts/local-environment-setup",
+    "skills/local-environment-setup/scripts/local-environment-setup-test",
+    "skills/phase-1-dev-environment-setup/SKILL.md",
+    "skills/phase-2-planning/SKILL.md",
+    "skills/phase-3-implementation/SKILL.md",
+    "skills/phase-3-implementation/references/claude-code-skills/development.md",
+    "skills/phase-3-implementation/references/implementation-prompt-template.md",
+    "skills/phase-4-delivery/SKILL.md",
+    "skills/report-workflow/SKILL.md"
+  ]
+}

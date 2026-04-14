@@ -1,0 +1,27 @@
+[
+  {
+    "id": "MEM-001",
+    "name": "Memory page loads",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "memory",
+    "preconditions": ["Logged into dashboard"],
+    "steps": ["Navigate to Memory section in dashboard", "Verify memory page loads"],
+    "expected": "Memory page loads showing agent memory files/state",
+    "tags": []
+  },
+  {
+    "id": "MEM-002",
+    "name": "Agent can read memory files",
+    "priority": "NORMAL",
+    "type": "browser",
+    "area": "memory",
+    "preconditions": ["Agent with memory files in workspace"],
+    "steps": [
+      "Ask agent: 'What do you have in your MEMORY.md?'",
+      "Verify agent can read and report on its memory file contents"
+    ],
+    "expected": "Agent successfully reads and reports contents of memory files",
+    "tags": []
+  }
+]
