@@ -32,6 +32,7 @@ import {
   getProxyLastActivityAt,
   isProxyBusyForStatus,
   setProxyContext,
+  stopActivityPersistence,
 } from "./src/context.js";
 import { createCredentialTools } from "./src/credentials/index.js";
 import { createPaziCredentialsHandler } from "./src/gateway/pazi-credentials.js";
@@ -466,6 +467,17 @@ export default {
           return;
         }
         await reactionEventHandler(req, res);
+      },
+    });
+
+    // PAZ-220: Persist lastActivityAt across restarts.
+    // Registered before pazi-proxy so it stops after the proxy (reverse order),
+    // ensuring all activity is flushed after proxy stops generating it.
+    api.registerService({
+      id: "pazi-activity-persistence",
+      start: async () => {},
+      stop: async () => {
+        stopActivityPersistence();
       },
     });
 
