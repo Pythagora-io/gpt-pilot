@@ -180,6 +180,8 @@ export function isBrowserEnabled(): boolean {
 }
 
 export function setProxyContext(ctx: ProxyContext): void {
+  // Hydrate persisted lastActivityAtMs before overwriting the file
+  ensureDiskLoaded();
   currentContext = ctx;
   diskLoaded = true; // We have a known value, no need to load from disk
   persistToDisk(stripTransientProxyContextFields(ctx));
