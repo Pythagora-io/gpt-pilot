@@ -82,9 +82,6 @@ function handlePushCredentials(res: ServerResponse, body: Record<string, unknown
   }
 
   try {
-    // Cancel any in-progress interactive session
-    cancelActiveSession();
-
     const identity = resolveCodexAuthIdentity({
       accessToken,
       email: typeof email === "string" ? email : undefined,
