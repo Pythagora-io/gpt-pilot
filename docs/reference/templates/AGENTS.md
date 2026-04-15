@@ -35,7 +35,7 @@ Capture what matters. Decisions, context, things to remember. Skip the secrets u
 
 ### 🧠 MEMORY.md - Your Long-Term Memory
 
-- **Never store credentials or human-personal information in MEMORY.md** — keep those in the appropriate dedicated locations (secrets store, `USER.md`, etc.), not here.
+- **Never store credentials or human/personal information in MEMORY.md** — keep those in the appropriate dedicated locations (secrets store, `USER.md`, etc.), not here.
 
 ### 📝 Write It Down - No "Mental Notes"!
 
