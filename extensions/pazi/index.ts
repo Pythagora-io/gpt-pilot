@@ -35,6 +35,7 @@ import {
   stopActivityPersistence,
 } from "./src/context.js";
 import { createCredentialTools } from "./src/credentials/index.js";
+import { createPaziCodexOAuthHandler } from "./src/gateway/pazi-codex-oauth.js";
 import { createPaziCredentialsHandler } from "./src/gateway/pazi-credentials.js";
 import {
   createPaziFilesDelete,
@@ -448,6 +449,22 @@ export default {
           return;
         }
         await credentialsHandler(req, res);
+      },
+    });
+
+    // PAZ-311: Codex Subscription OAuth handler
+    const codexOAuthHandler = createPaziCodexOAuthHandler();
+    api.registerHttpRoute({
+      path: "/pazi/codex-oauth",
+      auth: "gateway",
+      handler: async (req, res) => {
+        if (req.method !== "POST") {
+          res.statusCode = 405;
+          res.setHeader("Content-Type", "text/plain; charset=utf-8");
+          res.end("Method Not Allowed");
+          return;
+        }
+        await codexOAuthHandler(req, res);
       },
     });
 
