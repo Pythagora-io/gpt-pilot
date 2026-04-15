@@ -1,10 +1,10 @@
 ---
-name: update-goals
+name: pazi-update-goals
 description: Track and maintain user goals. Use when a user reports progress on a goal, a goal-related cron check-in fires, or GOALS.md needs to be created or updated.
 metadata: { "openclaw": { "emoji": "📈" } }
 ---
 
-# Update Goals
+# Pazi Update Goals
 
 ## a. GOALS.md — format and maintenance
 

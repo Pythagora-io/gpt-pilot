@@ -1,10 +1,10 @@
 ---
-name: set-goals
+name: pazi-set-goals
 description: When and how to use the set_goal tool to propose goals for the user
 metadata: { "openclaw": { "emoji": "🎯" } }
 ---
 
-# Set Goals
+# Pazi Set Goals
 
 ## When to Use
 
@@ -64,4 +64,4 @@ User: "I want to learn Spanish by the end of summer"
 
 ## After Setting a Goal
 
-**MUST run the `update-goals` skill after setting up a new goal.** Skipping this step means the goal exists in the dashboard but is invisible to the agent in subsequent sessions.
+**MUST run the `pazi-update-goals` skill after setting up a new goal.** Skipping this step means the goal exists in the dashboard but is invisible to the agent in subsequent sessions.
