@@ -1,6 +1,6 @@
 ---
 name: pazi-update-goals
-description: Track and maintain user goals. Use when a user reports progress on a goal, a goal-related cron check-in fires, or GOALS.md needs to be created or updated.
+description: Track and maintain user goals. Use when a user reports progress on a goal, a goal needs to be edited, a goal-related cron check-in fires, or GOALS.md needs to be created or updated.
 metadata: { "openclaw": { "emoji": "📈" } }
 ---
 
