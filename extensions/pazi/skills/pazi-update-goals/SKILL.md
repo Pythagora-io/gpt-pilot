@@ -6,16 +6,32 @@ metadata: { "openclaw": { "emoji": "📈" } }
 
 # Pazi Update Goals
 
-## a. GOALS.md — format and maintenance
+## 1. GOALS.md — format and maintenance
 
-File: `GOALS.md` in workspace root. Update after any goal event (created, updated, completed). Create it if missing — ask the user for Mission text once; only revisit if their direction has clearly shifted.
+File: `GOALS.md` in workspace root. This is the high-level snapshot — keep it concise. Update after any goal event (created, edited, completed). Create it if missing.
+
+### If creating GOALS.md for the first time (skip if GOALS.md already exists)
+
+- **CRITICAL: You MUST ask the user for the Mission. Never guess, infer, or auto-generate a Mission statement — stop and ask before writing anything.** Once a Mission exists, never change it unless the user specifically asks or their direction has very obviously shifted.
+- Append the following to `AGENTS.md` in the workspace root (create the file if it doesn't exist). Only do this once — check whether the Goals section already exists in AGENTS.md before appending:
+
+  ```markdown
+  ## Goals
+
+  GOALS.md is your north star — read it immediately at the start of every session.
+  Use the Mission as your overarching guide. Treat Active Goals as day-to-day priorities:
+  if a current task is plausibly relevant to an active goal, factor that goal in.
+  If you need detailed history on a goal's progress, read GOALS-LOG.md.
+  ```
+
+### GOALS.md format
 
 ```markdown
 # Goals
 
 ## Mission
 
-<user's overarching objective — ask once, update only if direction clearly shifts>
+<user's overarching objective — MUST be provided by the user>
 
 ## Active Goals
 
@@ -24,8 +40,31 @@ File: `GOALS.md` in workspace root. Update after any goal event (created, update
 - **Progress:** <currentValue> / <targetValue> <metricLabel> · <status emoji>
 - **Deadline:** <targetDate>
 - **Description:** <description>
+- **Log:** See [GOALS-LOG.md](GOALS-LOG.md#<title-slug>)
 
-**Activity log:**
+## Completed Goals
+
+### <Title>
+
+- **Completed:** <date>
+- **Result:** <finalValue> / <targetValue> <metricLabel>
+- **Log:** See [GOALS-LOG.md](GOALS-LOG.md#<title-slug>)
+```
+
+Status emoji: ✅ on track · ⚠️ at risk · 🔴 off track (calculate from current vs. required pace).
+
+## 2. GOALS-LOG.md — activity log
+
+File: `GOALS-LOG.md` in workspace root. This is the detailed running log. **Every activity related to a goal must be recorded here** — creation, check-ins, cron fires, progress updates, trajectory changes, completions, user edits. If something happened with a goal, it goes in this log.
+
+```markdown
+# Goals Activity Log
+
+For current goal state, see [GOALS.md](GOALS.md).
+
+## Active Goals
+
+### <Title>
 
 - <date> — Goal created. Starting value: <startingValue>
 - <date> — Check-in completed. <brief outcome, e.g. on track / behind by X / user updated target>
@@ -35,31 +74,9 @@ File: `GOALS.md` in workspace root. Update after any goal event (created, update
 
 ### <Title>
 
-- **Completed:** <date>
-- **Result:** <finalValue> / <targetValue> <metricLabel>
-
-**Activity log:**
-
-- <date> — Goal created
+- <date> — Goal created. Starting value: <startingValue>
 - <date> — <key milestone or check-in note>
-- <date> — Goal achieved
+- <date> — Goal completed. Final: <finalValue> / <targetValue>
 ```
 
-Status emoji: ✅ on track · ⚠️ at risk · 🔴 off track (calculate from current vs. required pace).
-
-**First-time GOALS.md creation — also update AGENTS.md:**
-When creating GOALS.md for the first time, append the following to `AGENTS.md` in the workspace root (create the file if it doesn't exist):
-
-```markdown
-## Goals
-
-GOALS.md is your north star — read it immediately at the start of every session.
-Use the Mission as your overarching guide. Treat Active Goals as day-to-day priorities:
-if a current task is plausibly relevant to an active goal, factor that goal in.
-```
-
-Only do this once — check whether the Goals section already exists in AGENTS.md before appending.
-
-## b. When a goal cron fires
-
-Follow the cron message instructions. When done, append to the goal's activity log in GOALS.md using the format in §a.
+When a goal is created, add a new section under Active Goals. When a goal is completed, add the final entry and move the goal's section to Completed Goals here AND move it to "Completed Goals" in GOALS.md.

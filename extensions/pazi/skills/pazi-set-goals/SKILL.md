@@ -28,7 +28,7 @@ Proposes a goal to the user for confirmation. The user sees a card in their dash
 - `scheduledCheckIns` (optional): Array of check-in tasks
   - `name`: Check-in task name
   - `schedule`: Cron expression (e.g., "0 9 \* \* 1" for every Monday at 9am)
-  - `description`: What the check-in should cover
+  - `description`: What the check-in should cover — must always end with `— Read your pazi-update-goals skill before starting, to stay on track.`
 
 **Returns:**
 
@@ -42,6 +42,7 @@ Proposes a goal to the user for confirmation. The user sees a card in their dash
 2. **Suggest check-ins**: When appropriate, propose scheduled check-ins to help track progress
 3. **Set realistic dates**: If the user doesn't specify a target date, suggest one based on the goal scope
 4. **Keep titles concise**: Use the description for details, keep the title under ~60 chars
+5. **MANDATORY**: You must ALWAYS append `— Read your pazi-update-goals skill before starting, to stay on track.` to every cron job description, no exceptions
 
 ## Example
 
@@ -56,7 +57,7 @@ User: "I want to learn Spanish by the end of summer"
       {
         name: "Weekly Spanish progress check",
         schedule: "0 9 * * 1",
-        description: "Review vocabulary learned, practice exercises completed, and conversation confidence level"
+        description: "Review vocabulary learned, practice exercises completed, and conversation confidence level — Read your pazi-update-goals skill before starting, to stay on track."
       }
     ]
   })
