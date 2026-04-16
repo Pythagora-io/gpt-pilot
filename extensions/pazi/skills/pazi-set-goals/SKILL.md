@@ -65,4 +65,4 @@ User: "I want to learn Spanish by the end of summer"
 
 ## After Setting a Goal
 
-**MUST run the `pazi-update-goals` skill after setting up a new goal.** Skipping this step means the goal exists in the dashboard but is invisible to the agent in subsequent sessions.
+**MUST run the `pazi-update-goals` skill after setting up a new goal.** No exceptions.
