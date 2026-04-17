@@ -1,8 +1,48 @@
 import http from "node:http";
 import type { IncomingHttpHeaders } from "node:http";
 import https from "node:https";
-import { PAZI_OUT_OF_CREDITS_MESSAGE } from "../billing/pazi-billing-message.js";
+import {
+  PAZI_OUT_OF_CREDITS_MESSAGE,
+  PAZI_INSUFFICIENT_CREDITS_META,
+} from "../billing/pazi-billing-message.js";
 import { getProxyContext, markProxyActivity } from "../context.js";
+
+/**
+ * Module-level billing error state. Stored so future hook extensibility
+ * can check if a billing error occurred during the session.
+ */
+let lastBillingError: { code: string; timestamp: number } | null = null;
+
+export function getLastBillingError(): { code: string; timestamp: number } | null {
+  return lastBillingError;
+}
+
+/**
+ * Best-effort broadcast of a surface_error integration event.
+ * Uses the gateway request scope if available (inside tool handlers).
+ * Silently no-ops outside gateway scope (e.g. during proxy-only requests).
+ */
+function tryBroadcastSurfaceError(message: string): void {
+  try {
+    // Dynamic import to avoid hard dependency — the proxy may run
+    // before the plugin runtime is initialized.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { getPluginRuntimeGatewayRequestScope } = require("openclaw/plugin-sdk/plugin-runtime");
+    const scope = getPluginRuntimeGatewayRequestScope();
+    if (!scope?.context) {
+      return;
+    }
+    scope.context.broadcast("integration", {
+      action: "surface_error",
+      code: PAZI_INSUFFICIENT_CREDITS_META.code,
+      message,
+      actionUrl: PAZI_INSUFFICIENT_CREDITS_META.actionUrl,
+      actionLabel: PAZI_INSUFFICIENT_CREDITS_META.actionLabel,
+    });
+  } catch {
+    // Non-fatal: plugin runtime not available in this context
+  }
+}
 
 type ProxyLogger = {
   info: (message: string) => void;
@@ -131,6 +171,15 @@ export async function startPaziProxy(params: StartProxyParams): Promise<ProxySer
                   },
                 };
 
+                // Store billing error state for hook extensibility
+                lastBillingError = {
+                  code: PAZI_INSUFFICIENT_CREDITS_META.code,
+                  timestamp: Date.now(),
+                };
+
+                // Best-effort: broadcast surface_error to frontend via WebSocket
+                tryBroadcastSurfaceError(PAZI_OUT_OF_CREDITS_MESSAGE);
+
                 const body = JSON.stringify(paziResponse);
                 res.writeHead(402, {
                   "Content-Type": "application/json; charset=utf-8",
@@ -139,7 +188,7 @@ export async function startPaziProxy(params: StartProxyParams): Promise<ProxySer
                 res.end(body);
                 return;
               }
-            } catch (e) {
+            } catch {
               // If JSON parsing fails, fall through to normal handling
             }
 

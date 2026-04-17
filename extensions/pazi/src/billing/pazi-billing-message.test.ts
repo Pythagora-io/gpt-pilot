@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   formatPaziBillingErrorMessage,
+  PAZI_INSUFFICIENT_CREDITS_META,
   PAZI_OUT_OF_CREDITS_MESSAGE,
 } from "./pazi-billing-message.js";
 
@@ -28,6 +29,24 @@ describe("pazi-billing-message", () => {
 
     test("should start with warning emoji", () => {
       expect(PAZI_OUT_OF_CREDITS_MESSAGE).toMatch(/^⚠️/);
+    });
+
+    test("should end with [insufficient_credits] detection tag", () => {
+      expect(PAZI_OUT_OF_CREDITS_MESSAGE).toMatch(/\[insufficient_credits\]$/);
+    });
+  });
+
+  describe("PAZI_INSUFFICIENT_CREDITS_META", () => {
+    test("should have correct code", () => {
+      expect(PAZI_INSUFFICIENT_CREDITS_META.code).toBe("insufficient_credits");
+    });
+
+    test("should have subscription action URL", () => {
+      expect(PAZI_INSUFFICIENT_CREDITS_META.actionUrl).toBe("/dashboard/account/subscription");
+    });
+
+    test("should have Upgrade label", () => {
+      expect(PAZI_INSUFFICIENT_CREDITS_META.actionLabel).toBe("Upgrade");
     });
   });
 

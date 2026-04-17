@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { PAZI_OUT_OF_CREDITS_MESSAGE } from "../billing/pazi-billing-message.js";
+import {
+  PAZI_INSUFFICIENT_CREDITS_META,
+  PAZI_OUT_OF_CREDITS_MESSAGE,
+} from "../billing/pazi-billing-message.js";
+import { getLastBillingError } from "./pazi-proxy.js";
 
 describe("pazi-proxy billing integration", () => {
   test("should be able to import Pazi billing message", () => {
@@ -22,6 +26,7 @@ describe("pazi-proxy billing integration", () => {
     expect(paziResponse.error.type).toBe("insufficient_credits");
     expect(paziResponse.error.message).toBe(PAZI_OUT_OF_CREDITS_MESSAGE);
     expect(paziResponse.error.message).toContain("subscription");
+    expect(paziResponse.error.message).toContain("[insufficient_credits]");
     expect(paziResponse.error.message).not.toMatch(/api[- ]?key/i);
   });
 
@@ -33,5 +38,15 @@ describe("pazi-proxy billing integration", () => {
 
     // Verify the structure we're looking for
     expect(insufficientCreditsResponse.error).toBe("insufficient_credits");
+  });
+
+  test("getLastBillingError should be null initially", () => {
+    expect(getLastBillingError()).toBeNull();
+  });
+
+  test("PAZI_INSUFFICIENT_CREDITS_META should have correct fields for surface_error event", () => {
+    expect(PAZI_INSUFFICIENT_CREDITS_META.code).toBe("insufficient_credits");
+    expect(PAZI_INSUFFICIENT_CREDITS_META.actionUrl).toBe("/dashboard/account/subscription");
+    expect(PAZI_INSUFFICIENT_CREDITS_META.actionLabel).toBe("Upgrade");
   });
 });
