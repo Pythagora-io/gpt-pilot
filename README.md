@@ -70,7 +70,6 @@ GPT Pilot is the core technology for the [Pythagora VS Code extension](https://m
 * [🔌 Requirements](#-requirements)
 * [🚦How to start using gpt-pilot?](#how-to-start-using-gpt-pilot)
 * [🔎 Examples](#-examples)
-* [🐳 How to start gpt-pilot in docker?](#-how-to-start-gpt-pilot-in-docker)
 * [🧑‍💻️ CLI arguments](#-cli-arguments)
 * [🏗 How GPT Pilot works?](#-how-gpt-pilot-works)
 * [🕴How's GPT Pilot different from _Smol developer_ and _GPT engineer_?](#hows-gpt-pilot-different-from-smol-developer-and-gpt-engineer)
