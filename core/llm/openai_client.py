@@ -99,7 +99,7 @@ class OpenAIClient(BaseLLMClient):
 
         remaining_tokens = headers["x-ratelimit-remaining-tokens"]
         time_regex = r"(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?"
-        if remaining_tokens == 0:
+        if int(remaining_tokens) == 0:
             match = re.search(time_regex, headers["x-ratelimit-reset-tokens"])
         else:
             match = re.search(time_regex, headers["x-ratelimit-reset-requests"])
