@@ -29,15 +29,29 @@
       }
     }
   },
-  // Each agent can use a different model or configuration. The default, as before, is GPT4 Turbo
-  // for most tasks and GPT3.5 Turbo to generate file descriptions. The agent name here should match
-  // the Python class name.
+  // Each agent can use a different model or configuration. The default is used for all agents
+  // unless overridden. The agent name should match the Python class name (case-insensitive).
+  // Valid agent names: "default", "CodeMonkey", "Importer", "SpecWriter", "Frontend",
+  // "BugHunter", "Developer", "TechLead", "Troubleshooter", "get_relevant_files"
+  // Sub-agent routes can also be overridden, e.g. "CodeMonkey.code_review".
   "agent": {
     "default": {
       "provider": "openai",
       "model": "gpt-4o-2024-05-13",
       "temperature": 0.5
     }
+    // Example: use a different model for code generation tasks
+    // "CodeMonkey": {
+    //   "provider": "openai",
+    //   "model": "gpt-4o-2024-05-13",
+    //   "temperature": 0.0
+    // },
+    // Example: use Anthropic for the Importer agent
+    // "Importer": {
+    //   "provider": "anthropic",
+    //   "model": "claude-3-5-sonnet-20241022",
+    //   "temperature": 0.5
+    // }
   },
   // Logging configuration outputs debug log to "pythagora.log" by default. If you set this to null,
   // the log will be sent to stdout.

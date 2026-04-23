@@ -425,10 +425,17 @@ class Config(_StrictModel):
         Fetch an LLM configuration for a given agent.
 
         If the agent specific configuration doesn't exist, returns the configuration
-        for the 'default' agent.
+        for the 'default' agent. Agent name matching is case-insensitive to allow
+        config keys like 'codemonkey' or 'importer' to match 'CodeMonkey' or 'Importer'.
         """
 
-        agent_name = agent_name if agent_name in self.agent else "default"
+        if agent_name not in self.agent:
+            # Try case-insensitive match to be forgiving of different naming conventions
+            agent_name_lower = agent_name.lower()
+            agent_name = next(
+                (key for key in self.agent if key.lower() == agent_name_lower),
+                "default",
+            )
         agent_config = self.agent[agent_name]
         provider_config = self.llm[agent_config.provider]
         return LLMConfig.from_provider_and_agent_configs(provider_config, agent_config)
