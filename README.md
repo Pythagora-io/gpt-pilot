@@ -70,7 +70,6 @@ GPT Pilot is the core technology for the [Pythagora VS Code extension](https://m
 * [🔌 Requirements](#-requirements)
 * [🚦How to start using gpt-pilot?](#how-to-start-using-gpt-pilot)
 * [🔎 Examples](#-examples)
-* [🐳 How to start gpt-pilot in docker?](#-how-to-start-gpt-pilot-in-docker)
 * [🧑‍💻️ CLI arguments](#-cli-arguments)
 * [🏗 How GPT Pilot works?](#-how-gpt-pilot-works)
 * [🕴How's GPT Pilot different from _Smol developer_ and _GPT engineer_?](#hows-gpt-pilot-different-from-smol-developer-and-gpt-engineer)
@@ -127,6 +126,11 @@ After you have Python and (optionally) PostgreSQL installed, follow these steps:
 8. `python main.py` (start GPT Pilot)
 
 All generated code will be stored in the folder `workspace` inside the folder named after the app name you enter upon starting the pilot.
+
+### Docker note
+
+This repository includes a `Dockerfile`, but it does not include a checked-in `docker-compose.yml` or a dedicated Docker startup guide in this README.
+If you plan to run GPT Pilot with Docker, use the `Dockerfile` as the starting point rather than looking for a missing Compose setup.
 
 # 🔎 [Examples](https://github.com/Pythagora-io/gpt-pilot/wiki/Apps-created-with-GPT-Pilot)
 
