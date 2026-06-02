@@ -21,7 +21,7 @@ async def mock_response_generator(*content):
 @patch("core.cli.helpers.StateManager")
 @patch("core.llm.minimax_client.AsyncOpenAI")
 async def test_minimax_calls_model(mock_AsyncOpenAI, mock_state_manager):
-    cfg = LLMConfig(provider=LLMProvider.MINIMAX, model="MiniMax-M2.7", temperature=0.5)
+    cfg = LLMConfig(provider=LLMProvider.MINIMAX, model="MiniMax-M3", temperature=0.5)
     convo = Convo("system hello").user("user hello")
 
     stream = AsyncMock(return_value=mock_response_generator("hello", None, "world"))
@@ -40,14 +40,14 @@ async def test_minimax_calls_model(mock_AsyncOpenAI, mock_state_manager):
     response, req_log = await llm(convo)
     assert response == "helloworld"
 
-    assert req_log.model == "MiniMax-M2.7"
+    assert req_log.model == "MiniMax-M3"
     assert req_log.provider == LLMProvider.MINIMAX
     assert req_log.temperature == 0.5
     assert req_log.response == response
     assert req_log.status == "success"
 
     stream.assert_awaited_once_with(
-        model="MiniMax-M2.7",
+        model="MiniMax-M3",
         messages=[
             {"role": "system", "content": "system hello"},
             {"role": "user", "content": "user hello"},
@@ -62,7 +62,7 @@ async def test_minimax_calls_model(mock_AsyncOpenAI, mock_state_manager):
 @patch("core.llm.minimax_client.AsyncOpenAI")
 async def test_minimax_temperature_clamping(mock_AsyncOpenAI, mock_state_manager):
     """Test that temperature=0 is clamped to MINIMAX_MIN_TEMPERATURE (0.01)."""
-    cfg = LLMConfig(provider=LLMProvider.MINIMAX, model="MiniMax-M2.7", temperature=0.0)
+    cfg = LLMConfig(provider=LLMProvider.MINIMAX, model="MiniMax-M3", temperature=0.0)
     convo = Convo("system").user("user")
 
     stream = AsyncMock(return_value=mock_response_generator("ok"))
@@ -93,7 +93,7 @@ async def test_minimax_temperature_clamping(mock_AsyncOpenAI, mock_state_manager
 @patch("core.llm.minimax_client.AsyncOpenAI")
 async def test_minimax_no_json_mode(mock_AsyncOpenAI, mock_state_manager):
     """Test that json_mode=True does NOT add response_format (MiniMax doesn't support it)."""
-    cfg = LLMConfig(provider=LLMProvider.MINIMAX, model="MiniMax-M2.7", temperature=0.5)
+    cfg = LLMConfig(provider=LLMProvider.MINIMAX, model="MiniMax-M3", temperature=0.5)
     convo = Convo("system").user("user")
 
     stream = AsyncMock(return_value=mock_response_generator("ok"))
@@ -120,7 +120,7 @@ async def test_minimax_no_json_mode(mock_AsyncOpenAI, mock_state_manager):
 @patch("core.cli.helpers.StateManager")
 @patch("core.llm.minimax_client.AsyncOpenAI")
 async def test_minimax_stream_handler(mock_AsyncOpenAI, mock_state_manager):
-    cfg = LLMConfig(provider=LLMProvider.MINIMAX, model="MiniMax-M2.7", temperature=0.5)
+    cfg = LLMConfig(provider=LLMProvider.MINIMAX, model="MiniMax-M3", temperature=0.5)
     convo = Convo("system hello").user("user hello")
 
     stream_handler = AsyncMock()
@@ -148,7 +148,7 @@ async def test_minimax_stream_handler(mock_AsyncOpenAI, mock_state_manager):
 @patch("core.llm.minimax_client.AsyncOpenAI")
 async def test_minimax_default_base_url(mock_AsyncOpenAI, mock_state_manager):
     """Test that the default base URL is set to MiniMax API endpoint."""
-    cfg = LLMConfig(provider=LLMProvider.MINIMAX, model="MiniMax-M2.7", temperature=0.5)
+    cfg = LLMConfig(provider=LLMProvider.MINIMAX, model="MiniMax-M3", temperature=0.5)
 
     sm = StateManager(mock_state_manager)
     MiniMaxClient(cfg, state_manager=sm)
@@ -165,7 +165,7 @@ async def test_minimax_custom_base_url(mock_AsyncOpenAI, mock_state_manager):
     """Test that a custom base URL overrides the default."""
     cfg = LLMConfig(
         provider=LLMProvider.MINIMAX,
-        model="MiniMax-M2.7",
+        model="MiniMax-M3",
         temperature=0.5,
         base_url="https://api.minimaxi.com/v1",
     )
@@ -199,7 +199,7 @@ def test_minimax_rate_limit_parser(
     err = MagicMock(response=MagicMock(headers=headers))
 
     sm = StateManager(mock_state_manager)
-    llm = MiniMaxClient(LLMConfig(provider=LLMProvider.MINIMAX, model="MiniMax-M2.7"), state_manager=sm)
+    llm = MiniMaxClient(LLMConfig(provider=LLMProvider.MINIMAX, model="MiniMax-M3"), state_manager=sm)
     assert int(llm.rate_limit_sleep(err).total_seconds()) == expected
 
 
@@ -211,5 +211,5 @@ def test_minimax_rate_limit_retry_after(mock_AsyncOpenAI, mock_state_manager):
     err = MagicMock(response=MagicMock(headers=headers))
 
     sm = StateManager(mock_state_manager)
-    llm = MiniMaxClient(LLMConfig(provider=LLMProvider.MINIMAX, model="MiniMax-M2.7"), state_manager=sm)
+    llm = MiniMaxClient(LLMConfig(provider=LLMProvider.MINIMAX, model="MiniMax-M3"), state_manager=sm)
     assert int(llm.rate_limit_sleep(err).total_seconds()) == 30

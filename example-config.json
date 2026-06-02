@@ -29,7 +29,7 @@
       }
     },
     // Example config for MiniMax (see https://platform.minimax.io/docs/api-reference/text-openai-api)
-    // Available models: MiniMax-M2.7 (default), MiniMax-M2.7-highspeed, MiniMax-M2.5, MiniMax-M2.5-highspeed
+    // Available models: MiniMax-M3 (default), MiniMax-M2.7, MiniMax-M2.7-highspeed
     "minimax": {
       "base_url": "https://api.minimax.io/v1",
       "api_key": "your-minimax-api-key",
