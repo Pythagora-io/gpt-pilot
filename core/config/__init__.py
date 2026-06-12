@@ -78,6 +78,7 @@ class LLMProvider(str, Enum):
     GROQ = "groq"
     LM_STUDIO = "lm-studio"
     AZURE = "azure"
+    MINIMAX = "minimax"
 
 
 class UIAdapter(str, Enum):
