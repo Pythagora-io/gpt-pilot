@@ -34,7 +34,7 @@ class Specification(Base):
     package_dependencies: Mapped[list[dict]] = mapped_column(default=list)
     templates: Mapped[Optional[dict]] = mapped_column()
 
-    complexity: Mapped[str] = mapped_column(server_default=Complexity.HARD)
+    complexity: Mapped[str] = mapped_column(default=Complexity.HARD)
     example_project: Mapped[Optional[str]] = mapped_column()
 
     # Relationships
@@ -52,7 +52,7 @@ class Specification(Base):
             system_dependencies=self.system_dependencies,
             package_dependencies=self.package_dependencies,
             templates=deepcopy(self.templates) if self.templates else None,
-            complexity=self.complexity,
+            complexity=self.complexity or Complexity.HARD,
             example_project=self.example_project,
         )
         return clone
