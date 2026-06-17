@@ -50,6 +50,16 @@ def test_parse_config():
     assert config.llm_for_agent("CodeMonkey").api_key == "sk-anthropic"
 
 
+def test_case_insensitive_agent_lookup():
+    config = ConfigLoader.from_json(json.dumps(test_config_data))
+
+    # Case-insensitive match: "codemonkey" should resolve to "CodeMonkey"
+    assert config.llm_for_agent("codemonkey").provider == LLMProvider.ANTHROPIC
+    assert config.llm_for_agent("codemonkey").model == "claude-3-opus"
+    # Unknown agent name falls back to "default"
+    assert config.llm_for_agent("NonExistentAgent").provider == LLMProvider.OPENAI
+
+
 def test_default_agent_llm_config():
     data = {
         "llm": {"openai": test_config_data["llm"]["openai"]},
