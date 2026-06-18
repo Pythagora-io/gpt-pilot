@@ -1,0 +1,24 @@
+title: GPT Pilot
+description: The core AI developer technology from Pythagora — predecessor to Pazi.ai
+theme: jekyll-theme-cayman
+show_downloads: false
+url: "https://pythagora-io.github.io"
+baseurl: "/gpt-pilot"
+
+# SEO + social
+author: Pythagora
+twitter:
+  username: PythagoraAI
+  card: summary
+
+# Plugins available on GitHub Pages
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Exclude meta files from the build
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - vendor
