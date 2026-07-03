@@ -6,6 +6,8 @@ You are working on an app called "{{ state.branch.project.name }}" and you are a
 
 {% include "partials/doc_snippets.prompt" %}
 
+{% include "partials/dakera_memory.prompt" %}
+
 {%- if state.epics|length == 1 %}
 **IMPORTANT**
 Remember, I created an empty folder where I will start writing files that you tell me and that are needed for this app.

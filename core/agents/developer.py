@@ -23,6 +23,7 @@ from core.db.models.project_state import IterationStatus, TaskStatus
 from core.db.models.specification import Complexity
 from core.llm.parser import JSONParser
 from core.log import get_logger
+from core.memory import ProjectMemory
 from core.telemetry import telemetry
 from core.ui.base import ProjectStage, pythagora_source
 
@@ -201,6 +202,21 @@ class Developer(ChatWithBreakdownMixin, RelevantFilesMixin, BaseAgent):
         self.next_state.flag_tasks_as_modified()
         return AgentResponse.done(self)
 
+    async def _recall_project_memory(self, task_description: str) -> list:
+        """
+        Recall decisions/bug-fixes from earlier sessions relevant to the current task.
+
+        Returns an empty list when the optional Dakera memory integration is disabled
+        or unavailable, in which case the breakdown prompt is unchanged.
+        """
+        memory = ProjectMemory.for_project(self.state_manager.project.id)
+        if memory is None:
+            return []
+        memories = await memory.recall(task_description)
+        if memories:
+            log.debug(f"Injecting {len(memories)} recalled memories into task breakdown")
+        return memories
+
     async def breakdown_current_task(self) -> AgentResponse:
         current_task = self.current_state.current_task
         current_task_index = self.current_state.tasks.index(current_task)
@@ -248,6 +264,8 @@ class Developer(ChatWithBreakdownMixin, RelevantFilesMixin, BaseAgent):
         ):
             redo_task_user_feedback = self.next_state.current_task["redo_human_instructions"]
 
+        dakera_memories = await self._recall_project_memory(current_task["description"])
+
         convo = AgentConvo(self).template(
             "breakdown",
             task=current_task,
@@ -256,6 +274,7 @@ class Developer(ChatWithBreakdownMixin, RelevantFilesMixin, BaseAgent):
             docs=self.current_state.docs,
             related_api_endpoints=related_api_endpoints,
             redo_task_user_feedback=redo_task_user_feedback,
+            dakera_memories=dakera_memories,
         )
 
         response: str = await llm(convo)

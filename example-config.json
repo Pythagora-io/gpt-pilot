@@ -86,4 +86,15 @@
     // Files larger than 50KB will be ignored, even if they otherwise wouldn't be.
     "ignore_size_threshold": 50000
   }
+  // Optional: give Pythagora semantic memory of past sessions via a self-hosted
+  // Dakera server (https://dakera.ai). When present, relevant decisions and bug fixes
+  // from earlier sessions on the same project are recalled during task breakdown, and
+  // a summary of each completed task is stored. All calls are best-effort and never
+  // block a build. Omit this section entirely to keep memory disabled (the default).
+  // Run a server with docker compose from https://github.com/dakera-ai/dakera-deploy.
+  // "memory": {
+  //   "base_url": "http://localhost:3000",
+  //   "api_key": null,
+  //   "top_k": 5
+  // }
 }

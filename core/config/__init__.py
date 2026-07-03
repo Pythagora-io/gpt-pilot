@@ -322,6 +322,57 @@ class FileSystemConfig(_StrictModel):
     )
 
 
+class DakeraConfig(_StrictModel):
+    """
+    Optional integration with a Dakera memory server (https://dakera.ai).
+
+    When enabled, Pythagora recalls semantically relevant decisions and bug fixes
+    from previous sessions while breaking down a task, and stores a short summary
+    of each completed task. This lets project knowledge (e.g. "the user schema needs
+    Optional types to avoid a Pydantic validation error") survive across conversations
+    instead of being re-derived every time.
+
+    The feature is fully opt-in: if this section is omitted from the config the
+    behaviour of Pythagora is unchanged. All calls to the memory server are
+    best-effort — a slow or unreachable server never blocks or fails a build.
+    """
+
+    enabled: bool = Field(
+        default=True,
+        description="Enable recalling/storing project memory (the section being present already implies intent)",
+    )
+    base_url: str = Field(
+        default="http://localhost:3000",
+        description="Base URL of the Dakera memory server (self-hosted via dakera-ai/dakera-deploy)",
+    )
+    api_key: Optional[str] = Field(
+        default=None,
+        description="API key for the Dakera server, sent as the X-API-Key header (looks like 'dk-...')",
+    )
+    top_k: int = Field(
+        default=5,
+        description="Maximum number of prior memories to recall for a task",
+        ge=1,
+        le=50,
+    )
+    min_importance: float = Field(
+        default=0.6,
+        description="Importance weight assigned to stored task outcomes (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
+    )
+    connect_timeout: float = Field(
+        default=10.0,
+        description="Timeout (in seconds) for connecting to the Dakera server",
+        ge=0.0,
+    )
+    read_timeout: float = Field(
+        default=20.0,
+        description="Timeout (in seconds) for reading a response from the Dakera server",
+        ge=0.0,
+    )
+
+
 class Config(_StrictModel):
     """
     Pythagora Core configuration
@@ -419,6 +470,10 @@ class Config(_StrictModel):
     db: DBConfig = DBConfig()
     ui: UIConfig = PlainUIConfig()
     fs: FileSystemConfig = FileSystemConfig()
+    memory: Optional[DakeraConfig] = Field(
+        default=None,
+        description="Optional Dakera memory server integration (see DakeraConfig). Omit to disable.",
+    )
 
     def llm_for_agent(self, agent_name: str = "default") -> LLMConfig:
         """
