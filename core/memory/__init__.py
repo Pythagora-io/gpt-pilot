@@ -126,10 +126,20 @@ class ProjectMemory:
         log.debug(f"Recalled {len(memories)} memories for agent {self.agent_id}")
         return memories
 
-    async def store(self, content: str, tags: Optional[list[str]] = None) -> bool:
+    async def store(
+        self,
+        content: str,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict] = None,
+    ) -> bool:
         """
         Store a memory for this project. Returns ``True`` on success, ``False`` if the
         server was unavailable. Never raises.
+
+        ``metadata`` is persisted verbatim on the memory and is meant for lifecycle
+        information such as the kind of memory (``decision``/``bug_fix``/...) and its
+        status (``candidate`` vs ``accepted``), so stale-memory handling does not depend
+        on prompt behaviour alone and stays visible to the runtime/UI.
         """
         if not content:
             return False
@@ -140,6 +150,8 @@ class ProjectMemory:
             "importance": self.config.min_importance,
             "tags": tags or ["gpt-pilot"],
         }
+        if metadata:
+            payload["metadata"] = metadata
         try:
             async with httpx.AsyncClient(
                 transport=httpx.AsyncHTTPTransport(retries=3),

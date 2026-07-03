@@ -134,6 +134,27 @@ async def test_store_posts_expected_payload():
 
 
 @pytest.mark.asyncio
+async def test_store_includes_lifecycle_metadata_when_provided():
+    memory = ProjectMemory(_config(), "p1")
+    response = _ok({"memory": {"id": "m1"}, "embedding_time_ms": 1})
+    metadata = {"kind": "bug_fix", "status": "candidate", "source": "gpt-pilot"}
+    with patch.object(httpx.AsyncClient, "post", _post_mock(response)) as mock_post:
+        ok = await memory.store("Task: fix login", tags=["gpt-pilot"], metadata=metadata)
+
+    assert ok is True
+    assert mock_post.call_args.kwargs["json"]["metadata"] == metadata
+
+
+@pytest.mark.asyncio
+async def test_store_omits_metadata_when_absent():
+    memory = ProjectMemory(_config(), "p1")
+    response = _ok({"memory": {"id": "m1"}, "embedding_time_ms": 1})
+    with patch.object(httpx.AsyncClient, "post", _post_mock(response)) as mock_post:
+        await memory.store("Task: build login")
+    assert "metadata" not in mock_post.call_args.kwargs["json"]
+
+
+@pytest.mark.asyncio
 async def test_store_returns_false_on_network_error():
     memory = ProjectMemory(_config(), "p1")
     with patch.object(httpx.AsyncClient, "post", AsyncMock(side_effect=httpx.ConnectError("down"))):

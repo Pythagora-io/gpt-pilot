@@ -17,6 +17,19 @@ semantic memory backed by a [Dakera](https://dakera.ai) server:
 Memories are namespaced per project (`agent_id = "gptpilot-<project_id>"`), so recall
 only ever surfaces knowledge from the same project.
 
+## Memory lifecycle
+
+Stored outcomes carry lightweight lifecycle metadata so that stale-memory handling does
+not depend on prompt behaviour alone and stays visible to the runtime/UI:
+
+- `kind` — `bug_fix` when the task needed debugging iterations, otherwise `decision`.
+- `status` — always `candidate` when written: a stored outcome is something a later
+  session *may* find relevant, never accepted project truth.
+- `source` — `gpt-pilot`.
+
+This keeps the door open for explicit supersession later (e.g. promoting a candidate to
+`accepted`, or marking it `superseded`) without changing the recall path.
+
 ## Enabling it
 
 The feature is **off by default**. If the `memory` section is omitted from your config,

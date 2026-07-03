@@ -19,12 +19,12 @@ class TaskCompleter(BaseAgent, GitMixin):
 
         # Capture the task outcome before `complete_task()` advances the pointer, so it
         # can be persisted to project memory (best-effort, no-op when memory is disabled).
-        outcome = self._summarize_task_outcome()
+        outcome, outcome_kind = self._summarize_task_outcome()
 
         current_task_index1 = self.current_state.tasks.index(self.current_state.current_task) + 1
         self.next_state.action = TC_TASK_DONE.format(current_task_index1)
         self.next_state.complete_task()
-        await self._store_task_outcome(outcome)
+        await self._store_task_outcome(outcome, outcome_kind)
         await self.state_manager.log_task_completed()
         tasks = self.current_state.tasks
         source = self.current_state.current_epic.get("source", "app")
@@ -63,24 +63,40 @@ class TaskCompleter(BaseAgent, GitMixin):
 
         return AgentResponse.done(self)
 
-    def _summarize_task_outcome(self) -> str:
+    def _summarize_task_outcome(self) -> tuple[str, str]:
         """
         Build a compact, human-readable summary of the finished task and any debugging
-        that happened while implementing it. The debugging iterations (problem ->
-        solution) are the most valuable thing to remember across sessions.
+        that happened while implementing it, along with the kind of memory it is.
+
+        The debugging iterations (problem -> solution) are the most valuable thing to
+        remember across sessions; a task that needed them is classified as a ``bug_fix``,
+        otherwise the outcome is a plain ``decision``.
         """
         task = self.current_state.current_task or {}
         lines = [f"Task: {task.get('description', '').strip()}"]
+        had_debugging = False
         for iteration in self.current_state.iterations or []:
             problem = (iteration.get("user_feedback") or "").strip()
             solution = (iteration.get("description") or "").strip()
             if problem or solution:
+                had_debugging = True
                 lines.append(f"Debugging: {problem or 'issue'} -> {solution or 'resolved'}")
-        return "\n".join(lines)
+        kind = "bug_fix" if had_debugging else "decision"
+        return "\n".join(lines), kind
 
-    async def _store_task_outcome(self, outcome: str) -> None:
-        """Persist the task outcome to project memory (best-effort; no-op when disabled)."""
+    async def _store_task_outcome(self, outcome: str, kind: str) -> None:
+        """Persist the task outcome to project memory (best-effort; no-op when disabled).
+
+        Stored outcomes carry lifecycle metadata (``kind`` and ``status: candidate``) so a
+        later session — or the runtime/UI — can reason about supersession explicitly
+        instead of relying on prompt behaviour alone. They are stored as *candidates*, not
+        as accepted project truth.
+        """
         memory = ProjectMemory.for_project(self.state_manager.project.id)
         if memory is None:
             return
-        await memory.store(outcome, tags=["gpt-pilot", "task-outcome"])
+        await memory.store(
+            outcome,
+            tags=["gpt-pilot", "task-outcome", kind.replace("_", "-")],
+            metadata={"kind": kind, "status": "candidate", "source": "gpt-pilot"},
+        )
