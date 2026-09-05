@@ -1,7 +1,7 @@
 {
   // Configuration for the LLM providers that can be used. Pythagora supports
-  // OpenAI, Azure, Anthropic and Groq. OpenRouter and local LLMs (such as LM-Studio)
-  // also work, you can use "openai" provider to define these.
+  // OpenAI, Azure, Anthropic and Groq. OpenRouter, Atlas Cloud and local LLMs
+  // (such as LM-Studio) also work, you can use "openai" provider to define these.
   "llm": {
     "openai": {
       // Base url to the provider/server, omitting the trailing "chat/completions" part.
@@ -17,6 +17,17 @@
       "connect_timeout": 60.0,
       "read_timeout": 20.0
     },
+    // Example config for an OpenAI-compatible endpoint such as Atlas Cloud
+    // (see https://www.atlascloud.ai/docs). Any provider that speaks the
+    // OpenAI chat-completions API goes under "openai" with its own base_url;
+    // pair it with an agent config that names one of its models, e.g.
+    // "provider": "openai", "model": "deepseek-ai/deepseek-v4-pro".
+    // "openai": {
+    //   "base_url": "https://api.atlascloud.ai/v1",
+    //   "api_key": "your-api-key",
+    //   "connect_timeout": 60.0,
+    //   "read_timeout": 20.0
+    // },
     // Example config for Azure OpenAI (see https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#chat-completions)
     "azure": {
       "base_url": "https://your-resource-name.openai.azure.com/",
