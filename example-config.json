@@ -1,7 +1,8 @@
 {
   // Configuration for the LLM providers that can be used. Pythagora supports
-  // OpenAI, Azure, Anthropic and Groq. OpenRouter and local LLMs (such as LM-Studio)
-  // also work, you can use "openai" provider to define these.
+  // OpenAI, Azure, Anthropic and Groq. OpenRouter, Cheaper Inference and local LLMs
+  // (such as LM-Studio) also work, you can use "openai" provider to define these.
+  // For Cheaper Inference, set "base_url" to "https://api.cheaperinference.com/v1".
   "llm": {
     "openai": {
       // Base url to the provider/server, omitting the trailing "chat/completions" part.
