@@ -1,5 +1,7 @@
 from os.path import exists, join
 
+import pytest
+
 from core.disk.ignore import IgnoreMatcher
 from core.disk.vfs import LocalDiskVFS, MemoryVFS
 
@@ -86,3 +88,49 @@ def test_local_disk_vfs_with_matcher(tmp_path):
 
     vfs.remove("test.log")
     assert exists(join(tmp_path, "test.log"))
+
+
+@pytest.mark.parametrize("operation", ["save", "read", "remove", "get_full_path"])
+@pytest.mark.parametrize("path_kind", ["relative", "absolute", "sibling"])
+def test_local_disk_vfs_rejects_paths_outside_root(tmp_path, operation, path_kind):
+    root = tmp_path / "workspace"
+    vfs = LocalDiskVFS(root)
+    outside = tmp_path / ("workspace-other" if path_kind == "sibling" else "outside") / "file.txt"
+    outside.parent.mkdir()
+    outside.write_text("keep", encoding="utf-8")
+    path = "../outside/file.txt" if path_kind == "relative" else str(outside)
+
+    with pytest.raises(ValueError, match="outside the project root"):
+        if operation == "save":
+            vfs.save(path, "replacement")
+        else:
+            getattr(vfs, operation)(path)
+
+    assert outside.read_text(encoding="utf-8") == "keep"
+
+
+def test_local_disk_vfs_resolves_paths_inside_root(tmp_path):
+    vfs = LocalDiskVFS(tmp_path)
+    vfs.save("subdir/../file.txt", "hello")
+
+    assert vfs.get_full_path("subdir/../file.txt") == str(tmp_path / "file.txt")
+    assert vfs.get_full_path(".") == str(tmp_path.resolve())
+    assert vfs.get_full_path(str(tmp_path / "file.txt")) == str(tmp_path / "file.txt")
+    assert vfs.read("./file.txt") == "hello"
+
+
+def test_local_disk_vfs_rejects_symlinks_outside_root(tmp_path):
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    root = tmp_path / "workspace"
+    vfs = LocalDiskVFS(root)
+    link = root / "link"
+    try:
+        link.symlink_to(outside, target_is_directory=True)
+    except (NotImplementedError, OSError) as error:
+        pytest.skip(f"Creating symlinks is unavailable: {error}")
+
+    with pytest.raises(ValueError, match="outside the project root"):
+        vfs.save("link/file.txt", "replacement")
+
+    assert not (outside / "file.txt").exists()
