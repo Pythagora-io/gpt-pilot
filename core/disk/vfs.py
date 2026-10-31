@@ -136,10 +136,11 @@ class LocalDiskVFS(VirtualFileSystem):
         self.ignore_matcher = ignore_matcher
 
     def get_full_path(self, path: str) -> str:
-        root = Path(self.root).resolve()
-        full_path = (root / path).resolve()
-        if not full_path.is_relative_to(root):
+        root = Path(os.path.abspath(self.root))
+        full_path = Path(os.path.abspath(os.path.normpath(os.path.join(self.root, path))))
+        if not full_path.is_relative_to(root) or not full_path.resolve().is_relative_to(root.resolve()):
             raise ValueError(f"Path is outside the project root: {path}")
+        # Resolve only for containment: remove() must unlink a symlink, not its target.
         return str(full_path)
 
     def save(self, path: str, content: str):

@@ -1,4 +1,5 @@
 from os.path import exists, join
+from pathlib import Path
 
 import pytest
 
@@ -134,3 +135,84 @@ def test_local_disk_vfs_rejects_symlinks_outside_root(tmp_path):
         vfs.save("link/file.txt", "replacement")
 
     assert not (outside / "file.txt").exists()
+
+
+def test_local_disk_vfs_remove_preserves_resolved_target(tmp_path, monkeypatch):
+    # Emulate symlink resolution so the removal boundary is covered without symlink privileges.
+    vfs = LocalDiskVFS(tmp_path)
+    target = tmp_path / "target.txt"
+    target.write_text("keep", encoding="utf-8")
+    alias = tmp_path / "alias.txt"
+    alias.write_text("alias", encoding="utf-8")
+    original_resolve = Path.resolve
+
+    def resolve(path, *args, **kwargs):
+        return target if path == alias else original_resolve(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", resolve)
+
+    vfs.remove("alias.txt")
+
+    assert not alias.exists()
+    assert target.read_text(encoding="utf-8") == "keep"
+
+
+@pytest.mark.parametrize("operation", ["save", "read", "remove", "get_full_path"])
+def test_local_disk_vfs_rejects_outside_path_resolving_inside_root(tmp_path, monkeypatch, operation):
+    # An outside symlink must not become an allowed operation just because its target is inside.
+    root = tmp_path / "workspace"
+    vfs = LocalDiskVFS(root)
+    target = root / "target.txt"
+    target.write_text("keep", encoding="utf-8")
+    alias = tmp_path / "alias.txt"
+    alias.write_text("alias", encoding="utf-8")
+    original_resolve = Path.resolve
+
+    def resolve(path, *args, **kwargs):
+        return target if path == alias else original_resolve(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", resolve)
+
+    with pytest.raises(ValueError, match="outside the project root"):
+        if operation == "save":
+            vfs.save(str(alias), "replacement")
+        else:
+            getattr(vfs, operation)(str(alias))
+
+    assert alias.read_text(encoding="utf-8") == "alias"
+    assert target.read_text(encoding="utf-8") == "keep"
+
+
+def test_local_disk_vfs_removes_symlink_without_removing_target(tmp_path):
+    vfs = LocalDiskVFS(tmp_path)
+    target = tmp_path / "target.txt"
+    target.write_text("keep", encoding="utf-8")
+    alias = tmp_path / "alias.txt"
+    try:
+        alias.symlink_to(target)
+    except (NotImplementedError, OSError) as error:
+        pytest.skip(f"Creating symlinks is unavailable: {error}")
+
+    assert vfs.get_full_path("alias.txt") == str(alias)
+    vfs.remove("alias.txt")
+
+    assert not alias.is_symlink()
+    assert target.read_text(encoding="utf-8") == "keep"
+
+
+def test_local_disk_vfs_rejects_outside_symlink_to_inside_root(tmp_path):
+    root = tmp_path / "workspace"
+    vfs = LocalDiskVFS(root)
+    target = root / "target.txt"
+    target.write_text("keep", encoding="utf-8")
+    alias = tmp_path / "alias.txt"
+    try:
+        alias.symlink_to(target)
+    except (NotImplementedError, OSError) as error:
+        pytest.skip(f"Creating symlinks is unavailable: {error}")
+
+    with pytest.raises(ValueError, match="outside the project root"):
+        vfs.remove(str(alias))
+
+    assert alias.is_symlink()
+    assert target.read_text(encoding="utf-8") == "keep"
