@@ -160,10 +160,10 @@ class LocalDiskVFS(VirtualFileSystem):
             return f.read()
 
     def remove(self, path: str):
+        full_path = self.get_full_path(path)
         if self.ignore_matcher.ignore(path):
             return
 
-        full_path = self.get_full_path(path)
         if os.path.isfile(full_path):
             try:
                 os.remove(full_path)

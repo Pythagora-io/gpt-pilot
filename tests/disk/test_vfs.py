@@ -120,6 +120,27 @@ def test_local_disk_vfs_resolves_paths_inside_root(tmp_path):
     assert vfs.read("./file.txt") == "hello"
 
 
+@pytest.mark.parametrize("ignored", [False, True])
+def test_local_disk_vfs_rejects_outside_paths_before_ignore(tmp_path, monkeypatch, ignored):
+    root = tmp_path / "workspace"
+    vfs = LocalDiskVFS(root)
+    outside = tmp_path / "outside.txt"
+    outside.write_text("keep", encoding="utf-8")
+    inspected_paths = []
+
+    def ignore(path):
+        inspected_paths.append(path)
+        return ignored
+
+    monkeypatch.setattr(vfs.ignore_matcher, "ignore", ignore)
+
+    with pytest.raises(ValueError, match="outside the project root"):
+        vfs.remove(str(outside))
+
+    assert inspected_paths == []
+    assert outside.read_text(encoding="utf-8") == "keep"
+
+
 def test_local_disk_vfs_rejects_symlinks_outside_root(tmp_path):
     outside = tmp_path / "outside"
     outside.mkdir()
