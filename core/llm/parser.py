@@ -38,7 +38,7 @@ class DescriptiveCodeBlockParser:
     """
 
     def __init__(self):
-        self.pattern = re.compile(r"^(.*?)\n```([a-z0-9]+\n)?(.*?)^```\s*", re.DOTALL | re.MULTILINE)
+        self.pattern = re.compile(r"^(.*?)\n```([a-z0-9]+\r?\n)?(.*?)^```\s*", re.DOTALL | re.MULTILINE)
 
     def __call__(self, text: str) -> ParsedBlocks:
         # Store original response
@@ -86,7 +86,7 @@ class MultiCodeBlockParser:
     """
 
     def __init__(self):
-        self.pattern = re.compile(r"^```([a-z0-9]+\n)?(.*?)^```\s*", re.DOTALL | re.MULTILINE)
+        self.pattern = re.compile(r"^```([a-z0-9]+\r?\n)?(.*?)^```\s*", re.DOTALL | re.MULTILINE)
 
     def __call__(self, text: str) -> list[str]:
         blocks = []
