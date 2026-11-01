@@ -4,7 +4,14 @@ from typing import Tuple
 import pytest
 from pydantic import BaseModel, field_validator
 
-from core.llm.parser import CodeBlockParser, EnumParser, JSONParser, MultiCodeBlockParser, OptionalCodeBlockParser
+from core.llm.parser import (
+    CodeBlockParser,
+    DescriptiveCodeBlockParser,
+    EnumParser,
+    JSONParser,
+    MultiCodeBlockParser,
+    OptionalCodeBlockParser,
+)
 
 
 @pytest.mark.parametrize(
@@ -43,6 +50,34 @@ def test_code_block_parser(input, expected):
             parser(input)
     else:
         assert parser(input) == expected
+
+
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
+@pytest.mark.parametrize("parser_type", [CodeBlockParser, MultiCodeBlockParser])
+def test_code_block_parser_line_endings(newline, parser_type):
+    content = f"first{newline}second"
+    text = f"```python{newline}{content}{newline}```"
+
+    expected = [content] if parser_type is MultiCodeBlockParser else content
+    assert parser_type()(text) == expected
+
+
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
+def test_descriptive_code_block_parser_line_endings(newline):
+    text = f"file: main.py{newline}```python{newline}print('hello'){newline}```"
+
+    blocks = DescriptiveCodeBlockParser()(text).blocks
+
+    assert len(blocks) == 1
+    assert blocks[0].description == "file: main.py"
+    assert blocks[0].content == "print('hello')"
+
+
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
+def test_json_parser_fenced_line_endings(newline):
+    text = f'```json{newline}{{"value": 42}}{newline}```'
+
+    assert JSONParser()(text) == {"value": 42}
 
 
 @pytest.mark.parametrize(
