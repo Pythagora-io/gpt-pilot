@@ -114,8 +114,7 @@ class IgnoreMatcher:
 
         try:
             with open(full_path, "r", encoding="utf-8") as f:
-                f.read(128 * 1024)
-            return False
+                return "\x00" in f.read(128 * 1024)
         except:  # noqa
             # If we can't open the file for any reason (eg. PermissionError), it's
             # best to ignore it anyway
