@@ -1,9 +1,10 @@
 import asyncio
+import codecs
 import signal
 import sys
 import time
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from os import environ
 from os.path import abspath, join
 from typing import Callable, Optional
@@ -31,6 +32,14 @@ class LocalProcess:
     stderr: str
     _process: asyncio.subprocess.Process
     show_output: bool
+    # Output is read byte by byte, so the decoders have to keep incomplete
+    # multi-byte sequences around until the rest of the character arrives.
+    _stdout_decoder: codecs.IncrementalDecoder = field(
+        default_factory=lambda: codecs.getincrementaldecoder("utf-8")("ignore")
+    )
+    _stderr_decoder: codecs.IncrementalDecoder = field(
+        default_factory=lambda: codecs.getincrementaldecoder("utf-8")("ignore")
+    )
 
     def __hash__(self) -> int:
         return hash(self.id)
@@ -76,13 +85,14 @@ class LocalProcess:
         return retcode
 
     @staticmethod
-    async def _nonblock_read(reader: asyncio.StreamReader, timeout: float) -> str:
+    async def _nonblock_read(reader: asyncio.StreamReader, decoder: codecs.IncrementalDecoder, timeout: float) -> str:
         """
         Reads data from a stream reader without blocking (for long).
 
         This wraps the read in a (short) timeout to avoid blocking the event loop for too long.
 
         :param reader: Async stream reader to read from.
+        :param decoder: Incremental UTF-8 decoder, buffering incomplete characters between reads.
         :param timeout: Timeout for the read operation (should not be too long).
         :return: Data read from the stream reader, or empty string.
         """
@@ -92,13 +102,13 @@ class LocalProcess:
                 data = await asyncio.wait_for(reader.read(1), timeout)
                 if not data:
                     return buffer
-                buffer += data.decode("utf-8", errors="ignore")
+                buffer += decoder.decode(data)
             except asyncio.TimeoutError:
                 return buffer
 
     async def read_output(self, timeout: float = NONBLOCK_READ_TIMEOUT) -> tuple[str, str]:
-        new_stdout = await self._nonblock_read(self._process.stdout, timeout)
-        new_stderr = await self._nonblock_read(self._process.stderr, timeout)
+        new_stdout = await self._nonblock_read(self._process.stdout, self._stdout_decoder, timeout)
+        new_stderr = await self._nonblock_read(self._process.stderr, self._stderr_decoder, timeout)
         self.stdout += new_stdout
         self.stderr += new_stderr
         return (new_stdout, new_stderr)

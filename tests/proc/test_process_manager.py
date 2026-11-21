@@ -1,6 +1,6 @@
 from os import getenv, makedirs
 from os.path import join
-from sys import platform
+from sys import executable, platform
 from unittest.mock import patch
 
 import pytest
@@ -85,6 +85,29 @@ async def test_process_manager_run_command_capture_stderr(tmp_path):
     assert return_code == 0
     assert stdout == ""
     assert stderr.strip() == "hello"
+
+
+@pytest.mark.asyncio
+@patch("core.proc.process_manager.WATCHER_IDLE_INTERVAL", 0.1)
+async def test_process_manager_run_command_capture_utf8_output(tmp_path):
+    """Non-ASCII output must be captured intact, not dropped byte by byte."""
+    script = tmp_path / "emit_utf8.py"
+    script.write_text(
+        "import sys\n"
+        "sys.stdout.buffer.write('héllo wörld 世界\\n'.encode('utf-8'))\n"
+        "sys.stderr.buffer.write('naïve café 你好\\n'.encode('utf-8'))\n",
+        encoding="utf-8",
+    )
+
+    pm = ProcessManager(root_dir=tmp_path)
+
+    return_code, stdout, stderr = await pm.run_command(f'"{executable}" "{script}"')
+
+    await pm.stop_watcher()
+
+    assert return_code == 0
+    assert stdout == "héllo wörld 世界\n"
+    assert stderr == "naïve café 你好\n"
 
 
 @pytest.mark.asyncio
